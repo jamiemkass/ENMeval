@@ -44,7 +44,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   for (a in 1:length(maxent.args)) {
     if (length(maxent.args) > 1) {
       if (is.function(updateProgress)) {
-        text <- paste('Running', maxent.args[[a]], '...')
+        text <- paste0('Running ', args.lab[[1]][a], args.lab[[2]][a], '...')
         updateProgress(detail = text)
       } else {
         setTxtProgressBar(pb, a) 
