@@ -42,7 +42,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   full.AUC <- vector()
   for (a in 1:length(maxent.args)) {
     if (length(maxent.args) > 1) {
-      if is.function(updateProgress) {
+      if (is.function(updateProgress) {
         text <- paste('Running', maxent.args[[a]], '...')
         updateProgress(detail = text)
       } else {
