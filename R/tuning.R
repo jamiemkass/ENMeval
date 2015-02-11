@@ -6,8 +6,8 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    rasterPreds, updateProgress)
-{
+                    rasterPreds, updateProgress) {
+  
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
     group.data <- get.checkerboard1(occ, env, bg.coords, 
@@ -30,8 +30,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     pres[, categoricals] <- as.factor(pres[, categoricals])
     bg[, categoricals] <- as.factor(bg[, categoricals])
   }
-  if (length(maxent.args) > 1 & !is.function(updateProgress)) 
-    pb <- txtProgressBar(0, length(maxent.args), style = 3)
+  if (length(maxent.args) > 1 & !is.function(updateProgress)) {
+    pb <- txtProgressBar(0, length(maxent.args), style = 3) 
+  }
   full.mod <- list()
   AUC.TEST <- data.frame()
   AUC.DIFF <- data.frame()
@@ -48,6 +49,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
       } else {
         setTxtProgressBar(pb, a) 
       }
+    }
       
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
