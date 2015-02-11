@@ -5,7 +5,8 @@
 # INPUT ARGUMENTS COME FROM WRAPPER FUNCTION
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
-                    args.lab, categoricals, aggregation.factor, kfolds, bin.output, rasterPreds) 
+                    args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
+                    rasterPreds, updateProgress)
 {
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -29,7 +30,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     pres[, categoricals] <- as.factor(pres[, categoricals])
     bg[, categoricals] <- as.factor(bg[, categoricals])
   }
-  if (length(maxent.args) > 1) 
+  if (length(maxent.args) > 1 & !is.function(updateProgress)) 
     pb <- txtProgressBar(0, length(maxent.args), style = 3)
   full.mod <- list()
   AUC.TEST <- data.frame()
@@ -40,8 +41,14 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   nparm <- vector()
   full.AUC <- vector()
   for (a in 1:length(maxent.args)) {
-    if (length(maxent.args) > 1) 
-      setTxtProgressBar(pb, a)
+    if (length(maxent.args) > 1) {
+      if is.function(updateProgress) {
+        text <- paste('Running', maxent.args[[a]], '...')
+        updateProgress(detail = text)
+      } else {
+        setTxtProgressBar(pb, a) 
+      }
+      
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
     tmpfolder <- tempfile()
