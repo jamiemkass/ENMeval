@@ -1,3 +1,8 @@
+ENMeval 0.1.2
+===========
+BOB IS TESTING HERE…
+
+
 ENMeval 0.1.1
 ===========
 o  This version corrects the calc.aicc function that, in version 0.1.0, could give erroneous results when used with multiple models simultaneously.  AICc, delta.AICc, and w.AIC values calculated in v.0.1.0 are potentially flawed!
