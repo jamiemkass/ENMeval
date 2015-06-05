@@ -29,8 +29,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   if (overlap == TRUE) {
     if (length(maxent.args) > 1) {
       message("Calculating niche overlap")
-      overlap.mat <- calc.niche.overlap(results@predictions, 
-                                        "D")
+      overlap.mat <- calc.niche.overlap(results@predictions, "D")
       results@overlap <- overlap.mat
     }
     else {
