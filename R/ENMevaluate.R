@@ -2,7 +2,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                          RMvalues = seq(0.5, 4, 0.5), fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), 
                          categoricals = NULL, n.bg = 10000, method = NULL, overlap = FALSE, 
                          aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE, 
-                         rasterPreds = TRUE, updateProgress = NULL) 
+                         rasterPreds = TRUE, parallel = FALSE, updateProgress = NULL) 
 {
   if (is.null(method)) {
     stop("Evaluation method needs to be specified.")
@@ -25,7 +25,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                                                     "Error: You need to specify an accepted evaluation method. Check the documentation.")))))))
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
                     maxent.args, args.lab, categoricals, aggregation.factor, 
-                    kfolds, bin.output, rasterPreds, updateProgress)
+                    kfolds, bin.output, rasterPreds, parallel, updateProgress)
   if (overlap == TRUE) {
     if (length(maxent.args) > 1) {
       message("Calculating niche overlap")

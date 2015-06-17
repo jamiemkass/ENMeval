@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    rasterPreds, updateProgress) {
+                    rasterPreds, parallel, updateProgress) {
   
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -33,45 +33,55 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (length(maxent.args) > 1 & !is.function(updateProgress)) {
     pb <- txtProgressBar(0, length(maxent.args), style = 3) 
   }
-  full.mod <- list()
-  AUC.TEST <- data.frame()
-  AUC.DIFF <- data.frame()
-  OR10 <- data.frame()
-  ORmin <- data.frame()
-  predictive.maps <- stack()
-  nparm <- vector()
-  full.AUC <- vector()
-  for (a in 1:length(maxent.args)) {
+  
+  # set up parallel computing
+  if (parallel==TRUE) {
+    numCores <- detectCores()  
+  } else {
+    numCores <- 1
+  }
+  c1 <- makeCluster(numCores)
+  registerDoParallel(c1)
+  numCoresUsed <- getDoParWorkers()
+  print(paste("Of", numCores, "total cores using", numCoresUsed))
+  
+  # log file to record status of parallel loops
+  writeLines(c(""), "log.txt")
+  
+  out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
+    sink("log.txt", append=TRUE) 
     if (length(maxent.args) > 1) {
       if (is.function(updateProgress)) {
-        text <- paste0('Running ', args.lab[[1]][a], args.lab[[2]][a], '...')
+        text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
         updateProgress(detail = text)
       } else {
-        setTxtProgressBar(pb, a) 
+        setTxtProgressBar(pb, i) 
       }
     }
-      
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
     tmpfolder <- tempfile()
-    full.mod[a] <- maxent(x, p, args = maxent.args[[a]], 
-                          factors = categoricals, path = tmpfolder)
+    full.mod <- maxent(x, p, args = maxent.args[[i]], 
+                       factors = categoricals, path = tmpfolder)
     pred.args <- c("outputformat=raw", "doclamp=true")
     if (rasterPreds==TRUE) {
-      predictive.maps <- stack(predictive.maps, predict(full.mod[[a]], env, args = pred.args))  
+      predictive.map <- predict(full.mod, env, args = pred.args)
     }
-    full.AUC[a] <- full.mod[[a]]@results[5]
+    AUC.TEST <- double()
+    AUC.DIFF <- double()
+    OR10 <- double()
+    ORmin <- double()
+    
     for (k in 1:nk) {
       train.val <- pres[group.data$occ.grp != k, ]
       test.val <- pres[group.data$occ.grp == k, ]
       bg.val <- bg[group.data$bg.grp != k, ]
       x <- rbind(train.val, bg.val)
       p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
-      mod <- maxent(x, p, args = maxent.args[[a]], factors = categoricals, 
+      mod <- maxent(x, p, args = maxent.args[[i]], factors = categoricals, 
                     path = tmpfolder)
-      AUC.TEST[a, k] <- evaluate(test.val, bg, mod)@auc
-      AUC.DIFF[a, k] <- max(0, evaluate(train.val, bg, 
-                                        mod)@auc - AUC.TEST[a, k])
+      AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
+      AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
       p.train <- predict(mod, train.val, args = pred.args)
       p.test <- predict(mod, test.val, args = pred.args)
       if (nrow(train.val) < 10) {
@@ -81,12 +91,25 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
         n90 <- ceiling(nrow(train.val) * 0.9)
       }
       train.thr.10 <- rev(sort(p.train))[n90]
-      OR10[a, k] <- mean(p.test < train.thr.10)
+      OR10[k] <- mean(p.test < train.thr.10)
       train.thr.min <- min(p.train)
-      ORmin[a, k] <- mean(p.test < train.thr.min)
+      ORmin[k] <- mean(p.test < train.thr.min)
     }
     unlink(tmpfolder, recursive = TRUE)
+    stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
+    return(list(full.mod, stats, predictive.map))
   }
+  
+  full.mods <- sapply(out, function(x) x[[1]])
+  statsTbl <- as.data.frame(t(sapply(out, function(x) x[[2]])))
+  predictive.maps <- stack(sapply(out, function(x) x[[3]]))
+  
+  
+  AUC.DIFF <- statsTbl[,1:nk]
+  AUC.TEST <- statsTbl[,nk:(2*nk)]
+  OR10 <- statsTbl[,(2*nk):(3*nk)]
+  ORmin <- statsTbl[,(3*nk):(4*nk)]
+  # rename column fields
   names(AUC.DIFF) <- paste("AUC.DIFF_bin", 1:nk, sep = ".")
   Mean.AUC.DIFF <- rowMeans(AUC.DIFF)
   Var.AUC.DIFF <- corrected.var(AUC.DIFF, noccs)
@@ -99,15 +122,23 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   names(ORmin) <- paste("ORmin_bin", 1:nk, sep = ".")
   Mean.ORmin <- rowMeans(ORmin)
   Var.ORmin <- apply(ORmin, 1, var)
-  for (i in 1:length(full.mod)) nparm[i] <- get.params(full.mod[[i]])
+
+  # get training AUCs for each model
+  full.AUC <- double()
+  for (i in 1:length(full.mods)) full.AUC[i] <- full.mods[[i]]@results[5]
+  # get total number of parameters
+  nparm <- numeric()
+  for (i in 1:length(full.mods)) nparm[i] <- get.params(full.mods[[i]])
   if (rasterPreds==TRUE) {
     aicc <- calc.aicc(nparm, occ, predictive.maps)
   } else {
     aicc <- rep(NaN, length(full.AUC))
   }
+  
   features <- args.lab[[1]]
   rm <- args.lab[[2]]
   settings <- paste(args.lab[[1]], args.lab[[2]], sep = "_")
+  
   res <- data.frame(settings, features, rm, full.AUC, Mean.AUC, 
                     Var.AUC, Mean.AUC.DIFF, Var.AUC.DIFF, Mean.OR10, Var.OR10, 
                     Mean.ORmin, Var.ORmin, nparm, aicc)
@@ -115,10 +146,11 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     res <- as.data.frame(cbind(res, AUC.TEST, AUC.DIFF, OR10, 
                                ORmin))
   }
+  
   if (rasterPreds==TRUE) {
     names(predictive.maps) <- settings
   }
-  results <- ENMevaluation(results = res, predictions = predictive.maps, models = full.mod,
+  results <- ENMevaluation(results = res, predictions = predictive.maps, models = full.mods,
                            partition.method = method, occ.pts = occ, occ.grp = group.data[[1]], 
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
   return(results)
