@@ -1,6 +1,8 @@
 ENMeval 0.1.2
 ===========
-BOB IS TESTING HERE…
+o  Added a slot in ENMevaluation object class to hold Maxent model objects.  
+o  Added arguments in ENMevaluate function to turn off raster prediction generation (saves time).
+o  Made some minor changes to documentation regarding delta.AICc and the get.user example
 
 
 ENMeval 0.1.1
