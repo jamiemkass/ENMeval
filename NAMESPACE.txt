@@ -1,4 +1,4 @@
-import("dismo", "methods", "rJava", "raster”, “doParallel”)
+import("dismo", "methods", "rJava", "raster", "doParallel")
 exportPattern("^[[:alpha:]]+")
 exportClasses(
     "ENMevaluation" 
