@@ -100,6 +100,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     return(list(full.mod, stats, predictive.map))
   }
   
+  # empty sink
+  sink()
+  
   full.mods <- sapply(out, function(x) x[[1]])
   statsTbl <- as.data.frame(t(sapply(out, function(x) x[[2]])))
   predictive.maps <- stack(sapply(out, function(x) x[[3]]))
