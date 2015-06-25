@@ -30,42 +30,33 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     pres[, categoricals] <- as.factor(pres[, categoricals])
     bg[, categoricals] <- as.factor(bg[, categoricals])
   }
-  if (length(maxent.args) > 1 & !is.function(updateProgress)) {
-    pb <- txtProgressBar(0, length(maxent.args), style = 3) 
-  }
   
-  # set up parallel computing
-  if (parallel==TRUE) {
-    numCores <- detectCores()  
-  } else {
-    numCores <- 1
-  }
-  c1 <- makeCluster(numCores)
-  registerDoParallel(c1)
-  numCoresUsed <- getDoParWorkers()
-  print(paste("Of", numCores, "total cores using", numCoresUsed))
   
-  # log file to record status of parallel loops
-  writeLines(c(""), "log.txt")
-  
-  out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-    sink("log.txt", append=TRUE) 
+  tune <- function(iter, parallel, progBar=NULL) {
     if (length(maxent.args) > 1) {
-      if (is.function(updateProgress)) {
-        text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
-        updateProgress(detail = text)
+      if (parallel) {
+        sink("log.txt", append=TRUE)
+        cat(paste("Starting iteration", i, "for", args.lab[[1]][iter], args.lab[[2]][iter], "...\n"))
+        sink()
       } else {
-        setTxtProgressBar(pb, i) 
+        if (is.function(updateProgress)) {
+          text <- paste0('Running ', args.lab[[1]][iter], args.lab[[2]][iter], '...')
+          updateProgress(detail = text)
+        } else {
+          setTxtProgressBar(progBar, iter) 
+        }        
       }
     }
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
     tmpfolder <- tempfile()
-    full.mod <- maxent(x, p, args = maxent.args[[i]], 
+    full.mod <- maxent(x, p, args = maxent.args[[iter]], 
                        factors = categoricals, path = tmpfolder)
     pred.args <- c("outputformat=raw", "doclamp=true")
     if (rasterPreds==TRUE) {
       predictive.map <- predict(full.mod, env, args = pred.args)
+    } else {
+      predictive.map <- NULL
     }
     AUC.TEST <- double()
     AUC.DIFF <- double()
@@ -78,7 +69,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
       bg.val <- bg[group.data$bg.grp != k, ]
       x <- rbind(train.val, bg.val)
       p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
-      mod <- maxent(x, p, args = maxent.args[[i]], factors = categoricals, 
+      mod <- maxent(x, p, args = maxent.args[[iter]], factors = categoricals, 
                     path = tmpfolder)
       AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
       AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
@@ -100,13 +91,38 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     return(list(full.mod, stats, predictive.map))
   }
   
-  # empty sink
-  sink()
+  # differential behavior for parallel, updateProgress, and default
+  if (parallel == TRUE) {
+    # set up parallel computing
+    numCores <- detectCores()
+    c1 <- makeCluster(numCores)
+    registerDoParallel(c1)
+    numCoresUsed <- getDoParWorkers()
+    print(paste("Of", numCores, "total cores using", numCoresUsed))
+    
+    # log file to record status of parallel loops
+    writeLines(c(""), "log.txt")
+    out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
+      tune(i, parallel=TRUE)
+    }
+    stopCluster(c1)
+  } else {
+    pb <- NULL
+    if (length(maxent.args) > 1 & !is.function(updateProgress)) {
+      pb <- txtProgressBar(0, length(maxent.args), style = 3) 
+    }
+    for (i in 1:length(maxent.args)) {
+      tune(i, parallel=FALSE, progBar=pb)
+    }
+  }
   
   full.mods <- sapply(out, function(x) x[[1]])
   statsTbl <- as.data.frame(t(sapply(out, function(x) x[[2]])))
-  predictive.maps <- stack(sapply(out, function(x) x[[3]]))
-  
+  if (rasterPreds) {
+    predictive.maps <- stack(sapply(out, function(x) x[[3]]))  
+  } else {
+    predictive.maps <- NULL
+  }
   
   AUC.DIFF <- statsTbl[,1:nk]
   AUC.TEST <- statsTbl[,nk:(2*nk)]
