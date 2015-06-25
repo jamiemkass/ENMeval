@@ -111,8 +111,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     if (length(maxent.args) > 1 & !is.function(updateProgress)) {
       pb <- txtProgressBar(0, length(maxent.args), style = 3) 
     }
+    out <- list()
     for (i in 1:length(maxent.args)) {
-      tune(i, parallel=FALSE, progBar=pb)
+      out[[i]] <- tune(i, parallel=FALSE, progBar=pb)
     }
   }
   
