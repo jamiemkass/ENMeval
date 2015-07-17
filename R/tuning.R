@@ -66,7 +66,7 @@ if{
     if (rasterPreds==TRUE) {
       predictive.map <- predict(full.mod, env, args = pred.args)
     } else {
-      predictive.map <- NULL
+      predictive.map <- stack()
     }
     AUC.TEST <- double()
     AUC.DIFF <- double()
@@ -132,7 +132,7 @@ if{
   if (rasterPreds) {
     predictive.maps <- stack(sapply(out, function(x) x[[3]]))  
   } else {
-    predictive.maps <- NULL
+    predictive.maps <- stack()
   }
   
   AUC.DIFF <- statsTbl[,1:nk]
