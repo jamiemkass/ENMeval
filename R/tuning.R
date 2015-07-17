@@ -26,12 +26,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   nk <- length(unique(group.data$occ.grp))
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
-if{ 
-	any(is.na(colSums(pres))
+if{ any(is.na(colSums(pres))
 	message("Warning: some predictors variables are NA at occurrence points")
 	}
-if{ 
-	any(is.na(colSums(bg))
+if{ any(is.na(colSums(bg))
 	message("Warning: some predictors variables are NA at background points")
 	}
   if (!is.null(categoricals)) {
