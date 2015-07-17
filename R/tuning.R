@@ -27,8 +27,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
   if (!is.null(categoricals)) {
-    pres[, categoricals] <- as.factor(pres[, categoricals])
-    bg[, categoricals] <- as.factor(bg[, categoricals])
+    for (i in 1:length(categoricals)) {
+    pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
+    bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
+    }
   }
   
   
