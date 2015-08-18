@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    rasterPreds, parallel, updateProgress) {
+                    rasterPreds, parallel) {
   
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -45,11 +45,7 @@ if (any(is.na(colSums(bg)))){
         cat(paste("Starting iteration", i, "for", args.lab[[1]][iter], args.lab[[2]][iter], "...\n"))
         sink()
       } else {
-        if (is.function(updateProgress)) {
-          text <- paste0('Running ', args.lab[[1]][iter], args.lab[[2]][iter], '...')
-          updateProgress(detail = text)
-        } else {
-          setTxtProgressBar(progBar, iter) 
+        setTxtProgressBar(progBar, iter) 
         }        
       }
     }
@@ -97,7 +93,7 @@ if (any(is.na(colSums(bg)))){
     return(list(full.mod, stats, predictive.map))
   }
   
-  # differential behavior for parallel, updateProgress, and default
+  # differential behavior for parallel and default
   if (parallel == TRUE) {
     # set up parallel computing
     numCores <- detectCores()
@@ -114,7 +110,7 @@ if (any(is.na(colSums(bg)))){
     stopCluster(c1)
   } else {
     pb <- NULL
-    if (length(maxent.args) > 1 & !is.function(updateProgress)) {
+    if (length(maxent.args) > 1) {
       pb <- txtProgressBar(0, length(maxent.args), style = 3) 
     }
     out <- list()
