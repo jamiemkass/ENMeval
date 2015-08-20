@@ -1,8 +1,10 @@
 ENMeval 0.1.2
 ===========
-o  Added a slot in ENMevaluation object class to hold Maxent model objects.  
+o  Fixed a bug that allowed only a single categorical variable, now multiple categoricals work.
+o  Added an option to run the tuning function in parallel (saves time for large jobs).  
+o  Added a slot in ENMevaluation object class to hold Maxent model objects.
 o  Added arguments in ENMevaluate function to turn off raster prediction generation (saves time).
-o  Made some minor changes to documentation regarding delta.AICc and the get.user example
+o  Made some minor changes to documentation
 
 
 ENMeval 0.1.1
