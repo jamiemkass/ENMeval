@@ -90,16 +90,18 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (parallel == TRUE) {
     # set up parallel computing
     allCores <- detectCores()  
-    if (is.null(numCores)) {
+    if (is.null(numCores) | numCores > allCores) {
       numCores <- allCores
     }
     c1 <- makeCluster(numCores)
     registerDoParallel(c1)
     numCoresUsed <- getDoParWorkers()
-    cat(paste("Of", allCores, "total cores using", numCoresUsed, "\n"))
+    message(paste("Of", allCores, "total cores using", numCoresUsed))
+    #cat(paste("Of", allCores, "total cores using", numCoresUsed, "\n"))
     
     # log file to record status of parallel loops
-    cat("Running in parallel...\n")
+    message("Running in parallel...")
+    #cat("Running in parallel...\n")
     out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
       tune()
     }
