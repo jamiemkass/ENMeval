@@ -90,7 +90,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (parallel == TRUE) {
     # set up parallel computing
     allCores <- detectCores()  
-    if (is.null(numCores) | numCores > allCores) {
+    if (is.null(numCores)) {
       numCores <- allCores
     }
     c1 <- makeCluster(numCores)
