@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    clamp, rasterPreds, parallel) {
+                    clamp, rasterPreds, parallel, numCores) {
   
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -89,14 +89,17 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   # differential behavior for parallel and default
   if (parallel == TRUE) {
     # set up parallel computing
-    numCores <- detectCores()
+    allCores <- detectCores()  
+    if (is.null(numCores)) {
+      numCores <- allCores
+    }
     c1 <- makeCluster(numCores)
     registerDoParallel(c1)
     numCoresUsed <- getDoParWorkers()
-    print(paste("Of", numCores, "total cores using", numCoresUsed))
+    cat(paste("Of", allCores, "total cores using", numCoresUsed, "\n"))
     
     # log file to record status of parallel loops
-    print("Running in parallel...")
+    cat("Running in parallel...\n")
     out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
       tune()
     }
