@@ -39,10 +39,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   
   
   tune <- function() {
-    if (length(maxent.args) > 1) {
-      if (pb) {
-        setTxtProgressBar(pb, i) 
-      }
+    if (length(maxent.args) > 1 & !parallel) {
+      setTxtProgressBar(pb, i) 
     }
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
@@ -104,9 +102,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
     stopCluster(c1)
   } else {
-    if (length(maxent.args) > 1) {
-      pb <- txtProgressBar(0, length(maxent.args), style = 3) 
-    }
+    pb <- txtProgressBar(0, length(maxent.args), style = 3) 
     out <- list()
     for (i in 1:length(maxent.args)) {
       out[[i]] <- tune()
