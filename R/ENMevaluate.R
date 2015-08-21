@@ -2,8 +2,9 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                          RMvalues = seq(0.5, 4, 0.5), fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), 
                          categoricals = NULL, n.bg = 10000, method = NULL, overlap = FALSE, 
                          aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE, clamp = TRUE,
-                         rasterPreds = TRUE, parallel = FALSE) 
-{
+                         rasterPreds = TRUE, parallel = FALSE) {
+
+  ptm <- proc.time()
   if (is.null(method)) {
     stop("Evaluation method needs to be specified.")
   }
@@ -36,5 +37,9 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
       message("Need >1 settings to do niche overlap")
     }
   }
+  timed <- proc.time() - ptm
+  t.min <- floor(timed[3] / 60)
+  t.sec <- timed[3] - (t.min * 60)
+  cat(paste("ENMeval completed in", t.min, "minutes", t.sec, "seconds."))
   return(results)
 }

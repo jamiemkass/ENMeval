@@ -107,6 +107,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     for (i in 1:length(maxent.args)) {
       out[[i]] <- tune()
     }
+    close(pb)
   }
   
   full.mods <- sapply(out, function(x) x[[1]])
