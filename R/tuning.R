@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    clamp, rasterPreds, parallel, updateProgress) {
+                    clamp, rasterPreds, parallel) {
   
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -26,14 +26,14 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   nk <- length(unique(group.data$occ.grp))
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
-if (any(is.na(colSums(pres)))){
-	message("Warning: some predictors variables are NA at occurrence points")}
-if (any(is.na(colSums(bg)))){
-	message("Warning: some predictors variables are NA at background points")}
+  if (any(is.na(colSums(pres)))){
+    message("Warning: some predictors variables are NA at occurrence points")}
+  if (any(is.na(colSums(bg)))){
+    message("Warning: some predictors variables are NA at background points")}
   if (!is.null(categoricals)) {
     for (i in 1:length(categoricals)) {
-    pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
-    bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
+      pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
+      bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
     }
   }
   
@@ -46,7 +46,6 @@ if (any(is.na(colSums(bg)))){
         sink()
       } else {
         setTxtProgressBar(progBar, iter) 
-        }        
       }
     }
     x <- rbind(pres, bg)
