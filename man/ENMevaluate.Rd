@@ -14,11 +14,11 @@ ENMevaluate(occ, env, bg.coords = NULL, occ.grp = NULL,
 		categoricals = NULL, n.bg = 10000, method = NULL, 
 		overlap = FALSE, aggregation.factor = c(2, 2), 
 		kfolds = NA, bin.output = FALSE, clamp = TRUE,
-		rasterPreds = TRUE, parallel = FALSE)
+		rasterPreds = TRUE, parallel = FALSE, numCores = NULL)
 
 tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
 	maxent.args, args.lab, categoricals, aggregation.factor, 
-	kfolds, bin.output, clamp, rasterPreds, parallel)
+	kfolds, bin.output, clamp, rasterPreds, parallel, numCores)
 
 }
 \arguments{
@@ -60,6 +60,7 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
 
   \item{parallel}{ logical; If \code{TRUE}, parallel processing is used to execute tuning function. }
 
+  \item{numCores}{ numeric; indicates the number of cores to use if running in parallel. }
 }
 
 \details{
