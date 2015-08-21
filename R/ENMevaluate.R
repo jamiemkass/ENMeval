@@ -40,6 +40,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   timed <- proc.time() - ptm
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  cat(paste("ENMeval completed in", t.min, "minutes", t.sec, "seconds."))
+  #cat(paste("ENMeval completed in", t.min, "minutes", t.sec, "seconds."))
+  message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   return(results)
 }
