@@ -38,20 +38,16 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   }
   
   
-  tune <- function(iter, parallel, progBar=NULL) {
+  tune <- function() {
     if (length(maxent.args) > 1) {
-      if (parallel) {
-        sink("log.txt", append=TRUE)
-        cat(paste("Starting iteration", i, "for", args.lab[[1]][iter], args.lab[[2]][iter], "...\n"))
-        sink()
-      } else {
-        setTxtProgressBar(progBar, iter) 
+      if (pb) {
+        setTxtProgressBar(pb, i) 
       }
     }
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
     tmpfolder <- tempfile()
-    full.mod <- maxent(x, p, args = maxent.args[[iter]], 
+    full.mod <- maxent(x, p, args = maxent.args[[i]], 
                        factors = categoricals, path = tmpfolder)
     pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
     if (rasterPreds==TRUE) {
@@ -70,7 +66,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
       bg.val <- bg[group.data$bg.grp != k, ]
       x <- rbind(train.val, bg.val)
       p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
-      mod <- maxent(x, p, args = maxent.args[[iter]], factors = categoricals, 
+      mod <- maxent(x, p, args = maxent.args[[i]], factors = categoricals, 
                     path = tmpfolder)
       AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
       AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
@@ -102,19 +98,18 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     print(paste("Of", numCores, "total cores using", numCoresUsed))
     
     # log file to record status of parallel loops
-    writeLines(c(""), "log.txt")
+    print("Running in parallel...")
     out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      tune(i, parallel=TRUE)
+      tune()
     }
     stopCluster(c1)
   } else {
-    pb <- NULL
     if (length(maxent.args) > 1) {
       pb <- txtProgressBar(0, length(maxent.args), style = 3) 
     }
     out <- list()
     for (i in 1:length(maxent.args)) {
-      out[[i]] <- tune(i, parallel=FALSE, progBar=pb)
+      out[[i]] <- tune()
     }
   }
   
