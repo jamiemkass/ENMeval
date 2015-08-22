@@ -8,8 +8,8 @@
 \tabular{ll}{
 Package: \tab ENMeval\cr
 Type: \tab Package\cr
-Version: \tab 0.1.2\cr
-Date: \tab 2014-08-25\cr
+Version: \tab 2.0\cr
+Date: \tab 2015-08-25\cr
 License: \tab GNU 3.0\cr
 }
 
@@ -17,7 +17,7 @@ The \pkg{ENMeval} package (Muscarella \emph{et al.} 2014) (1) automatically part
 
 \code{\link{ENMevaluate}} is the primary function of the \pkg{ENMeval} package, and multiple other functions highlighted below are called when it is run.  The six options for partitioning occurrence data into training and testing (i.e., calibration and evaluation) bins are: \emph{n}-1 jackknife, random \emph{k}-fold, user-specified bins, and three explicit methods of masked geographically structured \emph{k}-fold partitioning (see: \code{\link{get.evaluation.bins}}).  After model training, these bins are used to calculate five metrics of model performance for each combination of settings: model discrimination (AUC of test localities), the difference between training and testing AUC, two different threshold-based omission rates, and the small sample-size corrected version of the Akaike information criterion (AICc), the latter using the unpartitioned dataset.  A model prediction (as a raster layer) using the full (unpartitioned) dataset is generated for each combination of feature class and regularization multiplier settings.  Similarity of these models in geographic space (i.e., "niche overlap") can be calculated to better understand how model settings change predictions (see \code{\link{calc.niche.overlap}}).  The results of \code{ENMevaluate} are returned as an object of class \code{\link{ENMevaluation-class}}.  A basic plotting function (\code{\link{eval.plot}}) can be used to visualize how evaluation metrics depend on model settings.
 
-As of version 0.1.2, \code{\link{ENMevaluate}} includes an option for parallel computing.  Setting \code{parallel = TRUE} can significantly speed up processing time, particularly for large analyses.  For very small analyses, it may actually take longer than running with \code{parallel = FALSE}.
+As of version 2.0, \code{\link{ENMevaluate}} includes an option for parallel computing.  Setting \code{parallel = TRUE} can significantly speed up processing time, particularly for large analyses.  For very small analyses, it may actually take longer than running with \code{parallel = FALSE}.
 
 }
 
