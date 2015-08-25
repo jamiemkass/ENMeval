@@ -5,11 +5,13 @@
 \description{ An example results file based on a call of ENMevaluate (see example). }
 \usage{ data(enmeval_results) }
 \format{
-An object of class 'ENMevaluation' with eight slots:
+An object of class 'ENMevaluation' with nine slots:
 
 \code{@ results}         : data.frame of evaluation metrics
 
 \code{@ predictions}     : RasterStack of model predictions
+
+\code{@ models}: list of \code{MaxEnt} model objects (see \code{MaxEnt} documentation for details)
 
 \code{@ partition.method}: character giving method of data partitioning
 
