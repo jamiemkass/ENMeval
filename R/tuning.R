@@ -39,6 +39,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   OR10 <- data.frame()
   ORmin <- data.frame()
   predictive.maps <- stack()
+  predictive.maps.log <- stack()
   nparm <- vector()
   full.AUC <- vector()
   for (a in 1:length(maxent.args)) {
@@ -57,8 +58,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     full.mod[a] <- maxent(x, p, args = maxent.args[[a]], 
                           factors = categoricals, path = tmpfolder)
     pred.args <- c("outputformat=raw", "doclamp=true")
+    pred.args.log <- c("outputformat=logistic", "doclamp=true")
     if (rasterPreds==TRUE) {
-      predictive.maps <- stack(predictive.maps, predict(full.mod[[a]], env, args = pred.args))  
+      predictive.maps <- stack(predictive.maps, predict(full.mod[[a]], env, args = pred.args))
+      predictive.maps.log <- stack(predictive.maps.log, predict(full.mod[[a]], env, args = pred.args.log))
     }
     full.AUC[a] <- full.mod[[a]]@results[5]
     for (k in 1:nk) {
@@ -118,8 +121,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (rasterPreds==TRUE) {
     names(predictive.maps) <- settings
   }
-  results <- ENMevaluation(results = res, predictions = predictive.maps, models = full.mod,
-                           partition.method = method, occ.pts = occ, occ.grp = group.data[[1]], 
+  results <- ENMevaluation(results = res, predictions.raw = predictive.maps, predictions.log = predictive.maps.log,
+                           models = full.mod, partition.method = method, occ.pts = occ, occ.grp = group.data[[1]], 
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
   return(results)
 }
