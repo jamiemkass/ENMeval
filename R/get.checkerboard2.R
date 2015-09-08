@@ -33,6 +33,16 @@ get.checkerboard2 <- function(occ, env, bg.coords, aggregation.factor){
 	if (nrow(bgbb) > 0) bgbb$grp <- 4; bgr <- rbind(bgr, bgbb)
 	bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
 
+	# GIVE WARNING MESSAGES
+	noccgrp <- length(unique(occ.grp))
+	nbggrp <- length(unique(bg.grp))
+	if(noccgrp != 4){
+		message(paste("Warning: only", noccgrp, "bins generated for occurrence records"))
+	}
+	if(nbggrp != 4){
+		message(paste("Warning: only", nbggrp, "bins generated for occurrence records"))
+	}
+
 	out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
 	return(out)
 }
