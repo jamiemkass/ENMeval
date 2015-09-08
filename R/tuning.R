@@ -58,7 +58,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     OR10 <- double()
     ORmin <- double()
     
-    for (k in 1:nk) {
+    for (k in 1:sort(unique(group.data$occ.grp))) {
+#    for (k in 1:nk) {
       train.val <- pres[group.data$occ.grp != k, ]
       test.val <- pres[group.data$occ.grp == k, ]
       bg.val <- bg[group.data$bg.grp != k, ]
