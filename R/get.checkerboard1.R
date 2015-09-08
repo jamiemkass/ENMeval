@@ -20,15 +20,15 @@ get.checkerboard1 <- function(occ, env, bg.coords, aggregation.factor){
 	bgr <- rbind(bgw, bgb)
 	bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
 
-	# GIVE WARNING MESSAGES
+# FIX IF OCC POINTS FALL INTO A SINGLE BIN
 	noccgrp <- length(unique(occ.grp))
 	nbggrp <- length(unique(bg.grp))
-	if(noccgrp != 2){
-		message(paste("Warning: only", noccgrp, "bins generated for occurrence records"))
-	}
-	if(nbggrp != 2){
-		message(paste("Warning: only", nbggrp, "bins generated for occurrence records"))
-	}
+	if(noccgrp < 2 ){
+		message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
+		bg.grp[ ! bg.grp %in% occ.grp] <- NA
+		occ.grp <- as.numeric(as.factor(occ.grp))
+		bg.grp <- as.numeric(as.factor(bg.grp))
+		}
 
 	out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
 	return(out)
