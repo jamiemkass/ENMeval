@@ -43,6 +43,11 @@ get.checkerboard2 <- function(occ, env, bg.coords, aggregation.factor){
 		bg.grp <- as.numeric(as.factor(bg.grp))
 		}
 
+	if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
+		message(paste("Error: no background points fall in 1 or more evaluation bin(s)"))
+		stop()
+		}
+
 	out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
 	return(out)
 }
