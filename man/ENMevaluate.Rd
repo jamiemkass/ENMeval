@@ -13,12 +13,12 @@ ENMevaluate(occ, env, bg.coords = NULL, occ.grp = NULL,
 		fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
 		categoricals = NULL, n.bg = 10000, method = NULL, 
 		overlap = FALSE, aggregation.factor = c(2, 2), 
-		kfolds = NA, bin.output = FALSE, clamp = TRUE)
-
+		kfolds = NA, bin.output = FALSE, clamp = TRUE,
+		rasterPreds = TRUE, parallel = FALSE, numCores = NULL)
 
 tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
 	maxent.args, args.lab, categoricals, aggregation.factor, 
-	kfolds, bin.output, clamp)
+	kfolds, bin.output, clamp, rasterPreds, parallel, numCores)
 
 }
 \arguments{
@@ -56,6 +56,11 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
 
   \item{clamp}{ logical; If \code{TRUE}, 'clamping' is used (see Maxent documentation and tutorial for more details). }
 
+  \item{rasterPreds}{ logical; If \code{TRUE}, the \code{predict} function from \code{dismo} is used to predict each full model across the extent of the input environmental variables.  Setting to \code{FALSE} can significantly reduce run time if visualizing predictions in geographic space is not required. }
+
+  \item{parallel}{ logical; If \code{TRUE}, parallel processing is used to execute tuning function. }
+
+  \item{numCores}{ numeric; indicates the number of cores to use if running in parallel. If \code{parallel=TRUE} and this is not specified, the total number of available cores are used.}
 }
 
 \details{
@@ -81,7 +86,9 @@ An object of class \code{ENMevaluation} with named slots:
 
 \code{@results}	data.frame of evaluation metrics.  If \code{bin.output=TRUE}, evaluation metrics calculated separately for each evaluation bin are included in addition to the averages across \emph{k} bins.
 
-\code{@predictions} RasterStack of full model predictions with each layer named as: \code{fc_RM} (e.g., \code{L_1}).
+\code{@predictions} RasterStack of full model predictions with each layer named as: \code{fc_RM} (e.g., \code{L_1}). This will be an empty RasterStack if the \code{rasterPreds} argument is set to \code{FALSE}.
+
+\code{@models} List of objects of class \code{"MaxEnt"} from the \pkg{dismo} package. Each of these entries include slots for lambda values and the original Maxent results table.  See Maxent documentation for more information.
 
 \code{@partition.method} character vector with the method used for data partitioning.
 
@@ -103,6 +110,8 @@ Elith, J., Phillips, S. J., Hastie, T., Dudik, M., Chee, Y. E., and Yates, C. J.
 Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{http://cran.r-project.org/web/packages/dismo/index.html}.
 
 Lobo, J. M., Jimenez-Valverde, A., and Real, R. (2008) AUC: A misleading measure of the performance of predictive distribution models. \emph{Global Ecology and Biogeography}, \bold{17}: 145-151.
+
+Muscarella, R., Galante, P.J., Soley-Guardia, M., Boria, R.A., Kass, J., Uriarte, M. and Anderson, R.P. (2014) ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205.
 
 Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117.
 

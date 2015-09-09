@@ -33,6 +33,21 @@ get.checkerboard2 <- function(occ, env, bg.coords, aggregation.factor){
 	if (nrow(bgbb) > 0) bgbb$grp <- 4; bgr <- rbind(bgr, bgbb)
 	bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
 
+# PATCH IF OCC OR BG POINTS FALL INTO FEWER THAN FOUR BINS
+	noccgrp <- length(unique(occ.grp))
+	nbggrp <- length(unique(bg.grp))
+	if(noccgrp < 4 ){
+		message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
+		bg.grp[ ! bg.grp %in% occ.grp] <- NA
+		occ.grp <- as.numeric(as.factor(occ.grp))
+		bg.grp <- as.numeric(as.factor(bg.grp))
+		}
+
+	if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
+		message("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
+		stop()
+		}
+
 	out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
 	return(out)
 }

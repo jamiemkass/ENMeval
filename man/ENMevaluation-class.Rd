@@ -10,14 +10,15 @@ Objects can be created by calls of the form \code{new("ENMevaluation", ...)}.
 }
 \section{Slots}{
   \describe{
-    \item{\code{results}:}{Object of class \code{"data.frame"} ~~ }
-    \item{\code{predictions}:}{Object of class \code{"RasterStack"} ~~ }
-    \item{\code{partition.method}:}{Object of class \code{"character"} ~~ }
-    \item{\code{occ.pts}:}{Object of class \code{"data.frame"} ~~ }
-    \item{\code{occ.grp}:}{Object of class \code{"numeric"} ~~ }
-    \item{\code{bg.pts}:}{Object of class \code{"data.frame"} ~~ }
-    \item{\code{bg.grp}:}{Object of class \code{"numeric"} ~~ }
-    \item{\code{overlap}:}{Object of class \code{"matrix"} ~~ }
+    \item{\code{results}:}{Object of class \code{"data.frame"}. The full results table.}
+    \item{\code{predictions}:}{Object of class \code{"RasterStack"}. Model predictions in geographic space.}
+    \item{\code{models}:}{List of objects of class \code{"MaxEnt"} from the \pkg{dismo} package. Each of these entries include slots for lambda values and the original Maxent results table.  See Maxent documentation for more information.}
+    \item{\code{partition.method}:}{Object of class \code{"character"}. Indicates the method used for data partitioning.}
+    \item{\code{occ.pts}:}{Object of class \code{"data.frame"}. The original presence coordinates.}
+    \item{\code{occ.grp}:}{Object of class \code{"numeric"}. The evaluation bin assignment for each occurrence point.}
+    \item{\code{bg.pts}:}{Object of class \code{"data.frame"}. The background coordinates used for analysis.}
+    \item{\code{bg.grp}:}{Object of class \code{"numeric"}. The evaluation bin assignment for each background point.}
+    \item{\code{overlap}:}{Object of class \code{"matrix"}. Niche overlap statistic between models of different settings.}
   }
 }
 \author{ Jamie M. Kass <jkass@gc.cuny.edu> and Robert Muscarella <bob.muscarella@gmail.com> }
