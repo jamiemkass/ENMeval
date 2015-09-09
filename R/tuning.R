@@ -27,9 +27,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
   if (any(is.na(colSums(pres)))){
-    message("Warning: some predictors variables are NA at occurrence points")}
+    message("Warning: some predictors variables are NA at some occurrence points")}
   if (any(is.na(colSums(bg)))){
-    message("Warning: some predictors variables are NA at background points")}
+    message("Warning: some predictors variables are NA at some background points")}
   if (!is.null(categoricals)) {
     for (i in 1:length(categoricals)) {
       pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
