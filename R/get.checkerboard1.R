@@ -20,7 +20,7 @@ get.checkerboard1 <- function(occ, env, bg.coords, aggregation.factor){
 	bgr <- rbind(bgw, bgb)
 	bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
 
-# FIX IF OCC POINTS FALL INTO A SINGLE BIN
+# PATCH IF OCC OR BG POINTS FALL INTO A SINGLE BIN
 	noccgrp <- length(unique(occ.grp))
 	nbggrp <- length(unique(bg.grp))
 	if(noccgrp < 2 ){
