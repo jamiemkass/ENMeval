@@ -31,7 +31,7 @@ get.checkerboard1 <- function(occ, env, bg.coords, aggregation.factor){
 		}
 
 	if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
-		message(paste("Error: no background points fall in 1 or more evaluation bin(s)"))
+		message(paste("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)"))
 		stop()
 		}
 
