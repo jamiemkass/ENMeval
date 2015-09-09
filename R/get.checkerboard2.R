@@ -33,7 +33,7 @@ get.checkerboard2 <- function(occ, env, bg.coords, aggregation.factor){
 	if (nrow(bgbb) > 0) bgbb$grp <- 4; bgr <- rbind(bgr, bgbb)
 	bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
 
-# FIX IF OCC POINTS FALL INTO A SINGLE BIN
+# PATCH IF OCC OR BG POINTS FALL INTO FEWER THAN FOUR BINS
 	noccgrp <- length(unique(occ.grp))
 	nbggrp <- length(unique(bg.grp))
 	if(noccgrp < 4 ){
