@@ -1,4 +1,8 @@
 import("dismo", "methods", "rJava", "raster", "parallel", "doParallel", "foreach")
+importFrom("grDevices", "rainbow")
+importFrom("graphics", "abline", "arrows", "axis", "box", "par","plot")
+importFrom("stats", "var")
+importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 exportPattern("^[[:alpha:]]+")
 exportClasses(
     "ENMevaluation" 
