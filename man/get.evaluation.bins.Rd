@@ -63,7 +63,7 @@ The \code{checkerboard1} and \code{checkerboard2} methods are designed to partit
 }
 
 \references{ 
-Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. 2011. dismo package for R. Available online at: \url{http://cran.r-project.org/web/packages/dismo/index.html}.
+Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. 2011. dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 
 Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117.
 

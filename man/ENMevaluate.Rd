@@ -107,7 +107,7 @@ An object of class \code{ENMevaluation} with named slots:
 
 Elith, J., Phillips, S. J., Hastie, T., Dudik, M., Chee, Y. E., and Yates, C. J. (2011) A statistical explanation of MaxEnt for ecologists. \emph{Diversity and Distributions}, \bold{17}: 43-57.
 
-Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{http://cran.r-project.org/web/packages/dismo/index.html}.
+Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 
 Lobo, J. M., Jimenez-Valverde, A., and Real, R. (2008) AUC: A misleading measure of the performance of predictive distribution models. \emph{Global Ecology and Biogeography}, \bold{17}: 145-151.
 

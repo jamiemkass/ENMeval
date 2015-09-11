@@ -34,7 +34,7 @@ Robert Muscarella, Peter J. Galante, Mariano Soley-Guardia, Robert A. Boria, Jam
 Maintainer: Robert Muscarella <bob.muscarella@gmail.com>
 }
 \references{ 
-Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. 2011. dismo package for R. Available online at: \url{http://cran.r-project.org/web/packages/dismo/index.html}.
+Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. 2011. dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 
 Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., and Anderson, R. P. 2014. ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205.
 
