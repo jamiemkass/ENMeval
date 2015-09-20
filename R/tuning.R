@@ -124,9 +124,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   }
   
   AUC.DIFF <- statsTbl[,1:nk]
-  AUC.TEST <- statsTbl[,nk:(2*nk)]
-  OR10 <- statsTbl[,(2*nk):(3*nk)]
-  ORmin <- statsTbl[,(3*nk):(4*nk)]
+  AUC.TEST <- statsTbl[,(nk+1):(2*nk)]
+  OR10 <- statsTbl[,((2*nk)+1):(3*nk)]
+  ORmin <- statsTbl[,((3*nk)+1):(4*nk)]
   # rename column fields
   names(AUC.DIFF) <- paste("AUC.DIFF_bin", 1:nk, sep = ".")
   Mean.AUC.DIFF <- rowMeans(AUC.DIFF)
