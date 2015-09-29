@@ -47,6 +47,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     tmpfolder <- tempfile()
     full.mod <- maxent(x, p, args = maxent.args[[i]], 
                        factors = categoricals, path = tmpfolder)
+    print(full.mod)
     pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
     if (rasterPreds==TRUE) {
       predictive.map <- predict(full.mod, env, args = pred.args)
@@ -171,6 +172,5 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   results <- ENMevaluation(results = res, predictions = predictive.maps, models = full.mods,
                            partition.method = method, occ.pts = occ, occ.grp = group.data[[1]], 
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
-  print(full.mods)
   return(results)
 }
