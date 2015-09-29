@@ -4,7 +4,7 @@
 
 # adding "defaultprevalence" to be modified  
 
-make.args <- function(RMvalues=seq(0.5, 4, 0.5), fc=c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), labels=FALSE, defaultprevalence=0.5) {
+make.args <- function(RMvalues=seq(0.5, 4, 0.5), fc=c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), defaultprevalence=0.5, labels=FALSE) {
 
 	other.args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature", paste0("defaultprevalence=", defaultprevalence))
 	args.list <- list()
