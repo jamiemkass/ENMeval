@@ -45,3 +45,4 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   return(results)
 }
+
