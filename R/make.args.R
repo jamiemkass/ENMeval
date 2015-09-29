@@ -6,7 +6,7 @@
 
 make.args <- function(RMvalues=seq(0.5, 4, 0.5), fc=c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), labels=FALSE, defaultprevalence=0.5) {
 
-	other.args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
+	other.args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature", paste0("defaultprevalence=", defaultprevalence))
 	args.list <- list()
 
 	for (i in 1:length(fc)) {
@@ -27,7 +27,7 @@ make.args <- function(RMvalues=seq(0.5, 4, 0.5), fc=c("L", "LQ", "H", "LQH", "LQ
 	feats.lab <- c()
 	rms.lab <- c()
 		for (i in 1:length(fc.lab)) {
-			args[[i]] <- c(RM.arg[i], fc.arg[[i]], paste0("defaultprevalence=", defaultprevalence))
+			args[[i]] <- c(RM.arg[i], fc.arg[[i]])
 			feats.lab <- c(feats.lab, fc.lab[[i]])
 			rms.lab <- c(rms.lab, RM.lab[i])
 		}
