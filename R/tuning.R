@@ -66,7 +66,6 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
       p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
       mod <- maxent(x, p, args = maxent.args[[i]], factors = categoricals, 
                     path = tmpfolder)
-      print(mod)
       AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
       AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
       p.train <- predict(mod, train.val, args = pred.args)
@@ -172,5 +171,6 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   results <- ENMevaluation(results = res, predictions = predictive.maps, models = full.mods,
                            partition.method = method, occ.pts = occ, occ.grp = group.data[[1]], 
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
+  print(full.mods)
   return(results)
 }
