@@ -1,5 +1,6 @@
 ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NULL, 
                          RMvalues = seq(0.5, 4, 0.5), fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), 
+                         defaultprevalence=0.5, 
                          categoricals = NULL, n.bg = 10000, method = NULL, overlap = FALSE, 
                          aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE, clamp = TRUE,
                          rasterPreds = TRUE, parallel = FALSE, numCores = NULL) {
@@ -11,7 +12,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   if (is.null(bg.coords)) {
     bg.coords <- randomPoints(env[[1]], n = n.bg)
   }
-  maxent.args <- make.args(RMvalues, fc)
+  maxent.args <- make.args(RMvalues, fc, defaultprevalence)
   args.lab <- make.args(RMvalues, fc, labels = TRUE)
   occ <- as.data.frame(occ)
   colnames(occ) <- c("LON", "LAT")
@@ -44,3 +45,4 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   return(results)
 }
+
