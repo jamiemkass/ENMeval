@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    clamp, rasterPreds, parallel, numCores) {
+                    clamp, rasterPreds, parallel, numCores, userArgs) {
   
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -37,7 +37,6 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
   }
   
-  
   tune <- function() {
     if (length(maxent.args) > 1 & !parallel) {
       setTxtProgressBar(pb, i) 
@@ -45,7 +44,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
     tmpfolder <- tempfile()
-    full.mod <- maxent(x, p, args = maxent.args[[i]], 
+    full.mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs), 
                        factors = categoricals, path = tmpfolder)
     pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
     if (rasterPreds==TRUE) {
@@ -64,7 +63,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
       bg.val <- bg[group.data$bg.grp != k, ]
       x <- rbind(train.val, bg.val)
       p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
-      mod <- maxent(x, p, args = maxent.args[[i]], factors = categoricals, 
+      mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals, 
                     path = tmpfolder)
       AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
       AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])

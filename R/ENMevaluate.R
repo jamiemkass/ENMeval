@@ -2,12 +2,40 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                          RMvalues = seq(0.5, 4, 0.5), fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), 
                          categoricals = NULL, n.bg = 10000, method = NULL, overlap = FALSE, 
                          aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE, clamp = TRUE,
-                         rasterPreds = TRUE, parallel = FALSE, numCores = NULL) {
+                         rasterPreds = TRUE, parallel = FALSE, numCores = NULL, ...) {
 
   ptm <- proc.time()
   if (is.null(method)) {
     stop("Evaluation method needs to be specified.")
   }
+  userArgs <- list(...)
+  allMaxentArgs <- c("responsecurves", "pictures", "jackknife", "outputformat", 
+                     "outputfiletype", "outputdirectory", "projectionlayers", "samplesfile", 
+                     "environmentallayers", "randomseed", "logscale", "warnings", 
+                     "tooltips", "askoverwrite", "skipifexists", "removeduplicates", 
+                     "writeclampgrid", "writemess", "randomtestpoints", "betamultiplier", 
+                     "maximumbackground", "biasfile", "testsamplesfile", "replicates", 
+                     "replicatetype", "perspeciesresults", "writebackgroundpredictions", 
+                     "responsecurvesexponent", "linear", "quadratic", "product", "threshold", 
+                     "hinge", "addsamplestobackground", "addallsamplestobackground", 
+                     "autorun", "writeplotdata", "fadebyclamping", "extrapolate", 
+                     "visible", "autofeature", "doclamp", "outputgrids", "plots", 
+                     "appendtoresultsfile", "maximumiterations", "convergencethreshold", 
+                     "adjustsampleradius", "threads", "lq2lqptthreshold", "l2lqthreshold", 
+                     "hingethreshold", "beta_threshold", "beta_categorical", "beta_lqp", 
+                     "beta_hinge", "logfile", "cache", "defaultprevalence", "applythresholdrule", 
+                     "togglelayertype", "togglespeciesselected", "togglelayerselected", 
+                     "verbose", "allowpartialdata", "prefixes", "nodata")
+  if (length(userArgs) == 0) {
+    userArgs <- NULL
+  } else {
+    if (!all(names(userArgs) %in% allMaxentArgs)) {
+      stop("Check the names of extra input Maxent arguments.")
+    } else {
+      userArgs <- paste(names(userArgs), unlist(userArgs), sep='=')
+    }
+  }    
+
   if (is.null(bg.coords)) {
     bg.coords <- randomPoints(env[[1]], n = n.bg)
   }
@@ -26,7 +54,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                                                     "Error: You need to specify an accepted evaluation method. Check the documentation.")))))))
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
                     maxent.args, args.lab, categoricals, aggregation.factor, 
-                    kfolds, bin.output, clamp, rasterPreds, parallel, numCores)
+                    kfolds, bin.output, clamp, rasterPreds, parallel, numCores, userArgs)
   if (overlap == TRUE) {
     if (length(maxent.args) > 1) {
       message("Calculating niche overlap")
@@ -40,7 +68,6 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   timed <- proc.time() - ptm
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  #cat(paste("ENMeval completed in", t.min, "minutes", t.sec, "seconds."))
   message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   return(results)
 }
