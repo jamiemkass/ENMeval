@@ -15,7 +15,7 @@ calc.aicc <- function(nparam, occ, predictive.maps){
 	AICc[is.infinite(AICc)] <- NA
 	if(sum(is.na(AICc))==length(AICc)){
 		warning("AICc not valid - returning NA's.")
-		res <- data.frame(cbind(AICc, delta.AICc=NA, w.AIC=NA, nparam=NA))
+		res <- data.frame(cbind(AICc, delta.AICc=NA, w.AIC=NA, nparam=nparam))
 	} else {
 		delta.AICc <- (AICc - min(AICc, na.rm=TRUE))
 		w.AIC <- (exp(-0.5*delta.AICc))/(sum(exp(-0.5*delta.AICc), na.rm=TRUE))
