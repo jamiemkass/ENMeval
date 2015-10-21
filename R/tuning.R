@@ -158,7 +158,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   
   res <- data.frame(settings, features, rm, full.AUC, Mean.AUC, 
                     Var.AUC, Mean.AUC.DIFF, Var.AUC.DIFF, Mean.OR10, Var.OR10, 
-                    Mean.ORmin, Var.ORmin, nparm, aicc)
+                    Mean.ORmin, Var.ORmin, aicc)
   if (bin.output == TRUE) {
     res <- as.data.frame(cbind(res, AUC.TEST, AUC.DIFF, OR10, 
                                ORmin))
