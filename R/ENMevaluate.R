@@ -57,9 +57,14 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                     kfolds, bin.output, clamp, rasterPreds, parallel, numCores, userArgs)
   if (overlap == TRUE) {
     if (length(maxent.args) > 1) {
-      message("Calculating niche overlap")
-      overlap.mat <- calc.niche.overlap(results@predictions, "D")
-      results@overlap <- overlap.mat
+      if(nlayers(results@predictions) > 1) {
+        message("Calculating niche overlap")
+        overlap.mat <- calc.niche.overlap(results@predictions, "D")
+        results@overlap <- overlap.mat
+      }
+      else {
+        message("Cannot calculate niche overlap without rasterPreds")
+      }
     }
     else {
       message("Need >1 settings to do niche overlap")
