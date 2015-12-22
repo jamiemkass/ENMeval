@@ -1,0 +1,91 @@
+---
+title: "ENMeval Vignette"
+author: "Robert Muscarella & Jamie M. Kass"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ENMeval Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Introduction
+
+`ENMeval` is an R package that performs automated runs and evaluations of ecological niche models, and currently only implements Maxent. `ENMeval` was made for those who want to "tune" their models to maximize predictability and avoid overfitting, or in other words, optimize the balance between goodness-of-fit and model complexity. The primary function `ENMevaluate` does all the heavy lifting and returns a table of evaluation statistics, and for each run, a model object and prediction raster. There are also parameter options for calculating niche overlap between predictions, running in parallel to speed up computation, and more.
+
+## Demo
+
+We're going to start with the (insert name) dataset, from which we extract the coordinates.
+
+```{r}
+species.df <- read.csv('vignette_data.csv', header=TRUE)
+head(species.df)
+species.coord <- species.df[,c(3,2)]  # in order: longitude, latitude
+head(species.coord)
+```
+
+Next, let's get some climate data from WorldClim. We'll download the 19 bioclim variables at 10 arcmin resolution, which is about 11.5 km across at the equator. Now's also a good time to load the package, as it includes all the downstream dependencies (`raster`, `dismo`, etc.).
+
+```{r, warning=FALSE, message=FALSE}
+library(ENMeval)  
+preds <- getData('worldclim', var='bio', res=10)
+preds  # preds is a RasterStack, which is basically a list of rasters
+preds[[c(3,5)]]  # double brackets allow you to subset
+```
+
+An essential step before proceeding much further is to specify the study extent, which will be used 1) to delineate where the background points are drawn from, and 2) as the data we'll use to make our prediction rasters from the models we generate. This means we'll be cropping (or "clipping" in ArcGIS terms) our prediction rasters. We'll then generate some background points to illustrate the partitioning methods. We'll sample 10,000 random points across one of our cropped rasters.
+
+```{r, message=FALSE, fig.width=7, fig.height=5}
+na.extent <- extent(c(-130,-50,25,45))  # rough bounding box for U.S.
+preds.ext <- crop(preds, na.extent)
+backg <- randomPoints(preds.ext[[1]], n=10000)
+plot(preds.ext[[1]], ext=c(-100,-90,30,35))  # zoom in a bit to annual mean temp
+points(backg)  # notice how we have pretty good coverage
+```
+
+We'll now take a look at the different partitioning methods offered by `ENMeval`.
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+plot(1:10)
+plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
