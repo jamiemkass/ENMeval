@@ -9,3 +9,6 @@ Description: Automatically partitions data into evaluation bins, executes ecolog
 License: GPL
 Depends: dismo, methods, rJava (>= 0.5-0), parallel, raster, R (>= 2.10)
 Imports: doParallel, foreach, utils, graphics, stats, grDevices
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
