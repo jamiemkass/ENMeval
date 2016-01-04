@@ -1,3 +1,7 @@
+ENMeval 0.2.1
+===========
+o  Fixed an error in the organization of results table when bin.output=T
+
 ENMeval 0.2.0
 ===========
 o  Fixed a bug that allowed only a single categorical variable; now multiple categorical variables work.
