@@ -17,9 +17,9 @@ get.block <- function(occ, bg.coords){
 	grp4 <- grpB[!rownames(grpB)%in%rownames(grp3),]
 
 	# SPLIT BACKGROUND POINTS BASED ON SPATIAL GROUPS
-	bvert <- mean(max(grp1[, 1]), min(grp2[, 1]))
-	tvert <- mean(max(grp3[, 1]), min(grp4[, 1]))
-	horz <- mean(max(grpA[, 2]), min(grpB[, 2]))
+	bvert <- mean(c(max(grp1[, 1]), min(grp2[, 1])))
+	tvert <- mean(c(max(grp3[, 1]), min(grp4[, 1])))
+	horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))
 	bggrp1 <- bg.coords[bg.coords[, 2] <= horz & bg.coords[, 1]<bvert,]
 	bggrp2 <- bg.coords[bg.coords[, 2] < horz & bg.coords[, 1]>=bvert,]
 	bggrp3 <- bg.coords[bg.coords[, 2] > horz & bg.coords[, 1]<=tvert,]
