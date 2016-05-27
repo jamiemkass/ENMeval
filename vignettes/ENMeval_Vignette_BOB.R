@@ -221,7 +221,7 @@ res3@results$aicc
 # We can also calculate one of two niche overlap statistics directly here using the 'niche.overlap' argument.
 # Note that you can also calculate this value at a later stage using the separate 'calc.niche.overlap' function.
 
-overlap <- calc.niche.overlap(res2@predictions, )
+overlap <- calc.niche.overlap(res2@predictions, stat='D')
 overlap
 
 # The 'bin.output' argument determines if separate evaluation statistics for each testing bin are included in the results file.
@@ -233,12 +233,48 @@ overlap
 #################################
 #################################
 
+
+
+
 #################################
 ### PLOTTING RESULTS
 # Plot complex versus smooth models to see effect
 # Talk about evaluation metrics (table from paper)
 # Options for selecting optimal models
 # Plotting response curves (Use response(ENMeval_results@models[[1]]))
+
+# NOTE: 'models' is the name of the ENMevaluation object.
+
+
+# ENMeval has a built-in plotting function to visualize the results of different models.
+# It requires the results table of the ENMevaluation object.
+# By default, it plots delta.AICc values:
+eval.plot(models@results)
+
+# You can which evaluation metric to plot, and you can include error bars if relevant:
+models@results
+
+eval.plot(models@results, 'Mean.AUC', var='Var.AUC')
+
+eval.plot(models@results, 'Mean.ORmin', var='Var.ORmin')
+
+
+
+### Plotting model predictions
+
+# If you generated raster predictions of the models, you can plot them easily.
+# For example, let's look at the first two models included in our analysis:
+plot(models@predictions[[1]])
+
+# Notice that the output values are in Maxent's 'raw' units.
+
+# The original input data is stored in the ENMevaluate object so we can easily add the occurrence and background points, colored by evaluation bins: 
+points(models@bg.pts, pch=3, col=models@bg.grp, cex=0.5)
+points(models@occ.pts, pch=21, bg=models@occ.grp)
+
+
+
+
 
 
 #################################
