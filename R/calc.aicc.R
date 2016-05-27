@@ -6,6 +6,7 @@ calc.aicc <- function(nparam, occ, predictive.maps){
   AIC.valid <- nparam < nrow(occ)
   if(nlayers(predictive.maps) == 0){
     res <- data.frame(cbind(AICc=NA, delta.AICc=NA, w.AIC=NA, nparam=nparam))
+    warning("Can't calculate AICc when rasterPreds=F - returning NA's.")
   } else {
     vals <- extract(predictive.maps, occ)
     probsum <- cellStats(predictive.maps, sum)
