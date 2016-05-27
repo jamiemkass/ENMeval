@@ -1,3 +1,8 @@
+ENMeval 0.2.2
+===========
+o  Fixed an inconsistency with the AICc columns of the results table when rasterPreds=F
+o  Fixed potential errors in the partitioning methods functions when used independently
+
 ENMeval 0.2.1
 ===========
 o  Fixed an error in the organization of results table when bin.output=T
