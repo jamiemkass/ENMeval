@@ -3,7 +3,10 @@
 #############################################################################
 
 get.checkerboard1 <- function(occ, env, bg.coords, aggregation.factor){
-
+  
+  occ <- as.data.frame(occ)
+  bg.coords <- as.data.frame(bg.coords)
+    
 	grid <- aggregate(env[[1]], fact=aggregation.factor[1])
 	w <- gridSample(occ, grid, n=1e6, chess='white')
 	b <- gridSample(occ, grid, n=1e6, chess='black')

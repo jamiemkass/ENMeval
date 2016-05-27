@@ -3,7 +3,11 @@
 #########################################################
 
 get.block <- function(occ, bg.coords){
-	# SPLIT OCC POINTS INTO FOUR SPATIAL GROUPS
+	
+  occ <- as.data.frame(occ)
+	bg.coords <- as.data.frame(bg.coords)
+  
+  # SPLIT OCC POINTS INTO FOUR SPATIAL GROUPS
 	noccs <- nrow(occ)
 	n1 <- ceiling(nrow(occ)/2)
 	n2 <- floor(nrow(occ)/2)
