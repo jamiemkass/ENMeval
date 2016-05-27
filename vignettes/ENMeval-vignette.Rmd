@@ -1,6 +1,6 @@
 ---
 title: "ENMeval Vignette"
-author: "Robert Muscarella & Jamie M. Kass"
+author: "Robert Muscarella, Jamie M. Kass, and Peter Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, echo = FALSE}
+```{r, setup, echo = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 We're going to start by downloading an occurrence dataset for *Bradypus variegatus*, the Brown-throated sloth.
 
-```{r}
+```{r, occDownload}
 library(spocc)
 bv <- occ('Bradypus variegatus', 'gbif', limit=750, has_coords=TRUE)  # search GBIF for occurrence data
 bv.coords <- bv$gbif$data$Bradypus_variegatus[,2:3]  # get the latitude/coordinates for each locality
@@ -30,7 +30,7 @@ bv.coords <- bv.coords[!duplicated(bv.coords),]  # remove duplicate rows
 
 Let's now get some climate data from WorldClim. We'll download the 19 bioclimatic variables at 10 arcmin resolution, which is about 20 km across at the equator. These climatic data are based on 50-year averages from 1950-2000. Now's also a good time to load the package, as it includes all the downstream dependencies (`raster`, `dismo`, etc.).
 
-```{r, warning=FALSE, message=FALSE}
+```{r, envDownload, warning=FALSE, message=FALSE, fig.width=6, fig.height=8}
 library(ENMeval)
 envs <- getData('worldclim', var='bio', res=10)  # get worldclim bioclimatic variables at 10 arcmin resolution (~20 km at equator) for the world
 plot(envs[[1]])  # plot first raster in stack, bio1 (Annual Mean Temperature)
@@ -39,7 +39,7 @@ points(bv.coords)  # plot all the occurrence points -- notice the stray point in
 
 Next, we will specify the background extent by cropping (or "clipping" in ArcGIS terms) our global predictor variable rasters to a finer-scale region. As our models compare the environment at occurrence localities to the environment at background localities, we need to sample random points from a background extent. To ensure we do not include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We do this by buffering a bounding box that includes all occurrence localities. Other methods of background extent delineation, like minimum convex hulls, are more conservative because they better characterize the geographic space holding the points.
 
-```{r, message=FALSE, fig.width=7, fig.height=5}
+```{r, backgExt, message=FALSE}
 bv.coords.sp <- SpatialPoints(bv.coords)  # make a SpatialPoints object
 bb <- bbox(bv.coords.sp)  # get the bounding box of the points
 bb.buf <- extent(bb[1]-1, bb[3]+1, bb[2]-1, bb[4]+1)  # add 1 degree to each bound (buffer)
@@ -48,30 +48,49 @@ envs.backg <- crop(envs, bb.buf)  # crop envs for study extent
 # however, we want to remove the Caribbean islands from our extent
 library(maptools)
 data(wrld_simpl)  # get a simple world countries polygon
-ca.sa <- wrld_simpl[wrld_simpl@data$SUBREGION==5|wrld_simpl@data$SUBREGION==13,]  # get polygons for central and south america
-bv.coords.sp@proj4string <- crs(ca.sa)  # as both 
-bv.coords.sp <- bv.coords.sp[ca.sa]
-envs.backg <- mask(envs.backg, ca.sa)  # mask envs
-plot(envs.backg[[1]])  
+ca.sa <- wrld_simpl[wrld_simpl@data$SUBREGION==5|wrld_simpl@data$SUBREGION==13,]  # get polygons for Central and South America
+bv.coords.sp@proj4string <- crs(ca.sa)  # both spatial objects have same geographic coordinate system, so just name the CRS for bv.coords with that of wrld_simpl 
+bv.coords.sp <- bv.coords.sp[ca.sa]  # run a spatial intersect operation to subset bv.coords to only the points that fall within our polygon
+bv.coords <- bv.coords.sp@coords  # rename bv.coords with the new subset
+envs.backg <- mask(envs.backg, ca.sa)  # mask envs by this polygon
+plot(envs.backg[[1]])
 points(bv.coords)  # this is our background extent
 ```
 
 Here we sample our background points.
 
-```{r}
-backg <- randomPoints(envs.backg[[1]], n=10000)  # randomly sample 10,000 background points from one background extent raster (only one per cell without replacement)
-points(backg, col='red')  # notice how we have pretty good coverage
+```{r backgPts, fig.width=6, fig.height=8, eval=F}
+bg.coords <- randomPoints(envs.backg[[1]], n=10000)  # randomly sample 10,000 background points from one background extent raster (only one per cell without replacement)
+plot(envs.backg[[1]])  
+points(bg.coords, col='red')  # notice how we have pretty good coverage
 ```
 
-We'll now take a look at the different partitioning methods offered by `ENMeval`.
+A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for k-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). 
+Generally, the data partitioning step is done within the main 'ENMevaluate' function call.  In this section, we illustrate the different options here. 
+The first, three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. 
+Basically, these methods partition both occurrence records and background points into evaluation bins based on some spatial rules. 
+The methods are designed to reduce spatial-autocorrelation between points included in testing and training bins, which can overinflate model performance. 
 
-```{r}
 
+``` {r part, fig.width=6, fig.height=8, eval=F}
+#First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four bins of (insofar as possible) equal numbers.
+#Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines. 
+bv.coords <- as.data.frame(bv.coords)
+bg.coords <- as.data.frame(bg.coords)
+blocks <- get.block(bv.coords, bg.coords)
+
+# The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point.
+str(blocks)
+
+plot(envs.backg[[1]], col='gray', legend=FALSE)
+points(bv.coords, pch=21, bg=blocks$occ.grp)
 ```
+
+
 
 We will now perform model tuning using a variety of complexity combinations. Next, we will isolate the results table from the ENMevaluate object we produce, and using this table determine which model is the best approximation of fitting to the occurrence data without being overly complex. There are a variety of selection-techniques available, but for simplicity, here we will use AICc. We want the model with the lowest AICc score, therefore, we are interested in the model with a delta.AICc of 0. 
 
-```{r}
+```{r, ENMeval, eval=FALSE}
 models <- ENMevaluate(occ = species.coord, env = preds.ext, 
                       method = 'block', categoricals = NULL, 
                       fc = c("L", 'LQ', "H", "LQH"), 
@@ -81,37 +100,3 @@ results.table<-models@results #Isolate the results table
 results.table #Look at the tuning results. Here, you will find information about omission rates, AUC and AICc scores
 best.mod.AICc<- mod.table[mod.table[14]==0][c(1,16)] #Find the row of the results table that has a delta.AICc of 0.
 ```
-
-
-
-
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
-```
-
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
-```
-
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
