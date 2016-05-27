@@ -146,11 +146,11 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   # get total number of parameters
   nparm <- numeric()
   for (i in 1:length(full.mods)) nparm[i] <- get.params(full.mods[[i]])
-  if (rasterPreds==TRUE) {
+#  if (rasterPreds==TRUE) { # this should now work even if rasterPreds==F
     aicc <- calc.aicc(nparm, occ, predictive.maps)
-  } else {
-    aicc <- rep(NaN, length(full.AUC))
-  }
+#  } else {
+#    aicc <- rep(NaN, length(full.AUC))
+#  }
   
   features <- args.lab[[1]]
   rm <- args.lab[[2]]
