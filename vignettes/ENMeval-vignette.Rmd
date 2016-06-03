@@ -19,7 +19,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 ## Demo
 
-We're going to start by downloading an occurrence dataset for *Bradypus variegatus*, the Brown-throated sloth.
+We're going to start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.
 
 ```{r, occDownload}
 library(spocc)
