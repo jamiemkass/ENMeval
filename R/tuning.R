@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args, 
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output, 
-                    clamp, rasterPreds, parallel, numCores, userArgs) {
+                    clamp, rasterPreds, parallel, numCores, progbar, userArgs) {
   
   noccs <- nrow(occ)
   if (method == "checkerboard1") 
@@ -38,7 +38,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   }
   
   tune <- function() {
-    if (length(maxent.args) > 1 & !parallel) {
+    if (length(maxent.args) > 1 & !parallel & progbar==T) {
       setTxtProgressBar(pb, i) 
     }
     x <- rbind(pres, bg)
@@ -106,12 +106,12 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
     stopCluster(c1)
   } else {
-    pb <- txtProgressBar(0, length(maxent.args), style = 3) 
+    if(progbar==T) { pb <- txtProgressBar(0, length(maxent.args), style = 3) }
     out <- list()
     for (i in 1:length(maxent.args)) {
       out[[i]] <- tune()
     }
-    close(pb)
+    if(progbar==T) { close(pb) }
   }
   
   full.mods <- sapply(out, function(x) x[[1]])
