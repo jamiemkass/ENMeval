@@ -10,7 +10,7 @@ vignette: >
 ---
 
 ```{r setup, echo = FALSE}
-knitr::opts_chunk$set(collapse=TRUE, message=FALSE, comment="#>")
+knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 ```
 
 ## Introduction
@@ -91,7 +91,7 @@ For these methods, the user needs to provide a raster layer on which to base the
 
 ``` {r part.ck}
 check1 <- get.checkerboard1(occs, envs, bg, aggregation.factor=5)
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(occs, pch=21, bg=check1$occ.grp)
 
 # The partitioning method is more clearly illustrated by looking at the background points:
@@ -99,7 +99,7 @@ points(bg, pch=21, bg=check1$bg.grp)
 
 # We can change the aggregation factor to better illustrate how this partitioning method works:
 check1.large <- get.checkerboard1(occs, envs, bg, aggregation.factor=30)
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=check1.large$bg.grp)
 points(occs, pch=21, bg=check1.large$occ.grp, col='white', cex=1.5)
 
@@ -111,7 +111,7 @@ points(occs, pch=21, bg=check1.large$occ.grp, col='white', cex=1.5)
 # Points are assigned to bins with respect to where they fall in checkerboards of both scales.
 
 check2 <- get.checkerboard2(occs, envs, bg, aggregation.factor=c(5,5))
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=check2$bg.grp)
 points(occs, pch=21, bg=check2$occ.grp, col='white', cex=1.5)
 ```
@@ -124,7 +124,7 @@ ngrps <- 10
 kmeans <- kmeans(occs, ngrps)
 occ.grp <- kmeans$cluster
 
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(occs, pch=21, bg=occ.grp)
 
 # When using the user-defined partitioning method, we need to supply ENMevaluate with group identifiers for both occurrence points AND background points.
@@ -140,7 +140,7 @@ centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x == min(x)))
 
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=bg.grp)
 ```
 
@@ -150,7 +150,7 @@ Primarily when working with small data sets (e.g. < ca. 25 localities), users ma
 
 ``` {r part.jk}
 jack <- get.jackknife(occs, bg)
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(occs, pch=21, bg=jack$occ.grp)  # note that colors are repeated here
 ```
 
@@ -161,7 +161,7 @@ Finally, the 'random k-fold' method partitions occurrence localities randomly in
 # For instance, let's partition the data into five evaluation bins:
 random <- get.randomkfold(occs, bg, k=6)
 
-plot(envs[[1]])
+plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(occs, pch=21, bg=random$occ.grp)
 ```
 
@@ -177,34 +177,34 @@ The two main parameters to define when calling ENMevaluate are (1) the range of 
 
 ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and one with RM=2, both allowing only linear features.
 
-``` {r enmeval}
-res1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
-res1
+``` {r enmeval, hide=c(-1,-5,-11,-16)}
+eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
+eval1
 
 # We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
-res2 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
-res2
+eval2 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
+eval2
 
 # When building many models, the command may take a long time to run.
 # Of course this depends on the size of your dataset and the computer you are using.
 # When working on big projects, running the command in parallel can be faster:
-res2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE)
-res2.par
+eval2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE)
+eval2.par
 
 # Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (rasterPreds).
 # Note that these are needed for calculating AICc values so those are returned as NaN when rasterPreds=F.
-res3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE)
-res3
+eval3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE)
+eval3
 
 # No predictions generated:
-res3@predictions
+eval3@predictions
 
 # No AICc values calculated
-res3@results$aicc
+eval3@results$aicc
 
-# We can also calculate one of two niche overlap statistics directly here using the 'niche.overlap' argument.
+# We can also calculate one of two niche overlap statistics directly here using the 'niche.overlap' argument, which supports Moran's I or Schoener's D (citations?).
 # Note that you can also calculate this value at a later stage using the separate 'calc.niche.overlap' function.
-overlap <- calc.niche.overlap(res2@predictions, stat='D')
+overlap <- calc.niche.overlap(eval2@predictions, stat='D')
 overlap
 
 # The 'bin.output' argument determines if separate evaluation statistics for each testing bin are included in the results file.
@@ -212,10 +212,32 @@ overlap
 
 ## Exploring the ENMeval results object
 UNDER CONSTRUCTION
-``` {r stuff, eval=FALSE}
-results.table<-models@results #Isolate the results table 
-results.table #Look at the tuning results. Here, you will find information about omission rates, AUC and AICc scores
-best.mod.AICc<- mod.table[mod.table[14]==0][c(1,16)] #Find the row of the results table that has a delta.AICc of 0.
+``` {r stuff}
+# let's use "eval2" as our example ENMeval results object
+res <- eval2@results  # isolate the results table 
+res # examine tuning results--this has information about omission rates, AUC and AICc scores
+res[res$delta.AICc==0,]  # find the model settings that resulted in delta.AICc of 0
+
+# access a RasterStack of the model predictions
+eval2@predictions
+
+# let's plot the optimal model according to AICc (model with delta AICc equal to 0). Notice that this model was the 10th one that we ran (row 4), which means that it will be the 10th item in our RasterStack
+plot(eval2@predictions[[4]])
+```
+
+We can also access the list of model objects. You can subset this list using double brackets: e.g. `results@eval2[[2]]`. This will also allow you to access various elements of the model. This model object can also be used for predicting the model into other time periods or geographic areas. The html file no longer exists for these, but other important information can be accessed. Let's take a look at the AICc optimal model object (item 10 again).
+
+```{r mod.obj}
+opt <- eval2@models[[4]]  # the above model was in the 4th row of the results table, so the 4th model will be our optimal model
+opt
+opt@lambdas # "lambdas" file to find which variables were used (see CITATION)
+head(opt@results) # "results" shows the Maxent model statistics
+
+head(eval2@occ.pts)  # this simply shows you the data.frame of occurrence records that you used
+head(eval2@occ.grp, n=50)  # this shows you which group each of you occurrence records was sorted into based on your grouping method
+eval2@partition.method  # which occurrence partitioning method you used
+head(eval2@bg.pts)  # coordinates of the background points used
+head(eval2@bg.grp, n=50)  # vector of background point groups
 ```
 
 ## Plotting results
@@ -227,33 +249,25 @@ Options for selecting optimal models
 Plotting response curves (Use response(ENMeval_results@models[[1]]))
 
 ### Plotting results
+ENMeval has a built-in plotting function to visualize the results of different models. It requires the results table of the ENMevaluation object. By default, it plots delta.AICc values.
+
 ``` {r plot.res}
-# ENMeval has a built-in plotting function to visualize the results of different models.
-# It requires the results table of the ENMevaluation object.
-# By default, it plots delta.AICc values. Let's use "res2" as our example ENMeval results object.
-eval.plot(res2@results)
+eval.plot(eval2@results)
 
-# You can which evaluation metric to plot, and you can include error bars if relevant:
-res2@results
-
-eval.plot(res2@results, 'Mean.AUC', var='Var.AUC')
-
-eval.plot(res2@results, 'Mean.ORmin', var='Var.ORmin')
+# you can choose which evaluation metric to plot, and you can include error bars if relevant:
+eval.plot(res, 'Mean.AUC', var='Var.AUC')
+eval.plot(res, 'Mean.ORmin', var='Var.ORmin')
 ```
 
 ### Plotting model predictions
-If you generated raster predictions of the models, you can plot them easily. For example, let's look at the first two models included in our analysis.
+If you generated raster predictions of the models, you can plot them easily. For example, let's look at the first two models included in our analysis. Notice that the output values are in Maxent's 'raw' units.
 
 ``` {r plot.pred}
-plot(res2@predictions[[1]])
-
-# Notice that the output values are in Maxent's 'raw' units.
-
+plot(eval2@predictions[[1]])
 # The original input data is stored in the ENMevaluate object so we can easily add the occurrence and background points, colored by evaluation bins: 
-points(res2@bg.pts, pch=3, col=res2@bg.grp, cex=0.5)
-points(res2@occ.pts, pch=21, bg=res2@occ.grp)
+points(eval2@bg.pts, pch=3, col=eval2@bg.grp, cex=0.5)
+points(eval2@occ.pts, pch=21, bg=eval2@occ.grp)
 ```
-
 
 ## Downstream
 UNDER CONSTRUCTION
