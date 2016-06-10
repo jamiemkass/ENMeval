@@ -24,6 +24,7 @@ In this vignette, we briefly demonstrate acquisition and pre-processing of input
 We're going to start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.
 
 ```{r occDownload}
+install.packages('spocc') #####NOT sure where you guys prefer to put these, but for now, I will add above the library command. Should we specify a repo?
 library(spocc)
 bv <- occ('Bradypus variegatus', 'gbif', limit=50, has_coords=TRUE)  # search GBIF for occurrence data
 occs <- bv$gbif$data$Bradypus_variegatus[,2:3]  # get the latitude/coordinates for each locality
@@ -33,6 +34,7 @@ occs <- occs[!duplicated(occs),]  # remove duplicate rows
 We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `dismo` package. These climatic data are based on 50-year averages from 1950-2000. Now's also a good time to load the package, as it includes all the downstream dependencies (`raster`, `dismo`, etc.).
 
 ```{r envDownload, warning=FALSE, message=FALSE, fig.width=6, fig.height=8}
+install.packages('ENMeval')
 library(ENMeval)
 # first, load some predictor rasters from the dismo folder
 files <- list.files(path=paste(system.file(package="dismo"), '/ex', sep=''), pattern='grd', full.names=TRUE )
@@ -53,6 +55,7 @@ envs.backg <- crop(envs, bb.buf)  # crop envs for study extent
 We may also, however, want to remove the Caribbean islands (for example) from our background extent. For this, we can use tools from the `maptools` package, which is not loaded with `ENMeval`.
 
 ```{r backgExt, message=FALSE}
+install.packages('maptools')
 library(maptools)
 data(wrld_simpl)  # get a simple world countries polygon
 ca.sa <- wrld_simpl[wrld_simpl@data$SUBREGION==5|wrld_simpl@data$SUBREGION==13,]  # get polygons for Central and South America
@@ -68,6 +71,7 @@ In the next step, we'll sample 10,000 random points from the background (note th
 
 ```{r backgPts, fig.width=3, fig.height=4}
 bg <- randomPoints(envs.backg[[1]], n=10000)  # randomly sample 10,000 background points from one background extent raster (only one per cell without replacement)
+# NOTE: this will create a warning message since the raster has less than 10,000 pixels. All pixels will be used for background.
 plot(envs.backg[[1]])  
 points(bg, col='red')  # notice how we have pretty good coverage
 ```
@@ -227,15 +231,17 @@ The 'bin.output' argument determines if separate evaluation statistics for each 
 UNDER CONSTRUCTION
 ``` {r stuff}
 # let's use "eval2" as our example ENMeval results object
-res <- eval2@results  # isolate the results table 
+res <- eval2@results  # Model evaluation statistics are available if we isolate the results table 
 res # examine tuning results--this has information about omission rates, AUC and AICc scores
 res[res$delta.AICc==0,]  # find the model settings that resulted in delta.AICc of 0
 
-# access a RasterStack of the model predictions
+# access a RasterStack of the model predictions. NOTE: these predictions are in the raw output format.
 eval2@predictions
 
-# let's plot the optimal model according to AICc (model with delta AICc equal to 0). Notice that this model was the 10th one that we ran (row 4), which means that it will be the 10th item in our RasterStack
-plot(eval2@predictions[[4]])
+# let's plot the optimal model according to AICc (model with delta AICc equal to 0). Notice that this model was the 4th one that we ran (row 4), which means that it will be the 4th item in our RasterStack
+plot(env2@predictions[[4]])
+# gives us the same raster as:
+plot(eval2@predictions[[as.numeric(rownames(res[res$delta.AICc==0,]))]])
 ```
 
 We can also access the list of model objects. You can subset this list using double brackets: e.g. `results@eval2[[2]]`. This will also allow you to access various elements of the model. This model object can also be used for predicting the model into other time periods or geographic areas. The html file no longer exists for these, but other important information can be accessed. Let's take a look at the AICc optimal model object (item 10 again).
