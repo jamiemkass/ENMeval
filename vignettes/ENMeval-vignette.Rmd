@@ -20,6 +20,7 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 - [Running ENMeval](Running ENMeval)
 - [Plotting results](Plotting results)
 - [Downstream Analyses](Downstream Analyses)
+- [Resources](Resources)
 
 
 ## Introduction
@@ -29,7 +30,7 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
 ## Data Acquisition & Pre-processing
-In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the **Resources** section.
+In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](Resources) section.
 
 We'll start by downloading an occurrence dataset for [*Bradypus variegatus*] (https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` and [`spocc`](https://cran.r-project.org/web/packages/spocc/index.html) packages.  (We are using `spocc` to download occurrence records).
 
@@ -226,7 +227,7 @@ plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=bg.grp)
 ```
 
-Choosing among these data partitioning methods depends on the research objectives and the characteristics of the study system. Refer to the **Resources** section for additional considerations on appropriate partitioning for evaluation.
+Choosing among these data partitioning methods depends on the research objectives and the characteristics of the study system. Refer to the [Resources](Resources) section for additional considerations on appropriate partitioning for evaluation.
 
 ## Running ENMeval
 Once you decide which method of data partitioning you would like to use, you are ready to start building models. We now move on to the main function in ENMeval: `ENMevaluate`.
@@ -235,7 +236,7 @@ Once you decide which method of data partitioning you would like to use, you are
 - [Exploring the results](Exploring the results (the ENMevaluate object))
 
 #### Initial considerations
-The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for adding parameters to the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. Much more description of these parameters is available in the **Resources** section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
+The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for adding parameters to the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. Much more description of these parameters is available in the [Resources](Resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
 
 Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will need to define which layer(s) these are using the 'categoricals' argument.
 
@@ -373,3 +374,11 @@ response(ENMeval_results@models[[1]])
 - Use model object to make a new prediction if you want a logistic prediction
 - Make a projection to a new extent
 - Do MESS map (Use mess() is dismo)
+
+## Resources
+- [Web resources](Web resources)
+- [References](References)
+
+#### Web resources
+
+#### References
