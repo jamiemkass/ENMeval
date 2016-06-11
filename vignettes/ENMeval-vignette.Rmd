@@ -3,6 +3,7 @@ title: "ENMeval Vignette"
 author: "Robert Muscarella, Jamie M. Kass, and Peter Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
+toc: TRUE
 vignette: >
   %\VignetteIndexEntry{ENMeval Vignette}
   %\VignetteEngine{knitr::rmarkdown}
@@ -224,73 +225,92 @@ overlap <- calc.niche.overlap(eval2@predictions, stat='D')
 overlap
 ```
 
-The 'bin.output' argument determines if separate evaluation statistics for each testing bin are included in the results file.
+The `bin.output` argument determines if separate evaluation statistics for each testing bin are included in the results file.  If `bin.output=FALSE`, only the mean and variance of evaluation statistics across k bins is returned.
+
+## Exploring the results (the ENMevaluate object)
+We'll use the `eval2` object as our example ENMeval results object for the following demonstrations.  The results of a call to `ENMevaluate` are stored as an object of class ENMevaluate.  This is a specialized class that holds the following items:
+- A data.frame holding the model evaluation statistics
+- A RasterStack of the model predictions
+- A list of maxent model objects
+- A data.frame of the original occurrence coordinates
+- A vector of the evaluation bins used for the occurrence points
+- A data.frame of the background coordinates
+- A vector of the evaluation bins used for the background points
+- (if `overlap=T`) A matrix of the pairwise niche overlap metric
 
 
-## Exploring the ENMeval results object
-UNDER CONSTRUCTION
 ``` {r stuff}
-# let's use "eval2" as our example ENMeval results object
-res <- eval2@results  # Model evaluation statistics are available if we isolate the results table 
-res # examine tuning results--this has information about omission rates, AUC and AICc scores
-res[res$delta.AICc==0,]  # find the model settings that resulted in delta.AICc of 0
+str(eval2)
 
-# access a RasterStack of the model predictions. NOTE: these predictions are in the raw output format.
+# The first thing to examine is the table of evaluation metrics.
+eval2@results 
+
+# Use this to, for example, find the model settings that resulted in delta.AICc of 0:
+eval2@results[eval2@results$delta.AICc==0,]  
+
+# Access a RasterStack of the model predictions:
+# (Note that these predictions are in the 'raw' output format)
 eval2@predictions
 
-# let's plot the optimal model according to AICc (model with delta AICc equal to 0). Notice that this model was the 4th one that we ran (row 4), which means that it will be the 4th item in our RasterStack
-plot(env2@predictions[[4]])
-# gives us the same raster as:
-plot(eval2@predictions[[as.numeric(rownames(res[res$delta.AICc==0,]))]])
+# Now let's plot the model with delta.AICc equal == 0:
+plot(env2@predictions[[which(eval2@results$delta.AICc==0]])
+
 ```
 
-We can also access the list of model objects. You can subset this list using double brackets: e.g. `results@eval2[[2]]`. This will also allow you to access various elements of the model. This model object can also be used for predicting the model into other time periods or geographic areas. The html file no longer exists for these, but other important information can be accessed. Let's take a look at the AICc optimal model object (item 10 again).
+We can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not**  kept.
 
 ```{r mod.obj}
-opt <- eval2@models[[4]]  # the above model was in the 4th row of the results table, so the 4th model will be our optimal model
+# Let's look at the model object for our "AICc optimal" model:
+opt <- eval2@models[[which(eval2@results$delta.AICc==0]]
 opt
-opt@lambdas # "lambdas" file to find which variables were used (see CITATION)
-head(opt@results) # "results" shows the Maxent model statistics
 
-head(eval2@occ.pts)  # this simply shows you the data.frame of occurrence records that you used
-head(eval2@occ.grp, n=50)  # this shows you which group each of you occurrence records was sorted into based on your grouping method
-eval2@partition.method  # which occurrence partitioning method you used
-head(eval2@bg.pts)  # coordinates of the background points used
-head(eval2@bg.grp, n=50)  # vector of background point groups
+# The "lambdas" file can be used to see which variables were used:
+opt@lambdas
+
+# The "results" shows the Maxent model statistics:
+opt@results
+
+# The ENMevaluate object also remembers which occurrence partitioning method you used:
+eval2@partition.method  
 ```
 
 ## Plotting results
-UNDER CONSTRUCTION
-
-Plot complex versus smooth models to see effect
-Talk about evaluation metrics (table from paper)
-Options for selecting optimal models
-Plotting response curves (Use response(ENMeval_results@models[[1]]))
-
-### Plotting results
-ENMeval has a built-in plotting function to visualize the results of different models. It requires the results table of the ENMevaluation object. By default, it plots delta.AICc values.
+Plotting options in R are extremely flexible and here we demonstrate some key tools to explore the results of an ENMevaluate object graphically.  ENMeval has a built-in plotting function (`eval.plot`) to visualize the results of different models.  It requires the results table of the ENMevaluation object.  By default, it plots delta.AICc values.
 
 ``` {r plot.res}
 eval.plot(eval2@results)
 
-# you can choose which evaluation metric to plot, and you can include error bars if relevant:
+# You can  choose which evaluation metric to plot, and you can include error bars if relevant:
 eval.plot(res, 'Mean.AUC', var='Var.AUC')
 eval.plot(res, 'Mean.ORmin', var='Var.ORmin')
 ```
 
 ### Plotting model predictions
-If you generated raster predictions of the models, you can plot them easily. For example, let's look at the first two models included in our analysis. Notice that the output values are in Maxent's 'raw' units.
+If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis. Remember that the output values are in Maxent's 'raw' units.
 
 ``` {r plot.pred}
 plot(eval2@predictions[[1]])
-# The original input data is stored in the ENMevaluate object so we can easily add the occurrence and background points, colored by evaluation bins: 
+
+# We can easily add the occurrence and background points, colored by evaluation bins:
 points(eval2@bg.pts, pch=3, col=eval2@bg.grp, cex=0.5)
 points(eval2@occ.pts, pch=21, bg=eval2@occ.grp)
 ```
 
-## Downstream
-UNDER CONSTRUCTION
-Extracting model results from object (various threshold)
-Use model object to make a new prediction if you want a logistic prediction
-Make a projection to a new extent
-Do MESS map (Use mess() is dismo)
+Let's see how model complexity changes the predictions in our example.  We'll compare the model predictions of the model with only linear feature classes and with the highest regularization multiplier value we used (i.e., fc='L', RM=2) versus the model with all feature class combination and the lowest regularization multiplier value we used (i.e., fc='LQP',  RM=1).
+
+``` {r plot.pred}
+par(mfrow=c(2,2)
+plot(eval2@predictions[[1]])
+plot(eval2@predictions[[1]])
+```
+We can also plot the response curves of our model to see how different input variables influence our model predictions.
+``` {r plot.pred}
+response(ENMeval_results@models[[1]])
+```
+
+## Downstream Analyses
+###**UNDER CONSTRUCTION**
+- Extracting model results from object (various threshold)
+- Use model object to make a new prediction if you want a logistic prediction
+- Make a projection to a new extent
+- Do MESS map (Use mess() is dismo)
