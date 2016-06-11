@@ -84,7 +84,7 @@ envs.backg <- crop(envs, bb.buf)
 
 We may also, however, want to remove the Caribbean islands (for example) from our background extent. For this, we can use tools from the [`maptools`](https://cran.r-project.org/web/packages/maptools/index.html) package, which is not automatically loaded with `ENMeval`.
 
-```{r backgExt, message=FALSE}
+```{r removeCaribbean, message=FALSE}
 install.packages('maptools')
 library(maptools)
 
@@ -149,7 +149,7 @@ The next two partitioning methods are variants of a 'checkerboard' approach to p
 
 The Checkerboard1 method partitions the points into k=2 bins using a simple checkerboard pattern.
 
-``` {r part.ck}
+``` {r part.ck1}
 check1 <- get.checkerboard1(occs, envs, bg, aggregation.factor=5)
 
 plot(envs.backg[[1]], col='gray', legend=FALSE)
@@ -167,7 +167,7 @@ points(occs, pch=21, bg=check1.large$occ.grp, col='white', cex=1.5)
 #### 3. Checkerboard2
 The Checkerboard2 method partitions the data into k=4 bins. This is done by aggregating the input raster at two scales. Presence and background points are assigned to a bin with respect to where they fall in checkerboards of both scales.
 
-``` {r part.ck}
+``` {r part.ck2}
 check2 <- get.checkerboard2(occs, envs, bg, aggregation.factor=c(5,5))
 
 plot(envs.backg[[1]], col='gray', legend=FALSE)
@@ -199,7 +199,7 @@ points(occs, pch=21, bg=random$occ.grp)
 #### 6. User-defined
 For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, perhaps we would like to partition points based on a k-means clustering routine.
 
-``` {r part.user}
+``` {r part.user1}
 ngrps <- 10
 kmeans <- kmeans(occs, ngrps)
 occ.grp <- kmeans$clusterc
@@ -210,7 +210,7 @@ points(occs, pch=21, bg=occ.grp)
 
 When using the user-defined partitioning method, we need to supply ENMevaluate with group identifiers for both occurrence points AND background points. If we want to use all background points for each group, we can set the background to zero.
 
-``` {r part.user}
+``` {r part.user2}
 bg.grp <- rep(0, nrow(bg))
 
 plot(envs.backg[[1]], col='gray', legend=FALSE)
@@ -218,7 +218,7 @@ points(bg, pch=16, bg=bg.grp)
 ```
 Alternatively, we may think of various ways to partition background data. This depends on the goals of the study but we might, for example, find it reasonable to partition background by clustering around the centroids of the occurrence clusters.
 
-``` {r part.user}
+``` {r part.user3}
 centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x == min(x)))
@@ -242,7 +242,7 @@ Unless you supply the function with background points (which is recommended in m
 
 ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and one with RM=2, both allowing only linear features.
 
-``` {r enmeval, hide=c(-1,-5,-11,-16)}
+``` {r enmeval1, hide=c(-1,-5,-11,-16)}
 eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
 eval1
 
@@ -253,14 +253,14 @@ eval2
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel can be faster.
 
-``` {r enmeval, hide=c(-1,-5,-11,-16)}
+``` {r enmeval2, hide=c(-1,-5,-11,-16)}
 eval2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE)
 eval2.par
 ```
 
 Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (rasterPreds). Note, however, that these are needed for calculating AICc values so those are returned as NA when the `rasterPreds` argument is set to FALSE.
 
-``` {r enmeval, hide=c(-1,-5,-11,-16)}
+``` {r enmeval3, hide=c(-1,-5,-11,-16)}
 eval3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE)
 eval3
 
@@ -273,7 +273,7 @@ eval3@results$aicc
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the `niche.overlap` argument, which supports Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
-``` {r enmeval, hide=c(-1,-5,-11,-16)}
+``` {r enmeval4, hide=c(-1,-5,-11,-16)}
 overlap <- calc.niche.overlap(eval2@predictions, stat='D')
 overlap
 ```
@@ -346,7 +346,7 @@ eval.plot(res, 'Mean.ORmin', var='Var.ORmin')
 #### Plotting model predictions
 If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis. Remember that the output values are in Maxent's 'raw' units.
 
-``` {r plot.pred}
+``` {r plot.pred1}
 plot(eval2@predictions[[1]])
 
 # We can easily add the occurrence and background points, colored by evaluation bins:
@@ -356,7 +356,7 @@ points(eval2@occ.pts, pch=21, bg=eval2@occ.grp)
 
 Let's see how model complexity changes the predictions in our example.  We'll compare the model predictions of the model with only linear feature classes and with the highest regularization multiplier value we used (i.e., fc='L', RM=2) versus the model with all feature class combination and the lowest regularization multiplier value we used (i.e., fc='LQP',  RM=1).
 
-``` {r plot.pred}
+``` {r plot.pred2}
 par(mfrow=c(2,2)
 plot(eval2@predictions[[1]])
 plot(eval2@predictions[[1]])
@@ -364,7 +364,7 @@ plot(eval2@predictions[[1]])
 
 #### Plotting response curves
 We can also plot the response curves of our model to see how different input variables influence our model predictions.
-``` {r plot.pred}
+``` {r plot.pred3}
 response(ENMeval_results@models[[1]])
 ```
 
