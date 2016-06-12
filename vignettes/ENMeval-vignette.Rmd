@@ -25,7 +25,7 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 
 ## Introduction
 
-[`ENMeval`](https://cran.r-project.org/web/packages/ENMeval/index.html) is an R package that performs automated runs and evaluations of ecological niche models, and currently only implements [Maxent](https://www.cs.princeton.edu/~schapire/maxent/). `ENMeval` was made for those who want to "tune" their models to maximize predictive ability and avoid overfitting, or in other words, optimizing the balance between goodness-of-fit and model complexity. The primary function, `ENMevaluate`, does all the heavy lifting and returns a table of evaluation statistics, and for each setting combination (here, colloquially: *runs*), a model object and a raster showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication:
+[`ENMeval`](https://cran.r-project.org/web/packages/ENMeval/index.html) is an R package that performs automated runs and evaluations of ecological niche models, and currently only implements [Maxent](https://www.cs.princeton.edu/~schapire/maxent/). `ENMeval` was made for those who want to "tune" their models to maximize predictive ability and avoid overfitting, or in other words, optimize model complexity to balance goodness-of-fit and predictive ability. The primary function, `ENMevaluate`, does all the heavy lifting and returns several items including a table of evaluation statistics and, for each setting combination (here, colloquially: *runs*), a model object and a raster layer showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication:
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
@@ -94,7 +94,8 @@ data(wrld_simpl)
 # Get polygons for Central and South America
 ca.sa <- wrld_simpl[wrld_simpl@data$SUBREGION==5|wrld_simpl@data$SUBREGION==13,]
 
-# Both spatial objects have same geographic coordinate system, so just name the CRS for occs with that of wrld_simpl occs.sp@proj4string <- crs(ca.sa)  
+# Both spatial objects have same geographic coordinate system, so just name the CRS for occs with that of wrld_simpl
+occs.sp@proj4string <- crs(ca.sa)  
 
 # Run a spatial intersect operation to subset occs to only the points that fall within our polygon
 occs.sp <- occs.sp[ca.sa]
@@ -114,9 +115,9 @@ In the next step, we'll sample 10,000 random points from the background (note th
 
 ```{r backgPts, fig.width=3, fig.height=4}
 # Randomly sample 10,000 background points from one background extent raster (only one per cell without replacement)
+# (Note: Since the raster has <10,000 pixels, you'll get a warning and all pixels will be used for background.)
 bg <- randomPoints(envs.backg[[1]], n=10000)
 
-# NOTE: Since the raster has < 10,000 pixels, you will get a warning message and all pixels will be used for background.
 plot(envs.backg[[1]])  
 points(bg, col='red')  # notice how we have pretty good coverage
 ```
@@ -124,12 +125,12 @@ points(bg, col='red')  # notice how we have pretty good coverage
 ## Partitioning Occurrences for Evaluation
 A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for k-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Generally, the data partitioning step is done within the main 'ENMevaluate' function call.  In this section, we illustrate the different options. 
 
-- [1. Block](1. Block)
-- [2. Checkerboard1](2. Checkerboard1)
-- [3. Checkerboard2](3. Checkerboard2)
-- [4. k-1 Jackknife](4. k-1 Jackknife)
-- [5. Random k-fold](5. Random k-fold)
-- [6. User-defined](6 User-defined)
+1. [Block](1. Block)
+2. [Checkerboard1](2. Checkerboard1)
+3. [Checkerboard2](3. Checkerboard2)
+4. [k-1 Jackknife](4. k-1 Jackknife)
+5. [Random k-fold](5. Random k-fold)
+6. [User-defined](6 User-defined)
 
 The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence records and background points into evaluation bins based on some spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the testing and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009; Hijmans 2012; Wenger and Olden 2012). 
 
@@ -376,9 +377,43 @@ response(ENMeval_results@models[[1]])
 - Do MESS map (Use mess() is dismo)
 
 ## Resources
+###**UNDER CONSTRUCTION**
 - [Web resources](Web resources)
 - [References](References)
 
-#### Web resources
+#### Web Resources
+[Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf)
+
+[Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](http://www.molecularecologist.com/2013/04/species-distribution-models-in-r/)
+
+[Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent)
 
 #### References
+###### General guides
+[Merow, C., Smith, M., and Silander, J.A. (2013) A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography 36, 1-12.](http://onlinelibrary.wiley.com/doi/10.1111/j.1600-0587.2013.07872.x/abstract)
+
+[Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., and Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](http://press.princeton.edu/titles/9641.html)
+
+[Renner, I.W., Elith, J., Baddeley, A., Fithian, W., Hastie, T., Phillips, S.J., . . . Warton, D.I. (2015) Point process models for presence-only analysis. Methods in Ecology and Evolution 6, 366-379.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12352/abstract)
+
+###### Model Evaluation
+[Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., and Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography 38, 541-545.](http://onlinelibrary.wiley.com/doi/10.1111/ecog.01132/abstract)
+
+[Fielding, A.H. and Bell, J.F. (1997) A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf)
+
+[Hijmans, R.J. (2012) Cross-validation of species distribution models: removing spatial sorting bias and calibration with a null model. Ecology 93, 679-688.](http://onlinelibrary.wiley.com/doi/10.1890/11-0826.1/abstract)
+
+[Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
+
+[Radosavljevic, A. and Anderson, R.P. (2014) Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](http://onlinelibrary.wiley.com/doi/10.1111/jbi.12227/abstract)
+
+[Shcheglovitova, M. and Anderson, R.P. (2013) Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecol. Model. 269, 9-17.](http://www.sciencedirect.com/science/article/pii/S0304380013004043)
+
+[Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36, 2290-2299.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2009.02174.x/abstract)
+
+[Wenger, S.J. and Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution 3, 260-267.](http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00170.x/abstract)
+
+###### Some examples
+[Pearson, R.G., Raxworthy, C.J., Nakamura, M., and Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2006.01594.x/abstract)
+
+
