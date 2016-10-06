@@ -1,7 +1,7 @@
 Package: ENMeval
 Type: Package
 Title: Automated Runs and Evaluations of Ecological Niche Models
-Version: 0.2.1
+Version: 0.2.1.1
 Date: 2015-1-4
 Author: Robert Muscarella, Peter J. Galante, Mariano Soley-Guardia, Robert A. Boria, Jamie M. Kass, Maria Uriarte and Robert P. Anderson
 Maintainer: Robert Muscarella <bob.muscarella@gmail.com>
