@@ -216,7 +216,7 @@ For maximum flexibility, the last partitioning method is designed so that users 
 ``` {r part.user1, fig.width = 6, fig.height = 6}
 ngrps <- 10
 kmeans <- kmeans(occs, ngrps)
-occ.grp <- kmeans$clusterc
+occ.grp <- kmeans$cluster
 
 plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(occs, pch=21, bg=occ.grp)
