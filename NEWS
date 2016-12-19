@@ -2,6 +2,8 @@ ENMeval 0.2.2
 ===========
 o  Fixed an inconsistency with the AICc columns of the results table when rasterPreds=F
 o  Fixed potential errors in the partitioning methods functions when used independently
+o  Added vignette
+o  Added some (hidden) progress bar options to increase compatibility with Wallace
 
 ENMeval 0.2.1
 ===========
