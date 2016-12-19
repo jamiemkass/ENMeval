@@ -39,7 +39,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   }
 
   tune <- function() {
-    if (length(maxent.args) > 1 & !parallel)) {
+    if (length(maxent.args) > 1 & !parallel) {
       if (is.function(updateProgress)) {
         text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
         updateProgress(detail = text)
