@@ -117,7 +117,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
     stopCluster(c1)
   } else {
-    if(progbar==T & !is.function(updateProgress) { pb <- txtProgressBar(0, length(maxent.args), style = 3) }
+    if(progbar==T & !is.function(updateProgress)) { pb <- txtProgressBar(0, length(maxent.args), style = 3) }
     out <- list()
     for (i in 1:length(maxent.args)) {
       out[[i]] <- tune()
