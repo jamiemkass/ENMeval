@@ -10,28 +10,15 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
     stop("Evaluation method needs to be specified.")
   }
   userArgs <- list(...)
-  allMaxentArgs <- c("responsecurves", "pictures", "jackknife", "outputformat",
-                     "outputfiletype", "outputdirectory", "projectionlayers", "samplesfile",
-                     "environmentallayers", "randomseed", "logscale", "warnings",
-                     "tooltips", "askoverwrite", "skipifexists", "removeduplicates",
-                     "writeclampgrid", "writemess", "randomtestpoints", "betamultiplier",
-                     "maximumbackground", "biasfile", "testsamplesfile", "replicates",
-                     "replicatetype", "perspeciesresults", "writebackgroundpredictions",
-                     "responsecurvesexponent", "linear", "quadratic", "product", "threshold",
-                     "hinge", "addsamplestobackground", "addallsamplestobackground",
-                     "autorun", "writeplotdata", "fadebyclamping", "extrapolate",
-                     "visible", "autofeature", "doclamp", "outputgrids", "plots",
-                     "appendtoresultsfile", "maximumiterations", "convergencethreshold",
-                     "adjustsampleradius", "threads", "lq2lqptthreshold", "l2lqthreshold",
-                     "hingethreshold", "beta_threshold", "beta_categorical", "beta_lqp",
-                     "beta_hinge", "logfile", "cache", "defaultprevalence", "applythresholdrule",
-                     "togglelayertype", "togglespeciesselected", "togglelayerselected",
-                     "verbose", "allowpartialdata", "prefixes", "nodata")
+  allMaxentArgs <- c("addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
+                     "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
+                     "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
+                     "maximumiterations""removeduplicates")
   if (length(userArgs) == 0) {
     userArgs <- NULL
   } else {
     if (!all(names(userArgs) %in% allMaxentArgs)) {
-      stop("Check the names of extra input Maxent arguments.")
+      stop("The maxent argument given is not implemented in ENMeval or is misspelled.")
     } else {
       userArgs <- paste(names(userArgs), unlist(userArgs), sep='=')
     }
