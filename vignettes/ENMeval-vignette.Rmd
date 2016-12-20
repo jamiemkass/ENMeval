@@ -394,6 +394,7 @@ This is a running list of things we are planning to add to this vignette.  Feel 
 - Use model object to make a new prediction (e.g., if you want a logistic prediction)
 - Make a projection to a new extent
 - Do MESS map (Use `mess()` in the `dismo` package)
+- Parse text of lambda file into a data.frame (see, e.g., [John Baumgartner's `rmaxent` package] (https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R))
 
 ## Resources {#resources}
 - [Web resources](#resources.web)
