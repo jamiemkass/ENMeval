@@ -397,10 +397,12 @@ This is a running list of things we are planning to add to this vignette.  Feel 
 - Parse text of lambda file into a data.frame (see, e.g., [John Baumgartner's `rmaxent` package] (https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R))
 
 ## Resources {#resources}
+###**UNDER CONSTRUCTION**
+
 - [Web resources](#resources.web)
 - [References](#refs)
 
-#### Web Resources {#resources.web}
+### Web Resources {#resources.web}
 [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf)
 
 [Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](http://www.molecularecologist.com/2013/04/species-distribution-models-in-r/)
