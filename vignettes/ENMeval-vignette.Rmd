@@ -260,7 +260,7 @@ ENMevaluate builds a separate model for each unique combination of RM values and
 ``` {r enmeval1a, results='hide'}
 #eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
 # We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
-eval2 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
+eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
 ```
 
 ``` {r enmeval1b}
