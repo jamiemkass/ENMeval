@@ -13,7 +13,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   allMaxentArgs <- c("addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
                      "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
                      "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
-                     "maximumiterations""removeduplicates")
+                     "maximumiterations", "removeduplicates")
   if (length(userArgs) == 0) {
     userArgs <- NULL
   } else {
