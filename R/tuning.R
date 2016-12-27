@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, rasterPreds, logOutput, parallel, numCores, progbar, userArgs,
+                    clamp, rasterPreds, parallel, numCores, progbar, userArgs,
                     updateProgress) {
 
   noccs <- nrow(occ)
@@ -53,15 +53,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     full.mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs),
                        factors = categoricals, path = tmpfolder)
     pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
-    pred.args.log <- c("outputformat=logistic", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
     if (rasterPreds==TRUE) {
       predictive.map <- predict(full.mod, env, args = pred.args)
-      if (logOutput==TRUE) {
-        predictive.maps.log <- stack(predictive.maps.log, predict(full.mod, env, args = pred.args.log))
-      }
     } else {
       predictive.map <- stack()
-      predictive.maps.log <- stack()
     }
     AUC.TEST <- double()
     AUC.DIFF <- double()
@@ -93,7 +88,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
     unlink(tmpfolder, recursive = TRUE)
     stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
-    return(list(full.mod, stats, predictive.map, predictive.map.log))
+    return(list(full.mod, stats, predictive.map))
   }
 
   # differential behavior for parallel and default
@@ -117,7 +112,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
     stopCluster(c1)
   } else {
-    if(progbar==T & !is.function(updateProgress) { pb <- txtProgressBar(0, length(maxent.args), style = 3) }
+    if (progbar==T & !is.function(updateProgress) {pb <- txtProgressBar(0, length(maxent.args), style = 3)}
     out <- list()
     for (i in 1:length(maxent.args)) {
       out[[i]] <- tune()
@@ -129,10 +124,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   statsTbl <- as.data.frame(t(sapply(out, function(x) x[[2]])))
   if (rasterPreds) {
     predictive.maps <- stack(sapply(out, function(x) x[[3]]))
-    predictive.maps.log <- stack(sapply(out, function(x) x[[4]]))
   } else {
     predictive.maps <- stack()
-    predictive.maps.log <- stack()
   }
 
   AUC.DIFF <- statsTbl[,1:nk]
@@ -173,17 +166,15 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
                     Var.AUC, Mean.AUC.DIFF, Var.AUC.DIFF, Mean.OR10, Var.OR10,
                     Mean.ORmin, Var.ORmin, aicc)
   if (bin.output == TRUE) {
-    res <- as.data.frame(cbind(res, AUC.TEST, AUC.DIFF, OR10,
-                               ORmin))
+    res <- as.data.frame(cbind(res, AUC.TEST, AUC.DIFF, OR10, ORmin))
   }
 
   if (rasterPreds==TRUE) {
     names(predictive.maps) <- settings
-    if (logOutput==TRUE) {names(predictive.maps.log) <- settings}
   }
   results <- ENMevaluation(results = res, predictions.raw = predictive.maps,
-                           predictions.log = predictive.maps.log, models = full.mods,
-                           partition.method = method, occ.pts = occ, occ.grp = group.data[[1]],
+                           models = full.mods, partition.method = method, 
+                           occ.pts = occ, occ.grp = group.data[[1]],
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
   return(results)
 }
