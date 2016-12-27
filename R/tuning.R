@@ -172,7 +172,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (rasterPreds==TRUE) {
     names(predictive.maps) <- settings
   }
-  results <- ENMevaluation(results = res, predictions.raw = predictive.maps,
+  results <- ENMevaluation(results = res, predictions = predictive.maps,
                            models = full.mods, partition.method = method, 
                            occ.pts = occ, occ.grp = group.data[[1]],
                            bg.pts = bg.coords, bg.grp = group.data[[2]])

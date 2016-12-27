@@ -40,9 +40,11 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                                       ifelse(method == "randomkfold", "Doing random k-fold evaluation groups...",
                                              ifelse(method == "user", "Doing user-defined evaluation groups...",
                                                     "Error: You need to specify an accepted evaluation method. Check the documentation.")))))))
+  print(userArgs)
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
                     maxent.args, args.lab, categoricals, aggregation.factor,
-                    kfolds, bin.output, clamp, rasterPreds, logOutput, parallel, numCores, progbar, updateProgress, userArgs)
+                    kfolds, bin.output, clamp, rasterPreds, parallel, 
+                    numCores, progbar, userArgs, updateProgress)
   if (overlap == TRUE) {
     if (length(maxent.args) > 1) {
       if(nlayers(results@predictions) > 1) {
