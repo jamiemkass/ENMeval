@@ -40,7 +40,6 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                                       ifelse(method == "randomkfold", "Doing random k-fold evaluation groups...",
                                              ifelse(method == "user", "Doing user-defined evaluation groups...",
                                                     "Error: You need to specify an accepted evaluation method. Check the documentation.")))))))
-  print(userArgs)
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
                     maxent.args, args.lab, categoricals, aggregation.factor,
                     kfolds, bin.output, clamp, rasterPreds, parallel, 
