@@ -43,7 +43,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
                     maxent.args, args.lab, categoricals, aggregation.factor,
                     kfolds, bin.output, clamp, rasterPreds, parallel, 
-                    numCores, progbar, userArgs, updateProgress)
+                    numCores, progbar, updateProgress, userArgs)
   if (overlap == TRUE) {
     if (length(maxent.args) > 1) {
       if(nlayers(results@predictions) > 1) {

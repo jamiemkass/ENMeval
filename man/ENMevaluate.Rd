@@ -14,11 +14,13 @@ ENMevaluate(occ, env, bg.coords = NULL, occ.grp = NULL,
 		categoricals = NULL, n.bg = 10000, method = NULL, 
 		overlap = FALSE, aggregation.factor = c(2, 2), 
 		kfolds = NA, bin.output = FALSE, clamp = TRUE,
-		rasterPreds = TRUE, parallel = FALSE, numCores = NULL)
+		rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
+		progbar = TRUE, updateProgress = FALSE, ...)
 
 tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
 	maxent.args, args.lab, categoricals, aggregation.factor, 
-	kfolds, bin.output, clamp, rasterPreds, parallel, numCores)
+	kfolds, bin.output, clamp, rasterPreds, parallel, numCores,
+	progbar, updateProgress, userArgs)
 
 }
 \arguments{
@@ -61,6 +63,15 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
   \item{parallel}{ logical; If \code{TRUE}, parallel processing is used to execute tuning function. }
 
   \item{numCores}{ numeric; indicates the number of cores to use if running in parallel. If \code{parallel=TRUE} and this is not specified, the total number of available cores are used.}
+
+  \item{progbar}{  logical; used internally. }
+
+  \item{updateProgress}{ logical; used internally. }
+
+  \item{...}{ character vector; use this to pass other arguments (e.g., prevalence) to the `maxent` call.  Note that not all options are functional or relevant.}
+  
+  \item{userArgs}{ character vector; use this to pass other arguments (e.g., prevalence) to the `maxent` call.  Note that not all options are functional or relevant.}
+
 }
 
 \details{
@@ -161,7 +172,7 @@ occ <- cbind(x,y)
 
 \dontrun{
 ### This call gives the results loaded below
-ENMevaluate(occ, env, method="block", RMvalues=seq(1, 3, 0.5), fc=c('L','LQ','LQP'), n.bg=500)
+enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500)
 }
 
 data(enmeval_results)
