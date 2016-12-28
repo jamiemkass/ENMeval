@@ -6,8 +6,8 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, rasterPreds, parallel, numCores, progbar, userArgs,
-                    updateProgress) {
+                    clamp, rasterPreds, parallel, numCores, progbar, updateProgress,
+                    userArgs) {
 
   noccs <- nrow(occ)
   if (method == "checkerboard1")
