@@ -200,7 +200,7 @@ points(occs, pch=21, bg=jack$occ.grp)  # note that colors are repeated here
 ```
 
 #### 5. Random k-fold {#rand}
-The 'random k-fold' method partitions occurrence localities randomly into a userspecified number of (k) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI.
+The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (k) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI.
 
 ``` {r part.rand, fig.width = 5, fig.height = 5}
 # For instance, let's partition the data into five evaluation bins:
@@ -388,7 +388,7 @@ response(eval2@models[[1]])
 
 ## Downstream Analyses {#downstream}
 ###**UNDER CONSTRUCTION**
-This is a running list of things we are planning to add to this vignette.  Feel free to let us know if there are particular things you would like to see added...
+This is a running list of things we are planning to add to this vignette.  Feel free to let us know if there are particular things you would like to see added.
 
 - Extracting model results from object (various threshold)
 - Use model object to make a new prediction (e.g., if you want a logistic prediction)
