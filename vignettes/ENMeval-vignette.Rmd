@@ -332,11 +332,15 @@ We can also access a list of Maxent model objects, which (as all lists) can be s
 opt <- eval2@models[[which(eval2@results$delta.AICc==0)]]
 opt
 
-# The "lambdas" file can be used to see which variables were used:
+# The "lambdas" slot shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model.
 opt@lambdas
 
-# The "results" shows the Maxent model statistics:
+# The "results" slot shows the Maxent model statistics:
 opt@results
+
+# You can use these functions to get sorted data frames of permutation importance and percent contribution.
+permImp(opt)
+pntContr(opt)
 
 # The ENMevaluate object also remembers which occurrence partitioning method you used:
 eval2@partition.method
@@ -353,9 +357,13 @@ ENMeval has a built-in plotting function (`eval.plot`) to visualize the results 
 ``` {r plot.res, fig.width = 5, fig.height = 5}
 eval.plot(eval2@results)
 
-# You can  choose which evaluation metric to plot, and you can include error bars if relevant:
+# You can choose which evaluation metric to plot, and you can include error bars if relevant:
 eval.plot(eval2@results, 'Mean.AUC', var='Var.AUC')
 eval.plot(eval2@results, 'Mean.ORmin', var='Var.ORmin')
+
+# You can also plot the permutation importance or percent contribution:
+pi <- permImp(opt)
+barplot(pi$permImp, names.arg=pi$variable, las=2, ylab="Permutation Importance")
 ```
 
 #### Plotting model predictions {#plot.preds}
