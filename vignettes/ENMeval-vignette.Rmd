@@ -338,9 +338,8 @@ opt@lambdas
 # The "results" slot shows the Maxent model statistics:
 opt@results
 
-# You can use these functions to get sorted data frames of permutation importance and percent contribution.
-permImp(opt)
-pntContr(opt)
+# You can use these functions to get a data frame of two variable importance metrics: percent contribution and permutation importance.
+var.importance(opt)
 
 # The ENMevaluate object also remembers which occurrence partitioning method you used:
 eval2@partition.method
@@ -362,8 +361,8 @@ eval.plot(eval2@results, 'Mean.AUC', var='Var.AUC')
 eval.plot(eval2@results, 'Mean.ORmin', var='Var.ORmin')
 
 # You can also plot the permutation importance or percent contribution:
-pi <- permImp(opt)
-barplot(pi$permImp, names.arg=pi$variable, las=2, ylab="Permutation Importance")
+df <- var.importance(opt)
+barplot(df$permutation.importance, names.arg=df$variable, las=2, ylab="Permutation Importance")
 ```
 
 #### Plotting model predictions {#plot.preds}

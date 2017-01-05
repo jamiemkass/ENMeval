@@ -2,7 +2,7 @@ Package: ENMeval
 Type: Package
 Title: Automated Runs and Evaluations of Ecological Niche Models
 Version: 0.2.2
-Date: 2016-12-28
+Date: 2017-1-4
 Author: Robert Muscarella, Peter J. Galante, Mariano Soley-Guardia, Robert A. Boria, Jamie M. Kass, Maria Uriarte and Robert P. Anderson
 Maintainer: Robert Muscarella <bob.muscarella@gmail.com>
 Description: Automatically partitions data into evaluation bins, executes ecological niche models across a range of settings, and calculates a variety of evaluation statistics.  Current version only implements ENMs with Maxent (Phillips et al. 2006).
