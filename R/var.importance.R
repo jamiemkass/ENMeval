@@ -4,7 +4,5 @@ var.importance <- function(mod) {
   pi <- res[grepl('permutation', rownames(res)),]
   varnames <- sapply(strsplit(names(pc), '.contribution'), function(x) x[1])
   df <- data.frame(variable=varnames, percent.contribution=pc, permutation.importance=pi, row.names=NULL)
-  df <- df[rev(order(df[,2])),]
-  rownames(df) <- NULL
   return(df)
 }
