@@ -8,8 +8,8 @@
 \tabular{ll}{
 Package: \tab ENMeval\cr
 Type: \tab Package\cr
-Version: \tab 0.2.0\cr
-Date: \tab 2015-09-11\cr
+Version: \tab 0.2.2\cr
+Date: \tab 2017-01-04\cr
 License: \tab GNU 3.0\cr
 }
 
