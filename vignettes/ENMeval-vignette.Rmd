@@ -418,7 +418,7 @@ Below is a running list of other things we plan to add to this vignette.  Feel f
 ## Resources (*under construction*) {#resources}
 
 ###### Web Resources
-- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf)
+- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/package=dismo)
 
 - [Phillips, S. J. (2006) Phillips, S. (2006) A brief tutorial on Maxent. AT&T Research. Available at: http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc](http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc)
 
