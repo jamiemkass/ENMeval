@@ -27,7 +27,7 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 
 [`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated runs and evaluations of ecological niche models, and currently only implements [Maxent](https://www.cs.princeton.edu/~schapire/maxent/). `ENMeval` was made for those who want to "tune" their models to maximize predictive ability and avoid overfitting, or in other words, optimize model complexity to balance goodness-of-fit and predictive ability. The primary function, `ENMevaluate`, does all the heavy lifting and returns several items including a table of evaluation statistics and, for each setting combination (here, colloquially: *runs*), a model object and a raster layer showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication:
 
-[Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
+[Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
@@ -35,8 +35,8 @@ In this vignette, we briefly demonstrate acquisition and pre-processing of input
 We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` and [`spocc`](https://cran.r-project.org/package=spocc) packages.  (We are using `spocc` to download occurrence records).
 
 ```{r occDownload}
-if (!require('spocc')) install.packages('spocc', repos = "http://cran.us.r-project.org")
-if (!require('ENMeval')) install.packages('ENMeval', repos = "http://cran.us.r-project.org")
+if (!require('spocc')) install.packages('spocc', repos="http://cran.us.r-project.org")
+if (!require('ENMeval')) install.packages('ENMeval', repos="http://cran.us.r-project.org")
 library(spocc)
 library(ENMeval)
 
@@ -60,8 +60,8 @@ files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pat
 # Put the rasters into a RasterStack:
 envs <- stack(files)
 
-# Plot first raster in the stack: bio1 (Annual Mean Temperature)
-plot(envs[[1]])
+# Plot first raster in the stack, bio1
+plot(envs[[1]], main=names(envs)[1])
 
 # Add points for all the occurrence points onto the raster
 points(occs)
@@ -70,7 +70,7 @@ points(occs)
 head(occs[order(occs$latitude),])
 
 # We see there are two such points, and we can find them by specifying a logical statement that says to find all records with latitude less than -20.
-index <- which(occs$latitude < -20)
+index <- which(occs$latitude < (-20))
 
 # Next, let's subset our dataset to remove them by using the negative assignment on the index vector.
 occs <- occs[-index,]
@@ -98,8 +98,8 @@ envs.backg <- crop(envs, bb.buf)
 We may also, however, want to remove the Caribbean islands (for example) from our background extent. For this, we can use tools from the [`maptools`](https://cran.r-project.org/package=maptools) package, which is not automatically loaded with `ENMeval`.
 
 ```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5}
-if (!require('maptools')) install.packages('maptools', repos = "http://cran.us.r-project.org")
-if (!require('rgeos')) install.packages('rgeos', repos = "http://cran.us.r-project.org")
+if (!require('maptools')) install.packages('maptools', repos="http://cran.us.r-project.org")
+if (!require('rgeos')) install.packages('rgeos', repos="http://cran.us.r-project.org")
 library(maptools)
 library(rgeos)
 
@@ -107,31 +107,30 @@ library(rgeos)
 data(wrld_simpl)
 
 # Get polygons for Central and South America
-ca.sa <- wrld_simpl[wrld_simpl@data$SUBREGION == 5 | wrld_simpl@data$SUBREGION == 13,]
+ca.sa <- wrld_simpl[wrld_simpl@data$SUBREGION==5 | wrld_simpl@data$SUBREGION==13,]
 
 # Both spatial objects have the same geographic coordinate system with slightly different specifications, so just name the coordinate reference system (crs) for ca.sa with that of
 # envs.backg to ensure smooth geoprocessing.
 crs(envs.backg) <- crs(ca.sa)
 
 # Mask envs by this polygon after buffering a bit to make sure not to lose coastline.
-ca.sa <- gBuffer(ca.sa, width = 1)
+ca.sa <- gBuffer(ca.sa, width=1)
 envs.backg <- mask(envs.backg, ca.sa)
 
 # Let's check our work. We should see Central and South America without the Carribbean.
-plot(envs.backg[[1]])
+plot(envs.backg[[1]], main=names(envs.backg)[1])
 points(occs)
 ```
 
 In the next step, we'll sample 10,000 random points from the background (note that the number of background points is also a consideration you should make with respect to your own study).
 
 ```{r backgPts, fig.width = 5, fig.height = 5}
-# Randomly sample 10,000 background points from one background extent raster (only one per cell without replacement)
-# (Note: Since the raster has <10,000 pixels, you'll get a warning and all pixels will be used for background.)
+# Randomly sample 10,000 background points from one background extent raster (only one per cell without replacement). Note: Since the raster has <10,000 pixels, you'll get a warning and all pixels will be used for background.
 bg <- randomPoints(envs.backg[[1]], n=10000)
 bg <- as.data.frame(bg)
 
 # Notice how we have pretty good coverage (every cell).
-plot(envs.backg[[1]])
+plot(envs.backg[[1]], legend=FALSE)
 points(bg, col='red')
 ```
 
@@ -178,6 +177,7 @@ plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=check1.large$bg.grp)
 points(occs, pch=21, bg=check1.large$occ.grp, col='white', cex=1.5)
 ```
+
 #### 3. Checkerboard2 {#cb2}
 The Checkerboard2 method partitions the data into k=4 bins. This is done by aggregating the input raster at two scales. Presence and background points are assigned to a bin with respect to where they fall in checkerboards of both scales.
 
@@ -200,10 +200,10 @@ points(occs, pch=21, bg=jack$occ.grp)  # note that colors are repeated here
 ```
 
 #### 5. Random k-fold {#rand}
-The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (k) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI.
+The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (k) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI.  
 
+For instance, let's partition the data into five evaluation bins:
 ``` {r part.rand, fig.width = 5, fig.height = 5}
-# For instance, let's partition the data into five evaluation bins:
 random <- get.randomkfold(occs, bg, k=5)
 
 plot(envs.backg[[1]], col='gray', legend=FALSE)
@@ -236,7 +236,7 @@ Alternatively, we may think of various ways to partition background data. This d
 ``` {r part.user3, fig.width = 5, fig.height = 5}
 centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
-bg.grp <- apply(d, 1, function(x) which(x == min(x)))
+bg.grp <- apply(d, 1, function(x) which(x==min(x)))
 
 plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=bg.grp)
@@ -255,49 +255,44 @@ The two main parameters to define when calling `ENMevaluate` are (1) the range o
 
 Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will need to define which layer(s) these are using the 'categoricals' argument.
 
-ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and one with RM=2, both allowing only linear features.
+ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
-``` {r enmeval1a, results='hide'}
-#eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
-# We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
-eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
+``` {r enmeval1a, results='hide', eval=FALSE}
+eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
 ```
 
-``` {r enmeval1b}
-# Let's take a look at the ENMeval object.
-eval2
+We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
+
+``` {r enmeval1b, results='hide'}
+eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
 ```
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel can be faster.
 
-``` {r enmeval2par, results='hide', eval=FALSE}
+``` {r enmeval2par, eval=FALSE}
 eval2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE)
 ```
 
-Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (rasterPreds). Note, however, that these are needed for calculating AICc values so those are returned as NA when the `rasterPreds` argument is set to FALSE.
+Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (rasterPreds). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to FALSE.
 
 ``` {r enmeval3, eval=FALSE}
 eval3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE)
-eval3
-
-# Note that no predictions were generated:
-eval3@predictions
-
-# And no AICc values calculated:
-eval3@results$aicc
 ```
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the `niche.overlap` argument, which supports Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
-``` {r enmeval4, eval=FALSE}
+``` {r enmeval4, results='hide'}
 overlap <- calc.niche.overlap(eval2@predictions, stat='D')
+```
+``` {r enmeval5}
 overlap
 ```
 
 The `bin.output` argument determines if separate evaluation statistics for each testing bin are included in the results file.  If `bin.output=FALSE`, only the mean and variance of evaluation statistics across k bins is returned.
 
-#### Exploring the results {eval.explore}
-We'll use the `eval2` object as our example ENMeval results object for the following demonstrations.  The results of a call to `ENMevaluate` are stored as an object of class ENMevaluate.  This is a specialized class that holds the following items:
+#### Exploring the results {#eval.explore}
+Now let's take a look at the ENMeval object in more detail.  It contains the following slots:
+
 - A data.frame holding the model evaluation statistics
 - A RasterStack of the model predictions
 - A list of maxent model objects
@@ -307,41 +302,57 @@ We'll use the `eval2` object as our example ENMeval results object for the follo
 - A vector of the evaluation bins used for the background points
 - (if `overlap=T`) A matrix of the pairwise niche overlap metric
 
+Let's first examine the structure of the object:
+``` {r stuff}
+eval2
 
-``` {r stuff, fig.width = 5, fig.height = 5}
 str(eval2, max.level=3)
-
-# The first thing to examine is the table of evaluation metrics.
-eval2@results
-
-# Use this to, for example, find the model settings that resulted in delta.AICc of 0:
-eval2@results[eval2@results$delta.AICc==0,]
-
-# Access a RasterStack of the model predictions:
-# (Note that these predictions are in the 'raw' output format)
-eval2@predictions
-
-# Now let's plot the model with delta.AICc equal == 0:
-plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]])
 ```
 
-We can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not**  kept.
+The first slot holds the table of evaluation metrics.  We can use this to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
+``` {r stuff2}
+eval2@results
 
-```{r mod.obj}
-# Let's look at the model object for our "AICc optimal" model:
-opt <- eval2@models[[which(eval2@results$delta.AICc==0)]]
-opt
+eval2@results[which(eval2@results$delta.AICc==0),]
+```
 
-# The "lambdas" slot shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model.
-opt@lambdas
+Now let's access the RasterStack of the model predictions.  Note that these predictions are in the 'raw' output format.
+``` {r stuff3}
+eval2@predictions
+```
 
-# The "results" slot shows the Maxent model statistics:
-opt@results
+Now plot the model with the lowest AICc:
+``` {r stuff4, fig.width = 5, fig.height = 5}
+plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occurrence rate")
+```
 
-# You can use these functions to get a data frame of two variable importance metrics: percent contribution and permutation importance.
-var.importance(opt)
+We can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not** kept.
 
-# The ENMevaluate object also remembers which occurrence partitioning method you used:
+Let's look at the model object for our "AICc optimal" model:
+```{r mod.obj1}
+aic.opt <- eval2@models[[which(eval2@results$delta.AICc==0)]]
+
+aic.opt
+```
+
+The "results" slot shows the Maxent model statistics:
+```{r mod.obj3}
+aic.opt@results
+```
+
+You can use the `var.importance` function to get a data.frame of two variable importance metrics: percent contribution and permutation importance.  See the function help file for more information on these metrics.
+```{r mod.obj4}
+var.importance(aic.opt)
+```
+
+The "lambdas" slot shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model.  You will likely find the syntax to be cryptic and the information is not stored in a very user-friendly way.  Fortunately, John Baumgartner has developed a useful function to parse this file into a more user-friendly data.frame.  See the `parse_lambdas.R` function in his [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R) package for more details.
+
+```{r mod.obj2}
+aic.opt@lambdas
+```
+
+Finally, the ENMevaluate object also remembers which occurrence partitioning method you used:
+```{r mod.obj5}
 eval2@partition.method
 ```
 
@@ -355,36 +366,39 @@ ENMeval has a built-in plotting function (`eval.plot`) to visualize the results 
 
 ``` {r plot.res, fig.width = 5, fig.height = 5}
 eval.plot(eval2@results)
+```
 
-# You can choose which evaluation metric to plot, and you can include error bars if relevant:
+You can choose which evaluation metric to plot, and you can also include error bars, if relevant.
+``` {r plot.res2, fig.width = 5, fig.height = 5}
 eval.plot(eval2@results, 'Mean.AUC', var='Var.AUC')
-eval.plot(eval2@results, 'Mean.ORmin', var='Var.ORmin')
+```
 
-# You can also plot the permutation importance or percent contribution:
-df <- var.importance(opt)
+You can also plot the permutation importance or percent contribution.
+``` {r plot.res3, fig.width = 5, fig.height = 5}
+df <- var.importance(aic.opt)
 barplot(df$permutation.importance, names.arg=df$variable, las=2, ylab="Permutation Importance")
 ```
 
 #### Plotting model predictions {#plot.preds}
-If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis. Remember that the output values are in Maxent's 'raw' units.
+If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis - remember that the output values are in Maxent's 'raw' units.  
 
-``` {r plot.pred1, fig.width = 5, fig.height = 5}
-plot(eval2@predictions[[1]])
+``` {r plot.pred1, fig.width = 5, fig.height = 5, mar=c(2,2,1,0)}
+plot(eval2@predictions[[1]], legend=F)
 
-# We can easily add the occurrence and background points, colored by evaluation bins:
+# Now add the occurrence and background points, colored by evaluation bins:
 points(eval2@bg.pts, pch=3, col=eval2@bg.grp, cex=0.5)
 points(eval2@occ.pts, pch=21, bg=eval2@occ.grp)
 ```
 
 Let's see how model complexity changes the predictions in our example.  We'll compare the model predictions of the model with only linear feature classes and with the highest regularization multiplier value we used (i.e., fc='L', RM=2) versus the model with all feature class combination and the lowest regularization multiplier value we used (i.e., fc='LQP',  RM=1).
 
-``` {r plot.pred2, fig.width = 5, fig.height = 5}
+``` {r plot.pred2, fig.width = 5, fig.height = 2.5}
 # bisect the plotting area to make two columns
-par(mfrow=c(1,2))
-# L2 prediction
-plot(eval2@predictions[['L_2']])
-# LQP1 prediction
-plot(eval2@predictions[['LQP_1']])
+par(mfrow=c(1,2), mar=c(2,2,1,0))
+
+plot(eval2@predictions[['L_2']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, main='L_2 prediction')
+
+plot(eval2@predictions[['LQP_1']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, main='LQP_1 prediction')
 ```
 
 #### Plotting response curves {#plot.resp}
@@ -393,68 +407,50 @@ We can also plot the response curves of our model to see how different input var
 response(eval2@models[[1]])
 ```
 
-## Downstream Analyses {#downstream}
-###**UNDER CONSTRUCTION**
-Below is a running list of other things we are planning to add to this vignette.  Feel free to let us know if there are particular things you would like to see added.
+## Downstream Analyses (*under construction*) {#downstream}
+Below is a running list of other things we plan to add to this vignette.  Feel free to let us know if there are particular things you would like to see added.
 
-###### Extracting model results from object (various threshold)
+- Extracting model results from object (various thresholds)
+- Use model object to make a new prediction (e.g., if you want a logistic prediction)
+- Make a projection to a new extent
+- Do MESS map (Use `mess()` in the `dismo` package)
 
-###### Use model object to make a new prediction (e.g., if you want a logistic prediction)
+## Resources (*under construction*) {#resources}
 
-###### Make a projection to a new extent
+###### Web Resources
+- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf)
 
-###### Do MESS map (Use `mess()` in the `dismo` package)
+- [Phillips, S. J. (2006) Phillips, S. (2006) A brief tutorial on Maxent. AT&T Research. Available at: http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc](http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc)
 
-###### Parse text of lambda file
-In order to determine which variables were used for each model, you can look into the lambda file generated by maxent.  This file is stored in each maxent model object in a slot called 'lambdas'.
+- [Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](http://www.molecularecologist.com/2013/04/species-distribution-models-in-r/)
 
-```{r parse.lambdas}
-# Let's look at the lambda file for the model object of our "AICc optimal" model:
-eval2@models[[which(eval2@results$delta.AICc==0)]]@lambdas
-```
+- [Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent)
 
-This returns a character vector where all entries except the last four lines give the model coefficient for each variable used.  You will probably find the syntax to be cryptic and the information is not stored in a very user-friendly way.  Fortunately, John Baumgartner has developed a useful function to parse this file into a more user-friendly data.frame.  See the `parse_lambdas.R` function in his [`rmaxent` package] (https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R) for more details.
+###### General Guides
+- [Merow, C., Smith, M., and Silander, J.A. (2013) A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography 36, 1-12.](http://onlinelibrary.wiley.com/doi/10.1111/j.1600-0587.2013.07872.x/abstract)
 
+- [Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., and Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](http://press.princeton.edu/titles/9641.html)
 
-## Resources {#resources}
-###**UNDER CONSTRUCTION**
-
-- [Web resources](#resources.web)
-- [References](#refs)
-
-### Web Resources {#resources.web}
-[Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf)
-
-[Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](http://www.molecularecologist.com/2013/04/species-distribution-models-in-r/)
-
-[Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent)
-
-### References {#refs}
-###### General guides
-[Merow, C., Smith, M., and Silander, J.A. (2013) A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography 36, 1-12.](http://onlinelibrary.wiley.com/doi/10.1111/j.1600-0587.2013.07872.x/abstract)
-
-[Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., and Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](http://press.princeton.edu/titles/9641.html)
-
-[Renner, I.W., Elith, J., Baddeley, A., Fithian, W., Hastie, T., Phillips, S.J., . . . Warton, D.I. (2015) Point process models for presence-only analysis. Methods in Ecology and Evolution 6, 366-379.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12352/abstract)
+- [Renner, I.W., Elith, J., Baddeley, A., Fithian, W., Hastie, T., Phillips, S.J., . . . Warton, D.I. (2015) Point process models for presence-only analysis. Methods in Ecology and Evolution 6, 366-379.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12352/abstract)
 
 ###### Model Evaluation
-[Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., and Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography 38, 541-545.](http://onlinelibrary.wiley.com/doi/10.1111/ecog.01132/abstract)
+- [Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., and Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography 38, 541-545.](http://onlinelibrary.wiley.com/doi/10.1111/ecog.01132/abstract)
 
-[Fielding, A.H. and Bell, J.F. (1997) A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf)
+- [Fielding, A.H. and Bell, J.F. (1997) A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf)
 
-[Hijmans, R.J. (2012) Cross-validation of species distribution models: removing spatial sorting bias and calibration with a null model. Ecology 93, 679-688.](http://onlinelibrary.wiley.com/doi/10.1890/11-0826.1/abstract)
+- [Hijmans, R.J. (2012) Cross-validation of species distribution models: removing spatial sorting bias and calibration with a null model. Ecology 93, 679-688.](http://onlinelibrary.wiley.com/doi/10.1890/11-0826.1/abstract)
 
-[Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
+- [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-[Radosavljevic, A. and Anderson, R.P. (2014) Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](http://onlinelibrary.wiley.com/doi/10.1111/jbi.12227/abstract)
+- [Radosavljevic, A. and Anderson, R.P. (2014) Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](http://onlinelibrary.wiley.com/doi/10.1111/jbi.12227/abstract)
 
-[Shcheglovitova, M. and Anderson, R.P. (2013) Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecol. Model. 269, 9-17.](http://www.sciencedirect.com/science/article/pii/S0304380013004043)
+- [Shcheglovitova, M. and Anderson, R.P. (2013) Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecol. Model. 269, 9-17.](http://www.sciencedirect.com/science/article/pii/S0304380013004043)
 
-[Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36, 2290-2299.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2009.02174.x/abstract)
+- [Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36, 2290-2299.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2009.02174.x/abstract)
 
-[Wenger, S.J. and Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution 3, 260-267.](http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00170.x/abstract)
+- [Wenger, S.J. and Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution 3, 260-267.](http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00170.x/abstract)
 
-###### Some examples
-[Pearson, R.G., Raxworthy, C.J., Nakamura, M., and Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2006.01594.x/abstract)
+###### Some Empirical Examples
+- [Pearson, R.G., Raxworthy, C.J., Nakamura, M., and Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2006.01594.x/abstract)
 
 
