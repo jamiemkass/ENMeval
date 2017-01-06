@@ -282,7 +282,7 @@ Introduction
 <!-- - [Web resources](Web resources) -->
 <!-- - [References](References) -->
 <!-- #### Web Resources -->
-<!-- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) -->
+<!-- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/package=dismo) -->
 <!-- [Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](http://www.molecularecologist.com/2013/04/species-distribution-models-in-r/) -->
 <!-- [Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent) -->
 <!-- #### References -->
