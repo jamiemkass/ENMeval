@@ -257,13 +257,17 @@ Unless you supply the function with background points (which is recommended in m
 
 ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
-``` {r enmeval1a, results='hide', eval=FALSE}
+```{r load_vignette_data, echo = FALSE}
+data(eval2)
+```
+
+``` {r enmeval1a, eval=FALSE}
 eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
 
-``` {r enmeval1b, results='hide'}
+``` {r enmeval1b, eval=FALSE}
 eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
 ```
 
@@ -402,9 +406,10 @@ plot(eval2@predictions[['LQP_1']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, ma
 ```
 
 #### Plotting response curves {#plot.resp}
-We can also plot the response curves of our model to see how different input variables influence our model predictions.
-``` {r plot.pred3, fig.width = 5, fig.height = 5}
-response(eval2@models[[1]])
+We can also plot the response curves of our model to see how different input variables influence our model predictions.  (Note that, as with the `dismo::maxent` function, using this function requires that the maxent.jar file be installed in the `dismo` package java folder).
+
+``` {r response_curves, eval=FALSE}
+  response(eval2@models[[1]])
 ```
 
 ## Downstream Analyses (*under construction*) {#downstream}
@@ -418,7 +423,7 @@ Below is a running list of other things we plan to add to this vignette.  Feel f
 ## Resources (*under construction*) {#resources}
 
 ###### Web Resources
-- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/package=dismo)
+- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/package=dismo)
 
 - [Phillips, S. J. (2006) Phillips, S. (2006) A brief tutorial on Maxent. AT&T Research. Available at: http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc](http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc)
 
