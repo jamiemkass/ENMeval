@@ -97,7 +97,7 @@ An object of class \code{ENMevaluation} with named slots:
 
 \code{@results}	data.frame of evaluation metrics.  If \code{bin.output=TRUE}, evaluation metrics calculated separately for each evaluation bin are included in addition to the averages and corrected variances (see \code{\link{corrected.var}}) across \emph{k} bins.
 
-\code{@predictions} RasterStack of full model predictions with each layer named as: \code{fc_RM} (e.g., \code{L_1}). This will be an empty RasterStack if the \code{rasterPreds} argument is set to \code{FALSE}.
+\code{@predictions} RasterStack of full model predictions with each layer named as: \code{fc_RM} (e.g., \code{L_1}). This will be an empty RasterStack if the \code{rasterPreds=FALSE}.
 
 \code{@models} List of objects of class \code{"MaxEnt"} from the \pkg{dismo} package. Each of these entries include slots for lambda values and the original Maxent results table.  See Maxent documentation for more information.
 
