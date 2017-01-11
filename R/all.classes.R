@@ -1,19 +1,19 @@
 ENMevaluation <- setClass("ENMevaluation",
-					   slots=c(results='data.frame', 
-					   predictions='RasterStack',
-             models='list',
-					   partition.method='character',
-					   occ.pts='data.frame',
-					   occ.grp='numeric',
-					   bg.pts='data.frame',
-					   bg.grp='numeric',
-					   overlap='matrix'))
+					   slots=c(results='data.frame',
+					           predictions='RasterStack',
+					           models='list',
+					           partition.method='character',
+					           occ.pts='data.frame',
+					           occ.grp='numeric',
+					           bg.pts='data.frame',
+					           bg.grp='numeric',
+					           overlap='matrix'))
 
 setMethod("show",
 		  signature="ENMevaluation",
 		  definition=function(object) {
 		  	cat("An object of class: ", class(object), "\n", sep="")
-		  	cat(" ", "Occurrence/background points: ", 
+		  	cat(" ", "Occurrence/background points: ",
 		  		paste(nrow(object@occ.pts), '/', nrow(object@bg.pts), sep=''), '\n',
 		  		" ",  "Partition method: ", object@partition.method, '\n',
 		  	    " ",  "Feature classes: ", paste(as.character(unique(object@results[,2])), collapse=', '), '\n',

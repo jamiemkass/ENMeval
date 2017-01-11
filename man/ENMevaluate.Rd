@@ -14,11 +14,13 @@ ENMevaluate(occ, env, bg.coords = NULL, occ.grp = NULL,
 		categoricals = NULL, n.bg = 10000, method = NULL, 
 		overlap = FALSE, aggregation.factor = c(2, 2), 
 		kfolds = NA, bin.output = FALSE, clamp = TRUE,
-		rasterPreds = TRUE, parallel = FALSE, numCores = NULL)
+		rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
+		progbar = TRUE, updateProgress = FALSE, ...)
 
 tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
 	maxent.args, args.lab, categoricals, aggregation.factor, 
-	kfolds, bin.output, clamp, rasterPreds, parallel, numCores)
+	kfolds, bin.output, clamp, rasterPreds, parallel, numCores,
+	progbar, updateProgress, userArgs)
 
 }
 \arguments{
@@ -56,11 +58,20 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
 
   \item{clamp}{ logical; If \code{TRUE}, 'clamping' is used (see Maxent documentation and tutorial for more details). }
 
-  \item{rasterPreds}{ logical; If \code{TRUE}, the \code{predict} function from \code{dismo} is used to predict each full model across the extent of the input environmental variables.  Note that AICc (and associated values) are \emph{NOT} calculated if \code{rasterPreds=FALSE} because these calculations require the predicted surfaces.  However, setting to \code{FALSE} can significantly reduce run time. }
+  \item{rasterPreds}{ logical; If \code{TRUE}, the \code{predict} function from \code{dismo} is used to predict each full model across the extent of the input environmental variables.  Note that AICc (and associated values) are \emph{NOT} calculated if \code{rasterPreds=FALSE} because these calculations require the predicted surfaces.  However, setting to \code{FALSE} can significantly reduce run time.}
 
   \item{parallel}{ logical; If \code{TRUE}, parallel processing is used to execute tuning function. }
 
   \item{numCores}{ numeric; indicates the number of cores to use if running in parallel. If \code{parallel=TRUE} and this is not specified, the total number of available cores are used.}
+
+  \item{progbar}{  logical; used internally. }
+
+  \item{updateProgress}{ logical; used internally. }
+
+  \item{...}{ character vector; use this to pass other arguments (e.g., prevalence) to the `maxent` call.  Note that not all options are functional or relevant.}
+  
+  \item{userArgs}{ character vector; use this to pass other arguments (e.g., prevalence) to the `maxent` call.  Note that not all options are functional or relevant.}
+
 }
 
 \details{
@@ -76,7 +87,7 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
 
 To quantify the degree of overfitting, \code{ENMevaluate} calculates three metrics.  The first is the difference between training and testing AUC, averaged across \emph{k} bins (\code{Mean.AUC.DIFF}) (Warren and Seifert 2011).  \code{Mean.AUC.DIFF} is expected to be high for models overfit to the training data.  \code{ENMevaluate} also calculates two threshold-dependent omission rates that quantify overfitting when compared with the omission rate expected by the threshold employed: the proportion of testing localities with Maxent output values lower than the value associated with (1) the training locality with the lowest value (i.e., the minimum training presence, MTP; = 0 percent training omission) (\code{Mean.ORmin}) and (2) the value that excludes the 10 percent of training localities with the lowest predicted suitability (\code{Mean.OR10}) (Pearson \emph{et al.} 2007).  \code{ENMevaluate} uses \code{\link{corrected.var}} to calculate the variance for each of these metrics across \emph{k} bins (i.e., variances are corrected for non-independence of cross-validation iterations; see Shcheglovitova and Anderson 2013).  The value of these metrics for each of the individual \emph{k} bins is returned if \code{bin.output = TRUE}.  
 
-Based on the unpartitioned (full) dataset, \code{ENMevaluate} uses \code{\link{calc.aicc}} to calculate the AICc value for each model run and provides delta.AIC, AICc weights, as well as the number of parameters for each model (Warren and Seifert 2011).  Note that AIC (and associated values) are \emph{NOT} calculated if \code{rasterPreds=FALSE} because these calculations require the predicted surfaces.  The AUCtrain value for the full model is also returned (\code{full.AUC}).
+Based on the unpartitioned (full) dataset, \code{ENMevaluate} uses \code{\link{calc.aicc}} to calculate the AICc value for each model run and provides delta.AIC, AICc weights, as well as the number of parameters for each model (Warren and Seifert 2011).  Note that AICc (and associated values) are \emph{NOT} calculated if \code{rasterPreds=FALSE} because these calculations require the predicted surfaces.  The AUCtrain value for the full model is also returned (\code{full.AUC}).
 
 To quantify how resulting predictions differ in geographic space depending on the settings used, \code{ENMevaluate} includes an option to compute pairwise niche overlap between all pairs of full models (i.e., using the unpartitioned dataset) with Schoener's \emph{D} statistic (Schoener 1968; Warren \emph{et al.} 2009).
 }
@@ -84,7 +95,7 @@ To quantify how resulting predictions differ in geographic space depending on th
 \value{ 
 An object of class \code{ENMevaluation} with named slots:
 
-\code{@results}	data.frame of evaluation metrics.  If \code{bin.output=TRUE}, evaluation metrics calculated separately for each evaluation bin are included in addition to the averages across \emph{k} bins.
+\code{@results}	data.frame of evaluation metrics.  If \code{bin.output=TRUE}, evaluation metrics calculated separately for each evaluation bin are included in addition to the averages and corrected variances (see \code{\link{corrected.var}}) across \emph{k} bins.
 
 \code{@predictions} RasterStack of full model predictions with each layer named as: \code{fc_RM} (e.g., \code{L_1}). This will be an empty RasterStack if the \code{rasterPreds=FALSE}.
 
@@ -161,8 +172,7 @@ occ <- cbind(x,y)
 
 \dontrun{
 ### This call gives the results loaded below
-enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500, overlap=TRUE, 
-bin.output=TRUE, clamp=TRUE)
+enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500)
 }
 
 data(enmeval_results)

@@ -49,9 +49,8 @@ occ <- cbind(x,y)
 
 \dontrun{
 ### This gives the results that are loaded below:
-
-enmeval_results <- ENMevaluate(occ, env, method='block', n.bg=500, 
-			RMvalues=c(0.1, 1, 5), fc=c('L','LQ','LQP'), overlap=TRUE, clamp=T)}
+enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500)
+}
 
 data(enmeval_results)
 enmeval_results
