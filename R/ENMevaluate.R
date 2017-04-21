@@ -9,6 +9,9 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   if (is.null(method)) {
     stop("Evaluation method needs to be specified.")
   }
+  if (progbar==TRUE & is.function(updateProgress)) {
+    stop('Cannot specify both "progbar" and "updateProgress". Please turn one off.')
+  }
   
   # if maxent.jar is run, specify args command
   if (java == TRUE) {
@@ -27,8 +30,12 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
       }
     }
     maxent.args <- make.args(RMvalues, fc)
-    args.lab <- make.args(RMvalues, fc, labels = TRUE)
+  } else {
+    args.fc <- as.list(tolower(rep(fc, times=length(RMvalues))))
+    args.rm <- as.list(sort(rep(RMvalues, times=length(fc))))
+    maxent.args <- mapply(c, args.fc, args.rm, SIMPLIFY=FALSE)
   }
+  args.lab <- make.args(RMvalues, fc, labels = TRUE)
 
   # if no background points specified, generate random ones
   if (is.null(bg.coords)) {

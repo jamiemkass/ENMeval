@@ -6,16 +6,45 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, rasterPreds, parallel, numCores, progbar, updateProgress,
+                    clamp, rasterPreds, java, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
   noccs <- nrow(occ)
+
+  # extract predictor variable values at coordinates for occs and bg
+  pres <- as.data.frame(extract(env, occ))
+  bg <- as.data.frame(extract(env, bg.coords))
+  
+  # if rows have NA for any predictor, toss them out
+  # also redefine occ and bg without NA rows
+  numNA.pres <- sum(rowSums(is.na(pres)))
+  numNA.bg <- sum(rowSums(is.na(bg)))
+  if (numNA.pres > 0) {
+    message(paste("There are", numNA.pres, "occurrence records with NA for at least 
+                  one predictor variable. Removing these records from analysis,
+                  resulting in", nrow(pres) - numNA.pres, "records..."))
+    occ <- occ[-which(is.na(pres)),]
+    pres <- na.omit(pres)
+  }
+  if (numNA.bg > 0) {
+    message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable. 
+                  Removing these records from analysis, resulting in", nrow(bg) - numNA.bg, "records..."))
+    bg.coords <- bg.coords[-which(is.na(bg)),]
+    bg <- na.omit(bg)
+  }
+  
+  if (!is.null(categoricals)) {
+    for (i in 1:length(categoricals)) {
+      pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
+      bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
+    }
+  }
+  
+  # assign partition groups based on choice of method
   if (method == "checkerboard1")
-    group.data <- get.checkerboard1(occ, env, bg.coords,
-                                    aggregation.factor)
+    group.data <- get.checkerboard1(occ, env, bg.coords, aggregation.factor)
   if (method == "checkerboard2")
-    group.data <- get.checkerboard2(occ, env, bg.coords,
-                                    aggregation.factor)
+    group.data <- get.checkerboard2(occ, env, bg.coords, aggregation.factor)
   if (method == "block")
     group.data <- get.block(occ, bg.coords)
   if (method == "jackknife")
@@ -24,72 +53,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     group.data <- get.randomkfold(occ, bg.coords, kfolds)
   if (method == "user")
     group.data <- get.user(occ.grp, bg.grp)
+  # define number of groups (the value of "k")
   nk <- length(unique(group.data$occ.grp))
-  pres <- as.data.frame(extract(env, occ))
-  bg <- as.data.frame(extract(env, bg.coords))
-  if (any(is.na(colSums(pres)))){
-    message("Warning: some predictors variables are NA at some occurrence points")}
-  if (any(is.na(colSums(bg)))){
-    message("Warning: some predictors variables are NA at some background points")}
-  if (!is.null(categoricals)) {
-    for (i in 1:length(categoricals)) {
-      pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
-      bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
-    }
-  }
-
-  tune <- function() {
-    if (length(maxent.args) > 1 & !parallel) {
-      if (is.function(updateProgress)) {
-        text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
-        updateProgress(detail = text)
-      } else if (progbar==T) {
-        setTxtProgressBar(pb, i)
-      }
-    }
-    x <- rbind(pres, bg)
-    p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
-    tmpfolder <- tempfile()
-    full.mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs),
-                       factors = categoricals, path = tmpfolder)
-    pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
-    if (rasterPreds==TRUE) {
-      predictive.map <- predict(full.mod, env, args = pred.args)
-    } else {
-      predictive.map <- stack()
-    }
-    AUC.TEST <- double()
-    AUC.DIFF <- double()
-    OR10 <- double()
-    ORmin <- double()
-
-    for (k in 1:nk) {
-      train.val <- pres[group.data$occ.grp != k, ]
-      test.val <- pres[group.data$occ.grp == k, ]
-      bg.val <- bg[group.data$bg.grp != k, ]
-      x <- rbind(train.val, bg.val)
-      p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
-      mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
-                    path = tmpfolder)
-      AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
-      AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
-      p.train <- predict(mod, train.val, args = pred.args)
-      p.test <- predict(mod, test.val, args = pred.args)
-      if (nrow(train.val) < 10) {
-        n90 <- floor(nrow(train.val) * 0.9)
-      }
-      else {
-        n90 <- ceiling(nrow(train.val) * 0.9)
-      }
-      train.thr.10 <- rev(sort(p.train))[n90]
-      OR10[k] <- mean(p.test < train.thr.10)
-      train.thr.min <- min(p.train)
-      ORmin[k] <- mean(p.test < train.thr.min)
-    }
-    unlink(tmpfolder, recursive = TRUE)
-    stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
-    return(list(full.mod, stats, predictive.map))
-  }
 
   # differential behavior for parallel and default
   if (parallel == TRUE) {
@@ -108,14 +73,13 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     message("Running in parallel...")
     #cat("Running in parallel...\n")
     out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      tune()
+      modelTune(pres, bg, env, maxent.args, clamp, nk, 
+                rasterPreds, progbar, updateProgress)
     }
     stopCluster(c1)
   } else {
-    if (progbar==T & !is.function(updateProgress)) {pb <- txtProgressBar(0, length(maxent.args), style = 3)}
-    out <- list()
-    for (i in 1:length(maxent.args)) {
-      out[[i]] <- tune()
+      out <- modelTune(pres, bg, env, maxent.args, clamp, nk, 
+                       rasterPreds, progbar, updateProgress)
     }
     if(progbar==T) { close(pb) }
   }
