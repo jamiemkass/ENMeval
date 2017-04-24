@@ -78,10 +78,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     stopCluster(c1)
   } else {
       out <- modelTune()
-    }
-    if (progbar==T) close(pb)
   }
-
+  if (progbar==T) close(pb)
+  
   # gather all full models into list
   full.mods <- lapply(out, function(x) x[[1]])
   # gather all statistics into a data frame
