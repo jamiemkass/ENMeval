@@ -2,7 +2,7 @@
 #########	MODEL TUNE #############
 #################################################
 
-modelTune <- function(pres, bg, env, maxent.args, clamp, nk, rasterPreds, progbar, updateProgress) {
+modelTune <- function() {
   
   if (progbar==TRUE) {
     pb <- txtProgressBar(0, length(maxent.args), style = 3)

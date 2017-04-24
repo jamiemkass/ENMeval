@@ -3,11 +3,11 @@
 #################################################
 
 # function to make a raster prediction from a maxnet object
-predict_maxnetRas <- function(mod, envs, type, clamp) {
-  envs.n <- nlayers(envs)
-  envs.pts <- rasterToPoints(envs)
-  mxnet.p <- predict(mod, envs.pts, type=type, clamp=clamp)
-  envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
-  mxnet.p <- rasterFromXYZ(envs.pts[,c(1,2,envs.n+1)], res=res(envs))
+predict_maxnetRas <- function(mod, env, type, clamp) {
+  env.n <- nlayers(env)
+  env.pts <- rasterToPoints(env)
+  mxnet.p <- predict(mod, env.pts, type=type, clamp=clamp)
+  env.pts <- cbind(env.pts, as.numeric(mxnet.p))
+  mxnet.p <- rasterFromXYZ(env.pts[,c(1, 2, env.n+3)], res=res(env))
   return(mxnet.p)
 }
