@@ -33,8 +33,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
     
     dismo.vs <- packageVersion('dismo')
     # code from dismo to get Maxent version
-    mxe <- rJava::.jnew("meversion") 
-    v <- try(rJava::.jcall(mxe, "S", "meversion"))
+    v <- maxentJARversion()
     alg <- paste("Maxent", v, "via dismo", dismo.vs)
   } else {
     args.fc <- as.list(tolower(rep(fc, times=length(RMvalues))))
