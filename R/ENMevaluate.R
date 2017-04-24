@@ -30,11 +30,21 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
       }
     }
     maxent.args <- make.args(RMvalues, fc)
+    
+    dismo.vs <- packageVersion('dismo')
+    # code from dismo to get Maxent version
+    mxe <- rJava::.jnew("meversion") 
+    v <- try(rJava::.jcall(mxe, "S", "meversion"))
+    alg <- paste("Maxent", v, "via dismo", dismo.vs)
   } else {
     args.fc <- as.list(tolower(rep(fc, times=length(RMvalues))))
     args.rm <- as.list(sort(rep(RMvalues, times=length(fc))))
     maxent.args <- mapply(c, args.fc, args.rm, SIMPLIFY=FALSE)
+    
+    maxnet.vs <- packageVersion('maxnet')
+    alg <- paste0("maxnet v.", maxnet.vs)
   }
+  message(paste("*** Running ENMevaluate using", alg, "***"))
   args.lab <- make.args(RMvalues, fc, labels = TRUE)
 
   # if no background points specified, generate random ones

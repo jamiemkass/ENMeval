@@ -73,18 +73,18 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     message("Running in parallel...")
     #cat("Running in parallel...\n")
     out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      modelTune(pres, bg, env, maxent.args, clamp, nk, 
-                rasterPreds, progbar, updateProgress)
+      modelTune()
     }
     stopCluster(c1)
   } else {
-      out <- modelTune(pres, bg, env, maxent.args, clamp, nk, 
-                       rasterPreds, progbar, updateProgress)
+      out <- modelTune()
     }
-    if(progbar==T) { close(pb) }
+    if (progbar==T) close(pb)
   }
 
-  full.mods <- sapply(out, function(x) x[[1]])
+  # gather all full models into list
+  full.mods <- lapply(out, function(x) x[[1]])
+  # gather all statistics into a data frame
   statsTbl <- as.data.frame(t(sapply(out, function(x) x[[2]])))
   if (rasterPreds) {
     predictive.maps <- stack(sapply(out, function(x) x[[3]]))
@@ -112,12 +112,27 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
 
   # get training AUCs for each model
   full.AUC <- double()
-  for (i in 1:length(full.mods)) full.AUC[i] <- full.mods[[i]]@results[5]
+  
+  for (i in 1:length(full.mods)) {
+    if (java == TRUE) {
+      full.AUC[i] <- full.mods[[i]]@results[5]  
+    } else {
+      full.AUC[i] <- evaluate(pres, bg, full.mods[[i]])@auc
+    }
+  }
+  
   # get total number of parameters
-  nparm <- numeric()
-  for (i in 1:length(full.mods)) nparm[i] <- get.params(full.mods[[i]])
+  nparam <- numeric()
+  for (i in 1:length(full.mods)) {
+    if (java ==TRUE) {
+      nparam[i] <- get.params(full.mods[[i]])  
+    } else {
+      nparam[i] <- length(full.mods[[i]]$betas)
+    }
+  }
+    
 #  if (rasterPreds==TRUE) { # this should now work even if rasterPreds==F
-    aicc <- calc.aicc(nparm, occ, predictive.maps)
+    aicc <- calc.aicc(nparam, occ, predictive.maps)
 #  } else {
 #    aicc <- rep(NaN, length(full.AUC))
 #  }
@@ -136,7 +151,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (rasterPreds==TRUE) {
     names(predictive.maps) <- settings
   }
-  results <- ENMevaluation(results = res, predictions = predictive.maps,
+
+  results <- ENMevaluation(algorithm = alg, results = res, predictions = predictive.maps,
                            models = full.mods, partition.method = method, 
                            occ.pts = occ, occ.grp = group.data[[1]],
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
