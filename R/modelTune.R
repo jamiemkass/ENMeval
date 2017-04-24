@@ -2,7 +2,8 @@
 #########	MODEL TUNE #############
 #################################################
 
-modelTune <- function() {
+modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args, 
+                      userArgs, rasterPreds, clamp, java, updateProgress) {
   
   if (progbar==TRUE) {
     pb <- txtProgressBar(0, length(maxent.args), style = 3)
@@ -101,6 +102,7 @@ modelTune <- function() {
     stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
     out[[i]] <- list(full.mod, stats, predictive.map)
   }
+  if (progbar == TRUE) close(pb)
   return(out)
 }
 
