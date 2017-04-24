@@ -117,7 +117,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     if (java == TRUE) {
       full.AUC[i] <- full.mods[[i]]@results[5]  
     } else {
-      full.AUC[i] <- evaluate(pres, bg, full.mods[[i]])@auc
+      full.AUC[i] <- dismo::evaluate(pres, bg, full.mods[[i]])@auc
     }
   }
   

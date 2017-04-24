@@ -29,12 +29,12 @@ modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args,
     
     # build the full model from all the data
     if (java == FALSE) {
-      full.mod <- maxnet(p, x, f=maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
+      full.mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
                          regmult = as.numeric(maxent.args[[i]][2]))
     } else {
       # set up temp folder to delete later
       tmpfolder <- tempfile()
-      full.mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs),
+      full.mod <- dismo::maxent(x, p, args = c(maxent.args[[i]], userArgs),
                          factors = categoricals, path = tmpfolder)  
     }
     
@@ -68,15 +68,15 @@ modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args,
       
       # run the current test model
       if (java == FALSE) {
-        mod <- maxnet(p, x, f=maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
+        mod <- maxnet::maxnet(p, x, f=maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
                            regmult = as.numeric(maxent.args[[i]][2]))
       } else {
-        mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
+        mod <- dismo::maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
                       path = tmpfolder)  
       }
       
-      AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
-      AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
+      AUC.TEST[k] <- dismo::evaluate(test.val, bg, mod)@auc
+      AUC.DIFF[k] <- max(0, dismo::evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
       
       # predict values for training and testing data
       if (java == FALSE) {
