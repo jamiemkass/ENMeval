@@ -68,7 +68,7 @@ modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args,
       
       # run the current test model
       if (java == FALSE) {
-        mod <- maxnet::maxnet(p, x, f=maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
+        mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
                            regmult = as.numeric(maxent.args[[i]][2]))
       } else {
         mod <- dismo::maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
