@@ -73,13 +73,14 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     message("Running in parallel...")
     #cat("Running in parallel...\n")
     out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      modelTune()
+      modelTune(pres, bg, env, nk, group.data, progbar, maxent.args, 
+                userArgs, rasterPreds, clamp, java, updateProgress)
     }
     stopCluster(c1)
   } else {
-      out <- modelTune()
+      out <- modelTune(pres, bg, env, nk, group.data, progbar, maxent.args, 
+                       userArgs, rasterPreds, clamp, java, updateProgress)
   }
-  if (progbar==T) close(pb)
   
   # gather all full models into list
   full.mods <- lapply(out, function(x) x[[1]])
