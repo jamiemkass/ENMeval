@@ -6,7 +6,7 @@
 
 tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, rasterPreds, java, parallel, numCores, progbar, updateProgress,
+                    clamp, alg, rasterPreds, java, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
   noccs <- nrow(occ)

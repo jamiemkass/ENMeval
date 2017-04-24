@@ -69,7 +69,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   # run internal tuning function
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
                     maxent.args, args.lab, categoricals, aggregation.factor,
-                    kfolds, bin.output, clamp, rasterPreds, java, parallel, 
+                    kfolds, bin.output, clamp, alg, rasterPreds, java, parallel, 
                     numCores, progbar, updateProgress, userArgs)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
