@@ -32,10 +32,8 @@ modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args,
       full.mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
                          regmult = as.numeric(maxent.args[[i]][2]))
     } else {
-      # set up temp folder to delete later
-      tmpfolder <- tempfile()
       full.mod <- dismo::maxent(x, p, args = c(maxent.args[[i]], userArgs),
-                         factors = categoricals, path = tmpfolder)  
+                         factors = categoricals)  
     }
     
     # if rasters selected, predict for the full model
@@ -71,8 +69,7 @@ modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args,
         mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=maxent.args[[i]][1]), 
                            regmult = as.numeric(maxent.args[[i]][2]))
       } else {
-        mod <- dismo::maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
-                      path = tmpfolder)  
+        mod <- dismo::maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals)  
       }
       
       AUC.TEST[k] <- dismo::evaluate(test.val, bg, mod)@auc
@@ -98,7 +95,6 @@ modelTune <- function(pres, bg, env, nk, group.data, progbar, maxent.args,
       train.thr.min <- min(p.train)
       ORmin[k] <- mean(p.test < train.thr.min)
     }
-    if (java == TRUE) unlink(tmpfolder, recursive = TRUE)
     stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
     out[[i]] <- list(full.mod, stats, predictive.map)
   }
