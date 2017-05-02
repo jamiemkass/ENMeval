@@ -1,4 +1,4 @@
-import("dismo", "methods", "rJava", "parallel", "doParallel", "foreach")
+import("dismo", "methods", "parallel", "doParallel", "foreach")
 importFrom("grDevices", "rainbow")
 importFrom("raster", "cellStats", "extract", "nlayers", "aggregate", "stack")
 importFrom("graphics", "abline", "arrows", "axis", "box", "par","plot")
