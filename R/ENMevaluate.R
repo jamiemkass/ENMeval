@@ -68,9 +68,9 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                                                     "Error: You need to specify an accepted evaluation method. Check the documentation.")))))))
   
   # run internal tuning function
-  results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
+  results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method, algorithm,
                     args, args.lab, categoricals, aggregation.factor,
-                    kfolds, bin.output, clamp, alg, rasterPreds, java, parallel, 
+                    kfolds, bin.output, clamp, alg, rasterPreds, parallel, 
                     numCores, progbar, updateProgress, userArgs)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
