@@ -4,9 +4,9 @@
 # THIS FUNCTION DOES SPATIALLY-INDEPENDENT EVALUATIONS
 # INPUT ARGUMENTS COME FROM WRAPPER FUNCTION
 
-tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
+tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, alg, rasterPreds, java, parallel, numCores, progbar, updateProgress,
+                    clamp, alg, rasterPreds, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
   noccs <- nrow(occ)
@@ -72,14 +72,24 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     # log file to record status of parallel loops
     message("Running in parallel...")
     #cat("Running in parallel...\n")
-    out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      modelTune(pres, bg, env, nk, group.data, progbar, maxent.args, 
-                userArgs, rasterPreds, clamp, java, updateProgress)
+    out <- foreach(i = seq_len(length(args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
+      if (algorithm == 'maxnet') {
+        modelTune.maxnet(pres, bg, env, nk, group.data, args, 
+                         userArgs, rasterPreds, clamp, progbar, updateProgress)
+      } else if (algorithm == 'maxent.jar') {
+        modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
+                         userArgs, rasterPreds, clamp, progbar, updateProgress)
+      }
     }
     stopCluster(c1)
   } else {
-      out <- modelTune(pres, bg, env, nk, group.data, progbar, maxent.args, 
-                       userArgs, rasterPreds, clamp, java, updateProgress)
+    if (algorithm == 'maxnet') {
+      out <- modelTune.maxnet(pres, bg, env, nk, group.data, args, 
+                       userArgs, rasterPreds, clamp, progbar, updateProgress)
+    } else if (algorithm == 'maxent.jar') {
+      out <- modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
+                          userArgs, rasterPreds, clamp, progbar, updateProgress)
+    }
   }
   
   # gather all full models into list
