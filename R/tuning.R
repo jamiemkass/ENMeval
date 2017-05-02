@@ -9,8 +9,6 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
                     clamp, alg, rasterPreds, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
-  noccs <- nrow(occ)
-
   # extract predictor variable values at coordinates for occs and bg
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
@@ -53,6 +51,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     group.data <- get.randomkfold(occ, bg.coords, kfolds)
   if (method == "user")
     group.data <- get.user(occ.grp, bg.grp)
+  
   # define number of groups (the value of "k")
   nk <- length(unique(group.data$occ.grp))
 
@@ -109,10 +108,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   # rename column fields
   names(AUC.DIFF) <- paste("AUC.DIFF_bin", 1:nk, sep = ".")
   Mean.AUC.DIFF <- rowMeans(AUC.DIFF)
-  Var.AUC.DIFF <- corrected.var(AUC.DIFF, noccs)
+  Var.AUC.DIFF <- corrected.var(AUC.DIFF, nrow(occ))
   names(AUC.TEST) <- paste("AUC_bin", 1:nk, sep = ".")
   Mean.AUC <- rowMeans(AUC.TEST)
-  Var.AUC <- corrected.var(AUC.TEST, noccs)
+  Var.AUC <- corrected.var(AUC.TEST, nrow(occ))
   names(OR10) <- paste("OR10_bin", 1:nk, sep = ".")
   Mean.OR10 <- rowMeans(OR10)
   Var.OR10 <- apply(OR10, 1, var)
@@ -124,20 +123,20 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   full.AUC <- double()
   
   for (i in 1:length(full.mods)) {
-    if (java == TRUE) {
-      full.AUC[i] <- full.mods[[i]]@results[5]  
-    } else {
+    if (algorithm == 'maxnet') {
       full.AUC[i] <- dismo::evaluate(pres, bg, full.mods[[i]])@auc
+    } else if (algorithm == 'maxent.jar') {
+      full.AUC[i] <- full.mods[[i]]@results[5]  
     }
   }
   
   # get total number of parameters
   nparam <- numeric()
   for (i in 1:length(full.mods)) {
-    if (java ==TRUE) {
-      nparam[i] <- get.params(full.mods[[i]])  
-    } else {
+    if (algorithm == 'maxnet') {
       nparam[i] <- length(full.mods[[i]]$betas)
+    } else if (algorithm == 'maxent.jar') {
+      nparam[i] <- get.params(full.mods[[i]])  
     }
   }
     
