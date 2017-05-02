@@ -1,9 +1,9 @@
 ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NULL,
                          RMvalues = seq(0.5, 4, 0.5), fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
-                         categoricals = NULL, n.bg = 10000, method = NULL, overlap = FALSE,
-                         aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE, clamp = TRUE,
-                         rasterPreds = TRUE, java = FALSE, parallel = FALSE, numCores = NULL, progbar = TRUE, 
-                         updateProgress = FALSE, ...) {
+                         categoricals = NULL, n.bg = 10000, method = NULL, algorithm = 'maxnet', 
+                         overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
+                         clamp = TRUE, rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
+                         progbar = TRUE, updateProgress = FALSE, ...) {
 
   ptm <- proc.time()
   if (is.null(method)) {
@@ -14,7 +14,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   }
   
   # if maxent.jar is run, specify args command
-  if (java == TRUE) {
+  if (algorithm == 'maxent.jar') {
     userArgs <- list(...)
     allMaxentArgs <- c("addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
                        "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
@@ -29,20 +29,21 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
         userArgs <- paste(names(userArgs), unlist(userArgs), sep='=')
       }
     }
-    maxent.args <- make.args(RMvalues, fc)
+    args <- make.args(RMvalues, fc)
     
     dismo.vs <- packageVersion('dismo')
     # code from dismo to get Maxent version
     v <- maxentJARversion()
     alg <- paste("Maxent", v, "via dismo", dismo.vs)
-  } else {
+  } else if (algorithm == 'maxnet') {
     args.fc <- as.list(tolower(rep(fc, times=length(RMvalues))))
     args.rm <- as.list(sort(rep(RMvalues, times=length(fc))))
-    maxent.args <- mapply(c, args.fc, args.rm, SIMPLIFY=FALSE)
+    args <- mapply(c, args.fc, args.rm, SIMPLIFY=FALSE)
     
     maxnet.vs <- packageVersion('maxnet')
     alg <- paste0("maxnet v.", maxnet.vs)
   }
+  
   message(paste("*** Running ENMevaluate using", alg, "***"))
   args.lab <- make.args(RMvalues, fc, labels = TRUE)
 
@@ -68,13 +69,13 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   
   # run internal tuning function
   results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
-                    maxent.args, args.lab, categoricals, aggregation.factor,
+                    args, args.lab, categoricals, aggregation.factor,
                     kfolds, bin.output, clamp, alg, rasterPreds, java, parallel, 
                     numCores, progbar, updateProgress, userArgs)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if (overlap == TRUE) {
-    if (length(maxent.args) > 1) {
+    if (length(args) > 1) {
       if(nlayers(results@predictions) > 1) {
         message("Calculating niche overlap")
         overlap.mat <- calc.niche.overlap(results@predictions, "D")
