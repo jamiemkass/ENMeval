@@ -71,8 +71,8 @@ modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,
     ORmin[k] <- mean(p.test < train.thr.min)
   }
   stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
-  out[[i]] <- list(full.mod, stats, predictive.map)
+  out.i <- list(full.mod, stats, predictive.map)
   if (!is.null(pb)) close(pb)
-  return(out)
+  return(out.i)
 }
 

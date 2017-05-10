@@ -88,10 +88,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     }
     for (i in 1:length(args)) {
       if (algorithm == 'maxnet') {
-        out[[i]] <- modelTune.maxnet(i, pres, bg, env, nk, group.data, args, 
+        out[[i]] <- modelTune.maxnet(i, out, pres, bg, env, nk, group.data, args, 
                                      rasterPreds, clamp, pb, updateProgress)
       } else if (algorithm == 'maxent.jar') {
-        out[[i]] <- modelTune.maxentJar(i, pres, bg, env, nk, group.data, args, 
+        out[[i]] <- modelTune.maxentJar(i, out, pres, bg, env, nk, group.data, args, 
                                    userArgs, rasterPreds, clamp, pb, updateProgress)
       }
     }
