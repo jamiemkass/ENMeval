@@ -76,8 +76,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
         modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
                          rasterPreds, clamp)
       } else if (algorithm == 'maxent.jar') {
-        modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
-                         userArgs, rasterPreds, clamp, progbar, updateProgress)
+        modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]], 
+                            userArgs, rasterPreds, clamp)
       }
     }
     stopCluster(c1)
@@ -101,8 +101,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
         out[[i]] <- modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
                                      rasterPreds, clamp)
       } else if (algorithm == 'maxent.jar') {
-        out[[i]] <- modelTune.maxentJar(i, pres, bg, env, nk, group.data, args, 
-                                   userArgs, rasterPreds, clamp, pb, updateProgress)
+        out[[i]] <- modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]], 
+                                        userArgs, rasterPreds, clamp)
       }
     }
     if (progbar==TRUE) close(pb)
