@@ -71,7 +71,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     # log file to record status of parallel loops
     message("Running in parallel...")
     #cat("Running in parallel...\n")
-    out <- foreach(i = seq_len(length(args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
+    out <- foreach(i = seq_len(length(args)), .packages = c("rJava", "dismo", "raster", "ENMeval")) %dopar% {
       if (algorithm == 'maxnet') {
         modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
                          rasterPreds, clamp)
