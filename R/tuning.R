@@ -82,12 +82,18 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     }
     stopCluster(c1)
   } else {
-    if (algorithm == 'maxnet') {
-      out <- modelTune.maxnet(pres, bg, env, nk, group.data, args, 
-                       rasterPreds, clamp, progbar, updateProgress)
-    } else if (algorithm == 'maxent.jar') {
-      out <- modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
-                          userArgs, rasterPreds, clamp, progbar, updateProgress)
+    out <- list()
+    if (progbar==TRUE & !is.function(updateProgress)) {
+      pb <- txtProgressBar(0, length(maxent.args), style = 3)
+    }
+    for (i in 1:length(args)) {
+      if (algorithm == 'maxnet') {
+        out[[i]] <- modelTune.maxnet(pres, bg, env, nk, group.data, args, 
+                                     rasterPreds, clamp, progbar, updateProgress)
+      } else if (algorithm == 'maxent.jar') {
+        out[[i]] <- modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
+                                   userArgs, rasterPreds, clamp, progbar, updateProgress)
+      }
     }
   }
   
