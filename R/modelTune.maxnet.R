@@ -2,7 +2,7 @@
 #########	MODEL TUNE for maxnet #############
 #################################################
 
-modelTune.maxnet <- function(pres, bg, env, nk, group.data, args,  
+modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,  
                              rasterPreds, clamp, pb=NULL, updateProgress) {
   
   # set up the console progress bar (progbar), 
