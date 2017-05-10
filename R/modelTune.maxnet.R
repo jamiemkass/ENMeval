@@ -2,7 +2,7 @@
 #########	MODEL TUNE for maxnet #############
 #################################################
 
-modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,  
+modelTune.maxnet <- function(pres, bg, env, nk, group.data, args.i,  
                              rasterPreds, clamp) {
   
   # set up data: x is coordinates of occs and bg, 
@@ -11,8 +11,8 @@ modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,
   p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
   
   # build the full model from all the data
-  full.mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=args[[i]][1]), 
-                             regmult = as.numeric(args[[i]][2]))
+  full.mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=args.i[1]), 
+                             regmult = as.numeric(args.i[2]))
   
   # if rasters selected, predict for the full model
   if (rasterPreds == TRUE) {
@@ -38,8 +38,8 @@ modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,
     p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
     
     # run the current test model
-    mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=args[[i]][1]), 
-                          regmult = as.numeric(args[[i]][2]))
+    mod <- maxnet::maxnet(p, x, f=maxnet::maxnet.formula(p=p, data=x, classes=args.i[1]), 
+                          regmult = as.numeric(args.i[2]))
     
     AUC.TEST[k] <- dismo::evaluate(test.val, bg, mod)@auc
     AUC.DIFF[k] <- max(0, dismo::evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
