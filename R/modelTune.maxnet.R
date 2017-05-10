@@ -3,18 +3,7 @@
 #################################################
 
 modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,  
-                             rasterPreds, clamp, pb=NULL, updateProgress) {
-  
-  # set up the console progress bar (progbar), 
-  # or the shiny progress bar (updateProgress)
-  if (length(args) > 1) {
-    if (is.function(updateProgress)) {
-      text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
-      updateProgress(detail = text)
-    } else if (!is.null(pb)) {
-      setTxtProgressBar(pb, i)
-    }
-  }
+                             rasterPreds, clamp) {
   
   # set up data: x is coordinates of occs and bg, 
   # p is vector of 0's and 1's designating occs and bg
@@ -72,7 +61,6 @@ modelTune.maxnet <- function(i, pres, bg, env, nk, group.data, args,
   }
   stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
   out.i <- list(full.mod, stats, predictive.map)
-  if (!is.null(pb)) close(pb)
   return(out.i)
 }
 
