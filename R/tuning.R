@@ -83,18 +83,29 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     stopCluster(c1)
   } else {
     out <- list()
-    if (progbar==TRUE & !is.function(updateProgress)) {
+    if (progbar == TRUE & !is.function(updateProgress)) {
       pb <- txtProgressBar(0, length(args), style = 3)
     }
     for (i in 1:length(args)) {
+      # set up the console progress bar (progbar), 
+      # or the shiny progress bar (updateProgress)
+      if (length(args) > 1) {
+        if (is.function(updateProgress)) {
+          text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
+          updateProgress(detail = text)
+        } else if (progbar == TRUE) {
+          setTxtProgressBar(pb, i)
+        }
+      }
       if (algorithm == 'maxnet') {
         out[[i]] <- modelTune.maxnet(i, pres, bg, env, nk, group.data, args, 
-                                     rasterPreds, clamp, pb, updateProgress)
+                                     rasterPreds, clamp)
       } else if (algorithm == 'maxent.jar') {
-        out[[i]] <- modelTune.maxentJar(i, out, pres, bg, env, nk, group.data, args, 
+        out[[i]] <- modelTune.maxentJar(i, pres, bg, env, nk, group.data, args, 
                                    userArgs, rasterPreds, clamp, pb, updateProgress)
       }
     }
+    if (progbar==TRUE) close(pb)
   }
   
   # gather all full models into list
