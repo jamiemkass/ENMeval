@@ -74,7 +74,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     out <- foreach(i = seq_len(length(args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
       if (algorithm == 'maxnet') {
         modelTune.maxnet(pres, bg, env, nk, group.data, args, 
-                         userArgs, rasterPreds, clamp, progbar, updateProgress)
+                         rasterPreds, clamp, progbar, updateProgress)
       } else if (algorithm == 'maxent.jar') {
         modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
                          userArgs, rasterPreds, clamp, progbar, updateProgress)
@@ -84,7 +84,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   } else {
     if (algorithm == 'maxnet') {
       out <- modelTune.maxnet(pres, bg, env, nk, group.data, args, 
-                       userArgs, rasterPreds, clamp, progbar, updateProgress)
+                       rasterPreds, clamp, progbar, updateProgress)
     } else if (algorithm == 'maxent.jar') {
       out <- modelTune.maxentJar(pres, bg, env, nk, group.data, args, 
                           userArgs, rasterPreds, clamp, progbar, updateProgress)
