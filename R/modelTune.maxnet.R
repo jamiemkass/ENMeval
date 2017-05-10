@@ -2,7 +2,7 @@
 #########	MODEL TUNE for maxnet #############
 #################################################
 
-modelTune.maxnet <- function(pres, bg, env, nk, group.data, args, userArgs, 
+modelTune.maxnet <- function(pres, bg, env, nk, group.data, args,  
                              rasterPreds, clamp, progbar, updateProgress) {
   
   if (progbar==TRUE) {

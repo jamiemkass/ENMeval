@@ -42,6 +42,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
     
     maxnet.vs <- packageVersion('maxnet')
     alg <- paste0("maxnet v.", maxnet.vs)
+    userArgs <- NULL
   }
   
   message(paste("*** Running ENMevaluate using", alg, "***"))
