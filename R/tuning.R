@@ -84,7 +84,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   } else {
     out <- list()
     if (progbar==TRUE & !is.function(updateProgress)) {
-      pb <- txtProgressBar(0, length(maxent.args), style = 3)
+      pb <- txtProgressBar(0, length(args), style = 3)
     }
     for (i in 1:length(args)) {
       if (algorithm == 'maxnet') {
