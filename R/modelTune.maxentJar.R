@@ -31,9 +31,9 @@ modelTune.maxentJar <- function(pres, bg, env, nk, group.data, args.i, userArgs,
   # cross-validation on partitions
   for (k in 1:nk) {
     # set up training and testing data groups
-    train.val <- pres[group.data$occ.grp != k, ]
-    test.val <- pres[group.data$occ.grp == k, ]
-    bg.val <- bg[group.data$bg.grp != k, ]
+    train.val <- pres[group.data$occ.grp != k,, drop = FALSE]
+    test.val <- pres[group.data$occ.grp == k,, drop = FALSE]
+    bg.val <- bg[group.data$bg.grp != k,, drop = FALSE]
     # redefine x and p for partition groups
     x <- rbind(train.val, bg.val)
     p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
