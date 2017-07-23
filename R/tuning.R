@@ -47,6 +47,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
         setTxtProgressBar(pb, i)
       }
     }
+    if (names(pres) != names(bg)) {
+      stop("Please input predictor variables as RasterStack.")
+    }
     x <- rbind(pres, bg)
     p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
     tmpfolder <- tempfile()
@@ -64,9 +67,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     ORmin <- double()
 
     for (k in 1:nk) {
-      train.val <- pres[group.data$occ.grp != k, ]
-      test.val <- pres[group.data$occ.grp == k, ]
-      bg.val <- bg[group.data$bg.grp != k, ]
+      train.val <- pres[group.data$occ.grp != k,, drop=FALSE]
+      test.val <- pres[group.data$occ.grp == k,, drop=FALSE]
+      bg.val <- bg[group.data$bg.grp != k,, drop=FALSE]
       x <- rbind(train.val, bg.val)
       p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
       mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
