@@ -15,8 +15,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   
   # if rows have NA for any predictor, toss them out
   # also redefine occ and bg without NA rows
-  numNA.pres <- sum(rowSums(is.na(pres)))
-  numNA.bg <- sum(rowSums(is.na(bg)))
+  numNA.pres <- sum(rowSums(is.na(pres)) > 0)
+  numNA.bg <- sum(rowSums(is.na(bg)) > 0)
   if (numNA.pres > 0) {
     message(paste("There are", numNA.pres, "occurrence records with NA for at least 
                   one predictor variable. Removing these records from analysis,
