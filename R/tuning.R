@@ -71,6 +71,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     # log file to record status of parallel loops
     message("Running in parallel...")
     if (algorithm == 'maxnet') {
+      # load maxnet package because it is not loaded automatically when embedded in foreach
+      # if not loaded here, dismo::evaluate fails later
+      library(maxnet)
       out <- foreach(i = seq_len(length(args)), 
                      .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
                        modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
