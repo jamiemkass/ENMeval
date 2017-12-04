@@ -70,14 +70,18 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
 
     # log file to record status of parallel loops
     message("Running in parallel...")
-    out <- foreach(i = seq_len(length(args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      if (algorithm == 'maxnet') {
-        modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
-                         rasterPreds, clamp)
-      } else if (algorithm == 'maxent.jar') {
-        modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]], 
-                            userArgs, rasterPreds, clamp)
-      }
+    if (algorithm == 'maxnet') {
+      out <- foreach(i = seq_len(length(args)), 
+                     .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
+                       modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
+                                        rasterPreds, clamp)
+                     }
+    } else if (algorithm == 'maxent.jar') {
+      out <- foreach(i = seq_len(length(args)), 
+                     .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
+                       modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]], 
+                                           userArgs, rasterPreds, clamp)
+                     }
     }
     stopCluster(c1)
   } else {
