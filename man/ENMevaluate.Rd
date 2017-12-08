@@ -5,22 +5,24 @@
 
 \title{ Tuning and evaluation of ENMs with Maxent }
 
-\description{ \code{ENMevaluate} automatically executes Maxent (Phillips \emph{et al}. 2006; Phillips and Dudik 2008) across a range of settings, returning a \code{data.frame} of evaluation metrics to aid in identifying settings that balance model fit and predictive ability.  The function calls Maxent using the \code{maxent} function in the \pkg{dismo} package (Hijmans \emph{et al.} 2011).  Users should consult \code{\link{ENMeval-package}} and help documentation of the \pkg{dismo} package for guidelines on how to run Maxent in R. }
+\description{ \code{ENMevaluate} automatically executes Maxent (Phillips \emph{et al}. 2006; Phillips and Dudik 2008) across a range of settings, returning a \code{data.frame} of evaluation metrics to aid in identifying settings that balance model fit and predictive ability.  Since version 0.3.0, the default function uses the \code{maxnet} function in the \pkg{maxnet} package (Phillips \emph{et al.} 2017) to implement the Maxent algorithm (\emph{see notes}).}
 
 \usage{
 ENMevaluate(occ, env, bg.coords = NULL, occ.grp = NULL, 
 		bg.grp = NULL, RMvalues = seq(0.5, 4, 0.5), 
 		fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
-		categoricals = NULL, n.bg = 10000, method = NULL, 
-		overlap = FALSE, aggregation.factor = c(2, 2), 
-		kfolds = NA, bin.output = FALSE, clamp = TRUE,
-		rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
-		progbar = TRUE, updateProgress = FALSE, ...)
+		algorithm = 'maxnet', categoricals = NULL, 
+		n.bg = 10000, method = NULL, overlap = FALSE, 
+		aggregation.factor = c(2, 2), kfolds = NA, 
+		bin.output = FALSE, clamp = TRUE, rasterPreds = TRUE, 
+		parallel = FALSE, numCores = NULL, progbar = TRUE, 
+		updateProgress = FALSE, ...)
 
 tuning(occ, env, bg.coords, occ.grp, bg.grp, method, 
-	maxent.args, args.lab, categoricals, aggregation.factor, 
-	kfolds, bin.output, clamp, rasterPreds, parallel, numCores,
-	progbar, updateProgress, userArgs)
+	maxent.args, args.lab, algorithm, categoricals, 
+	aggregation.factor, kfolds, bin.output, clamp, 
+	rasterPreds, parallel, numCores, progbar, 
+	updateProgress, userArgs)
 
 }
 \arguments{
@@ -37,6 +39,8 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
   \item{RMvalues}{ Vector of (non-negative) values to use for the regularization multiplier. }
   
   \item{fc}{ Character vector of feature class combinations to be included in analysis. }
+
+  \item{algorithm}{ Character vector.  Use \code{'maxnet'} to use the \pkg{maxnet} package [default] and \code{'maxent.jar'} to use the \pkg{dismo} package and the 'maxent.jar' Java program.}
 
   \item{categoricals}{ Vector indicating which (if any) of the input environmental layers are categorical. }
 
@@ -76,6 +80,8 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
 
 \details{
 \code{ENMevaluate} is the primary function for general use in the \pkg{ENMeval} package; the \code{tuning} function is used internally.
+
+Since version 0.3.0, the default \code{\link{ENMevaluate}} runs the the Maxent algorithm by calling the \pkg{maxnet} package (Phillips \emph{et al.} 2017) instead of the previous implementation (still available) that relies on the 'maxent.jar' Java program called by the \pkg{dismo} package.
 
 \emph{Maxent settings:}  In the current default implementation of Maxent, the combination of feature classes (\code{fc}s) allowed depends on the number of occurrence localities, and the value for the regularization multiplier (\code{RM}) is 1.0.  \code{ENMevaluate} provides an automated way to execute ecological niche models in Maxent across a user-specified range of (\code{RM}) values and (\code{fc}) combinations, regardless of sample size.  Acceptable values for the \code{fc} argument include: L=linear, Q=quadratic, P=product, T=threshold, and H=hinge (see Maxent help documentation, Phillips \emph{et al.} (2006), Phillips and Dudik (2008), Elith \emph{et al.} (2011), and Merow \emph{et al.} (2013) for additional details on \code{RM} and \code{fc}s).  Categorical feature classes (C) are specified by the \code{categoricals} argument.
 
@@ -128,6 +134,10 @@ Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. 2007. Predict
 
 Peterson, A. T., Soberon, J., Pearson, R. G., Anderson, R. P., Martinez-Meyer, E., Nakamura, M. and Araujo, M. B. (2011) \emph{Ecological Niches and Geographic Distributions}. Monographs in Population Biology, 49. Princeton University Press, Princeton, NJ.
 
+Phillips, S. J. 2017. maxnet package for R. Available online at: \url{https://CRAN.R-project.org/package=maxnet}.
+
+Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E. and Blair, M. E. 2017. Opening the black box: an open-source release of Maxent. \emph{Ecography}, \bold{40}: 887–893.
+
 Phillips, S. J., Anderson, R. P., and Schapire, R. E. (2006) Maximum entropy modeling of species geographic distributions. \emph{Ecological Modelling}, \bold{190}: 231-259.
 
 Phillips, S. J. and Dudik, M. (2008) Modeling of species distributions with Maxent: new extensions and a comprehensive evaluation. \emph{Ecography}, \bold{31}: 161-175.
@@ -151,6 +161,8 @@ Warren, D.L. and Seifert, S.N. (2011) Ecological niche modeling in Maxent: the i
 Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jkass@gc.cuny.edu>}
 
 \seealso{ 	
+\code{maxnet} in the \pkg{maxnet} package
+
 \code{maxent} in the \pkg{dismo} package 
 }
 
