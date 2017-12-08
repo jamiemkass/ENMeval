@@ -39,18 +39,27 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   }
   
   # assign partition groups based on choice of method
-  if (method == "checkerboard1")
+  if ("checkerboard1" %in% method) {
+    method <- c(method = "checkerboard1", aggregation.factor = aggregation.factor)
     group.data <- get.checkerboard1(occ, env, bg.coords, aggregation.factor)
-  if (method == "checkerboard2")
+  }
+  if ("checkerboard2" %in% method) {
+    method <- c(method = "checkerboard2", aggregation.factor = aggregation.factor)
     group.data <- get.checkerboard2(occ, env, bg.coords, aggregation.factor)
-  if (method == "block")
+  }
+  if ("block" %in% method)
     group.data <- get.block(occ, bg.coords)
-  if (method == "jackknife")
+  if ("jackknife" %in% method)
     group.data <- get.jackknife(occ, bg.coords)
-  if (method == "randomkfold")
+  if ("randomkfold" %in% method) {
+    method <- c(method = "randomkfold", number.folds = kfolds)
     group.data <- get.randomkfold(occ, bg.coords, kfolds)
-  if (method == "user")
+  }
+  if ("user" %in% method) {
+    method <- c(method= "user", number.folds = length(unique(occ.grp)))
     group.data <- get.user(occ.grp, bg.grp)
+  }
+    
   
   # define number of groups (the value of "k")
   nk <- length(unique(group.data$occ.grp))
