@@ -10,6 +10,7 @@ Objects can be created by calls of the form \code{new("ENMevaluation", ...)}.
 }
 \section{Slots}{
   \describe{
+    \item{\code{algorithm}:}{Object of class \code{"character"}. The algorithm used for the analysis.}
     \item{\code{results}:}{Object of class \code{"data.frame"}. The full results table.}
     \item{\code{predictions}:}{Object of class \code{"RasterStack"}. Model predictions in geographic space.}
     \item{\code{models}:}{List of objects of class \code{"MaxEnt"} from the \pkg{dismo} package. Each of these entries include slots for lambda values and the original Maxent results table.  See Maxent documentation for more information.}
