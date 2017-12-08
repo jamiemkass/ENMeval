@@ -14,10 +14,10 @@ Imports: doParallel,
 	graphics, 
 	stats, 
 	grDevices, 
-	raster
+	raster,
+	maxnet
 Suggests: rJava (>= 0.5-0),
         dismo, 
-	maxnet, 
 	parallel, 
 	knitr, 
 	rmarkdown, 
