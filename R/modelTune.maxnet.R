@@ -16,7 +16,7 @@ modelTune.maxnet <- function(pres, bg, env, nk, group.data, args.i,
   
   # if rasters selected, predict for the full model
   if (rasterPreds == TRUE) {
-    predictive.map <- predict_maxnetRas(full.mod, env, type = 'exponential', clamp = clamp)
+    predictive.map <- predict.maxnetRas(full.mod, env, type = 'exponential', clamp = clamp)
   } else {
     predictive.map <- stack()
   }

@@ -3,7 +3,7 @@
 #################################################
 
 # function to make a raster prediction from a maxnet object
-predict_maxnetRas <- function(mod, env, type, clamp) {
+predict.maxnetRas <- function(mod, env, type, clamp) {
   env.n <- nlayers(env)
   env.pts <- rasterToPoints(env)
   origNrow <- nrow(env.pts)
