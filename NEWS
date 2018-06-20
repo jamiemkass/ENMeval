@@ -3,6 +3,7 @@ ENMeval 0.3.0
 o  Changed the default behavior to use the 'maxnet' function of the 'maxnet' package instead of the 'maxent.jar' program, and removed the dependency on the 'rJava' package by default, among others.
 o  Added an algorithm slot to the ENMevaluation object.
 o  Added information on the aggregation factor(s) or number of k folds to the ENMevaluation object when relevant.
+o  Corrected use of 'corrected.var' in the 'tuning' function.
 
 
 ENMeval 0.2.2
