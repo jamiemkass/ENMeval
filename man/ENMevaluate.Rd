@@ -40,7 +40,7 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
   
   \item{fc}{ Character vector of feature class combinations to be included in analysis. }
 
-  \item{algorithm}{ Character vector.  Use \code{'maxnet'} to use the \pkg{maxnet} package [default] and \code{'maxent.jar'} to use the \pkg{dismo} package and the 'maxent.jar' Java program.}
+  \item{algorithm}{ Character vector.  Use \code{'maxnet'} to use the \pkg{maxnet} package [default] or \code{'maxent.jar'} to use the \pkg{dismo} package and the 'maxent.jar' Java program. See details for more information on these different implementations.}
 
   \item{categoricals}{ Vector indicating which (if any) of the input environmental layers are categorical. }
 
@@ -81,7 +81,7 @@ tuning(occ, env, bg.coords, occ.grp, bg.grp, method,
 \details{
 \code{ENMevaluate} is the primary function for general use in the \pkg{ENMeval} package; the \code{tuning} function is used internally.
 
-Since version 0.3.0, the default \code{\link{ENMevaluate}} runs the the Maxent algorithm by calling the \pkg{maxnet} package (Phillips \emph{et al.} 2017) instead of the previous implementation (still available) that relies on the 'maxent.jar' Java program called by the \pkg{dismo} package.
+Since version 0.3.0, the default \code{\link{ENMevaluate}} runs the the Maxent algorithm by calling the \pkg{maxnet} package (Phillips \emph{et al.} 2017) instead of the previous implementation (still available) that relies on the 'maxent.jar' Java program called by the \pkg{dismo} package. This choice is controlled by the argument \code{algorithm='maxnet'}.  Some advantages of this change include more transparency in the underlying code and no reliance on Java or the \pkg{rJava} package, which is great but can sometimes cause confusing problems on different computers. There are some differences between the 'maxnet' and 'maxent.jar' algorithms that may lead to slight numeric differences in the results (at least when \code{hindge} feature classes are used). See Phillips \emph{et al.} (2017) and Phillips (2017) for more details.  Additionally, the 'maxnet' algorithm does provide information on variable importance (from the \code{var.importance()} function) because of differences in the underlying models. Users can still choose to use the 'maxent.jar' implementation by setting \code{algorithm='maxent.jar'} in the \code{ENMevaluate} function (also see note below).
 
 \emph{Maxent settings:}  In the current default implementation of Maxent, the combination of feature classes (\code{fc}s) allowed depends on the number of occurrence localities, and the value for the regularization multiplier (\code{RM}) is 1.0.  \code{ENMevaluate} provides an automated way to execute ecological niche models in Maxent across a user-specified range of (\code{RM}) values and (\code{fc}) combinations, regardless of sample size.  Acceptable values for the \code{fc} argument include: L=linear, Q=quadratic, P=product, T=threshold, and H=hinge (see Maxent help documentation, Phillips \emph{et al.} (2006), Phillips and Dudik (2008), Elith \emph{et al.} (2011), and Merow \emph{et al.} (2013) for additional details on \code{RM} and \code{fc}s).  Categorical feature classes (C) are specified by the \code{categoricals} argument.
 
