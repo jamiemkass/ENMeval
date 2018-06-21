@@ -11,7 +11,7 @@ predict.maxnetRas <- function(mod, env, type, clamp) {
   naOmitNrow <- nrow(env.pts)
   rowDiff <- origNrow - naOmitNrow
   if (rowDiff > 0) {
-    message(paste('\n', rowDiff, "grid cells found with at least one NA value: these cells were not processed."))
+    message(paste('\n', rowDiff, "grid cells found with at least one NA value: these cells were excluded from raster predictions."))
   }
   mxnet.p <- predict(mod, env.pts, type=type, clamp=clamp)
   env.pts <- cbind(env.pts, as.numeric(mxnet.p))
