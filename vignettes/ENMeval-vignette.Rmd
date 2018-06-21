@@ -37,6 +37,7 @@ We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](htt
 ```{r occDownload}
 if (!require('spocc')) install.packages('spocc', repos="http://cran.us.r-project.org")
 if (!require('ENMeval')) install.packages('ENMeval', repos="http://cran.us.r-project.org")
+
 library(spocc)
 library(ENMeval)
 
