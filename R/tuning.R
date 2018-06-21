@@ -21,14 +21,14 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     message(paste("There are", numNA.pres, "occurrence records with NA for at least 
                   one predictor variable. Removing these records from analysis,
                   resulting in", nrow(pres) - numNA.pres, "records..."))
-    occ <- occ[-which(is.na(pres)),]
-    pres <- na.omit(pres)
+    occ <- occ[!apply(pres, 1, anyNA),]
+    pres <- pres[!apply(pres, 1, anyNA),]
   }
   if (numNA.bg > 0) {
     message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable. 
                   Removing these records from analysis, resulting in", nrow(bg) - numNA.bg, "records..."))
-    bg.coords <- bg.coords[-which(rowSums(is.na(bg)) > 0),]
-    bg <- na.omit(bg)
+    bg.coords <- bg.coords[!apply(bg, 1, anyNA),]
+    bg <- bg[!apply(bg, 1, anyNA),]
   }
   
   if (!is.null(categoricals)) {
