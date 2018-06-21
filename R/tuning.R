@@ -27,7 +27,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   if (numNA.bg > 0) {
     message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable. 
                   Removing these records from analysis, resulting in", nrow(bg) - numNA.bg, "records..."))
-    bg.coords <- bg.coords[-which(is.na(bg)),]
+    bg.coords <- bg.coords[-which(rowSums(is.na(bg)) > 0),]
     bg <- na.omit(bg)
   }
   
