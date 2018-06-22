@@ -269,25 +269,25 @@ data(eval2)
 ```
 
 ``` {r enmeval1a, eval=FALSE}
-eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'))
+eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'), algorithm='maxent.jar')
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
 
 ``` {r enmeval1b, eval=FALSE}
-eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'))
+eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), algorithm='maxent.jar')
 ```
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel can be faster.
 
 ``` {r enmeval2par, eval=FALSE}
-eval2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE)
+eval2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE, algorithm='maxent.jar')
 ```
 
 Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (rasterPreds). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to FALSE.
 
 ``` {r enmeval3, eval=FALSE}
-eval3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE)
+eval3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE, algorithm='maxent.jar')
 ```
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the `niche.overlap` argument, which supports Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
@@ -304,6 +304,7 @@ The `bin.output` argument determines if separate evaluation statistics for each 
 #### Exploring the results {#eval.explore}
 Now let's take a look at the ENMeval object in more detail.  It contains the following slots:
 
+- A character vector showing which algorithm was used
 - A data.frame holding the model evaluation statistics
 - A RasterStack of the model predictions
 - A list of maxent model objects
@@ -320,7 +321,12 @@ eval2
 str(eval2, max.level=3)
 ```
 
-The first slot holds the table of evaluation metrics.  We can use this to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
+The first slot tells which algorithm was used (maxent.jar or maxnet) and which version of the software.
+``` {r stuff1}
+eval2@algorithm
+```
+
+The next slot holds the table of evaluation metrics.  We can use this to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
 ``` {r stuff2}
 eval2@results
 
@@ -337,7 +343,9 @@ Now plot the model with the lowest AICc:
 plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occurrence rate")
 ```
 
-We can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not** kept.
+If we used the 'maxent.jar' algorithm, we can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not** kept.
+
+*(Stay tuned for an update on the vignette focusing on the output from the 'maxnet' algorithm)*
 
 Let's look at the model object for our "AICc optimal" model:
 ```{r mod.obj1}
@@ -422,6 +430,7 @@ We can also plot the response curves of our model to see how different input var
 ## Downstream Analyses (*under construction*) {#downstream}
 Below is a running list of other things we plan to add to this vignette.  Feel free to let us know if there are particular things you would like to see added.
 
+- Working with the output from the 'maxnet' algorithm
 - Extracting model results from object (various thresholds)
 - Use model object to make a new prediction (e.g., if you want a logistic prediction)
 - Make a projection to a new extent
