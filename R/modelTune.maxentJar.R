@@ -3,7 +3,7 @@
 #################################################
 
 modelTune.maxentJar <- function(pres, bg, env, nk, group.data, args.i, userArgs, 
-                                rasterPreds, clamp, categoricals) {
+                                rasterPreds, clamp) {
   
   # set up data: x is coordinates of occs and bg, 
   # p is vector of 0's and 1's designating occs and bg

@@ -1,9 +1,9 @@
-import("dismo", "methods", "parallel", "doParallel", "foreach", "maxnet")
+import("dismo", "methods", "parallel", "doParallel", "foreach")
 importFrom("grDevices", "rainbow")
-importFrom("raster", "raster", "cellStats", "extract", "nlayers", "aggregate", "stack","rasterFromXYZ")
+importFrom("raster", "cellStats", "extract", "nlayers", "aggregate", "stack")
 importFrom("graphics", "abline", "arrows", "axis", "box", "par","plot")
-importFrom("stats", "var", "na.omit")
-importFrom("utils", "setTxtProgressBar", "txtProgressBar", "packageVersion")
+importFrom("stats", "var")
+importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 exportPattern("^[[:alpha:]]+")
 exportClasses(
     "ENMevaluation" 
