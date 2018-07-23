@@ -16,7 +16,7 @@ modelTune.maxnet <- function(pres, bg, env, nk, group.data, args.i,
   
   # if rasters selected, predict for the full model
   if (rasterPreds == TRUE) {
-    predictive.map <- predict.maxnetRas(full.mod, env, type = 'exponential', clamp = clamp)
+    predictive.map <- maxnet.predictRaster(full.mod, env, type = 'exponential', clamp = clamp)
   } else {
     predictive.map <- stack()
   }
@@ -45,8 +45,8 @@ modelTune.maxnet <- function(pres, bg, env, nk, group.data, args.i,
     AUC.DIFF[k] <- max(0, dismo::evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
     
     # predict values for training and testing data
-    p.train <- predict(mod, train.val, type = 'exponential')
-    p.test <- predict(mod, test.val, type = 'exponential')  
+    p.train <- dismo::predict(mod, train.val, type = 'exponential')
+    p.test <- dismo::predict(mod, test.val, type = 'exponential')  
     
     # figure out 90% of total no. of training records
     if (nrow(train.val) < 10) {
