@@ -32,8 +32,6 @@ The dataset is based on the simulated dataset and call of \code{\link{ENMevaluat
 }
 
 \examples{
-require(raster)
-
 ### Simulated data environmental covariates
 set.seed(1)
 r1 <- raster(matrix(nrow=50, ncol=50, data=runif(10000, 0, 25)))
@@ -51,7 +49,7 @@ occ <- cbind(x,y)
 
 \dontrun{
 ### This gives the results that are loaded below:
-enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500, algorithm='maxent.jar')
+enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500)
 }
 
 data(enmeval_results)
