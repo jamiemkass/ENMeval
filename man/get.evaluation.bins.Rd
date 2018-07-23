@@ -73,6 +73,7 @@ Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for 
 \author{ Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jkass@gc.cuny.edu> }
 
 \examples{
+require(raster)
 
 set.seed(1)
 
