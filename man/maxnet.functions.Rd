@@ -1,19 +1,20 @@
 \name{ maxnet.functions  }
 
-\alias{maxentJARversion.R}
-\alias{modelTune.maxentJar.R}
-\alias{modelTune.maxnet.R}
-\alias{predict.maxnetRas.R}
+\alias{maxentJARversion}
+\alias{modelTune.maxentJar}
+\alias{modelTune.maxnet}
+\alias{maxnet.predictRaster}
 
 \title{ Functions for compatability with maxnet package }
 
 \description{ These functions are used internally for compatability with the \pkg{maxnet} package (Phillips \emph{et al.} 2017, Phillips 2017). }
 
 \usage{
-  maxentJARversion.R ()
-  modelTune.maxentJar.R (pres, bg, env, nk, group.data, args.i, userArgs, rasterPreds, clamp)
-  modelTune.maxnet.R (pres, bg, env, nk, group.data, args.i, rasterPreds, clamp)
-  predict.maxnetRas.R (mod, env, type, clamp)
+  maxentJARversion ()
+  modelTune.maxentJar (pres, bg, env, nk, group.data, 
+                        args.i, userArgs, rasterPreds, clamp, categoricals)
+  modelTune.maxnet (pres, bg, env, nk, group.data, args.i, rasterPreds, clamp)
+  maxnet.predictRaster (mod, env, type, clamp)
 }
 
 \arguments{
@@ -34,6 +35,8 @@
   \item{rasterPreds}{ Raster(s) of model predictions. }
   
   \item{clamp}{ Logical. }
+
+  \item{categoricals}{ Vector indicating which (if any) of the input environmental layers are categorical. }
   
   \item{mod}{ maxnet model object. }
   
