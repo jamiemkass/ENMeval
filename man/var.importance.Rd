@@ -1,4 +1,4 @@
-\name{Extract percent contribution and permutation importance from a Maxent model}
+\name{var.importance}
 
 \alias{var.importance}
 
