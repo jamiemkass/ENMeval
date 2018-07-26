@@ -9,4 +9,4 @@ R package for automated runs and evaluations of ecological niche models.
 
 Also see the vignette for examples of implementation.
 
-Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet).  The output from this differs from that of the original java program and so some features are not compatible (e.g., variable importance, the old html output).
+Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet).  The output from this differs from that of the original java program and so some features are not compatible (e.g., variable importance, the old html output).  Our team has done some fairly extensive testing to ensure this implementation gives the expected results but the maxnet implementation is relatively new (at the time of writing this) and we encourage users to scrutinize their results.
