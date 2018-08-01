@@ -23,7 +23,7 @@ calc.aicc <- function(nparam, occ, predictive.maps) {
     } else {
       delta.AICc <- (AICc - min(AICc, na.rm=TRUE))
       w.AIC <- (exp(-0.5*delta.AICc))/(sum(exp(-0.5*delta.AICc), na.rm=TRUE))
-      res <- data.frame(AICc, delta.AICc, w.AIC, nparam)
+      res <- data.frame(AICc, delta.AICc, w.AIC, parameters=nparam)
       rownames(res) <- NULL
     }    
   }
