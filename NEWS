@@ -4,6 +4,7 @@ o  Changed the default behavior to use the 'maxnet' function of the 'maxnet' pac
 o  Added an algorithm slot to the ENMevaluation object.
 o  Added information on the aggregation factor(s) or number of k folds to the ENMevaluation object when relevant.
 o  Corrected use of 'corrected.var' in the 'tuning' function.
+o  Changed some column names in the @results table to be more intuitive and compatable with the R package, Wallace.
 
 
 ENMeval 0.2.2
