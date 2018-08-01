@@ -138,16 +138,16 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   OR10 <- statsTbl[,((2*nk)+1):(3*nk)]
   ORmin <- statsTbl[,((3*nk)+1):(4*nk)]
   # rename column fields
-  names(AUC.DIFF) <- paste("AUC.DIFF_bin", 1:nk, sep = ".")
+  names(AUC.DIFF) <- paste("diff.AUC_bin", 1:nk, sep = ".")
   Mean.AUC.DIFF <- rowMeans(AUC.DIFF)
   Var.AUC.DIFF <- corrected.var(AUC.DIFF, nk)
   names(AUC.TEST) <- paste("AUC_bin", 1:nk, sep = ".")
   Mean.AUC <- rowMeans(AUC.TEST)
   Var.AUC <- corrected.var(AUC.TEST, nk)
-  names(OR10) <- paste("OR10_bin", 1:nk, sep = ".")
+  names(OR10) <- paste("test.or10pct_bin", 1:nk, sep = ".")
   Mean.OR10 <- rowMeans(OR10)
   Var.OR10 <- apply(OR10, 1, var)
-  names(ORmin) <- paste("ORmin_bin", 1:nk, sep = ".")
+  names(ORmin) <- paste("test.orMTP_bin", 1:nk, sep = ".")
   Mean.ORmin <- rowMeans(ORmin)
   Var.ORmin <- apply(ORmin, 1, var)
 
