@@ -182,9 +182,11 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   rm <- args.lab[[2]]
   settings <- paste(args.lab[[1]], args.lab[[2]], sep = "_")
 
-  res <- data.frame(settings, features, rm, full.AUC, Mean.AUC,
-                    Var.AUC, Mean.AUC.DIFF, Var.AUC.DIFF, Mean.OR10, Var.OR10,
-                    Mean.ORmin, Var.ORmin, aicc)
+  res <- data.frame(settings, features, rm, train.AUC = full.AUC, 
+                    avg.test.AUC = Mean.AUC, var.test.AUC = Var.AUC,
+                    avg.diff.AUC = Mean.AUC.DIFF, var.diff.AUC = Var.AUC.DIFF, 
+                    avg.test.orMTP = Mean.ORmin, var.test.orMTP = Var.ORmin,
+                    avg.test.or10pct = Mean.OR10, var.test.or10pct = Var.OR10, aicc)
   if (bin.output == TRUE) {
     res <- as.data.frame(cbind(res, AUC.TEST, AUC.DIFF, OR10, ORmin))
   }
