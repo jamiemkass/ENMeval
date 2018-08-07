@@ -13,10 +13,10 @@ modelTune.maxentJar <- function(pres, bg, env, nk, group.data, args.i, userArgs,
   # build the full model from all the data
   full.mod <- dismo::maxent(x, p, args = c(args.i, userArgs),
                             factors = categoricals)  
+  pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
   
   # if rasters selected, predict for the full model
   if (rasterPreds == TRUE) {
-    pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
     predictive.map <- predict(full.mod, env, args = pred.args)  
   } else {
     predictive.map <- stack()
