@@ -4,33 +4,33 @@
 # THIS FUNCTION DOES SPATIALLY-INDEPENDENT EVALUATIONS
 # INPUT ARGUMENTS COME FROM WRAPPER FUNCTION
 
-tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
+tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, rasterPreds, parallel, numCores, progbar, updateProgress,
+                    clamp, alg, rasterPreds, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
-  noccs <- nrow(occ)
-  if (method == "checkerboard1")
-    group.data <- get.checkerboard1(occ, env, bg.coords,
-                                    aggregation.factor)
-  if (method == "checkerboard2")
-    group.data <- get.checkerboard2(occ, env, bg.coords,
-                                    aggregation.factor)
-  if (method == "block")
-    group.data <- get.block(occ, bg.coords)
-  if (method == "jackknife")
-    group.data <- get.jackknife(occ, bg.coords)
-  if (method == "randomkfold")
-    group.data <- get.randomkfold(occ, bg.coords, kfolds)
-  if (method == "user")
-    group.data <- get.user(occ.grp, bg.grp)
-  nk <- length(unique(group.data$occ.grp))
+  # extract predictor variable values at coordinates for occs and bg
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
-  if (any(is.na(colSums(pres)))){
-    message("Warning: some predictors variables are NA at some occurrence points")}
-  if (any(is.na(colSums(bg)))){
-    message("Warning: some predictors variables are NA at some background points")}
+
+  # if rows have NA for any predictor, toss them out
+  # also redefine occ and bg without NA rows
+  numNA.pres <- sum(rowSums(is.na(pres)) > 0)
+  numNA.bg <- sum(rowSums(is.na(bg)) > 0)
+  if (numNA.pres > 0) {
+    message(paste("There are", numNA.pres, "occurrence records with NA for at least
+                  one predictor variable. Removing these records from analysis,
+                  resulting in", nrow(pres) - numNA.pres, "records..."))
+    occ <- occ[!apply(pres, 1, anyNA),]
+    pres <- pres[!apply(pres, 1, anyNA),]
+  }
+  if (numNA.bg > 0) {
+    message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable.
+                  Removing these records from analysis, resulting in", nrow(bg) - numNA.bg, "records..."))
+    bg.coords <- bg.coords[!apply(bg, 1, anyNA),]
+    bg <- bg[!apply(bg, 1, anyNA),]
+  }
+
   if (!is.null(categoricals)) {
     for (i in 1:length(categoricals)) {
       pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
@@ -38,61 +38,31 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
     }
   }
 
-  tune <- function() {
-    if (length(maxent.args) > 1 & !parallel) {
-      if (is.function(updateProgress)) {
-        text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
-        updateProgress(detail = text)
-      } else if (progbar==T) {
-        setTxtProgressBar(pb, i)
-      }
-    }
-    if (names(pres) != names(bg)) {
-      stop("Please input predictor variables as RasterStack.")
-    }
-    x <- rbind(pres, bg)
-    p <- c(rep(1, nrow(pres)), rep(0, nrow(bg)))
-    tmpfolder <- tempfile()
-    full.mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs),
-                       factors = categoricals, path = tmpfolder)
-    pred.args <- c("outputformat=raw", ifelse(clamp==TRUE, "doclamp=true", "doclamp=false"))
-    if (rasterPreds==TRUE) {
-      predictive.map <- predict(full.mod, env, args = pred.args)
-    } else {
-      predictive.map <- stack()
-    }
-    AUC.TEST <- double()
-    AUC.DIFF <- double()
-    OR10 <- double()
-    ORmin <- double()
-
-    for (k in 1:nk) {
-      train.val <- pres[group.data$occ.grp != k,, drop=FALSE]
-      test.val <- pres[group.data$occ.grp == k,, drop=FALSE]
-      bg.val <- bg[group.data$bg.grp != k,, drop=FALSE]
-      x <- rbind(train.val, bg.val)
-      p <- c(rep(1, nrow(train.val)), rep(0, nrow(bg.val)))
-      mod <- maxent(x, p, args = c(maxent.args[[i]], userArgs), factors = categoricals,
-                    path = tmpfolder)
-      AUC.TEST[k] <- evaluate(test.val, bg, mod)@auc
-      AUC.DIFF[k] <- max(0, evaluate(train.val, bg, mod)@auc - AUC.TEST[k])
-      p.train <- predict(mod, train.val, args = pred.args)
-      p.test <- predict(mod, test.val, args = pred.args)
-      if (nrow(train.val) < 10) {
-        n90 <- floor(nrow(train.val) * 0.9)
-      }
-      else {
-        n90 <- ceiling(nrow(train.val) * 0.9)
-      }
-      train.thr.10 <- rev(sort(p.train))[n90]
-      OR10[k] <- mean(p.test < train.thr.10)
-      train.thr.min <- min(p.train)
-      ORmin[k] <- mean(p.test < train.thr.min)
-    }
-    unlink(tmpfolder, recursive = TRUE)
-    stats <- c(AUC.DIFF, AUC.TEST, OR10, ORmin)
-    return(list(full.mod, stats, predictive.map))
+  # assign partition groups based on choice of method
+  if ("checkerboard1" %in% method) {
+    method <- c(method = "checkerboard1", aggregation.factor = aggregation.factor)
+    group.data <- get.checkerboard1(occ, env, bg.coords, aggregation.factor)
   }
+  if ("checkerboard2" %in% method) {
+    method <- c(method = "checkerboard2", aggregation.factor = aggregation.factor)
+    group.data <- get.checkerboard2(occ, env, bg.coords, aggregation.factor)
+  }
+  if ("block" %in% method)
+    group.data <- get.block(occ, bg.coords)
+  if ("jackknife" %in% method)
+    group.data <- get.jackknife(occ, bg.coords)
+  if ("randomkfold" %in% method) {
+    method <- c(method = "randomkfold", number.folds = kfolds)
+    group.data <- get.randomkfold(occ, bg.coords, kfolds)
+  }
+  if ("user" %in% method) {
+    method <- c(method= "user", number.folds = length(unique(occ.grp)))
+    group.data <- get.user(occ.grp, bg.grp)
+  }
+
+
+  # define number of groups (the value of "k")
+  nk <- length(unique(group.data$occ.grp))
 
   # differential behavior for parallel and default
   if (parallel == TRUE) {
@@ -109,21 +79,53 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
 
     # log file to record status of parallel loops
     message("Running in parallel...")
-    #cat("Running in parallel...\n")
-    out <- foreach(i = seq_len(length(maxent.args)), .packages = c("dismo", "raster", "ENMeval")) %dopar% {
-      tune()
+    if (algorithm == 'maxnet') {
+      # load maxnet package because it is not loaded automatically when embedded in foreach
+      # if not loaded here, dismo::evaluate fails later
+      # library(maxnet)
+      out <- foreach(i = seq_len(length(args)),
+                     .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
+                       modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]],
+                                        rasterPreds, clamp)
+                     }
+    } else if (algorithm == 'maxent.jar') {
+      out <- foreach(i = seq_len(length(args)),
+                     .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
+                       modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]],
+                                           userArgs, rasterPreds, clamp)
+                     }
     }
     stopCluster(c1)
   } else {
-    if (progbar==T & !is.function(updateProgress)) {pb <- txtProgressBar(0, length(maxent.args), style = 3)}
     out <- list()
-    for (i in 1:length(maxent.args)) {
-      out[[i]] <- tune()
+    if (progbar == TRUE & !is.function(updateProgress)) {
+      pb <- txtProgressBar(0, length(args), style = 3)
     }
-    if(progbar==T) { close(pb) }
+    for (i in 1:length(args)) {
+      # set up the console progress bar (progbar),
+      # or the shiny progress bar (updateProgress)
+      if (length(args) > 1) {
+        if (is.function(updateProgress)) {
+          text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
+          updateProgress(detail = text)
+        } else if (progbar == TRUE) {
+          setTxtProgressBar(pb, i)
+        }
+      }
+      if (algorithm == 'maxnet') {
+        out[[i]] <- modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]],
+                                     rasterPreds, clamp)
+      } else if (algorithm == 'maxent.jar') {
+        out[[i]] <- modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]],
+                                        userArgs, rasterPreds, clamp)
+      }
+    }
+    if (progbar==TRUE) close(pb)
   }
 
-  full.mods <- sapply(out, function(x) x[[1]])
+  # gather all full models into list
+  full.mods <- lapply(out, function(x) x[[1]])
+  # gather all statistics into a data frame
   statsTbl <- as.data.frame(t(sapply(out, function(x) x[[2]])))
   if (rasterPreds) {
     predictive.maps <- stack(sapply(out, function(x) x[[3]]))
@@ -136,27 +138,42 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   OR10 <- statsTbl[,((2*nk)+1):(3*nk)]
   ORmin <- statsTbl[,((3*nk)+1):(4*nk)]
   # rename column fields
-  names(AUC.DIFF) <- paste("AUC.DIFF_bin", 1:nk, sep = ".")
+  names(AUC.DIFF) <- paste("diff.AUC_bin", 1:nk, sep = ".")
   Mean.AUC.DIFF <- rowMeans(AUC.DIFF)
-  Var.AUC.DIFF <- corrected.var(AUC.DIFF, noccs)
+  Var.AUC.DIFF <- corrected.var(AUC.DIFF, nk)
   names(AUC.TEST) <- paste("AUC_bin", 1:nk, sep = ".")
   Mean.AUC <- rowMeans(AUC.TEST)
-  Var.AUC <- corrected.var(AUC.TEST, noccs)
-  names(OR10) <- paste("OR10_bin", 1:nk, sep = ".")
+  Var.AUC <- corrected.var(AUC.TEST, nk)
+  names(OR10) <- paste("test.or10pct_bin", 1:nk, sep = ".")
   Mean.OR10 <- rowMeans(OR10)
   Var.OR10 <- apply(OR10, 1, var)
-  names(ORmin) <- paste("ORmin_bin", 1:nk, sep = ".")
+  names(ORmin) <- paste("test.orMTP_bin", 1:nk, sep = ".")
   Mean.ORmin <- rowMeans(ORmin)
   Var.ORmin <- apply(ORmin, 1, var)
 
   # get training AUCs for each model
   full.AUC <- double()
-  for (i in 1:length(full.mods)) full.AUC[i] <- full.mods[[i]]@results[5]
+
+  for (i in 1:length(full.mods)) {
+    if (algorithm == 'maxnet') {
+      full.AUC[i] <- dismo::evaluate(pres, bg, full.mods[[i]])@auc
+    } else if (algorithm == 'maxent.jar') {
+      full.AUC[i] <- full.mods[[i]]@results[5]
+    }
+  }
+
   # get total number of parameters
-  nparm <- numeric()
-  for (i in 1:length(full.mods)) nparm[i] <- get.params(full.mods[[i]])
+  nparam <- numeric()
+  for (i in 1:length(full.mods)) {
+    if (algorithm == 'maxnet') {
+      nparam[i] <- length(full.mods[[i]]$betas)
+    } else if (algorithm == 'maxent.jar') {
+      nparam[i] <- get.params(full.mods[[i]])
+    }
+  }
+
 #  if (rasterPreds==TRUE) { # this should now work even if rasterPreds==F
-    aicc <- calc.aicc(nparm, occ, predictive.maps)
+    aicc <- calc.aicc(nparam, occ, predictive.maps)
 #  } else {
 #    aicc <- rep(NaN, length(full.AUC))
 #  }
@@ -165,9 +182,11 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   rm <- args.lab[[2]]
   settings <- paste(args.lab[[1]], args.lab[[2]], sep = "_")
 
-  res <- data.frame(settings, features, rm, full.AUC, Mean.AUC,
-                    Var.AUC, Mean.AUC.DIFF, Var.AUC.DIFF, Mean.OR10, Var.OR10,
-                    Mean.ORmin, Var.ORmin, aicc)
+  res <- data.frame(settings, features, rm, train.AUC = full.AUC,
+                    avg.test.AUC = Mean.AUC, var.test.AUC = Var.AUC,
+                    avg.diff.AUC = Mean.AUC.DIFF, var.diff.AUC = Var.AUC.DIFF,
+                    avg.test.orMTP = Mean.ORmin, var.test.orMTP = Var.ORmin,
+                    avg.test.or10pct = Mean.OR10, var.test.or10pct = Var.OR10, aicc)
   if (bin.output == TRUE) {
     res <- as.data.frame(cbind(res, AUC.TEST, AUC.DIFF, OR10, ORmin))
   }
@@ -175,8 +194,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, maxent.args,
   if (rasterPreds==TRUE) {
     names(predictive.maps) <- settings
   }
-  results <- ENMevaluation(results = res, predictions = predictive.maps,
-                           models = full.mods, partition.method = method, 
+
+  results <- ENMevaluation(algorithm = alg, results = res, predictions = predictive.maps,
+                           models = full.mods, partition.method = method,
                            occ.pts = occ, occ.grp = group.data[[1]],
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
   return(results)
