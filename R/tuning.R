@@ -12,32 +12,32 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   # extract predictor variable values at coordinates for occs and bg
   pres <- as.data.frame(extract(env, occ))
   bg <- as.data.frame(extract(env, bg.coords))
-  
+
   # if rows have NA for any predictor, toss them out
   # also redefine occ and bg without NA rows
   numNA.pres <- sum(rowSums(is.na(pres)) > 0)
   numNA.bg <- sum(rowSums(is.na(bg)) > 0)
   if (numNA.pres > 0) {
-    message(paste("There are", numNA.pres, "occurrence records with NA for at least 
+    message(paste("There are", numNA.pres, "occurrence records with NA for at least
                   one predictor variable. Removing these records from analysis,
                   resulting in", nrow(pres) - numNA.pres, "records..."))
     occ <- occ[!apply(pres, 1, anyNA),]
     pres <- pres[!apply(pres, 1, anyNA),]
   }
   if (numNA.bg > 0) {
-    message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable. 
+    message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable.
                   Removing these records from analysis, resulting in", nrow(bg) - numNA.bg, "records..."))
     bg.coords <- bg.coords[!apply(bg, 1, anyNA),]
     bg <- bg[!apply(bg, 1, anyNA),]
   }
-  
+
   if (!is.null(categoricals)) {
     for (i in 1:length(categoricals)) {
       pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
       bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
     }
   }
-  
+
   # assign partition groups based on choice of method
   if ("checkerboard1" %in% method) {
     method <- c(method = "checkerboard1", aggregation.factor = aggregation.factor)
@@ -59,8 +59,8 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
     method <- c(method= "user", number.folds = length(unique(occ.grp)))
     group.data <- get.user(occ.grp, bg.grp)
   }
-    
-  
+
+
   # define number of groups (the value of "k")
   nk <- length(unique(group.data$occ.grp))
 
@@ -83,15 +83,15 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
       # load maxnet package because it is not loaded automatically when embedded in foreach
       # if not loaded here, dismo::evaluate fails later
       # library(maxnet)
-      out <- foreach(i = seq_len(length(args)), 
+      out <- foreach(i = seq_len(length(args)),
                      .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
-                       modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
+                       modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]],
                                         rasterPreds, clamp)
                      }
     } else if (algorithm == 'maxent.jar') {
-      out <- foreach(i = seq_len(length(args)), 
+      out <- foreach(i = seq_len(length(args)),
                      .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
-                       modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]], 
+                       modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]],
                                            userArgs, rasterPreds, clamp)
                      }
     }
@@ -102,7 +102,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
       pb <- txtProgressBar(0, length(args), style = 3)
     }
     for (i in 1:length(args)) {
-      # set up the console progress bar (progbar), 
+      # set up the console progress bar (progbar),
       # or the shiny progress bar (updateProgress)
       if (length(args) > 1) {
         if (is.function(updateProgress)) {
@@ -113,16 +113,16 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
         }
       }
       if (algorithm == 'maxnet') {
-        out[[i]] <- modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]], 
+        out[[i]] <- modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]],
                                      rasterPreds, clamp)
       } else if (algorithm == 'maxent.jar') {
-        out[[i]] <- modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]], 
+        out[[i]] <- modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]],
                                         userArgs, rasterPreds, clamp)
       }
     }
     if (progbar==TRUE) close(pb)
   }
-  
+
   # gather all full models into list
   full.mods <- lapply(out, function(x) x[[1]])
   # gather all statistics into a data frame
@@ -153,25 +153,25 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
 
   # get training AUCs for each model
   full.AUC <- double()
-  
+
   for (i in 1:length(full.mods)) {
     if (algorithm == 'maxnet') {
       full.AUC[i] <- dismo::evaluate(pres, bg, full.mods[[i]])@auc
     } else if (algorithm == 'maxent.jar') {
-      full.AUC[i] <- full.mods[[i]]@results[5]  
+      full.AUC[i] <- full.mods[[i]]@results[5]
     }
   }
-  
+
   # get total number of parameters
   nparam <- numeric()
   for (i in 1:length(full.mods)) {
     if (algorithm == 'maxnet') {
       nparam[i] <- length(full.mods[[i]]$betas)
     } else if (algorithm == 'maxent.jar') {
-      nparam[i] <- get.params(full.mods[[i]])  
+      nparam[i] <- get.params(full.mods[[i]])
     }
   }
-    
+
 #  if (rasterPreds==TRUE) { # this should now work even if rasterPreds==F
     aicc <- calc.aicc(nparam, occ, predictive.maps)
 #  } else {
@@ -182,9 +182,9 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   rm <- args.lab[[2]]
   settings <- paste(args.lab[[1]], args.lab[[2]], sep = "_")
 
-  res <- data.frame(settings, features, rm, train.AUC = full.AUC, 
+  res <- data.frame(settings, features, rm, train.AUC = full.AUC,
                     avg.test.AUC = Mean.AUC, var.test.AUC = Var.AUC,
-                    avg.diff.AUC = Mean.AUC.DIFF, var.diff.AUC = Var.AUC.DIFF, 
+                    avg.diff.AUC = Mean.AUC.DIFF, var.diff.AUC = Var.AUC.DIFF,
                     avg.test.orMTP = Mean.ORmin, var.test.orMTP = Var.ORmin,
                     avg.test.or10pct = Mean.OR10, var.test.or10pct = Var.OR10, aicc)
   if (bin.output == TRUE) {
@@ -196,7 +196,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   }
 
   results <- ENMevaluation(algorithm = alg, results = res, predictions = predictive.maps,
-                           models = full.mods, partition.method = method, 
+                           models = full.mods, partition.method = method,
                            occ.pts = occ, occ.grp = group.data[[1]],
                            bg.pts = bg.coords, bg.grp = group.data[[2]])
   return(results)
