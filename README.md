@@ -1,4 +1,4 @@
-[![CRAN version](http://www.r-pkg.org/badges/version/wallace)](https://CRAN.R-project.org/package=wallace) [![downloads](http://cranlogs.r-pkg.org/badges/grand-total/wallace?color=orange)](http://cranlogs.r-pkg.org/badges/grand-total/wallace?color=orange)
+[![CRAN version](http://www.r-pkg.org/badges/version/ENMeval)](https://CRAN.R-project.org/package=ENMeval) [![downloads](http://cranlogs.r-pkg.org/badges/grand-total/ENMeval?color=orange)](http://cranlogs.r-pkg.org/badges/grand-total/ENMeval?color=orange)
 
 # ENMeval
 R package for automated runs and evaluations of ecological niche models.
