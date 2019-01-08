@@ -4,35 +4,36 @@
 # THIS FUNCTION DOES SPATIALLY-INDEPENDENT EVALUATIONS
 # INPUT ARGUMENTS COME FROM WRAPPER FUNCTION
 
-tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, args,
+tuning <- function (occs, envs, bg, occs.grp, bg.grp, method, algorithm, args,
                     args.lab, categoricals, aggregation.factor, kfolds, bin.output,
                     clamp, alg, rasterPreds, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
   # extract predictor variable values at coordinates for occs and bg
-  pres <- as.data.frame(extract(env, occ))
-  bg <- as.data.frame(extract(env, bg.coords))
+  occs.vals <- as.data.frame(extract(envs, occs))
+  bg.vals <- as.data.frame(extract(envs, bg))
 
-  # if rows have NA for any predictor, toss them out
-  # also redefine occ and bg without NA rows
-  numNA.pres <- sum(rowSums(is.na(pres)) > 0)
-  numNA.bg <- sum(rowSums(is.na(bg)) > 0)
-  if (numNA.pres > 0) {
-    message(paste("There are", numNA.pres, "occurrence records with NA for at least
-                  one predictor variable. Removing these records from analysis,
-                  resulting in", nrow(pres) - numNA.pres, "records..."))
-    keepInds <- !apply(pres, 1, anyNA)
-    occ <- occ[keepInds,]
-    occ.grp <- occ.grp[keepInds]
-    pres <- pres[keepInds,]
+  # remove rows with NA for any predictor variable
+  # also redefine occs and bg without NA rows
+  occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
+  bg.vals.na <- sum(rowSums(is.na(bg)) > 0)
+  if(occs.vals.na > 0) {
+    i <- !apply(occs.vals, 1, anyNA)
+    occs <- occs[i,]
+    occs.grp <- occs.grp[i]
+    occs.vals <- occs.vals[i,]
+    message(paste("There were", occs.vals.na, "occurrence records with NA for at least
+                  one predictor variable. Removed these from analysis,
+                  resulting in", nrow(occs.vals), "occurrence records."))
   }
-  if (numNA.bg > 0) {
-    message(paste("There are", numNA.bg, "background records with NA for at least one predictor variable.
-                  Removing these records from analysis, resulting in", nrow(bg) - numNA.bg, "records..."))
-    keepInds <- !apply(bg, 1, anyNA)
-    bg.coords <- bg.coords[keepInds,]
-    bg.grp <- bg.grp[keepInds]
-    bg <- bg[keepInds,]
+  if(bg.vals.na > 0) {
+    i <- !apply(bg.vals, 1, anyNA)
+    occs <- occs[i,]
+    bg.grp <- bg.grp[i]
+    bg.vals <- bg.vals[i,]
+    message(paste("There were", bg.vals.na, "background records with NA for at least
+                  one predictor variable. Removed these from analysis,
+                  resulting in", nrow(bg.vals), "background records."))
   }
 
   if (!is.null(categoricals)) {
@@ -45,28 +46,28 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   # assign partition groups based on choice of method
   if ("checkerboard1" %in% method) {
     method <- c(method = "checkerboard1", aggregation.factor = aggregation.factor)
-    group.data <- get.checkerboard1(occ, env, bg.coords, aggregation.factor)
+    group.data <- get.checkerboard1(occs, envs, bg, aggregation.factor)
   }
   if ("checkerboard2" %in% method) {
     method <- c(method = "checkerboard2", aggregation.factor = aggregation.factor)
-    group.data <- get.checkerboard2(occ, env, bg.coords, aggregation.factor)
+    group.data <- get.checkerboard2(occs, envs, bg, aggregation.factor)
   }
   if ("block" %in% method)
-    group.data <- get.block(occ, bg.coords)
+    group.data <- get.block(occs, bg)
   if ("jackknife" %in% method)
-    group.data <- get.jackknife(occ, bg.coords)
+    group.data <- get.jackknife(occs, bg)
   if ("randomkfold" %in% method) {
     method <- c(method = "randomkfold", number.folds = kfolds)
-    group.data <- get.randomkfold(occ, bg.coords, kfolds)
+    group.data <- get.randomkfold(occs, bg, kfolds)
   }
   if ("user" %in% method) {
-    method <- c(method= "user", number.folds = length(unique(occ.grp)))
-    group.data <- get.user(occ.grp, bg.grp)
+    method <- c(method= "user", number.folds = length(unique(occs.grp)))
+    group.data <- get.user(occs.grp, bg.grp)
   }
 
 
   # define number of groups (the value of "k")
-  nk <- length(unique(group.data$occ.grp))
+  nk <- length(unique(group.data$occs.grp))
 
   # differential behavior for parallel and default
   if (parallel == TRUE) {
@@ -89,13 +90,13 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
       # library(maxnet)
       out <- foreach(i = seq_len(length(args)),
                      .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
-                       modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]],
+                       modelTune.maxnet(pres, bg, envs, nk, group.data, args[[i]],
                                         rasterPreds, clamp)
                      }
     } else if (algorithm == 'maxent.jar') {
       out <- foreach(i = seq_len(length(args)),
                      .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
-                       modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]],
+                       modelTune.maxentJar(pres, bg, envs, nk, group.data, args[[i]],
                                            userArgs, rasterPreds, clamp)
                      }
     }
@@ -117,10 +118,10 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
         }
       }
       if (algorithm == 'maxnet') {
-        out[[i]] <- modelTune.maxnet(pres, bg, env, nk, group.data, args[[i]],
+        out[[i]] <- modelTune.maxnet(pres, bg, envs, nk, group.data, args[[i]],
                                      rasterPreds, clamp)
       } else if (algorithm == 'maxent.jar') {
-        out[[i]] <- modelTune.maxentJar(pres, bg, env, nk, group.data, args[[i]],
+        out[[i]] <- modelTune.maxentJar(pres, bg, envs, nk, group.data, args[[i]],
                                         userArgs, rasterPreds, clamp)
       }
     }
@@ -177,7 +178,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
   }
 
 #  if (rasterPreds==TRUE) { # this should now work even if rasterPreds==F
-    aicc <- calc.aicc(nparam, occ, predictive.maps)
+    aicc <- calc.aicc(nparam, occs, predictive.maps)
 #  } else {
 #    aicc <- rep(NaN, length(full.AUC))
 #  }
@@ -201,7 +202,7 @@ tuning <- function (occ, env, bg.coords, occ.grp, bg.grp, method, algorithm, arg
 
   results <- ENMevaluation(algorithm = alg, results = res, predictions = predictive.maps,
                            models = full.mods, partition.method = method,
-                           occ.pts = occ, occ.grp = group.data[[1]],
-                           bg.pts = bg.coords, bg.grp = group.data[[2]])
+                           occs.pts = occs, occs.grp = group.data[[1]],
+                           bg.pts = bg, bg.grp = group.data[[2]])
   return(results)
 }

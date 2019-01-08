@@ -2,38 +2,42 @@
 #########	CREATE MAXENT ARGUMENTS	#############
 #################################################
 
-make.args <- function(RMvalues=seq(0.5, 4, 0.5), fc=c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"), labels=FALSE) {
+make.args <- function(mod.settings, algorithm, labels=FALSE) {
 
-	other.args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
-	args.list <- list()
+  if(algorithm == "maxent.jar") {
+    other.args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
+    args.list <- list()
+    rms <- mod.settings[["rms"]]
+    fcs <- mod.settings[["fcs"]]
+    
+    for(i in 1:length(fcs)) {
+      args.list[[i]] <- other.args
+      if(!grepl("L", fcs[i])) args.list[[i]] <- c(args.list[[i]], "nolinear")
+      if(!grepl("Q", fcs[i])) args.list[[i]] <- c(args.list[[i]], "noquadratic")
+      if(!grepl("H", fcs[i])) args.list[[i]] <- c(args.list[[i]], "nohinge")
+      if(!grepl("P", fcs[i])) args.list[[i]] <- c(args.list[[i]], "noproduct")
+      if(!grepl("T", fcs[i])) args.list[[i]] <- c(args.list[[i]], "nothreshold")
+    }
+    
+    rms.lab <- rep(rms, each=length(fcs))
+    rms.arg <- paste("betamultiplier=", rms.lab, sep="")
+    fcs.lab <- rep(fcs, times=length(rms))
+    fcs.arg <- rep(args.list, times=length(rms))
 
-	for (i in 1:length(fc)) {
-		args.list[[i]] <- other.args
-			if(!grepl("L", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "nolinear")
-			if(!grepl("Q", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "noquadratic")
-			if(!grepl("H", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "nohinge")
-			if(!grepl("P", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "noproduct")
-			if(!grepl("T", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "nothreshold")
-		}
-
-	RM.lab <- rep(RMvalues, each=length(fc))
-	RM.arg <- paste("betamultiplier=", RM.lab, sep="")
-	fc.lab <- rep(fc, times=length(RMvalues))
-	fc.arg <- rep(args.list, times=length(RMvalues))
-
-	args <- list()
-	feats.lab <- c()
-	rms.lab <- c()
-		for (i in 1:length(fc.lab)) {
-			args[[i]] <- c(RM.arg[i], fc.arg[[i]])
-			feats.lab <- c(feats.lab, fc.lab[[i]])
-			rms.lab <- c(rms.lab, RM.lab[i])
-		}
-	args.lab <- list(feats.lab, rms.lab)
-
-	if(labels==FALSE) {
-	return(args)
-	} else {
-		return(args.lab)
-	}
+    args <- list()
+    for(i in 1:length(fcs.arg)) args[[i]] <- c(rms.arg[i], fcs.arg[[i]])
+    args.lab <- list(fcs.lab, rms.lab)
+  }
+  
+  if(algorithm == "maxnet") {
+    rms <- mod.settings[["rms"]]
+    fcs <- mod.settings[["fcs"]]
+    
+    fcs.arg <- as.list(tolower(rep(fcs, times=length(rms))))
+    rms.arg <- as.list(sort(rep(rms, times=length(fcs))))
+    args <- mapply(c, fcs.arg, rms.arg, SIMPLIFY=FALSE)
+  }
+  
+  if(labels == FALSE) return(args) else return(args.lab)
+	
 }
