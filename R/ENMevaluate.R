@@ -1,63 +1,84 @@
-ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NULL,
-                         RMvalues = seq(0.5, 4, 0.5), fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
-                         categoricals = NULL, n.bg = 10000, method = NULL, algorithm = 'maxnet', 
-                         overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
-                         clamp = TRUE, rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
-                         progbar = TRUE, updateProgress = FALSE, ...) {
+#' 
 
-  ptm <- proc.time()
-  if (is.null(method)) {
+ENMevaluate <- function(occs, envs, bg = NULL, occs.grp = NULL, bg.grp = NULL,
+                        mod.settings, categoricals = NULL, partitions = NULL,
+                        algorithm, n.bg = 10000, 
+                        overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
+                        clamp = TRUE, rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
+                        progbar = TRUE, updateProgress = FALSE, ...) {
+
+  # record start time
+  start.time <- proc.time()
+  
+  # general parameter checks
+  if(is.null(method)) {
     stop("Evaluation method needs to be specified.")
   }
-  if (progbar==TRUE & is.function(updateProgress)) {
+  if(progbar==TRUE & is.function(updateProgress)) {
     stop('Cannot specify both "progbar" and "updateProgress". Please turn one off.')
   }
   
-  # if maxent.jar is run, specify args command
-  if (algorithm == 'maxent.jar') {
-    userArgs <- list(...)
-    allMaxentArgs <- c("addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
-                       "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
-                       "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
-                       "maximumiterations", "removeduplicates")
-    if (length(userArgs) == 0) {
-      userArgs <- NULL
-    } else {
-      if (!all(names(userArgs) %in% allMaxentArgs)) {
-        stop("The maxent argument given is not implemented in ENMeval or is misspelled.")
-      } else {
-        userArgs <- paste(names(userArgs), unlist(userArgs), sep='=')
+  # mod.settings checks and algorithm-specific set-up
+  if(algorithm %in% c("maxent.jar", "maxnet")) 
+    if(!("rms" %in% names(mod.settings)) | !("fcs" %in% names(mod.settings))) {
+      stop("For Maxent, please specify both 'rms' and 'fcs' settings. See ?mod.settings for help.")
+    }else{
+      if(!is.numeric(mod.settings[["rms"]])) {
+        stop("Please input numeric values for 'rms' settings for Maxent.")
+      }
+      all.fcs <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
+      if(any(!mod.settings[["fcs"]] %in% all.fcs)) {
+        stop("Please input accepted values for 'fcs' settings for Maxent.")
       }
     }
-    args <- make.args(RMvalues, fc)
-    
-    dismo.vs <- packageVersion('dismo')
-    # code from dismo to get Maxent version
-    v <- maxentJARversion()
-    alg <- paste("Maxent", v, "via dismo", dismo.vs)
-  } else if (algorithm == 'maxnet') {
-    args.fc <- as.list(tolower(rep(fc, times=length(RMvalues))))
-    args.rm <- as.list(sort(rep(RMvalues, times=length(fc))))
-    args <- mapply(c, args.fc, args.rm, SIMPLIFY=FALSE)
-    
-    maxnet.vs <- packageVersion('maxnet')
-    alg <- paste0("maxnet v.", maxnet.vs)
-    userArgs <- NULL
+  
+  if(algorithm == 'maxent.jar') {
+    user.args <- list(...)
+    maxent.args <- c("addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
+                     "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
+                     "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
+                     "maximumiterations", "removeduplicates")
+    if(!all(names(user.args) %in% maxent.args)) {
+      stop("One or more input Maxent settings are not implemented in ENMeval or are misspelled.")
+    }
+    # construct user message with version info
+    algorithm.ver <- paste("Maxent", maxentJARversion(), "via dismo", packageVersion('dismo'))
   }
   
-  message(paste("*** Running ENMevaluate using", alg, "***"))
-  args.lab <- make.args(RMvalues, fc, labels = TRUE)
+  if(algorithm == 'maxnet') {
+    # construct user message with version info
+    algorithm.ver <- paste("maxnet", packageVersion('maxnet'))
+  }
+  
+  if(algorithm == 'brt') {
+    if(all("n.trees" %in% names(mod.settings), "interaction.depth" %in% names(mod.settings), "shrinkage" %in% names(mod.settings))) {
+      stop("BRT settings must include 'n.trees', 'interaction.depth', and 'shrinkage'.")
+    # construct user message with version info
+    algorithm.ver <- paste("gbm", packageVersion('gbm'))
+  }
+  
+  # handle user.args
+  if(length(user.args) == 0) {
+    user.args <- NULL
+  }else{
+    user.args <- paste(names(user.args), unlist(user.args), sep='=')
+  }
+  
+  
+  
+  args <- make.args(mod.settings, algorithm)
+  args.lab <- make.args(mod.settings, algorithm, labels = TRUE)
+  
+  message(paste("*** Running ENMevaluate using", algorithm.ver, "***"))
 
   # if no background points specified, generate random ones
-  if (is.null(bg.coords)) {
-    bg.coords <- randomPoints(env[[1]], n = n.bg)
+  if(is.null(bg)) {
+    bg <- randomPoints(envs, n = n.bg)
   }
   
-  # coerce occ and bg.coords to data frame and rename columns
-  occ <- as.data.frame(occ)
-  colnames(occ) <- c("LON", "LAT")
-  bg.coords <- as.data.frame(bg.coords)
-  colnames(bg.coords) <- c("LON", "LAT")
+  # make sure occs and bg are data frames with identical column names
+  occs <- data.frame(longitude = occs[,1], latitude = occs[,2])
+  bg <- data.frame(longitude = bg[,1], latitude = bg[,2])
   
   # print message for selected cross-validation method
   message(ifelse(method == "jackknife", "Doing evaluations using k-1 jackknife...",
@@ -69,10 +90,10 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
                                                     "Error: You need to specify an accepted evaluation method. Check the documentation.")))))))
   
   # run internal tuning function
-  results <- tuning(occ, env, bg.coords, occ.grp, bg.grp, method, algorithm,
+  results <- tuning(occs, envs, bg, occs.grp, bg.grp, partitions, algorithm,
                     args, args.lab, categoricals, aggregation.factor,
                     kfolds, bin.output, clamp, alg, rasterPreds, parallel, 
-                    numCores, progbar, updateProgress, userArgs)
+                    numCores, progbar, updateProgress, user.args)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if (overlap == TRUE) {
@@ -92,7 +113,7 @@ ENMevaluate <- function (occ, env, bg.coords = NULL, occ.grp = NULL, bg.grp = NU
   }
   
   # calculate time expended and print message
-  timed <- proc.time() - ptm
+  timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
   message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
