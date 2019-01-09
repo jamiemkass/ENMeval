@@ -9,3 +9,4 @@ envs <- stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep='')
 which(rowSums(is.na(extract(envs, occs))) > 0)
 bg <- randomPoints(envs, 10000)
 mod.settings <- list("rm" = 1:4, "fc" = c("L", "LQ"))
+partitions <- "block"

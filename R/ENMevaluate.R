@@ -3,8 +3,8 @@
 ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL, partitions = NULL,
                         algorithm, n.bg = 10000, occs.folds = NULL, bg.folds = NULL,
                         overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
-                        clamp = TRUE, rasterPreds = TRUE, parallel = FALSE, numCores = NULL, 
-                        progbar = TRUE, updateProgress = FALSE, ...) {
+                        clamp = TRUE, skipRasters = FALSE, parallel = FALSE, numCores = NULL, 
+                        updateProgress = FALSE, ...) {
 
   # record start time
   start.time <- proc.time()
@@ -15,9 +15,6 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
   }
   if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", "checkerboard2", "user"))) {
     stop("Please make sure partition method is one of the available options.")
-  }
-  if(progbar==TRUE & is.function(updateProgress)) {
-    stop('Cannot specify both "progbar" and "updateProgress". Please turn one off.')
   }
   
   # mod.settings checks and algorithm-specific set-up
@@ -112,13 +109,135 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
     folds <- list(occs.folds = occs.folds, bg.folds = bg.folds)
   }
   
+  # unpack occs.folds and bg.folds
+  occs.folds <- folds$occs.folds
+  bg.folds <- folds$bg.folds
+  
   message(paste("Doing evaluations with", ptn.msg, "cross validation..."))
   
-  # run internal tuning function
-  results <- tuning(occs, envs, bg, folds, algorithm,
-                    args, args.lab, categoricals, aggregation.factor,
-                    kfolds, bin.output, clamp, alg, rasterPreds, parallel, 
-                    numCores, progbar, updateProgress, user.args)
+  ###############
+  # ANALYSIS ####
+  ###############
+  
+  # extract predictor variable values at coordinates for occs and bg
+  occs.vals <- as.data.frame(extract(envs, occs))
+  bg.vals <- as.data.frame(extract(envs, bg))
+  
+  # remove rows from occs, occs.vals, occs.folds with NA for any predictor variable
+  occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
+  bg.vals.na <- sum(rowSums(is.na(bg.vals)) > 0)
+  if(occs.vals.na > 0) {
+    i <- !apply(occs.vals, 1, anyNA)
+    occs <- occs[i,]
+    occs.folds <- occs.folds[i]
+    occs.vals <- occs.vals[i,]
+    message(paste("There were", occs.vals.na, "occurrence records with NA for at least
+                  one predictor variable. Removed these from analysis,
+                  resulting in", nrow(occs.vals), "occurrence records."))
+  }
+  # do the same for associated bg variables
+  if(bg.vals.na > 0) {
+    i <- !apply(bg.vals, 1, anyNA)
+    occs <- occs[i,]
+    bg.folds <- bg.folds[i]
+    bg.vals <- bg.vals[i,]
+    message(paste("There were", bg.vals.na, "background records with NA for at least
+                  one predictor variable. Removed these from analysis,
+                  resulting in", nrow(bg.vals), "background records."))
+  }
+  
+  # convert fields for categorical data to factor class
+  if(!is.null(categoricals)) {
+    for (i in 1:length(categoricals)) {
+      occs.vals[, categoricals[i]] <- as.factor(occs.vals[, categoricals[i]])
+      bg.vals[, categoricals[i]] <- as.factor(bg.vals[, categoricals[i]])
+    }
+  }
+  
+  # if using parallel processing...
+  if(parallel == TRUE) {
+    # set up parallel processing functionality
+    allCores <- detectCores()
+    if (is.null(numCores)) {
+      numCores <- allCores
+    }
+    c1 <- makeCluster(numCores)
+    registerDoParallel(c1)
+    numCoresUsed <- getDoParWorkers()
+    message(paste("Of", allCores, "total cores using", numCoresUsed))
+    
+    message("Running in parallel...")
+    if (algorithm == 'maxnet') {
+      tune.results <- foreach(i = seq_len(length(args)),
+                     .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
+                       modelTune.maxnet(occs.vals, bg.vals, envs, folds, args[[i]],
+                                        rasterPreds, clamp)
+                     }
+    }
+    if (algorithm == 'maxent.jar') {
+      tune.results <- foreach(i = seq_len(length(args)),
+                     .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
+                       modelTune.maxentJar(occs.vals, bg.vals, envs, folds, args[[i]],
+                                           userArgs, rasterPreds, clamp)
+                     }
+    }
+    stopCluster(c1)
+  } 
+  # if not using parallel processing...
+  if(parallel == FALSE) {
+    tune.results <- list()
+    # set up the console progress bar
+    pb <- txtProgressBar(0, length(args), style = 3)
+    
+    for(i in 1:length(args)) {
+      # and (optionally) the shiny progress bar (updateProgress)
+      if(length(args) > 1) {
+        if(is.function(updateProgress)) {
+          text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
+          updateProgress(detail = text)
+        }
+        setTxtProgressBar(pb, i)
+      }
+      if (algorithm == 'maxnet') {
+        tune.results[[i]] <- modelTune.maxnet(occs.vals, bg.vals, envs, occs.folds, bg.folds, args[[i]],
+                                     rasterPreds, clamp)
+      } else if (algorithm == 'maxent.jar') {
+        tune.results[[i]] <- modelTune.maxentJar(occs.vals, bg.vals, envs, nk, folds, args[[i]],
+                                        userArgs, rasterPreds, clamp)
+      }
+    }
+    close(pb)  
+  }
+  
+  # gather all full models into list
+  mod.full.all <- lapply(tune.results, function(x) x$mod.full)
+  # gather all statistics into a data frame
+  stats.all <- lapply(tune.results, function(x) x$stats)
+  if(skipRasters == FALSE) {
+    mod.full.pred.all <- stack(sapply(tune.results, function(x) x$mod.full.pred))
+  } else {
+    mod.full.pred.all <- stack()
+  }
+  
+  # define a corrected variance function
+  corrected.var <- function(x, nk){
+    rowSums((x - rowMeans(x))^2) * ((nk-1)/nk)
+  }
+  
+  # make data frame of stats (for all folds)
+  stats.all.df <- do.call("rbind", stats.all)
+  # make new column for fold number
+  stats.all.df$fold <- rep(1:4, length(args))
+  # concatenate fc and rm to make settings column
+  stats.all.df$fc <- unlist(lapply(args.lab[[1]], function(x) rep(x, 4)))
+  stats.all.df$rm <- unlist(lapply(args.lab[[2]], function(x) rep(x, 4)))
+  args.lab.concat <- paste0(args.lab[[1]], args.lab[[2]])
+  stats.all.df$settings <- unlist(lapply(args.lab.concat, function(x) rep(x, 4)))
+  stats.all.df <- stats.all.df %>% dplyr::select(settings, fc, rm, fold, auc.test, auc.diff, or.min, or.10)
+
+  stats.sum.df <- stats.all.df %>% dplyr::group_by(settings) %>% summarize(mean(auc.test), mean(auc.diff), mean(or.min), mean(or.10))
+  
+  
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if (overlap == TRUE) {
