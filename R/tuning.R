@@ -4,73 +4,55 @@
 # THIS FUNCTION DOES SPATIALLY-INDEPENDENT EVALUATIONS
 # INPUT ARGUMENTS COME FROM WRAPPER FUNCTION
 
-tuning <- function (occs, envs, bg, occs.grp, bg.grp, method, algorithm, args,
-                    args.lab, categoricals, aggregation.factor, kfolds, bin.output,
-                    clamp, alg, rasterPreds, parallel, numCores, progbar, updateProgress,
+tuning <- function (occs, envs, bg, folds, algorithm, args,
+                    args.lab, categoricals, aggregation.factor, bin.output,
+                    clamp, rasterPreds, parallel, numCores, progbar, updateProgress,
                     userArgs) {
 
+  # unpack occs.folds and bg.folds
+  occs.folds <- folds$occs.folds
+  bg.folds <- folds$bg.folds
+  
   # extract predictor variable values at coordinates for occs and bg
   occs.vals <- as.data.frame(extract(envs, occs))
   bg.vals <- as.data.frame(extract(envs, bg))
 
-  # remove rows with NA for any predictor variable
-  # also redefine occs and bg without NA rows
+  # remove rows from occs, occs.vals, occs.folds with NA for any predictor variable
   occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
   bg.vals.na <- sum(rowSums(is.na(bg)) > 0)
   if(occs.vals.na > 0) {
     i <- !apply(occs.vals, 1, anyNA)
     occs <- occs[i,]
-    occs.grp <- occs.grp[i]
+    occs.folds <- occs.folds[i]
     occs.vals <- occs.vals[i,]
     message(paste("There were", occs.vals.na, "occurrence records with NA for at least
                   one predictor variable. Removed these from analysis,
                   resulting in", nrow(occs.vals), "occurrence records."))
   }
+  # do the same for associated bg variables
   if(bg.vals.na > 0) {
     i <- !apply(bg.vals, 1, anyNA)
     occs <- occs[i,]
-    bg.grp <- bg.grp[i]
+    bg.folds <- bg.folds[i]
     bg.vals <- bg.vals[i,]
     message(paste("There were", bg.vals.na, "background records with NA for at least
                   one predictor variable. Removed these from analysis,
                   resulting in", nrow(bg.vals), "background records."))
   }
 
-  if (!is.null(categoricals)) {
+  # convert fields for categorical data to factor class
+  if(!is.null(categoricals)) {
     for (i in 1:length(categoricals)) {
-      pres[, categoricals[i]] <- as.factor(pres[, categoricals[i]])
-      bg[, categoricals[i]] <- as.factor(bg[, categoricals[i]])
+      occs.vals[, categoricals[i]] <- as.factor(occs.vals[, categoricals[i]])
+      bg.vals[, categoricals[i]] <- as.factor(bg.vals[, categoricals[i]])
     }
   }
 
-  # assign partition groups based on choice of method
-  if ("checkerboard1" %in% method) {
-    method <- c(method = "checkerboard1", aggregation.factor = aggregation.factor)
-    group.data <- get.checkerboard1(occs, envs, bg, aggregation.factor)
-  }
-  if ("checkerboard2" %in% method) {
-    method <- c(method = "checkerboard2", aggregation.factor = aggregation.factor)
-    group.data <- get.checkerboard2(occs, envs, bg, aggregation.factor)
-  }
-  if ("block" %in% method)
-    group.data <- get.block(occs, bg)
-  if ("jackknife" %in% method)
-    group.data <- get.jackknife(occs, bg)
-  if ("randomkfold" %in% method) {
-    method <- c(method = "randomkfold", number.folds = kfolds)
-    group.data <- get.randomkfold(occs, bg, kfolds)
-  }
-  if ("user" %in% method) {
-    method <- c(method= "user", number.folds = length(unique(occs.grp)))
-    group.data <- get.user(occs.grp, bg.grp)
-  }
-
-
-  # define number of groups (the value of "k")
-  nk <- length(unique(group.data$occs.grp))
+  # define number of folds (the value of "k")
+  nk <- length(unique(occs.folds))
 
   # differential behavior for parallel and default
-  if (parallel == TRUE) {
+  if(parallel == TRUE) {
     # set up parallel computing
     allCores <- detectCores()
     if (is.null(numCores)) {
@@ -90,13 +72,13 @@ tuning <- function (occs, envs, bg, occs.grp, bg.grp, method, algorithm, args,
       # library(maxnet)
       out <- foreach(i = seq_len(length(args)),
                      .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
-                       modelTune.maxnet(pres, bg, envs, nk, group.data, args[[i]],
+                       modelTune.maxnet(occs.vals, bg.vals, envs, nk, folds, args[[i]],
                                         rasterPreds, clamp)
                      }
     } else if (algorithm == 'maxent.jar') {
       out <- foreach(i = seq_len(length(args)),
                      .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
-                       modelTune.maxentJar(pres, bg, envs, nk, group.data, args[[i]],
+                       modelTune.maxentJar(occs.vals, bg.vals, envs, nk, folds, args[[i]],
                                            userArgs, rasterPreds, clamp)
                      }
     }
@@ -118,10 +100,10 @@ tuning <- function (occs, envs, bg, occs.grp, bg.grp, method, algorithm, args,
         }
       }
       if (algorithm == 'maxnet') {
-        out[[i]] <- modelTune.maxnet(pres, bg, envs, nk, group.data, args[[i]],
+        out[[i]] <- modelTune.maxnet(occs.vals, bg.vals, envs, nk, folds, args[[i]],
                                      rasterPreds, clamp)
       } else if (algorithm == 'maxent.jar') {
-        out[[i]] <- modelTune.maxentJar(pres, bg, envs, nk, group.data, args[[i]],
+        out[[i]] <- modelTune.maxentJar(occs.vals, bg.vals, envs, nk, folds, args[[i]],
                                         userArgs, rasterPreds, clamp)
       }
     }
@@ -161,7 +143,7 @@ tuning <- function (occs, envs, bg, occs.grp, bg.grp, method, algorithm, args,
 
   for (i in 1:length(full.mods)) {
     if (algorithm == 'maxnet') {
-      full.AUC[i] <- dismo::evaluate(pres, bg, full.mods[[i]])@auc
+      full.AUC[i] <- dismo::evaluate(occs.vals, bg.vals, full.mods[[i]])@auc
     } else if (algorithm == 'maxent.jar') {
       full.AUC[i] <- full.mods[[i]]@results[5]
     }
@@ -200,9 +182,9 @@ tuning <- function (occs, envs, bg, occs.grp, bg.grp, method, algorithm, args,
     names(predictive.maps) <- settings
   }
 
-  results <- ENMevaluation(algorithm = alg, results = res, predictions = predictive.maps,
+  results <- ENMevaluation(algorithm = algorithm, results = res, predictions = predictive.maps,
                            models = full.mods, partition.method = method,
-                           occs.pts = occs, occs.grp = group.data[[1]],
-                           bg.pts = bg, bg.grp = group.data[[2]])
+                           occs.pts = occs, occs.folds = folds[[1]],
+                           bg.pts = bg, bg.folds = folds[[2]])
   return(results)
 }
