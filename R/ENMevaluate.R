@@ -1,13 +1,19 @@
-#' 
+#' @export 
 
-ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL, partitions = NULL,
-                        algorithm, n.bg = 10000, occs.folds = NULL, bg.folds = NULL,
+ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, categoricals = NULL, 
+                        partitions = NULL, occs.folds = NULL, bg.folds = NULL, n.bg = 10000, 
                         overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
-                        clamp = TRUE, skipRasters = FALSE, parallel = FALSE, numCores = NULL, 
-                        updateProgress = FALSE, ...) {
+                        doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE, 
+                        numCores = NULL, updateProgress = FALSE) {
 
   # record start time
   start.time <- proc.time()
+  # get model function's name
+  mod.fun.name <- as.character(substitute(mod.fun))[3]
+  
+  ########### #
+  # CHECKS ####
+  ########### #
   
   # general parameter checks
   if(is.null(partitions)) {
@@ -17,58 +23,47 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
     stop("Please make sure partition method is one of the available options.")
   }
   
-  # mod.settings checks and algorithm-specific set-up
-  if(algorithm %in% c("maxent.jar", "maxnet")) {
-    if(!("rm" %in% names(mod.settings)) | !("fc" %in% names(mod.settings))) {
-      stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?mod.settings for help.")
+  # tune.args checks and algorithm-specific set-up
+  if(mod.fun.name %in% c("maxent", "maxnet")) {
+    if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
+      stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
     }else{
-      if(!is.numeric(mod.settings[["rm"]])) {
+      if(!is.numeric(tune.args[["rm"]])) {
         stop("Please input numeric values for 'rm' settings for Maxent.")
       }
       all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
-      if(any(!mod.settings[["fc"]] %in% all.fc)) {
+      if(any(!tune.args[["fc"]] %in% all.fc)) {
         stop("Please input accepted values for 'fc' settings for Maxent.")
       }
     }
     
-    if(algorithm == 'maxent.jar') {
-      user.args <- list(...)
-      maxent.args <- c("addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
-                       "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
-                       "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
-                       "maximumiterations", "removeduplicates")
-      if(!all(names(user.args) %in% maxent.args)) {
-        stop("One or more input Maxent settings are not implemented in ENMeval or are misspelled.")
-      }
+    if(mod.fun.name == 'maxent') {
+      # maxent.args <- c("fc", "rm", "addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
+      #                  "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
+      #                  "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
+      #                  "maximumiterations", "removeduplicates")
+      # if(!all(names(tune.args) %in% maxent.args)) {
+        # stop("One or more input Maxent settings are not implemented in ENMeval or are misspelled.")
+      # }
       # construct user message with version info
       algorithm.ver <- paste("Maxent", maxentJARversion(), "via dismo", packageVersion('dismo'))
     }
     
-    if(algorithm == 'maxnet') {
+    if(mod.fun.name == 'maxnet') {
       # construct user message with version info
       algorithm.ver <- paste("maxnet", packageVersion('maxnet'))
     }
   }
   
-  if(algorithm == 'brt') {
-    if(all("n.trees" %in% names(mod.settings), "interaction.depth" %in% names(mod.settings), "shrinkage" %in% names(mod.settings))) {
+  if(mod.fun.name == 'brt') {
+    if(all("n.trees" %in% names(tune.args), "interaction.depth" %in% names(tune.args), "shrinkage" %in% names(tune.args))) {
       stop("BRT settings must include 'n.trees', 'interaction.depth', and 'shrinkage'.")
       # construct user message with version info
       algorithm.ver <- paste("gbm", packageVersion('gbm'))
     }
   }
   
-  # handle user.args
-  if(length(user.args) == 0) {
-    user.args <- NULL
-  }else{
-    user.args <- paste(names(user.args), unlist(user.args), sep='=')
-  }
-  
-  
-  
-  args <- make.args(mod.settings, algorithm)
-  args.lab <- make.args(mod.settings, algorithm, labels = TRUE)
+  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   message(paste("*** Running ENMevaluate using", algorithm.ver, "***"))
 
@@ -76,7 +71,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
   
   # if no background points specified, generate random ones
   if(is.null(bg)) {
-    bg <- randomPoints(envs, n = n.bg)
+    bg <- dismo::randomPoints(envs, n = n.bg)
   }
   
   # make sure occs and bg are data frames with identical column names
@@ -115,9 +110,9 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
   
   message(paste("Doing evaluations with", ptn.msg, "cross validation..."))
   
-  ###############
+  ############# #
   # ANALYSIS ####
-  ###############
+  ############# #
   
   # extract predictor variable values at coordinates for occs and bg
   occs.vals <- as.data.frame(extract(envs, occs))
@@ -148,75 +143,31 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
   
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
-    for (i in 1:length(categoricals)) {
+    for(i in 1:length(categoricals)) {
       occs.vals[, categoricals[i]] <- as.factor(occs.vals[, categoricals[i]])
       bg.vals[, categoricals[i]] <- as.factor(bg.vals[, categoricals[i]])
     }
   }
   
-  # if using parallel processing...
   if(parallel == TRUE) {
-    # set up parallel processing functionality
-    allCores <- detectCores()
-    if (is.null(numCores)) {
-      numCores <- allCores
-    }
-    c1 <- makeCluster(numCores)
-    registerDoParallel(c1)
-    numCoresUsed <- getDoParWorkers()
-    message(paste("Of", allCores, "total cores using", numCoresUsed))
-    
-    message("Running in parallel...")
-    if (algorithm == 'maxnet') {
-      tune.results <- foreach(i = seq_len(length(args)),
-                     .packages = c("dismo", "raster", "ENMeval", "maxnet")) %dopar% {
-                       modelTune.maxnet(occs.vals, bg.vals, envs, folds, args[[i]],
-                                        rasterPreds, clamp)
-                     }
-    }
-    if (algorithm == 'maxent.jar') {
-      tune.results <- foreach(i = seq_len(length(args)),
-                     .packages = c("dismo", "raster", "ENMeval", "rJava")) %dopar% {
-                       modelTune.maxentJar(occs.vals, bg.vals, envs, folds, args[[i]],
-                                           userArgs, rasterPreds, clamp)
-                     }
-    }
-    stopCluster(c1)
+    results <- tune.enm.parallel(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
+                                 mod.fun, tune.tbl, other.args, categoricals, 
+                                 doClamp, skipRasters, abs.auc.diff)
   } 
-  # if not using parallel processing...
-  if(parallel == FALSE) {
-    tune.results <- list()
-    # set up the console progress bar
-    pb <- txtProgressBar(0, length(args), style = 3)
-    
-    for(i in 1:length(args)) {
-      # and (optionally) the shiny progress bar (updateProgress)
-      if(length(args) > 1) {
-        if(is.function(updateProgress)) {
-          text <- paste0('Running ', args.lab[[1]][i], args.lab[[2]][i], '...')
-          updateProgress(detail = text)
-        }
-        setTxtProgressBar(pb, i)
-      }
-      if (algorithm == 'maxnet') {
-        tune.results[[i]] <- modelTune.maxnet(occs.vals, bg.vals, envs, occs.folds, bg.folds, args[[i]],
-                                     rasterPreds, clamp)
-      } else if (algorithm == 'maxent.jar') {
-        tune.results[[i]] <- modelTune.maxentJar(occs.vals, bg.vals, envs, nk, folds, args[[i]],
-                                        userArgs, rasterPreds, clamp)
-      }
-    }
-    close(pb)  
+  else {
+    results <- tune.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
+                        mod.fun, tune.tbl, other.args, categoricals, 
+                        doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
   # gather all full models into list
-  mod.full.all <- lapply(tune.results, function(x) x$mod.full)
+  mod.full.all <- lapply(results, function(x) x$mod.full)
   # gather all statistics into a data frame
-  stats.all <- lapply(tune.results, function(x) x$stats)
+  kstats.all <- lapply(results, function(x) x$kstats)
   if(skipRasters == FALSE) {
-    mod.full.pred.all <- stack(sapply(tune.results, function(x) x$mod.full.pred))
+    mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
   } else {
-    mod.full.pred.all <- stack()
+    mod.full.pred.all <- raster::stack()
   }
   
   # define a corrected variance function
@@ -225,17 +176,22 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.settings, categoricals = NULL
   }
   
   # make data frame of stats (for all folds)
-  stats.all.df <- do.call("rbind", stats.all)
-  # make new column for fold number
-  stats.all.df$fold <- rep(1:4, length(args))
+  kstats.df <- do.call("rbind", kstats.all)
+  # define number of folds (the value of "k")
+  nk <- length(unique(occs.folds))
   # concatenate fc and rm to make settings column
-  stats.all.df$fc <- unlist(lapply(args.lab[[1]], function(x) rep(x, 4)))
-  stats.all.df$rm <- unlist(lapply(args.lab[[2]], function(x) rep(x, 4)))
-  args.lab.concat <- paste0(args.lab[[1]], args.lab[[2]])
-  stats.all.df$settings <- unlist(lapply(args.lab.concat, function(x) rep(x, 4)))
-  stats.all.df <- stats.all.df %>% dplyr::select(settings, fc, rm, fold, auc.test, auc.diff, or.min, or.10)
-
-  stats.sum.df <- stats.all.df %>% dplyr::group_by(settings) %>% summarize(mean(auc.test), mean(auc.diff), mean(or.min), mean(or.10))
+  for(i in 1:ncol(tune.tbl)) {
+    kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
+    names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
+  }
+  # make new column for fold number
+  kstats.df$fold <- rep(1:nk, nrow(tune.tbl))
+  # get number of columns in kstats.df
+  nc <- ncol(kstats.df)
+  # rearrange the columns
+  kstats.df <- kstats.df[, c(seq(nc-ncol(tune.tbl), nc), seq_len(nc-ncol(tune.tbl)-1))]
+  
+  stats.sum.df <- kstats.df %>% dplyr::group_by(fc, rm) %>% dplyr::summarize(mean(auc.test), mean(auc.diff), mean(or.min), mean(or.10))
   
   
   
