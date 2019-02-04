@@ -22,9 +22,7 @@ tuning <- function (occs, envs, bg, folds, algorithm, args,
   OR10 <- statsTbl[,((2*nk)+1):(3*nk)]
   ORmin <- statsTbl[,((3*nk)+1):(4*nk)]
   
-  corrected.var <- function(x, nk){
-    rowSums((x - rowMeans(x))^2) * ((nk-1)/nk)
-  }
+
   
   # rename column fields
   names(AUC.DIFF) <- paste("diff.AUC_bin", 1:nk, sep = ".")
