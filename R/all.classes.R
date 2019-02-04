@@ -1,3 +1,5 @@
+#' @export
+
 ENMevaluation <- setClass("ENMevaluation",
                           slots=c(algorithm='character',
                                   results='data.frame',

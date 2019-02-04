@@ -1,6 +1,6 @@
 #' @export
 
-tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, 
+tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.fun.name,
                      tune.tbl, other.args, categoricals, doClamp, skipRasters,
                      abs.auc.diff, updateProgress) {
   results <- list()
@@ -17,7 +17,7 @@ tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun,
       }
       setTxtProgressBar(pb, i)
     }
-    results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun,
+    results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.fun.name,
                            tune.tbl[i,], other.args, categoricals, doClamp, 
                            skipRasters, abs.auc.diff)
   }
@@ -26,7 +26,7 @@ tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun,
   return(results)  
 }
 
-tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, 
+tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.fun.name,
                               tune.tbl, other.args, categoricals, doClamp, skipRasters,
                               abs.auc.diff) {
   # get model function's name
@@ -47,7 +47,7 @@ tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mo
   message("Running in parallel...")
   n <- nrow(tune.tbl)
   results <- foreach(i = 1:n, .packages = pkgs) %dopar% {
-    cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, tune.tbl[i,],
+    cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.fun.name, tune.tbl[i,],
            other.args, categoricals, doClamp, skipRasters, abs.auc.diff)
   }
   stopCluster(c1)
@@ -55,16 +55,17 @@ tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mo
   return(results)
 }
 
-cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun,
+cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.fun.name,
                    tune.tbl.i, other.args, categoricals, doClamp, skipRasters,
                    abs.auc.diff) {
   # get model function's name
-  # mod.fun.name <- as.character(substitute(mod.fun))[3]
-  mod.fun.name <- "maxnet"
+  mod.fun.name <- as.character(substitute(mod.fun))[3]
+  print(mod.fun.name)
   
   # build the full model from all the data
   mod.full.args <- make.args(tune.tbl.i, mod.fun.name, occs.vals, bg.vals, other.args)
   mod.full <- do.call(mod.fun, mod.full.args)
+  auc.train.full <- dismo::evaluate(occs.vals, bg.vals, mod.full)@auc
   
   # if rasters selected, predict for the full model
   if(skipRasters == FALSE) {
@@ -83,12 +84,12 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun,
     mod.full.pred <- raster::stack()
   }
   
+  # define number of folds (the value of "k")
+  nk <- length(unique(occs.folds))
+  
   # set up empty vectors for stats
   kstats <- data.frame(auc.test = numeric(nk), auc.diff = numeric(nk), 
                       or.min = numeric(nk), or.10 = numeric(nk))
-  
-  # define number of folds (the value of "k")
-  nk <- length(unique(occs.folds))
   
   # cross-validation on partitions
   for(k in 1:nk) {
@@ -104,7 +105,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun,
     kstats[k,] <- evalStats(train.k, bg.k, test.k, mod.k, abs.auc.diff)
   }
   
-  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, kstats = kstats)
+  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
+                 kstats = kstats, auc.train.full = auc.train.full)
   return(cv.res)
 }
 

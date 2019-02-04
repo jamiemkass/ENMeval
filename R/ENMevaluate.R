@@ -1,3 +1,4 @@
+#' @importFrom magrittr %>%
 #' @export 
 
 ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, categoricals = NULL, 
@@ -10,6 +11,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   start.time <- proc.time()
   # get model function's name
   mod.fun.name <- as.character(substitute(mod.fun))[3]
+  print(mod.fun.name)
   
   ########### #
   # CHECKS ####
@@ -151,17 +153,18 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   
   if(parallel == TRUE) {
     results <- tune.enm.parallel(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                                 mod.fun, tune.tbl, other.args, categoricals, 
+                                 mod.fun, mod.fun.name, tune.tbl, other.args, categoricals, 
                                  doClamp, skipRasters, abs.auc.diff)
   } 
   else {
     results <- tune.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                        mod.fun, tune.tbl, other.args, categoricals, 
+                        mod.fun, mod.fun.name, tune.tbl, other.args, categoricals, 
                         doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
   # gather all full models into list
   mod.full.all <- lapply(results, function(x) x$mod.full)
+  aucs.train.full <- lapply(results, function(x) x$auc.train.full)
   # gather all statistics into a data frame
   kstats.all <- lapply(results, function(x) x$kstats)
   if(skipRasters == FALSE) {
@@ -179,8 +182,10 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   kstats.df <- do.call("rbind", kstats.all)
   # define number of folds (the value of "k")
   nk <- length(unique(occs.folds))
+  # define number of settings
+  ns <- ncol(tune.tbl)
   # concatenate fc and rm to make settings column
-  for(i in 1:ncol(tune.tbl)) {
+  for(i in 1:ns) {
     kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
     names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
   }
@@ -188,13 +193,18 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   kstats.df$fold <- rep(1:nk, nrow(tune.tbl))
   # get number of columns in kstats.df
   nc <- ncol(kstats.df)
-  # rearrange the columns
-  kstats.df <- kstats.df[, c(seq(nc-ncol(tune.tbl), nc), seq_len(nc-ncol(tune.tbl)-1))]
   
-  stats.sum.df <- kstats.df %>% dplyr::group_by(fc, rm) %>% dplyr::summarize(mean(auc.test), mean(auc.diff), mean(or.min), mean(or.10))
+  # summarize by averaging all folds per model setting combination
+  stats.df <- kstats.df %>% 
+    dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
+    dplyr::summarize_at(seq(1, nc-ns-1), mean)
+  stats.df$aucs.train.full <- unlist(aucs.train.full)
+  stats.df <- stats.df %>% 
+    dplyr::select_at(c(1:ns, ns+5, seq(ns+1, ns+4)))
   
-  
-  
+  # rearrange the columns for kstats
+  kstats.df <- kstats.df %>%
+    dplyr::select_at(c(seq(nc-ns, nc), 1:4))
   # if niche overlap selected, calculate and add the resulting matrix to results
   if (overlap == TRUE) {
     if (length(args) > 1) {
