@@ -1,7 +1,7 @@
 #' @importFrom magrittr %>%
 #' @export 
 
-ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, categoricals = NULL, 
+ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = NULL, categoricals = NULL, 
                         partitions = NULL, occs.folds = NULL, bg.folds = NULL, n.bg = 10000, 
                         overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
                         doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE, 
@@ -64,7 +64,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
       algorithm.ver <- paste("gbm", packageVersion('gbm'))
     }
   }
-  
+  # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   message(paste("*** Running ENMevaluate using", algorithm.ver, "***"))
@@ -117,8 +117,8 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   ############# #
   
   # extract predictor variable values at coordinates for occs and bg
-  occs.vals <- as.data.frame(extract(envs, occs))
-  bg.vals <- as.data.frame(extract(envs, bg))
+  occs.vals <- as.data.frame(raster::extract(envs, occs))
+  bg.vals <- as.data.frame(raster::extract(envs, bg))
   
   # remove rows from occs, occs.vals, occs.folds with NA for any predictor variable
   occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
@@ -153,58 +153,24 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   
   if(parallel == TRUE) {
     results <- tune.enm.parallel(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                                 mod.fun, mod.fun.name, tune.tbl, other.args, categoricals, 
+                                 mod.fun, tune.tbl, other.args, categoricals, 
                                  doClamp, skipRasters, abs.auc.diff)
   } 
   else {
     results <- tune.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                        mod.fun, mod.fun.name, tune.tbl, other.args, categoricals, 
+                        mod.fun, tune.tbl, other.args, categoricals, 
                         doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
-  # gather all full models into list
-  mod.full.all <- lapply(results, function(x) x$mod.full)
-  aucs.train.full <- lapply(results, function(x) x$auc.train.full)
-  # gather all statistics into a data frame
-  kstats.all <- lapply(results, function(x) x$kstats)
-  if(skipRasters == FALSE) {
-    mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
-  } else {
-    mod.full.pred.all <- raster::stack()
-  }
+  res <- collateResults(results, tune.tbl)
+  e <- ENMevaluation(algorithm = mod.fun.name, 
+                     stats = res$stats, kstats = res$kstats,
+                     predictions = res$preds, models = res$mods, 
+                     partition.method = partitions,
+                     occs = occs, occs.folds = occs.folds,
+                     bg = bg, bg.folds = bg.folds)
   
-  # define a corrected variance function
-  corrected.var <- function(x, nk){
-    rowSums((x - rowMeans(x))^2) * ((nk-1)/nk)
-  }
   
-  # make data frame of stats (for all folds)
-  kstats.df <- do.call("rbind", kstats.all)
-  # define number of folds (the value of "k")
-  nk <- length(unique(occs.folds))
-  # define number of settings
-  ns <- ncol(tune.tbl)
-  # concatenate fc and rm to make settings column
-  for(i in 1:ns) {
-    kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
-    names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
-  }
-  # make new column for fold number
-  kstats.df$fold <- rep(1:nk, nrow(tune.tbl))
-  # get number of columns in kstats.df
-  nc <- ncol(kstats.df)
-  
-  # summarize by averaging all folds per model setting combination
-  stats.df <- kstats.df %>% 
-    dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
-    dplyr::summarize_at(seq(1, nc-ns-1), mean)
-  stats.df$aucs.train.full <- unlist(aucs.train.full)
-  stats.df <- stats.df %>% 
-    dplyr::select_at(c(1:ns, ns+5, seq(ns+1, ns+4)))
-  
-  # rearrange the columns for kstats
-  kstats.df <- kstats.df %>%
-    dplyr::select_at(c(seq(nc-ns, nc), 1:4))
   # if niche overlap selected, calculate and add the resulting matrix to results
   if (overlap == TRUE) {
     if (length(args) > 1) {
@@ -228,5 +194,5 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args, c
   t.sec <- timed[3] - (t.min * 60)
   message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
-  return(results)
+  return(e)
 }
