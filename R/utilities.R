@@ -1,43 +1,93 @@
 #' @export
-make.args <- function(tune.args.i, mod.fun.name, occs.vals, bg.vals, other.args) {
+make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
   
   out <- list()
+  # define data 
+  d <- rbind(occs.vals, bg.vals)
+  # define response
+  p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
   
-  if(mod.fun.name == "maxent") {
+  if(mod.name == "maxent") {
+    out$x <- d
+    out$p <- p
     out$args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
-    
-    if(!grepl("L", tune.args.i$fc)) out$args <- c(out$args, "nolinear")
-    if(!grepl("Q", tune.args.i$fc)) out$args <- c(out$args, "noquadratic")
-    if(!grepl("H", tune.args.i$fc)) out$args <- c(out$args, "nohinge")
-    if(!grepl("P", tune.args.i$fc)) out$args <- c(out$args, "noproduct")
-    if(!grepl("T", tune.args.i$fc)) out$args <- c(out$args, "nothreshold")
-    out$args <- c(out$args, paste0("betamultiplier=", tune.args.i$rm, sep=""))
-    out$x <- as.data.frame(rbind(occs.vals, bg.vals))
-    out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
+    if(!grepl("L", tune.tbl.i$fc)) out$args <- c(out$args, "nolinear")
+    if(!grepl("Q", tune.tbl.i$fc)) out$args <- c(out$args, "noquadratic")
+    if(!grepl("H", tune.tbl.i$fc)) out$args <- c(out$args, "nohinge")
+    if(!grepl("P", tune.tbl.i$fc)) out$args <- c(out$args, "noproduct")
+    if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold")
+    out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
   }
   
-  if(mod.fun.name == "maxnet") {
-    out$data <- rbind(occs.vals, bg.vals)
-    out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
-    out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.args.i$fc))
-    out$regmult <- tune.args.i$rm
+  if(mod.name == "maxnet") {
+    out$data <- d
+    out$p <- p
+    out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
+    out$regmult <- tune.tbl.i$rm
   }
   
   # need logic for BRTs
-  
+  if(mod.name == "gbm.step") {
+    out$tree.complexity <- tune.tbl.i$tree.complexity
+    out$learning.rate <- tune.tbl.i$learning.rate
+    out$bag.fraction <- tune.tbl.i$bag.fraction
+    out$data <- cbind(p, d)
+    out$gbm.x <- 2:ncol(out$data)
+    out$gbm.y <- 1
+    out$silent <- TRUE
+  }
   # add other args
   out <- c(out, other.args)
   
   return(out)
 }
 
+# function to calculate AUC based on the model type
+calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
+  if(mod.name %in% c("maxent", "maxnet")) {
+    auc <- dismo::evaluate(occs.vals, bg.vals, mod)@auc  
+  }
+  if(mod.name == "gbm.step") {
+    auc <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
+  }
+  return(auc)
+}
+
+# function to predict values to a raster based on the model type
+rasterPred <- function(mod, envs, mod.name, doClamp) {
+  if(mod.name == "maxent") {
+    pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
+    pred <- dismo::predict(mod, envs, args = pred.args)
+  }
+  if(mod.name == "maxnet") {
+    pred <- maxnet.predictRaster(mod, envs, type = 'exponential', clamp = doClamp)
+  }
+  if(mod.name == "gbm.step") {
+    pred <- dismo::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees)
+  }
+}
+
+vectorPred <- function(mod, df, mod.name, doClamp) {
+  if(mod.name == "maxent") {
+    pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
+    pred <- dismo::predict(mod, df, args = pred.args)
+  }
+  if(mod.name == "maxnet") {
+    pred <- predict(mod, df, type = 'exponential', clamp = doClamp)
+  }
+  if(mod.name == "gbm.step") {
+    pred <- dismo::predict(mod, df, type = "response", n.trees = mod$gbm.call$best.trees)
+  }
+  return(pred)
+}
+
 #' @export
 # get total number of parameters
-getNoParams <- function(m, mod.fun.name) {
-  if(mod.fun.name == 'maxnet') {
+getNoParams <- function(m, mod.name) {
+  if(mod.name == 'maxnet') {
     return(length(m$betas))
   }
-  if(mod.fun.name == "maxent") {
+  if(mod.name == "maxent") {
     lambdas <- m@lambdas[1:(length(m@lambdas)-4)]
     countNonZeroParams <- function(x) {
       if(strsplit(x, split=", ")[[1]][2] != '0.0') 1

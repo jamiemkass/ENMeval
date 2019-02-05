@@ -4,7 +4,7 @@
 # envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 # which(rowSums(is.na(raster::extract(envs, occs))) > 0)
 # bg <- dismo::randomPoints(envs, 1000)
-# tune.args <- list("rm" = 1:4, "fc" = c("L", "LQ"))
+# tune.args <- list(rm = 1:4, fc = c("L", "LQ"))
 # partitions <- "block"
 # categoricals <- "biome"
 # 
@@ -13,5 +13,7 @@
 # envs.xy <- rasterToPoints(envs[[1]], spatial = TRUE)
 # envs.folds <- ENMeval::get.block(occ=occs, bg.coords=envs.xy@coords)$bg.grp
 # 
-
 # e <- ENMevaluate(occs, envs, bg, maxnet::maxnet, tune.args, categoricals = "biome", partitions = "block")
+# e <- ENMevaluate(occs, envs, bg, dismo::maxent, tune.args, categoricals = "biome", partitions = "block")
+# tune.args <- list(tree.complexity = c(1,4), learning.rate = c(0.01, 0.001), bag.fraction = c(0.5, 0.75))
+# e <- ENMevaluate(occs, envs, bg, dismo::gbm.step, tune.args, categoricals = "biome", partitions = "block")
