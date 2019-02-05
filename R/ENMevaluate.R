@@ -10,8 +10,8 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   # record start time
   start.time <- proc.time()
   # get model function's name
-  mod.fun.name <- as.character(substitute(mod.fun))[3]
-  print(mod.fun.name)
+  mod.name <- as.character(substitute(mod.fun))[3]
+  print(mod.name)
   
   ########### #
   # CHECKS ####
@@ -26,7 +26,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   }
   
   # tune.args checks and algorithm-specific set-up
-  if(mod.fun.name %in% c("maxent", "maxnet")) {
+  if(mod.name %in% c("maxent", "maxnet")) {
     if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
       stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
     }else{
@@ -39,7 +39,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
       }
     }
     
-    if(mod.fun.name == 'maxent') {
+    if(mod.name == 'maxent') {
       # maxent.args <- c("fc", "rm", "addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
       #                  "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
       #                  "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
@@ -51,18 +51,18 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
       algorithm.ver <- paste("Maxent", maxentJARversion(), "via dismo", packageVersion('dismo'))
     }
     
-    if(mod.fun.name == 'maxnet') {
+    if(mod.name == 'maxnet') {
       # construct user message with version info
       algorithm.ver <- paste("maxnet", packageVersion('maxnet'))
     }
   }
   
-  if(mod.fun.name == 'brt') {
-    if(all("n.trees" %in% names(tune.args), "interaction.depth" %in% names(tune.args), "shrinkage" %in% names(tune.args))) {
-      stop("BRT settings must include 'n.trees', 'interaction.depth', and 'shrinkage'.")
-      # construct user message with version info
-      algorithm.ver <- paste("gbm", packageVersion('gbm'))
+  if(mod.name == 'gbm.step') {
+    if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
+      stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
     }
+    # construct user message with version info
+    algorithm.ver <- paste("gbm.step via", packageVersion('gbm'), "and dismo", packageVersion('dismo'))
   }
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
@@ -153,17 +153,17 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   
   if(parallel == TRUE) {
     results <- tune.enm.parallel(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                                 mod.fun, tune.tbl, other.args, categoricals, 
+                                 mod.fun, mod.name, tune.tbl, other.args, categoricals, 
                                  doClamp, skipRasters, abs.auc.diff)
   } 
   else {
     results <- tune.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                        mod.fun, tune.tbl, other.args, categoricals, 
+                        mod.fun, mod.name, tune.tbl, other.args, categoricals, 
                         doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
-  res <- collateResults(results, tune.tbl)
-  e <- ENMevaluation(algorithm = mod.fun.name, 
+  res <- collateResults(results, tune.tbl, mod.name, skipRasters)
+  e <- ENMevaluation(algorithm = mod.name, 
                      stats = res$stats, kstats = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,
