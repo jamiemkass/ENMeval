@@ -89,7 +89,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     # run the current model k
     mod.k <- do.call(mod.fun, mod.k.args)
     # calculate the stats for model k
-    kstats[k,] <- evalStats(train.k, bg.k, test.k, mod.k, mod.name, abs.auc.diff)
+    kstats[k,] <- evalStats(train.k, bg.k, test.k, mod.k, mod.name, doClamp, abs.auc.diff)
   }
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
@@ -97,7 +97,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, mod, mod.name, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, mod, mod.name, doClamp, abs.auc.diff) {
   # calculate auc on training and testing data
   auc.train <- calcAUC(occs.train, bg.train, mod, mod.name)
   auc.test <- calcAUC(occs.test, bg.train, mod, mod.name)
@@ -162,7 +162,7 @@ collateResults <- function(results, tune.tbl, mod.name, skipRasters) {
   # get number of columns in kstats.df
   nc <- ncol(kstats.df)
   # calculate number of non-zero parameters in model
-  nparams <- sapply(mod.full.all, function(x) getNoParams(x, mod.name))
+  nparams <- sapply(mod.full.all, function(x) no.params(x, mod.name))
   
   # summarize by averaging all folds per model setting combination
   stats.df <- kstats.df %>% 
@@ -186,7 +186,7 @@ collateResults <- function(results, tune.tbl, mod.name, skipRasters) {
     dplyr::ungroup() %>%
     dplyr::mutate(auc.train = sapply(results, function(x) x$auc.train)) %>%
     dplyr::select(-((ns+1):(ns+16)), (ns+1):(ns+16)) %>%
-    dplyr::bind_cols(calc.aicc(nparams, occs, mod.full.pred.all))
+    dplyr::bind_cols(calc.aicc(nparams, occs, mod.full.pred.all, mod.name))
   
   # rearrange the columns for kstats
   kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:4))
