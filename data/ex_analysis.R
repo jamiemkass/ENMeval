@@ -15,5 +15,5 @@
 # 
 # e <- ENMevaluate(occs, envs, bg, maxnet::maxnet, tune.args, categoricals = "biome", partitions = "block")
 # e <- ENMevaluate(occs, envs, bg, dismo::maxent, tune.args, categoricals = "biome", partitions = "block")
-# tune.args <- list(tree.complexity = c(1,4), learning.rate = c(0.01, 0.001), bag.fraction = c(0.5, 0.75))
+# tune.args <- list(tree.complexity = 1, learning.rate = 0.1, bag.fraction = 0.5)
 # e <- ENMevaluate(occs, envs, bg, dismo::gbm.step, tune.args, categoricals = "biome", partitions = "block")

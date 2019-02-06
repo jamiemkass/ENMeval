@@ -11,7 +11,6 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   start.time <- proc.time()
   # get model function's name
   mod.name <- as.character(substitute(mod.fun))[3]
-  print(mod.name)
   
   ########### #
   # CHECKS ####
@@ -25,49 +24,11 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
     stop("Please make sure partition method is one of the available options.")
   }
   
-  # tune.args checks and algorithm-specific set-up
-  if(mod.name %in% c("maxent", "maxnet")) {
-    if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
-      stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
-    }else{
-      if(!is.numeric(tune.args[["rm"]])) {
-        stop("Please input numeric values for 'rm' settings for Maxent.")
-      }
-      all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
-      if(any(!tune.args[["fc"]] %in% all.fc)) {
-        stop("Please input accepted values for 'fc' settings for Maxent.")
-      }
-    }
-    
-    if(mod.name == 'maxent') {
-      # maxent.args <- c("fc", "rm", "addsamplestobackground", "addallsamplestobackground", "allowpartialdata", 
-      #                  "beta_threshold", "beta_categorical", "beta_lqp", "beta_hinge", "convergencethreshold",
-      #                  "defaultprevalence", "extrapolate", "fadebyclamping", "jackknife", "maximumbackground", 
-      #                  "maximumiterations", "removeduplicates")
-      # if(!all(names(tune.args) %in% maxent.args)) {
-        # stop("One or more input Maxent settings are not implemented in ENMeval or are misspelled.")
-      # }
-      # construct user message with version info
-      algorithm.ver <- paste("Maxent", maxentJARversion(), "via dismo", packageVersion('dismo'))
-    }
-    
-    if(mod.name == 'maxnet') {
-      # construct user message with version info
-      algorithm.ver <- paste("maxnet", packageVersion('maxnet'))
-    }
-  }
+  # print model-specific message
+  model.msgs(tune.args, mod.name)
   
-  if(mod.name == 'gbm.step') {
-    if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
-      stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
-    }
-    # construct user message with version info
-    algorithm.ver <- paste("gbm.step via", packageVersion('gbm'), "and dismo", packageVersion('dismo'))
-  }
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
-  
-  message(paste("*** Running ENMevaluate using", algorithm.ver, "***"))
 
   ## data checks and formatting
   
@@ -128,9 +89,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
     occs <- occs[i,]
     occs.folds <- occs.folds[i]
     occs.vals <- occs.vals[i,]
-    message(paste("There were", occs.vals.na, "occurrence records with NA for at least
-                  one predictor variable. Removed these from analysis,
-                  resulting in", nrow(occs.vals), "occurrence records."))
+    message(paste("There were", occs.vals.na, "occurrence records with NA for at least one predictor variable. Removed these from analysis, resulting in", nrow(occs.vals), "occurrence records."))
   }
   # do the same for associated bg variables
   if(bg.vals.na > 0) {
@@ -138,9 +97,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
     occs <- occs[i,]
     bg.folds <- bg.folds[i]
     bg.vals <- bg.vals[i,]
-    message(paste("There were", bg.vals.na, "background records with NA for at least
-                  one predictor variable. Removed these from analysis,
-                  resulting in", nrow(bg.vals), "background records."))
+    message(paste("There were", bg.vals.na, "background records with NA for at least one predictor variable. Removed these from analysis, resulting in", nrow(bg.vals), "background records."))
   }
   
   # convert fields for categorical data to factor class
