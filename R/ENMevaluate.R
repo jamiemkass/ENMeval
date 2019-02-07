@@ -1,7 +1,8 @@
 #' @importFrom magrittr %>%
 #' @export 
 
-ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = NULL, categoricals = NULL, 
+ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
+                        mod.fun, tune.args, other.args = NULL, categoricals = NULL, 
                         partitions = NULL, occs.folds = NULL, bg.folds = NULL, n.bg = 10000, 
                         overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
                         doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE, 
@@ -11,12 +12,13 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   start.time <- proc.time()
   # get model function's name
   mod.name <- as.character(substitute(mod.fun))[3]
+  print(mod.name)
   
   ########### #
   # CHECKS ####
   ########### #
   
-  # general parameter checks
+  ## general parameter checks
   if(is.null(partitions)) {
     stop("Please specify a partition method for cross validation.")
   }
@@ -31,10 +33,26 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
 
   ## data checks and formatting
-  
-  # if no background points specified, generate random ones
-  if(is.null(bg)) {
-    bg <- dismo::randomPoints(envs, n = n.bg)
+  # if occs is combined occurrence and background with environmental
+  # predictor values (SWD format)
+  if(is.null(envs)) {
+    if(is.null(occs.vals)) {
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
+    }
+    occs.vals <- as.data.frame(occs.vals)
+    if(is.null(bg.vals)) {
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
+    }
+    bg.vals <- as.data.frame(bg.vals)
+    if(is.null(bg)) {
+      stop("If inputting data without rasters (SWD), please specify bg in addition to occs.")
+    }
+    message("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.")
+  }else{
+    # if no background points specified, generate random ones
+    if(is.null(bg)) {
+      bg <- dismo::randomPoints(envs, n = n.bg)
+    }  
   }
   
   # make sure occs and bg are data frames with identical column names
@@ -55,10 +73,12 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
     folds <- get.block(occs, bg)
   }
   if(partitions == "checkerboard1") {
+    if(is.null(envs)) stop("Cannot use checkerboard partitioning is envs in NULL.")
     ptn.msg <- "checkerboard (2-fold)"
     folds <- get.checkerboard1(occs, envs, bg, aggregation.factor)
   }
   if(partitions == "checkerboard2") {
+    if(is.null(envs)) stop("Cannot use checkerboard partitioning is envs in NULL.")
     ptn.msg <- "hierarchical checkerboard (4-fold)"
     folds <- get.checkerboard2(occs, envs, bg, aggregation.factor)
   }
@@ -78,8 +98,10 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
   ############# #
   
   # extract predictor variable values at coordinates for occs and bg
-  occs.vals <- as.data.frame(raster::extract(envs, occs))
-  bg.vals <- as.data.frame(raster::extract(envs, bg))
+  if(!is.null(envs)) {
+    occs.vals <- as.data.frame(raster::extract(envs, occs))
+    bg.vals <- as.data.frame(raster::extract(envs, bg))  
+  }
   
   # remove rows from occs, occs.vals, occs.folds with NA for any predictor variable
   occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
@@ -119,7 +141,7 @@ ENMevaluate <- function(occs, envs, bg = NULL, mod.fun, tune.args, other.args = 
                         doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
-  res <- collateResults(results, tune.tbl, mod.name, skipRasters)
+  res <- collateResults(results, tune.tbl, envs, mod.name, skipRasters)
   e <- ENMevaluation(algorithm = mod.name, 
                      stats = res$stats, kstats = res$kstats,
                      predictions = res$preds, models = res$mods, 

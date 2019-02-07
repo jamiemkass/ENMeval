@@ -107,19 +107,19 @@ rasterPred <- function(mod, envs, mod.name, doClamp) {
     pred <- dismo::predict(mod, envs, args = pred.args)
   }
   if(mod.name == "maxnet") {
-    env.n <- raster::nlayers(envs)
-    env.pts <- raster::rasterToPoints(envs)
-    origNrow <- nrow(env.pts)
-    env.pts <- na.omit(env.pts)
-    naOmitNrow <- nrow(env.pts)
+    envs.n <- raster::nlayers(envs)
+    envs.pts <- raster::rasterToPoints(envs)
+    origNrow <- nrow(envs.pts)
+    envs.pts <- na.omit(envs.pts)
+    naOmitNrow <- nrow(envs.pts)
     rowDiff <- origNrow - naOmitNrow
     if (rowDiff > 0) {
       message(paste('\n', rowDiff, "grid cells found with at least one NA value: these cells were excluded from raster predictions."))
     }
-    # mxnet.p <- maxnet::predict(mod, env.pts, type=type, clamp=clamp)
-    mxnet.p <- predict(mod, env.pts, type = 'exponential', clamp = doClamp)
-    env.pts <- cbind(env.pts, as.numeric(mxnet.p))
-    pred <- raster::rasterFromXYZ(env.pts[,c(1, 2, env.n+3)], res=raster::res(env))
+    # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
+    mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp)
+    envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
+    pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
   }
   if(mod.name == "gbm.step") {
     pred <- dismo::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees)
@@ -169,7 +169,7 @@ calc.aicc <- function(nparams, occs, preds, mod.name) {
     }else{
       vals <- raster::extract(preds, occs)
       probsum <- raster::cellStats(preds, sum)
-      # The log-likelihood was incorrectly calculated (see next line) in ENMeval v.1.0.0 when working with >1 model at once.
+      # The log-likelihood was incorrectly calculated (see next line) in ENMeval v.0.1.0 when working with >1 model at once.
       #   LL <- colSums(log(vals/probsum), na.rm=T)
       # The corrected calculation (since v.0.1.1) is:
       LL <- colSums(log(t(t(vals)/probsum)), na.rm=T)
@@ -181,7 +181,7 @@ calc.aicc <- function(nparams, occs, preds, mod.name) {
       }else{
         out$AICc <- AICc
         out$AICc.delta <- (AICc - min(AICc, na.rm=TRUE))
-        out$AICc.weights <- (exp(-0.5*AICc.delta))/(sum(exp(-0.5*AICc.delta), na.rm=TRUE))
+        out$AICc.weights <- (exp(-0.5*out$AICc.delta))/(sum(exp(-0.5*out$AICc.delta), na.rm=TRUE))
       }    
     }
   }else{
