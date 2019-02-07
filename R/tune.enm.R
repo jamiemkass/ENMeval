@@ -64,8 +64,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   # calculate training auc
   auc.train <- calcAUC(occs.vals, bg.vals, mod.full, mod.name)
   
-  # if rasters selected, predict for the full model
-  if(skipRasters == FALSE) {
+  # if rasters selected and envs is not NULL, predict raster for the full model
+  if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred <- rasterPred(mod.full, envs, mod.name, doClamp)
   }else{
     mod.full.pred <- raster::stack()
@@ -126,12 +126,12 @@ evalStats <- function(occs.train, bg.train, occs.test, mod, mod.name, doClamp, a
   return(stats)
 }
 
-collateResults <- function(results, tune.tbl, mod.name, skipRasters) {
+collateResults <- function(results, tune.tbl, envs, mod.name, skipRasters) {
   # gather all full models into list
   mod.full.all <- lapply(results, function(x) x$mod.full)
   # gather all statistics into a data frame
   kstats.all <- lapply(results, function(x) x$kstats)
-  if(skipRasters == FALSE) {
+  if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
   } else {
     mod.full.pred.all <- raster::stack()
@@ -176,11 +176,11 @@ collateResults <- function(results, tune.tbl, mod.name, skipRasters) {
                      auc.diff.min = min(auc.diff),
                      auc.diff.max = max(auc.diff),
                      or.mtp.mean = mean(or.mtp),
-                     or.mtp.var = corrected.var(or.mtp, nk),
+                     or.mtp.var = var(or.mtp),
                      or.mtp.min = min(or.mtp),
                      or.mtp.max = max(or.mtp),
                      or.10p.mean = mean(or.10p),
-                     or.10p.var = corrected.var(or.10p, nk),
+                     or.10p.var = var(or.10p),
                      or.10p.min = min(or.10p),
                      or.10p.max = max(or.10p)) %>%
     dplyr::ungroup() %>%
