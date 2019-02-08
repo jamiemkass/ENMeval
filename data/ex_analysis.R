@@ -17,9 +17,13 @@
 # # as the real occurrence data
 # envs.xy <- rasterToPoints(envs[[1]], spatial = TRUE)
 # envs.folds <- ENMeval::get.block(occ=occs, bg.coords=envs.xy@coords)$bg.grp
-# 
+#
+## regular run
 # e <- ENMevaluate(occs, envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "block")
+## run with SWD
 # e <- ENMevaluate(occs, bg, occs.vals = occs.vals, bg.vals = bg.vals, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "block")
+## run with independent testing data
+# e <- ENMevaluate(occs[1:250,], envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
 # e <- ENMevaluate(occs, envs, bg, maxnet::maxnet, tune.args, categoricals = "biome", partitions = "block")
 # e <- ENMevaluate(occs, envs, bg, dismo::maxent, tune.args, categoricals = "biome", partitions = "block")
 # tune.args <- list(tree.complexity = 1, learning.rate = 0.1, bag.fraction = 0.5)

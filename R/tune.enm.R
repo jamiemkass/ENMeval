@@ -1,10 +1,12 @@
 #' @export
 
 tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                     tune.tbl, other.args, categoricals, doClamp, skipRasters,
+                     tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
                      abs.auc.diff, updateProgress) {
   results <- list()
   n <- nrow(tune.tbl)
+  print(doClamp)
+
   # set up the console progress bar
   pb <- txtProgressBar(0, n, style = 3)
   
@@ -18,7 +20,7 @@ tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mo
       setTxtProgressBar(pb, i)
     }
     results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                           tune.tbl[i,], other.args, categoricals, doClamp, 
+                           tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
                            skipRasters, abs.auc.diff)
   }
   close(pb)   
@@ -27,7 +29,7 @@ tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mo
 }
 
 tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name,
-                              tune.tbl, other.args, categoricals, doClamp, skipRasters,
+                              tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
                               abs.auc.diff) {
   # set up parallel processing functionality
   allCores <- detectCores()
@@ -47,7 +49,7 @@ tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mo
   n <- nrow(tune.tbl)
   results <- foreach(i = 1:n, .packages = pkgs) %dopar% {
     cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, tune.tbl[i,],
-           other.args, categoricals, doClamp, skipRasters, abs.auc.diff)
+           other.args, categoricals, occs.ind, doClamp, skipRasters, abs.auc.diff)
   }
   stopCluster(c1)
   
@@ -55,7 +57,7 @@ tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mo
 }
 
 cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                   tune.tbl.i, other.args, categoricals, doClamp, skipRasters,
+                   tune.tbl.i, other.args, categoricals, occs.ind, doClamp, skipRasters,
                    abs.auc.diff) {
 
   # build the full model from all the data
@@ -79,20 +81,28 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
                                  dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   
-  # cross-validation on partitions
-  for(k in 1:nk) {
-    # assign partitions for training and testing occurrence data and for background data
-    occs.train.k <- occs.vals[occs.folds != k,, drop = FALSE]
-    occs.test.k <- occs.vals[occs.folds == k,, drop = FALSE]
-    bg.train.k <- bg.vals[bg.folds != k,, drop = FALSE]
-    bg.test.k <- bg.vals[bg.folds == k,, drop = FALSE]
-    # define model arguments for current model k
-    mod.k.args <- make.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
-    # run the current model k
-    mod.k <- do.call(mod.fun, mod.k.args)
-    # calculate the stats for model k
-    kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k, 
-                            mod.k, mod.name, doClamp, abs.auc.diff)
+  # for occs.ind settings
+  if(nk == 0) {
+    occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
+    auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
+    kstats[1,] <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
+                             auc.train, mod.full, mod.name, doClamp, abs.auc.diff)
+  }else{
+    # cross-validation on partitions
+    for(k in 1:nk) {
+      # assign partitions for training and testing occurrence data and for background data
+      occs.train.k <- occs.vals[occs.folds != k,, drop = FALSE]
+      occs.test.k <- occs.vals[occs.folds == k,, drop = FALSE]
+      bg.train.k <- bg.vals[bg.folds != k,, drop = FALSE]
+      bg.test.k <- bg.vals[bg.folds == k,, drop = FALSE]
+      # define model arguments for current model k
+      mod.k.args <- make.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
+      # run the current model k
+      mod.k <- do.call(mod.fun, mod.k.args)
+      # calculate the stats for model k
+      kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k, 
+                              auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
+    } 
   }
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
@@ -100,9 +110,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, mod, mod.name, doClamp, abs.auc.diff) {
-  # calculate auc on training and testing data
-  auc.train <- calcAUC(occs.train, bg.train, mod, mod.name)
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, doClamp, abs.auc.diff) {
+  # calculate auc on testing data
   auc.test <- calcAUC(occs.test, bg.train, mod, mod.name)
   # calculate auc diff
   auc.diff <- auc.train - auc.test
@@ -124,17 +133,22 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, mod, mod.name, d
   min.train.thr <- min(pred.train)
   or.mtp.test <- mean(pred.test < min.train.thr)
   
-  # calculate MESS values
-  p <- rbind(occs.train, bg.train)
-  v <- rbind(occs.test, bg.test)
-  cat.i <- which(names(occs.train) == categoricals)
-  if(length(cat.i) > 0) {
-    p <- p[,-cat.i]
-    v <- v[,-cat.i]
+  # calculate MESS values if bg.test values are given
+  if(!is.null(bg.test)) {
+    p <- rbind(occs.train, bg.train)
+    v <- rbind(occs.test, bg.test)
+    cat.i <- which(names(occs.train) == categoricals)
+    if(length(cat.i) > 0) {
+      p <- p[,-cat.i]
+      v <- v[,-cat.i]
+    }
+    mss <- mess.vec(p, v)
+    mess.mean <- mean(mss)
+    mess.min <- min(mss)  
+  }else{
+    mess.mean <- NA
+    mess.min <- NA  
   }
-  mss <- mess.vec(p, v)
-  mess.mean <- mean(mss)
-  mess.min <- min(mss)
   
   stats <- c(auc.test, auc.diff, or.mtp.test, or.10p.test, mess.mean, mess.min)
   
