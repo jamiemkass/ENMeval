@@ -75,21 +75,24 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   nk <- length(unique(occs.folds))
   
   # set up empty vectors for stats
-  kstats <- data.frame(auc.test = numeric(nk), auc.diff = numeric(nk), 
-                       or.mtp = numeric(nk), or.10p = numeric(nk))
+  cnames <- c("auc.test", "auc.diff", "or.mtp", "or.10p", "mess.min", "mess.mean")
+  kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
+                                 dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   
   # cross-validation on partitions
   for(k in 1:nk) {
     # assign partitions for training and testing occurrence data and for background data
-    train.k <- occs.vals[occs.folds != k,, drop = FALSE]
-    test.k <- occs.vals[occs.folds == k,, drop = FALSE]
-    bg.k <- bg.vals[bg.folds != k,, drop = FALSE]
+    occs.train.k <- occs.vals[occs.folds != k,, drop = FALSE]
+    occs.test.k <- occs.vals[occs.folds == k,, drop = FALSE]
+    bg.train.k <- bg.vals[bg.folds != k,, drop = FALSE]
+    bg.test.k <- bg.vals[bg.folds == k,, drop = FALSE]
     # define model arguments for current model k
-    mod.k.args <- make.args(tune.tbl.i, mod.name, train.k, bg.k, other.args)
+    mod.k.args <- make.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
     # run the current model k
     mod.k <- do.call(mod.fun, mod.k.args)
     # calculate the stats for model k
-    kstats[k,] <- evalStats(train.k, bg.k, test.k, mod.k, mod.name, doClamp, abs.auc.diff)
+    kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k, 
+                            mod.k, mod.name, doClamp, abs.auc.diff)
   }
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
@@ -97,7 +100,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, mod, mod.name, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, mod, mod.name, doClamp, abs.auc.diff) {
   # calculate auc on training and testing data
   auc.train <- calcAUC(occs.train, bg.train, mod, mod.name)
   auc.test <- calcAUC(occs.test, bg.train, mod, mod.name)
@@ -121,7 +124,19 @@ evalStats <- function(occs.train, bg.train, occs.test, mod, mod.name, doClamp, a
   min.train.thr <- min(pred.train)
   or.mtp.test <- mean(pred.test < min.train.thr)
   
-  stats <- c(auc.test, auc.diff, or.mtp.test, or.10p.test)
+  # calculate MESS values
+  p <- rbind(occs.train, bg.train)
+  v <- rbind(occs.test, bg.test)
+  cat.i <- which(names(occs.train) == categoricals)
+  if(length(cat.i) > 0) {
+    p <- p[,-cat.i]
+    v <- v[,-cat.i]
+  }
+  mss <- mess.vec(p, v)
+  mess.mean <- mean(mss)
+  mess.min <- min(mss)
+  
+  stats <- c(auc.test, auc.diff, or.mtp.test, or.10p.test, mess.mean, mess.min)
   
   return(stats)
 }
@@ -148,9 +163,11 @@ collateResults <- function(results, tune.tbl, envs, mod.name, skipRasters) {
   # define number of folds (the value of "k") as number of
   # rows in one of the model runs
   nk <- nrow(kstats.all[[1]])
+  # define number of evaluation statistics
+  nstat <- ncol(kstats.all[[1]])
   # define number of settings
   ns <- ncol(tune.tbl)
-  # concatenate fc and rm to make settings column
+  # add in columns for tuning settings
   for(i in 1:ns) {
     kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
     names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
@@ -189,7 +206,7 @@ collateResults <- function(results, tune.tbl, envs, mod.name, skipRasters) {
     dplyr::bind_cols(calc.aicc(nparams, occs, mod.full.pred.all, mod.name))
   
   # rearrange the columns for kstats
-  kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:4))
+  kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:nstat))
   
   return(list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all))

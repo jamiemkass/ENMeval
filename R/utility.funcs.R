@@ -190,6 +190,30 @@ calc.aicc <- function(nparams, occs, preds, mod.name) {
   return(out)
 }
 
+# repurposed from dismo::mess(), based on .messi3()
+mess.vec <- function(p, v) {
+  calc.mess <- function(p, v) {
+    v <- stats::na.omit(v)
+    f <- 100*findInterval(p, sort(v)) / length(v)
+    minv <- min(v)
+    maxv <- max(v)
+    res <- 2*f 
+    f[is.na(f)] <- -99
+    i <- f>50 & f<100
+    res[i] <- 200-res[i]
+    
+    i <- f==0 
+    res[i] <- 100*(p[i]-minv)/(maxv-minv)
+    i <- f==100
+    res[i] <- 100*(maxv-p[i])/(maxv-minv)
+    return(res)
+  }
+  
+  x <- sapply(1:ncol(p), function(i) calc.mess(p[,i], v[,i]))
+  rmess <- apply(x, 1, min, na.rm=TRUE)
+  return(rmess)
+}
+
 #' @export
 
 var.importance <- function(mod) {
