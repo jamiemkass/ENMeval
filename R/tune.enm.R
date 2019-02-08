@@ -1,12 +1,11 @@
 #' @export
 
 tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                     tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
+                     partitions, tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
                      abs.auc.diff, updateProgress) {
   results <- list()
   n <- nrow(tune.tbl)
-  print(doClamp)
-
+  
   # set up the console progress bar
   pb <- txtProgressBar(0, n, style = 3)
   
@@ -20,16 +19,16 @@ tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mo
       setTxtProgressBar(pb, i)
     }
     results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                           tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
+                           partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
                            skipRasters, abs.auc.diff)
   }
   close(pb)   
-
+  
   return(results)  
 }
 
 tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name,
-                              tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
+                              partitions, tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
                               abs.auc.diff) {
   # set up parallel processing functionality
   allCores <- detectCores()
@@ -48,8 +47,8 @@ tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mo
   message("Running in parallel...")
   n <- nrow(tune.tbl)
   results <- foreach(i = 1:n, .packages = pkgs) %dopar% {
-    cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, tune.tbl[i,],
-           other.args, categoricals, occs.ind, doClamp, skipRasters, abs.auc.diff)
+    cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, partitions, 
+           tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, skipRasters, abs.auc.diff)
   }
   stopCluster(c1)
   
@@ -57,9 +56,9 @@ tune.enm.parallel <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mo
 }
 
 cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                   tune.tbl.i, other.args, categoricals, occs.ind, doClamp, skipRasters,
-                   abs.auc.diff) {
-
+                   partitions, tune.tbl.i, other.args, categoricals, occs.ind, 
+                   doClamp, skipRasters, abs.auc.diff) {
+  
   # build the full model from all the data
   mod.full.args <- make.args(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args)
   mod.full <- do.call(mod.fun, mod.full.args)
@@ -81,12 +80,17 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
                                  dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   
-  # for occs.ind settings
+  # if there are no folds specified...
   if(nk == 0) {
-    occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
-    auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
-    kstats[1,] <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
-                             auc.train, mod.full, mod.name, doClamp, abs.auc.diff)
+    # if user selects to use independent testing data, do not do k-fold cross validation
+    if(partitions == "independent") {
+      occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
+      auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
+      kstats[1,] <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
+                              auc.train, mod.full, mod.name, doClamp, abs.auc.diff)  
+    }
+    # # if user selects to only calculate AICc, stop here
+    # if(partitions == "none") break
   }else{
     # cross-validation on partitions
     for(k in 1:nk) {
@@ -107,6 +111,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
                  kstats = kstats, auc.train = auc.train)
+  
   return(cv.res)
 }
 
@@ -155,14 +160,16 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   return(stats)
 }
 
-collateResults <- function(results, tune.tbl, envs, mod.name, skipRasters) {
+collateResults <- function(results, tune.tbl, envs, mod.name, partitions, skipRasters) {
   # gather all full models into list
   mod.full.all <- lapply(results, function(x) x$mod.full)
+  # gather all training AUCs into vector
+  auc.train.all <- sapply(results, function(x) x$auc.train)
   # gather all statistics into a data frame
   kstats.all <- lapply(results, function(x) x$kstats)
   if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
-  } else {
+  }else{
     mod.full.pred.all <- raster::stack()
   }
   
@@ -177,55 +184,63 @@ collateResults <- function(results, tune.tbl, envs, mod.name, skipRasters) {
   # define number of folds (the value of "k") as number of
   # rows in one of the model runs
   nk <- nrow(kstats.all[[1]])
-  # define number of evaluation statistics
-  nstat <- ncol(kstats.all[[1]])
-  # define number of settings
-  ns <- ncol(tune.tbl)
-  # add in columns for tuning settings
-  for(i in 1:ns) {
-    kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
-    names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
-  }
-  # make new column for fold number
-  kstats.df$fold <- rep(1:nk, nrow(tune.tbl))
-  kstats.df <- tibble::as_tibble(kstats.df)
   
-  # get number of columns in kstats.df
-  nc <- ncol(kstats.df)
+  if(partitions != "none") {
+    # define number of evaluation statistics
+    nstat <- ncol(kstats.all[[1]])
+    # define number of settings
+    ns <- ncol(tune.tbl)
+    # add in columns for tuning settings
+    for(i in 1:ns) {
+      kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
+      names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
+    }
+    # make new column for fold number
+    kstats.df$fold <- rep(1:nk, nrow(tune.tbl))
+    kstats.df <- tibble::as_tibble(kstats.df)
+    
+    # get number of columns in kstats.df
+    nc <- ncol(kstats.df)
+    
+    # summarize by averaging all folds per model setting combination
+    kstats.avg.df <- kstats.df %>% 
+      dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
+      dplyr::summarize(auc.test.mean = mean(auc.test),
+                       auc.test.var = corrected.var(auc.test, nk),
+                       auc.test.min = min(auc.test),
+                       auc.test.max = max(auc.test),
+                       auc.diff.mean = mean(auc.diff),
+                       auc.diff.var = corrected.var(auc.diff, nk),
+                       auc.diff.min = min(auc.diff),
+                       auc.diff.max = max(auc.diff),
+                       or.mtp.mean = mean(or.mtp),
+                       or.mtp.var = var(or.mtp),
+                       or.mtp.min = min(or.mtp),
+                       or.mtp.max = max(or.mtp),
+                       or.10p.mean = mean(or.10p),
+                       or.10p.var = var(or.10p),
+                       or.10p.min = min(or.10p),
+                       or.10p.max = max(or.10p)) %>%
+      dplyr::ungroup() 
+    stats.df <- tibble::as_tibble(cbind(kstats.avg.df[,1:ns], auc.train = auc.train.all, 
+                                        kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))
+    
+    # rearrange the columns for kstats
+    kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:nstat))
+  }else{
+    tune.cols <- tune.tbl[order(tune.tbl[,1]),]
+    stats.df <- tibble::as_tibble(cbind(tune.cols, auc.train = auc.train.all))
+  }
+  
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, function(x) no.params(x, mod.name))
-  
-  # summarize by averaging all folds per model setting combination
-  stats.df <- kstats.df %>% 
-    dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
-    dplyr::summarize(auc.test.mean = mean(auc.test),
-                     auc.test.var = corrected.var(auc.test, nk),
-                     auc.test.min = min(auc.test),
-                     auc.test.max = max(auc.test),
-                     auc.diff.mean = mean(auc.diff),
-                     auc.diff.var = corrected.var(auc.diff, nk),
-                     auc.diff.min = min(auc.diff),
-                     auc.diff.max = max(auc.diff),
-                     or.mtp.mean = mean(or.mtp),
-                     or.mtp.var = var(or.mtp),
-                     or.mtp.min = min(or.mtp),
-                     or.mtp.max = max(or.mtp),
-                     or.10p.mean = mean(or.10p),
-                     or.10p.var = var(or.10p),
-                     or.10p.min = min(or.10p),
-                     or.10p.max = max(or.10p)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(auc.train = sapply(results, function(x) x$auc.train)) %>%
-    dplyr::select(-((ns+1):(ns+16)), (ns+1):(ns+16)) %>%
-    dplyr::bind_cols(calc.aicc(nparams, occs, mod.full.pred.all, mod.name))
-  
-  # rearrange the columns for kstats
-  kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:nstat))
+  # calculate AICc
+  stats.df <- tibble::as_tibble(cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all, mod.name)))
   
   return(list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all))
 }
 
 
-  
-  # out.i <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, stats = stats)
+
+# out.i <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, stats = stats)

@@ -76,7 +76,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   ## general parameter checks
   if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", 
-                         "checkerboard2", "user", "independent"))) {
+                         "checkerboard2", "user", "independent", "none"))) {
     stop("Please make sure partition method is one of the available options.")
   }
   
@@ -121,41 +121,45 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # for occs.ind settings, partitions should be NULL
   
   if(partitions == "jackknife") {
-    ptn.msg <- "k-1 jackknife"
     folds <- get.jackknife(occs, bg)
+    message("Doing model evaluations with k-1 jackknife cross validation...")
   }
   if(partitions == "randomkfold") {
-    ptn.msg <- paste0("random ", kfolds, "-fold")
     folds <- get.randomkfold(occs, bg, kfolds)
+    message(paste0("Doing model evaluations with random", kfolds, "-fold cross validation..."))
   }
   if(partitions == "block") {
-    ptn.msg <- "spatial block (4-fold)"
     folds <- get.block(occs, bg)
+    message("Doing model evaluations with spatial block (4-fold) cross validation...")
   }
   if(partitions == "checkerboard1") {
-    if(is.null(envs)) stop("Cannot use checkerboard partitioning is envs in NULL.")
-    ptn.msg <- "checkerboard (2-fold)"
+    if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
     folds <- get.checkerboard1(occs, envs, bg, aggregation.factor)
+    message("Doing model evaluations with checkerboard (2-fold) cross validation...")
   }
   if(partitions == "checkerboard2") {
-    if(is.null(envs)) stop("Cannot use checkerboard partitioning is envs in NULL.")
-    ptn.msg <- "hierarchical checkerboard (4-fold)"
+    if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
     folds <- get.checkerboard2(occs, envs, bg, aggregation.factor)
+    message("Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...")
   }
   if(partitions == "user") {
-    ptn.msg <- "user-defined k-fold"
     folds <- list(occs.folds = occs.folds, bg.folds = bg.folds)
+    userk <- length(unique(occs.folds))
+    message(paste0("Doing model evaluations with user-defined ", userk, "-fold cross validation..."))
   }
   if(partitions == "independent") {
-    ptn.msg <- "independent testing data"
+    if(is.null(occs.ind)) stop("Cannot use independent partitioning if occs.ind is NULL.")
     folds <- NULL
+    message("Doing model evaluations with independent testing data...")
+  }
+  if(partitions == "none") {
+    folds <- NULL
+    message("Skipping model evaluations (only calculating AICc)...")
   }
   
   # unpack occs.folds and bg.folds
   occs.folds <- folds$occs.folds
   bg.folds <- folds$bg.folds
-  
-  message(paste("Doing evaluations with", ptn.msg, "cross validation..."))
   
   ############# #
   # ANALYSIS ####
@@ -196,16 +200,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   if(parallel == TRUE) {
     results <- tune.enm.parallel(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                                 mod.fun, mod.name, tune.tbl, other.args, categoricals, 
+                                 mod.fun, mod.name, partitions, tune.tbl, other.args, categoricals, 
                                  occs.ind, doClamp, skipRasters, abs.auc.diff)
   } 
   else {
     results <- tune.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
-                        mod.fun, mod.name, tune.tbl, other.args, categoricals, 
+                        mod.fun, mod.name, partitions, tune.tbl, other.args, categoricals, 
                         occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
-  res <- collateResults(results, tune.tbl, envs, mod.name, skipRasters)
+  res <- collateResults(results, tune.tbl, envs, mod.name, partitions, skipRasters)
   if(is.null(occs.folds)) occs.folds <- 0
   if(is.null(bg.folds)) bg.folds <- 0
   e <- ENMevaluation(algorithm = mod.name, 
