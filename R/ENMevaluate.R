@@ -1,28 +1,82 @@
+#' Tuning and evaluation of ecological niche models
+#' 
+#' @param occs matrix or data frame with two columns for longitude and latitude 
+#' of occurrence localities, in that order
+#' @param envs Raster* object of environmental variables (must be in 
+#' same geographic projection as occurrence data)
+#' @param bg matrix or data frame with two columns for longitude and latitude of 
+#' background (or pseudo-absence) localities, in that order; if NULL, points 
+#' will be randomly sampled across \code{envs} with the number specified by 
+#' parameter \code{n.bg}
+#' @param occs.vals matrix or data frame of environmental values corresponding
+#' to occurrence localities, intended to be input when environmental rasters
+#' are not used (\code{envs} is NULL) 
+#' @param bg.vals matrix or data frame of environmental values corresponding
+#' to background (or pseudo-absence) localities, intended to be input when 
+#' environmental rasters are not used (\code{envs} is NULL) 
+#' @param mod.fun function of chosen model
+#' @param tune.args named list of model settings to be tuned
+#' @param other.args named list of any additional model arguments not specified 
+#' for tuning
+#' @param categoricals character vector of names of categorical 
+#' environmental variables
+#' @param partitions character of name of partitioning technique (see
+#' \code{?partitions})
+#' @param occs.folds numeric vector of partition group (fold) for each
+#' occurrence locality, intended for user-defined partitions
+#' @param bg.folds numeric vector of partition group (fold) for each background 
+#' (or pseudo-absence) locality, intended for user-defined partitions
+#' @param occs.ind matrix or data frame with two columns for longitude and latitude 
+#' of occurrence localities, in that order, intended for independent evaluation;
+#' when \code{partitions = "independent"}; these occurrences will be used only 
+#' for evaluation, and not for model training, and thus no cross validation will 
+#' be done
+#' @param kfolds numeric for number of partition groups (folds), only for random
+#' k-fold partitioning
+#' @param aggregation.factor numeric vector with length 2 that specifies the
+#' factors for aggregating \code{envs} in order to perform checkerboard
+#' partitioning
+#' @param n.bg numeric for number of random background (or pseudo-absence) points
+#' to sample; necessary if \code{bg} is NULL
+#' @param overlap boolean (TRUE or FALSE); if TRUE, calculate niche overlap 
+#' statistics
+#' @param doClamp boolean (TRUE or FALSE); if TRUE, clamp model responses; only
+#' applicable for Maxent models
+#' @param skipRasters boolean (TRUE or FALSE); if TRUE, skip raster predictions
+#' @param abs.auc.diff boolean (TRUE or FALSE); if TRUE, take absolute value of
+#' AUCdiff; default is TRUE
+#' @param parallel boolean (TRUE or FALSE); if TRUE, run with parallel processing
+#' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores
+#' for parallel processing
+#' @param updateProgress boolean (TRUE or FALSE); if TRUE, use shiny progress
+#' bar; only for use in shiny apps
+#'
+#' @return 
+#'
+#' @examples
+#'
 #' @importFrom magrittr %>%
 #' @export 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
                         mod.fun, tune.args, other.args = NULL, categoricals = NULL, 
-                        partitions = NULL, occs.folds = NULL, bg.folds = NULL, n.bg = 10000, 
-                        overlap = FALSE, aggregation.factor = c(2, 2), kfolds = NA, bin.output = FALSE,
+                        partitions = NULL, occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, 
+                        kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,   
                         doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE, 
                         numCores = NULL, updateProgress = FALSE) {
-
+  
   # record start time
   start.time <- proc.time()
   # get model function's name
   mod.name <- as.character(substitute(mod.fun))[3]
-  print(mod.name)
   
   ########### #
   # CHECKS ####
   ########### #
   
   ## general parameter checks
-  if(is.null(partitions)) {
-    stop("Please specify a partition method for cross validation.")
-  }
-  if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", "checkerboard2", "user"))) {
+  if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", 
+                         "checkerboard2", "user", "independent"))) {
     stop("Please make sure partition method is one of the available options.")
   }
   
@@ -31,23 +85,27 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
-
+  
   ## data checks and formatting
   # if occs is combined occurrence and background with environmental
   # predictor values (SWD format)
   if(is.null(envs)) {
     if(is.null(occs.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
+      stop("If inputting data without rasters (SWD), please specify both 
+           occs.vals and bg.vals.")
     }
     occs.vals <- as.data.frame(occs.vals)
     if(is.null(bg.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
+      stop("If inputting data without rasters (SWD), please specify both 
+           occs.vals and bg.vals.")
     }
     bg.vals <- as.data.frame(bg.vals)
     if(is.null(bg)) {
-      stop("If inputting data without rasters (SWD), please specify bg in addition to occs.")
+      stop("If inputting data without rasters (SWD), please specify bg in 
+           addition to occs.")
     }
-    message("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.")
+    message("Data without rasters were input (SWD format), so no raster 
+            predictions will be generated and AICc cannot be calculated.")
   }else{
     # if no background points specified, generate random ones
     if(is.null(bg)) {
@@ -60,6 +118,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   bg <- data.frame(longitude = bg[,1], latitude = bg[,2])
   
   # print message for selected cross-validation method
+  # for occs.ind settings, partitions should be NULL
+  
   if(partitions == "jackknife") {
     ptn.msg <- "k-1 jackknife"
     folds <- get.jackknife(occs, bg)
@@ -85,6 +145,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(partitions == "user") {
     ptn.msg <- "user-defined k-fold"
     folds <- list(occs.folds = occs.folds, bg.folds = bg.folds)
+  }
+  if(partitions == "independent") {
+    ptn.msg <- "independent testing data"
+    folds <- NULL
   }
   
   # unpack occs.folds and bg.folds
@@ -133,15 +197,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(parallel == TRUE) {
     results <- tune.enm.parallel(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
                                  mod.fun, mod.name, tune.tbl, other.args, categoricals, 
-                                 doClamp, skipRasters, abs.auc.diff)
+                                 occs.ind, doClamp, skipRasters, abs.auc.diff)
   } 
   else {
     results <- tune.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, 
                         mod.fun, mod.name, tune.tbl, other.args, categoricals, 
-                        doClamp, skipRasters, abs.auc.diff, updateProgress)
+                        occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
   res <- collateResults(results, tune.tbl, envs, mod.name, skipRasters)
+  if(is.null(occs.folds)) occs.folds <- 0
+  if(is.null(bg.folds)) bg.folds <- 0
   e <- ENMevaluation(algorithm = mod.name, 
                      stats = res$stats, kstats = res$kstats,
                      predictions = res$preds, models = res$mods, 
