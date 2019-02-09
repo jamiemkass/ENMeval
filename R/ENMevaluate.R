@@ -59,7 +59,7 @@
 #' @export 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
-                        mod.fun, tune.args, other.args = NULL, categoricals = NULL, 
+                        mod.fun, tune.args = NULL, other.args = NULL, categoricals = NULL, 
                         partitions = NULL, occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,   
                         doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE, 
@@ -78,6 +78,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", 
                          "checkerboard2", "user", "independent", "none"))) {
     stop("Please make sure partition method is one of the available options.")
+  }
+  if(is.null(tune.args) & mod.name != "bioclim") {
+    stop("Must specify tuning.args for all models except BIOCLIM.")
   }
   
   # print model-specific message

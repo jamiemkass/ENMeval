@@ -27,7 +27,9 @@
 ## run with just AIC
 # e <- ENMevaluate(occs, envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "none")
 ## run with maxent.jar
-# e <- ENMevaluate(occs, envs, bg, dismo::maxent, tune.args, categoricals = "biome", partitions = "block")
+# e <- ENMevaluate(occs, envs, bg, mod.fun = dismo::maxent, tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with BRT
 # tune.args <- list(tree.complexity = 1, learning.rate = 0.1, bag.fraction = 0.5)
-# e <- ENMevaluate(occs, envs, bg, dismo::gbm.step, tune.args, categoricals = "biome", partitions = "block")
+# e <- ENMevaluate(occs, envs, bg, mod.fun = dismo::gbm.step, tune.args = tune.args, categoricals = "biome", partitions = "block")
+# run with BIOCLIM
+# e <- ENMevaluate(occs, envs, bg, mod.fun = dismo::bioclim, categoricals = "biome", partitions = "block")

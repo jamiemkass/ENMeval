@@ -26,12 +26,12 @@ model.msgs <- function(tune.args, mod.name) {
       }
       mxe <- rJava::.jnew("meversion") 
       v <- try(rJava::.jcall(mxe, "S", "meversion"))
-      algorithm.ver <- paste("Maxent", v, "via dismo", packageVersion('dismo'))
+      algorithm.ver <- paste("maxent.jar v.", v, "from dismo package v.", packageVersion('dismo'))
     }
     
     if(mod.name == 'maxnet') {
       # construct user message with version info
-      algorithm.ver <- paste("maxnet", packageVersion('maxnet'))
+      algorithm.ver <- paste("maxnet from maxnet package v.", packageVersion('maxnet'))
     }
   }
   
@@ -40,7 +40,15 @@ model.msgs <- function(tune.args, mod.name) {
       stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
     }
     # construct user message with version info
-    algorithm.ver <- paste("gbm.step via", packageVersion('gbm'), "and dismo", packageVersion('dismo'))
+    algorithm.ver <- paste("Boosted regression trees (BRTs) using the gbm.step() function from gbm package v.", packageVersion('gbm'), "and dismo package v.", packageVersion('dismo'))
+  }
+  
+  if(mod.name == 'bioclim') {
+    algorithm.ver <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
+  }
+  
+  if(mod.name == "gam") {
+    algorithm.ver <- paste("Generalized additive model (GAM) from gam package v.", packageVersion('gam'))
   }
   message(paste("*** Running ENMevaluate using", algorithm.ver, "***"))
 }
@@ -53,7 +61,7 @@ make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
   d <- rbind(occs.vals, bg.vals)
   # define response
   p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
-  
+  # maxent.jar
   if(mod.name == "maxent") {
     out$x <- d
     out$p <- p
@@ -65,15 +73,14 @@ make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
     if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold")
     out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
   }
-  
+  # maxnet
   if(mod.name == "maxnet") {
     out$data <- d
     out$p <- p
     out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
     out$regmult <- tune.tbl.i$rm
   }
-  
-  # need logic for BRTs
+  # BRT
   if(mod.name == "gbm.step") {
     out$tree.complexity <- tune.tbl.i$tree.complexity
     out$learning.rate <- tune.tbl.i$learning.rate
@@ -83,6 +90,11 @@ make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
     out$gbm.y <- 1
     out$silent <- TRUE
   }
+  # BIOCLIM
+  if(mod.name == "bioclim") {
+    out$x <- occs.vals 
+  }
+  
   # add other args
   out <- c(out, other.args)
   
@@ -91,12 +103,13 @@ make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
 
 # function to calculate AUC based on the model type
 calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
-  if(mod.name %in% c("maxent", "maxnet")) {
-    auc <- dismo::evaluate(occs.vals, bg.vals, mod)@auc  
-  }
   if(mod.name == "gbm.step") {
     auc <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
+  }else{
+    # currently, maxent.jar, maxnet, and BIOCLIM have no additional parameters
+    auc <- dismo::evaluate(occs.vals, bg.vals, mod)@auc
   }
+  
   return(auc)
 }
 
@@ -105,25 +118,29 @@ rasterPred <- function(mod, envs, mod.name, doClamp) {
   if(mod.name == "maxent") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, envs, args = pred.args)
-  }
-  if(mod.name == "maxnet") {
+  }else if(mod.name == "maxnet") {
     envs.n <- raster::nlayers(envs)
     envs.pts <- raster::rasterToPoints(envs)
     origNrow <- nrow(envs.pts)
     envs.pts <- na.omit(envs.pts)
     naOmitNrow <- nrow(envs.pts)
     rowDiff <- origNrow - naOmitNrow
-    if (rowDiff > 0) {
+    if(rowDiff > 0) {
       message(paste('\n', rowDiff, "grid cells found with at least one NA value: these cells were excluded from raster predictions."))
     }
     # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
     mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp)
     envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
     pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
+  }else if(mod.name == "gbm.step") {
+    pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees)
+  }else if(mod.name == "bioclim") {
+    # if no tails in other.args, defaults to NULL
+    pred <- dismo::predict(mod, envs, tails = other.args$tails)
+  }else{
+    pred <- dismo::predict(mod, envs)
   }
-  if(mod.name == "gbm.step") {
-    pred <- dismo::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees)
-  }
+  
   return(pred)
 }
 
@@ -131,12 +148,15 @@ vectorPred <- function(mod, df, mod.name, doClamp) {
   if(mod.name == "maxent") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, df, args = pred.args)
-  }
-  if(mod.name == "maxnet") {
-    pred <- predict(mod, df, type = 'exponential', clamp = doClamp)
-  }
-  if(mod.name == "gbm.step") {
+  }else if(mod.name == "maxnet") {
+    pred <- dismo::predict(mod, df, type = 'exponential', clamp = doClamp)
+  }else if(mod.name == "gbm.step") {
     pred <- dismo::predict(mod, df, type = "response", n.trees = mod$gbm.call$best.trees)
+  }else if(mod.name == "bioclim") {
+    # if no tails in other.args, defaults to NULL
+    pred <- dismo::predict(mod, df, tails = other.args$tails)
+  }else{
+    pred <- dismo::predict(mod, df)
   }
   return(pred)
 }
@@ -146,15 +166,15 @@ vectorPred <- function(mod, df, mod.name, doClamp) {
 no.params <- function(mod, mod.name) {
   if(mod.name == 'maxnet') {
     return(length(mod$betas))
-  }
-  if(mod.name == "maxent") {
+  }else if(mod.name == "maxent") {
     lambdas <- mod@lambdas[1:(length(mod@lambdas)-4)]
     countNonZeroParams <- function(x) if(strsplit(x, split=", ")[[1]][2] != '0.0') 1
     return(sum(unlist(sapply(lambdas, countNonZeroParams))))
-  }
-  if(mod.name == "gbm.step") {
+  }else if(mod.name == "gbm.step") {
     # as no L1 regularization occurs, no parameters are dropped
     return(length(mod$var.names))
+  }else if(mod.name == "bioclim") {
+    return(length(mod@min))
   }
 }
 

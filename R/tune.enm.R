@@ -4,7 +4,7 @@ tune.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mo
                      partitions, tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
                      abs.auc.diff, updateProgress) {
   results <- list()
-  n <- nrow(tune.tbl)
+  n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
   # set up the console progress bar
   pb <- txtProgressBar(0, n, style = 3)
@@ -186,45 +186,55 @@ collateResults <- function(results, tune.tbl, envs, mod.name, partitions, skipRa
   nk <- nrow(kstats.all[[1]])
   
   if(partitions != "none") {
+    # define number of rows in tune.tbl
+    n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
     # define number of evaluation statistics
     nstat <- ncol(kstats.all[[1]])
     # define number of settings
     ns <- ncol(tune.tbl)
     # add in columns for tuning settings
-    for(i in 1:ns) {
-      kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
-      names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
+    if(nrow(tune.tbl) > 0) {
+      for(i in 1:ns) {
+        kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
+        names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
+      }  
     }
+    
     # make new column for fold number
-    kstats.df$fold <- rep(1:nk, nrow(tune.tbl))
+    kstats.df$fold <- rep(1:nk, n)
     kstats.df <- tibble::as_tibble(kstats.df)
     
     # get number of columns in kstats.df
     nc <- ncol(kstats.df)
     
-    # summarize by averaging all folds per model setting combination
-    kstats.avg.df <- kstats.df %>% 
-      dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
-      dplyr::summarize(auc.test.mean = mean(auc.test),
-                       auc.test.var = corrected.var(auc.test, nk),
-                       auc.test.min = min(auc.test),
-                       auc.test.max = max(auc.test),
-                       auc.diff.mean = mean(auc.diff),
-                       auc.diff.var = corrected.var(auc.diff, nk),
-                       auc.diff.min = min(auc.diff),
-                       auc.diff.max = max(auc.diff),
-                       or.mtp.mean = mean(or.mtp),
-                       or.mtp.var = var(or.mtp),
-                       or.mtp.min = min(or.mtp),
-                       or.mtp.max = max(or.mtp),
-                       or.10p.mean = mean(or.10p),
-                       or.10p.var = var(or.10p),
-                       or.10p.min = min(or.10p),
-                       or.10p.max = max(or.10p)) %>%
-      dplyr::ungroup() 
-    stats.df <- tibble::as_tibble(cbind(kstats.avg.df[,1:ns], auc.train = auc.train.all, 
-                                        kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))
-    
+    # if model settings for tuning were input, summarize by averaging all folds 
+    # per model setting combination
+    if(ns > 0) {
+      kstats.avg.df <- kstats.df %>% 
+        dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
+        dplyr::summarize(auc.test.mean = mean(auc.test),
+                         auc.test.var = corrected.var(auc.test, nk),
+                         auc.test.min = min(auc.test),
+                         auc.test.max = max(auc.test),
+                         auc.diff.mean = mean(auc.diff),
+                         auc.diff.var = corrected.var(auc.diff, nk),
+                         auc.diff.min = min(auc.diff),
+                         auc.diff.max = max(auc.diff),
+                         or.mtp.mean = mean(or.mtp),
+                         or.mtp.var = var(or.mtp),
+                         or.mtp.min = min(or.mtp),
+                         or.mtp.max = max(or.mtp),
+                         or.10p.mean = mean(or.10p),
+                         or.10p.var = var(or.10p),
+                         or.10p.min = min(or.10p),
+                         or.10p.max = max(or.10p)) %>%
+        dplyr::ungroup() 
+      stats.df <- tibble::as_tibble(cbind(kstats.avg.df[,1:ns], auc.train = auc.train.all, 
+                                          kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))  
+    }else{
+      stats.df <- cbind(auc.train = auc.train.all, kstats.df) 
+      stats.df <- stats.df %>% dplyr::select(nc+1, 1:ncol(stats.df))
+    }
     # rearrange the columns for kstats
     kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:nstat))
   }else{
