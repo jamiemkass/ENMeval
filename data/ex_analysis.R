@@ -1,3 +1,4 @@
+# set.seed(48)
 # bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
 # occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 # occs <- occs[!duplicated(occs),]
@@ -18,6 +19,10 @@
 # envs.xy <- rasterToPoints(envs[[1]], spatial = TRUE)
 # envs.folds <- ENMeval::get.block(occ=occs, bg.coords=envs.xy@coords)$bg.grp
 #
+
+# old ENMeval
+# e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block")
+
 ## regular run
 # e <- ENMevaluate(occs, envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with SWD
