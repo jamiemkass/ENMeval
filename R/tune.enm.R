@@ -104,7 +104,9 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       # run the current model k
       mod.k <- do.call(mod.fun, mod.k.args)
       # calculate the stats for model k
-      kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k, 
+      # kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k,
+      #                         auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
+      kstats[k,] <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
                               auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
     } 
   }
@@ -129,9 +131,9 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   # get 10 percentile predicted value
   occs.train.n <- nrow(occs.train)
   if(occs.train.n < 10) {
-    pct10.train <- ceiling(occs.train.n * 0.1)
-  } else {
     pct10.train <- floor(occs.train.n * 0.1)
+  } else {
+    pct10.train <- ceiling(occs.train.n * 0.1)
   }
   pct10.train.thr <- sort(pred.train)[pct10.train]
   or.10p.test <- mean(pred.test < pct10.train.thr)
