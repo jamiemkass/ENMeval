@@ -67,7 +67,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
-    mod.full.pred <- rasterPred(mod.full, envs, mod.name, doClamp)
+    mod.full.pred <- rasterPred(mod.full, envs, mod.name, other.args, doClamp)
   }else{
     mod.full.pred <- raster::stack()
   }
@@ -76,7 +76,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   nk <- length(unique(occs.folds))
   
   # set up empty vectors for stats
-  cnames <- c("auc.test", "auc.diff", "or.mtp", "or.10p", "mess.min", "mess.mean")
+  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p", "mess.mean", "mess.min")
   kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
                                  dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   
@@ -86,8 +86,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     if(partitions == "independent") {
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
       auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
-      kstats[1,] <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
-                              auc.train, mod.full, mod.name, doClamp, abs.auc.diff)  
+      kstats[1,] <- c(1, evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
+                              auc.train, mod.full, mod.name, other.args, doClamp, abs.auc.diff))
     }
     # # if user selects to only calculate AICc, stop here
     # if(partitions == "none") break
@@ -106,8 +106,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       # calculate the stats for model k
       # kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k,
       #                         auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
-      kstats[k,] <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
-                              auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
+      kstats[k,] <- c(k, evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
+                              auc.train, mod.k, mod.name, other.args, doClamp, abs.auc.diff))
     } 
   }
   
@@ -117,7 +117,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
   auc.test <- calcAUC(occs.test, bg.train, mod, mod.name)
   # calculate auc diff
@@ -126,8 +126,8 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   # get model predictions for training and testing data
   # these predictions are used only for calculating omission rate, and
   # thus should not need any specific parameter changes for maxent/maxnet
-  pred.train <- vectorPred(mod, occs.train, mod.name, doClamp)
-  pred.test <- vectorPred(mod, occs.test, mod.name, doClamp)
+  pred.train <- vectorPred(mod, occs.train, mod.name, other.args, doClamp)
+  pred.test <- vectorPred(mod, occs.test, mod.name, other.args, doClamp)
   # get 10 percentile predicted value
   occs.train.n <- nrow(occs.train)
   if(occs.train.n < 10) {
@@ -195,7 +195,7 @@ collateResults <- function(results, tune.tbl, envs, mod.name, partitions, skipRa
     # define number of settings
     ns <- ncol(tune.tbl)
     # add in columns for tuning settings
-    if(nrow(tune.tbl) > 0) {
+    if(ns > 0) {
       for(i in 1:ns) {
         kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
         names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
@@ -203,7 +203,6 @@ collateResults <- function(results, tune.tbl, envs, mod.name, partitions, skipRa
     }
     
     # make new column for fold number
-    kstats.df$fold <- rep(1:nk, n)
     kstats.df <- tibble::as_tibble(kstats.df)
     
     # get number of columns in kstats.df
@@ -212,33 +211,34 @@ collateResults <- function(results, tune.tbl, envs, mod.name, partitions, skipRa
     # if model settings for tuning were input, summarize by averaging all folds 
     # per model setting combination
     if(ns > 0) {
-      kstats.avg.df <- kstats.df %>% 
-        dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
-        dplyr::summarize(auc.test.mean = mean(auc.test),
-                         auc.test.var = corrected.var(auc.test, nk),
-                         auc.test.min = min(auc.test),
-                         auc.test.max = max(auc.test),
-                         auc.diff.mean = mean(auc.diff),
-                         auc.diff.var = corrected.var(auc.diff, nk),
-                         auc.diff.min = min(auc.diff),
-                         auc.diff.max = max(auc.diff),
-                         or.mtp.mean = mean(or.mtp),
-                         or.mtp.var = var(or.mtp),
-                         or.mtp.min = min(or.mtp),
-                         or.mtp.max = max(or.mtp),
-                         or.10p.mean = mean(or.10p),
-                         or.10p.var = var(or.10p),
-                         or.10p.min = min(or.10p),
-                         or.10p.max = max(or.10p)) %>%
-        dplyr::ungroup() 
-      stats.df <- tibble::as_tibble(cbind(kstats.avg.df[,1:ns], auc.train = auc.train.all, 
-                                          kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))  
-    }else{
-      stats.df <- cbind(auc.train = auc.train.all, kstats.df) 
-      stats.df <- stats.df %>% dplyr::select(nc+1, 1:ncol(stats.df))
+      kstats.df <- dplyr::group_by_at(kstats.df, seq(nc-ns+1, nc))
     }
-    # rearrange the columns for kstats
-    kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:nstat))
+    kstats.avg.df <-  kstats.df %>% 
+      dplyr::summarize(auc.test.mean = mean(auc.test),
+                       auc.test.var = corrected.var(auc.test, nk),
+                       auc.test.min = min(auc.test),
+                       auc.test.max = max(auc.test),
+                       auc.diff.mean = mean(auc.diff),
+                       auc.diff.var = corrected.var(auc.diff, nk),
+                       auc.diff.min = min(auc.diff),
+                       auc.diff.max = max(auc.diff),
+                       or.mtp.mean = mean(or.mtp),
+                       or.mtp.var = corrected.var(or.mtp, nk),
+                       or.mtp.min = min(or.mtp),
+                       or.mtp.max = max(or.mtp),
+                       or.10p.mean = mean(or.10p),
+                       or.10p.var = corrected.var(or.10p, nk),
+                       or.10p.min = min(or.10p),
+                       or.10p.max = max(or.10p)) %>%
+        dplyr::ungroup() 
+    if(ns > 0) {
+      stats.df <- tibble::as_tibble(cbind(kstats.avg.df[,1:ns], auc.train = auc.train.all, 
+                                          kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))   
+      # rearrange the columns for kstats
+      kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns+1, nc), 1:nstat))
+    }else{
+      stats.df <- tibble::as_tibble(cbind(auc.train = auc.train.all, kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))
+    }
   }else{
     tune.cols <- tune.tbl[order(tune.tbl[,1]),]
     stats.df <- tibble::as_tibble(cbind(tune.cols, auc.train = auc.train.all))
