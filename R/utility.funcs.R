@@ -54,7 +54,7 @@ model.msgs <- function(tune.args, mod.name) {
 }
 
 #' @export
-make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
+model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
   
   out <- list()
   # define data 

@@ -60,7 +60,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
                    doClamp, skipRasters, abs.auc.diff) {
   
   # build the full model from all the data
-  mod.full.args <- make.args(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args)
+  mod.full.args <- model.args(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args)
   mod.full <- do.call(mod.fun, mod.full.args)
   # calculate training auc
   auc.train <- calcAUC(occs.vals, bg.vals, mod.full, mod.name)
@@ -100,7 +100,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       bg.train.k <- bg.vals[bg.folds != k,, drop = FALSE]
       bg.test.k <- bg.vals[bg.folds == k,, drop = FALSE]
       # define model arguments for current model k
-      mod.k.args <- make.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
+      mod.k.args <- model.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
       # run the current model k
       mod.k <- do.call(mod.fun, mod.k.args)
       # calculate the stats for model k
