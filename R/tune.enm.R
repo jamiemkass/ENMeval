@@ -21,9 +21,10 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   nk <- length(unique(occs.folds))
   
   # set up empty vectors for stats
-  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p", "mess.mean", "mess.min")
-  kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
-                                 dimnames = list(rep("", nk), cnames)), row.names = FALSE)
+  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p")
+  # kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
+  #                                dimnames = list(rep("", nk), cnames)), row.names = FALSE)
+  kstats.lst <- list()
   
   # if there are no folds specified...
   if(nk == 0) {
@@ -31,8 +32,9 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     if(partitions == "independent") {
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
       auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
-      kstats[1,] <- c(1, evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
-                              auc.train, mod.full, mod.name, other.args, doClamp, abs.auc.diff))
+      e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
+                     auc.train, mod.full, mod.name, other.args, doClamp, abs.auc.diff)
+      kstats.lst[[1]] <- c(fold = 1, e)
     }
     # # if user selects to only calculate AICc, stop here
     # if(partitions == "none") break
@@ -49,12 +51,13 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       # run the current model k
       mod.k <- do.call(mod.fun, mod.k.args)
       # calculate the stats for model k
-      # kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k,
-      #                         auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
-      kstats[k,] <- c(k, evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
-                              auc.train, mod.k, mod.name, other.args, doClamp, abs.auc.diff))
+      e <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
+                     auc.train, mod.k, mod.name, other.args, doClamp, abs.auc.diff)
+      kstats.lst[[k]] <- c(fold = k, e)
     } 
   }
+  
+  kstats <- as.data.frame(do.call("rbind", kstats.lst))
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
                  kstats = kstats, auc.train = auc.train)
@@ -81,9 +84,9 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
     pct10.train <- ceiling(occs.train.n * 0.1)
   }
   pct10.train.thr <- sort(pred.train)[pct10.train]
-  or.10p.test <- mean(pred.test < pct10.train.thr)
+  or.10p <- mean(pred.test < pct10.train.thr)
   min.train.thr <- min(pred.train)
-  or.mtp.test <- mean(pred.test < min.train.thr)
+  or.mtp <- mean(pred.test < min.train.thr)
   
   # calculate MESS values if bg.test values are given
   if(!is.null(bg.test)) {
@@ -95,14 +98,16 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
       v <- v[,-cat.i]
     }
     mss <- mess.vec(p, v)
-    mess.mean <- mean(mss)
-    mess.min <- min(mss)  
+    mess.quant <- quantile(mss)
+    names(mess.quant) <- paste0("mess_", names(mess.quant))
+    # mess.mean <- mean(mss)
+    # mess.min <- min(mss)
   }else{
-    mess.mean <- NA
-    mess.min <- NA  
+    mess.quant <- NULL
   }
   
-  stats <- c(auc.test, auc.diff, or.mtp.test, or.10p.test, mess.mean, mess.min)
+  stats <- c(auc.test = auc.test, auc.diff = auc.diff, 
+             or.mtp = or.mtp, or.10p = or.10p, mess.quant)
   
   return(stats)
 }

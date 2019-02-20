@@ -67,7 +67,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # record start time
   start.time <- proc.time()
-  # get model function's name
+  # get model function from input name
   mod.fun <- get.mod.fun(mod.name)
   
   ########### #
@@ -238,9 +238,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     numCoresUsed <- getDoParWorkers()
     message(paste("Of", allCores, "total cores using", numCoresUsed))
     
-    if(mod.name == "maxent") pkgs <- c("dismo", "raster", "ENMeval", "rJava")
+    if(mod.name == "maxent.jar") pkgs <- c("dismo", "raster", "ENMeval", "rJava")
     if(mod.name == "maxnet") pkgs <- c("dismo", "raster", "ENMeval", "maxnet")
-    if(mod.name == "gbm") pkgs <- c("dismo", "raster", "ENMeval", "gbm")
+    if(mod.name == "brt") pkgs <- c("dismo", "raster", "ENMeval", "gbm")
     if(mod.name == "bioclim") pkgs <- c("dismo", "raster")
     
     message("Running in parallel...")
@@ -285,14 +285,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # add in columns for tuning settings
     if(nrow(tune.tbl) > 0) {
       for(i in 1:ns) {
-        kstats.df <- cbind(kstats.df, rep(tune.tbl[,i], each = nk))
-        names(kstats.df)[ncol(kstats.df)] <- names(tune.tbl)[i]
+        kstats.df <- cbind(rep(tune.tbl[,i], each = nk), kstats.df)
+        names(kstats.df)[1] <- names(tune.tbl)[i]
       }  
     }
     
     # make new column for fold number
-    kstats.df$fold <- rep(1:nk, n)
-    kstats.df <- tibble::as_tibble(kstats.df)
+    # kstats.df <- tibble::as_tibble(kstats.df)
     
     # get number of columns in kstats.df
     nc <- ncol(kstats.df)
@@ -300,47 +299,44 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # if model settings for tuning were input, summarize by averaging all folds 
     # per model setting combination
     if(ns > 0) {
-      kstats.avg.df <- kstats.df %>% 
-        dplyr::group_by_at(seq(nc-ns, nc-1)) %>% 
-        dplyr::summarize(auc.test.mean = mean(auc.test),
-                         auc.test.var = corrected.var(auc.test, nk),
-                         auc.test.min = min(auc.test),
-                         auc.test.max = max(auc.test),
-                         auc.diff.mean = mean(auc.diff),
-                         auc.diff.var = corrected.var(auc.diff, nk),
-                         auc.diff.min = min(auc.diff),
-                         auc.diff.max = max(auc.diff),
-                         or.mtp.mean = mean(or.mtp),
-                         or.mtp.var = var(or.mtp),
-                         or.mtp.min = min(or.mtp),
-                         or.mtp.max = max(or.mtp),
-                         or.10p.mean = mean(or.10p),
-                         or.10p.var = var(or.10p),
-                         or.10p.min = min(or.10p),
-                         or.10p.max = max(or.10p)) %>%
-        dplyr::ungroup() 
-      stats.df <- tibble::as_tibble(cbind(kstats.avg.df[,1:ns], auc.train = auc.train.all, 
-                                          kstats.avg.df[,seq(ns+1, ncol(kstats.avg.df))]))  
-    }else{
-      stats.df <- cbind(auc.train = auc.train.all, kstats.df) 
-      stats.df <- stats.df %>% dplyr::select(nc+1, 1:ncol(stats.df))
+      kstats.df <- dplyr::group_by_at(kstats.df, 1:ns)
     }
-    # rearrange the columns for kstats
-    kstats.df <- dplyr::select_at(kstats.df, c(seq(nc-ns, nc), 1:nstat))
+    kstats.avg.df <- kstats.df %>% 
+      dplyr::summarize(auc.test.mean = mean(auc.test),
+                       auc.test.var = corrected.var(auc.test, nk),
+                       auc.test.min = min(auc.test),
+                       auc.diff.mean = mean(auc.diff),
+                       auc.diff.var = corrected.var(auc.diff, nk),
+                       auc.diff.max = max(auc.diff),
+                       or.mtp.mean = mean(or.mtp),
+                       or.mtp.var = var(or.mtp),
+                       or.mtp.max = max(or.mtp),
+                       or.10p.mean = mean(or.10p),
+                       or.10p.var = var(or.10p),
+                       or.10p.max = max(or.10p)) %>%
+      dplyr::ungroup()
+    if(ns > 0) {
+      stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
+                        kstats.avg.df[, seq(ns+1, ns+12)])  
+    }else{
+      stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
+    }
   }else{
     tune.cols <- tune.tbl[order(tune.tbl[,1]),]
-    stats.df <- tibble::as_tibble(cbind(tune.cols, auc.train = auc.train.all))
+    stats.df <- cbind(tune.cols, auc.train = auc.train.all)
   }
   
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, function(x) no.params(x, mod.name))
   # calculate AICc for Maxent models
-  if(mod.name %in% c("maxent", "maxnet")) {
-    stats.df <- tibble::as_tibble(cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all)))
+  if(mod.name %in% c("maxent.jar", "maxnet")) {
+    stats.df <- cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
   }else{
     warning(paste0("AICc is not able to be calculated for ", mod.name, "... returning NAs"))
   }
   stats.df$nparam <- nparams
+  stats.df <- tibble::as_tibble(stats.df)
+  kstats.df <- tibble::as_tibble(kstats.df)
   
   res <- list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all)

@@ -8,7 +8,7 @@ get.mod.fun <- function(mod.name) {
 
 model.msgs <- function(tune.args, mod.name) {
   # tune.args checks and algorithm-specific set-up
-  if(mod.name %in% c("maxent", "maxnet")) {
+  if(mod.name %in% c("maxent.jar", "maxnet")) {
     if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
       stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
     }else{
@@ -21,7 +21,7 @@ model.msgs <- function(tune.args, mod.name) {
       }
     }
     
-    if(mod.name == 'maxent') {
+    if(mod.name == 'maxent.jar') {
       if(is.null(getOption('dismo_rJavaLoaded'))) {
         # to avoid trouble on macs
         Sys.setenv(NOAWT=TRUE)
@@ -43,7 +43,7 @@ model.msgs <- function(tune.args, mod.name) {
     }
   }
   
-  if(mod.name == 'gbm.step') {
+  if(mod.name == 'brt') {
     if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
       stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
     }
@@ -70,7 +70,7 @@ model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
   # define response
   p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
   # maxent.jar
-  if(mod.name == "maxent") {
+  if(mod.name == "maxent.jar") {
     out$x <- d
     out$p <- p
     out$args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
@@ -89,7 +89,7 @@ model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
     out$regmult <- tune.tbl.i$rm
   }
   # BRT
-  if(mod.name == "gbm.step") {
+  if(mod.name == "brt") {
     out$tree.complexity <- tune.tbl.i$tree.complexity
     out$learning.rate <- tune.tbl.i$learning.rate
     out$bag.fraction <- tune.tbl.i$bag.fraction
@@ -111,7 +111,7 @@ model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
 
 # function to calculate AUC based on the model type
 calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
-  if(mod.name == "gbm.step") {
+  if(mod.name == "brt") {
     auc <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
   }else{
     # currently, maxent.jar, maxnet, and BIOCLIM have no additional parameters
@@ -123,7 +123,7 @@ calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
 
 # function to predict values to a raster based on the model type
 rasterPred <- function(mod, envs, mod.name, other.args, doClamp) {
-  if(mod.name == "maxent") {
+  if(mod.name == "maxent.jar") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, envs, args = pred.args, na.rm = TRUE)
   }else if(mod.name == "maxnet") {
@@ -140,7 +140,7 @@ rasterPred <- function(mod, envs, mod.name, other.args, doClamp) {
     mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
     envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
     pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
-  }else if(mod.name == "gbm.step") {
+  }else if(mod.name == "brt") {
     pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
   }else if(mod.name == "bioclim") {
     # if no tails in other.args, defaults to NULL
@@ -153,12 +153,12 @@ rasterPred <- function(mod, envs, mod.name, other.args, doClamp) {
 }
 
 vectorPred <- function(mod, df, mod.name, other.args, doClamp) {
-  if(mod.name == "maxent") {
+  if(mod.name == "maxent.jar") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, df, args = pred.args, na.rm = TRUE)
   }else if(mod.name == "maxnet") {
     pred <- dismo::predict(mod, df, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-  }else if(mod.name == "gbm.step") {
+  }else if(mod.name == "brt") {
     pred <- dismo::predict(mod, df, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
   }else if(mod.name == "bioclim") {
     # if no tails in other.args, defaults to NULL
@@ -174,11 +174,11 @@ vectorPred <- function(mod, df, mod.name, other.args, doClamp) {
 no.params <- function(mod, mod.name) {
   if(mod.name == 'maxnet') {
     return(length(mod$betas))
-  }else if(mod.name == "maxent") {
+  }else if(mod.name == "maxent.jar") {
     lambdas <- mod@lambdas[1:(length(mod@lambdas)-4)]
     countNonZeroParams <- function(x) if(strsplit(x, split=", ")[[1]][2] != '0.0') 1
     return(sum(unlist(sapply(lambdas, countNonZeroParams))))
-  }else if(mod.name == "gbm.step") {
+  }else if(mod.name == "brt") {
     # as no L1 regularization occurs, no parameters are dropped
     return(length(mod$var.names))
   }else if(mod.name == "bioclim") {
@@ -247,15 +247,15 @@ mess.vec <- function(p, v) {
 
 #' @export
 
-var.importance <- function(mod) {
-  if(!'MaxEnt' %in% class(mod)){
-    stop('Sorry, variable importance cannot currently be calculated with maxnet models (only maxent.jar)')
-  } else {
-    res <- mod@results
-    pc <- res[grepl('contribution', rownames(res)),]
-    pi <- res[grepl('permutation', rownames(res)),]
-    varnames <- sapply(strsplit(names(pc), '.contribution'), function(x) x[1])
-    df <- data.frame(variable=varnames, percent.contribution=pc, permutation.importance=pi, row.names=NULL)
-    return(df)
-  }
-}
+# var.importance <- function(mod) {
+#   if(!'MaxEnt' %in% class(mod)){
+#     stop('Sorry, variable importance cannot currently be calculated with maxnet models (only maxent.jar)')
+#   } else {
+#     res <- mod@results
+#     pc <- res[grepl('contribution', rownames(res)),]
+#     pi <- res[grepl('permutation', rownames(res)),]
+#     varnames <- sapply(strsplit(names(pc), '.contribution'), function(x) x[1])
+#     df <- data.frame(variable=varnames, percent.contribution=pc, permutation.importance=pi, row.names=NULL)
+#     return(df)
+#   }
+# }

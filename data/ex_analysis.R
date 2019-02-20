@@ -22,7 +22,6 @@
 # 
 # ## old ENMeval
 # e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block")
-<<<<<<< HEAD
 
 ## regular run
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
@@ -39,21 +38,3 @@
 # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # run with BIOCLIM
 # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
-=======
-# 
-# ## regular run
-# e <- ENMevaluate(occs, envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with SWD
-# e <- ENMevaluate(occs, bg = bg, occs.vals = occs.vals, bg.vals = bg.vals, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with independent testing data
-# e <- ENMevaluate(occs[1:250,], envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
-# ## run with just AIC
-# e <- ENMevaluate(occs, envs, bg, mod.fun = maxnet::maxnet, tune.args = tune.args, categoricals = "biome", partitions = "none")
-# ## run with maxent.jar
-# e <- ENMevaluate(occs, envs, bg, mod.fun = dismo::maxent, tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with BRT
-# tune.args <- list(tree.complexity = 1, learning.rate = 0.1, bag.fraction = 0.5)
-# e <- ENMevaluate(occs, envs, bg, mod.fun = dismo::gbm.step, tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with BIOCLIM
-# e <- ENMevaluate(occs, envs, bg = bg, mod.fun = dismo::bioclim, tune.args = NULL, categoricals = "biome", partitions = "block")
->>>>>>> dad0cd4779f4f68d654889fcd4b69c02555644cb
