@@ -12,7 +12,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
-    mod.full.pred <- rasterPred(mod.full, envs, mod.name, doClamp)
+    mod.full.pred <- rasterPred(mod.full, envs, mod.name, other.args, doClamp)
   }else{
     mod.full.pred <- raster::stack()
   }
@@ -21,7 +21,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   nk <- length(unique(occs.folds))
   
   # set up empty vectors for stats
-  cnames <- c("auc.test", "auc.diff", "or.mtp", "or.10p", "mess.min", "mess.mean")
+  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p", "mess.mean", "mess.min")
   kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
                                  dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   
@@ -31,8 +31,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     if(partitions == "independent") {
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
       auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
-      kstats[1,] <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
-                              auc.train, mod.full, mod.name, doClamp, abs.auc.diff)  
+      kstats[1,] <- c(1, evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
+                              auc.train, mod.full, mod.name, other.args, doClamp, abs.auc.diff))
     }
     # # if user selects to only calculate AICc, stop here
     # if(partitions == "none") break
@@ -51,8 +51,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       # calculate the stats for model k
       # kstats[k,] <- evalStats(occs.train.k, bg.train.k, occs.test.k, bg.test.k,
       #                         auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
-      kstats[k,] <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
-                              auc.train, mod.k, mod.name, doClamp, abs.auc.diff)
+      kstats[k,] <- c(k, evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
+                              auc.train, mod.k, mod.name, other.args, doClamp, abs.auc.diff))
     } 
   }
   
@@ -62,7 +62,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
   auc.test <- calcAUC(occs.test, bg.train, mod, mod.name)
   # calculate auc diff
@@ -71,8 +71,8 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   # get model predictions for training and testing data
   # these predictions are used only for calculating omission rate, and
   # thus should not need any specific parameter changes for maxent/maxnet
-  pred.train <- vectorPred(mod, occs.train, mod.name, doClamp)
-  pred.test <- vectorPred(mod, occs.test, mod.name, doClamp)
+  pred.train <- vectorPred(mod, occs.train, mod.name, other.args, doClamp)
+  pred.test <- vectorPred(mod, occs.test, mod.name, other.args, doClamp)
   # get 10 percentile predicted value
   occs.train.n <- nrow(occs.train)
   if(occs.train.n < 10) {
@@ -106,6 +106,5 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   
   return(stats)
 }
-
 
 # out.i <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, stats = stats)

@@ -18,7 +18,7 @@ get.randomkfold <- function(occs, bg, kfolds){
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occs.folds <- kfold(occs, kfolds)
+  occs.folds <- dismo::kfold(occs, kfolds)
   bg.folds <- rep(0, nrow(bg))
   out <- list(occs.folds=occs.folds, bg.folds=bg.folds)
   return(out)	

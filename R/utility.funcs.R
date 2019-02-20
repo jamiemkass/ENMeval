@@ -122,7 +122,7 @@ calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
 }
 
 # function to predict values to a raster based on the model type
-rasterPred <- function(mod, envs, mod.name, doClamp) {
+rasterPred <- function(mod, envs, mod.name, other.args, doClamp) {
   if(mod.name == "maxent") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, envs, args = pred.args, na.rm = TRUE)
@@ -152,7 +152,7 @@ rasterPred <- function(mod, envs, mod.name, doClamp) {
   return(pred)
 }
 
-vectorPred <- function(mod, df, mod.name, doClamp) {
+vectorPred <- function(mod, df, mod.name, other.args, doClamp) {
   if(mod.name == "maxent") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, df, args = pred.args, na.rm = TRUE)
