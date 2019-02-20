@@ -1,3 +1,11 @@
+get.mod.fun <- function(mod.name) {
+  x <- switch(mod.name, maxent.jar = dismo::maxent,
+              maxnet = maxnet::maxnet,
+              brt = dismo::gbm.step,
+              bioclim = dismo::bioclim)
+  return(x)
+}
+
 model.msgs <- function(tune.args, mod.name) {
   # tune.args checks and algorithm-specific set-up
   if(mod.name %in% c("maxent", "maxnet")) {
@@ -54,7 +62,7 @@ model.msgs <- function(tune.args, mod.name) {
 }
 
 #' @export
-make.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
+model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
   
   out <- list()
   # define data 
@@ -117,7 +125,7 @@ calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
 rasterPred <- function(mod, envs, mod.name, doClamp) {
   if(mod.name == "maxent") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
-    pred <- dismo::predict(mod, envs, args = pred.args)
+    pred <- dismo::predict(mod, envs, args = pred.args, na.rm = TRUE)
   }else if(mod.name == "maxnet") {
     envs.n <- raster::nlayers(envs)
     envs.pts <- raster::rasterToPoints(envs)
@@ -129,16 +137,16 @@ rasterPred <- function(mod, envs, mod.name, doClamp) {
       message(paste('\n', rowDiff, "grid cells found with at least one NA value: these cells were excluded from raster predictions."))
     }
     # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
-    mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp)
+    mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
     envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
     pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
   }else if(mod.name == "gbm.step") {
-    pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees)
+    pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
   }else if(mod.name == "bioclim") {
     # if no tails in other.args, defaults to NULL
-    pred <- dismo::predict(mod, envs, tails = other.args$tails)
+    pred <- dismo::predict(mod, envs, tails = other.args$tails, na.rm = TRUE)
   }else{
-    pred <- dismo::predict(mod, envs)
+    pred <- dismo::predict(mod, envs, na.rm = TRUE)
   }
   
   return(pred)
@@ -147,16 +155,16 @@ rasterPred <- function(mod, envs, mod.name, doClamp) {
 vectorPred <- function(mod, df, mod.name, doClamp) {
   if(mod.name == "maxent") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
-    pred <- dismo::predict(mod, df, args = pred.args)
+    pred <- dismo::predict(mod, df, args = pred.args, na.rm = TRUE)
   }else if(mod.name == "maxnet") {
-    pred <- dismo::predict(mod, df, type = 'exponential', clamp = doClamp)
+    pred <- dismo::predict(mod, df, type = 'exponential', clamp = doClamp, na.rm = TRUE)
   }else if(mod.name == "gbm.step") {
-    pred <- dismo::predict(mod, df, type = "response", n.trees = mod$gbm.call$best.trees)
+    pred <- dismo::predict(mod, df, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
   }else if(mod.name == "bioclim") {
     # if no tails in other.args, defaults to NULL
-    pred <- dismo::predict(mod, df, tails = other.args$tails)
+    pred <- dismo::predict(mod, df, tails = other.args$tails, na.rm = TRUE)
   }else{
-    pred <- dismo::predict(mod, df)
+    pred <- dismo::predict(mod, df, na.rm = TRUE)
   }
   return(pred)
 }
@@ -178,36 +186,39 @@ no.params <- function(mod, mod.name) {
   }
 }
 
+#' @title Calculate AICc from Maxent model prediction
 #' @export
-calc.aicc <- function(nparams, occs, preds, mod.name) {
+calc.aicc <- function(nparams, occs, preds) {
   # only functional for Maxent models currently
-  out <- data.frame(AICc = NA, AICc.delta = NA, AICc.weights = NA, params = nparams, row.names = NULL)
-  if(mod.name %in% c("maxent", "maxnet")) {
-    AIC.valid <- nparams < nrow(occs)
-    if(nlayers(preds) == 0) {
-      warning("Cannot calculate AICc when rasterPreds = FALSE... returning NAs.")
-    }else{
-      vals <- raster::extract(preds, occs)
-      probsum <- raster::cellStats(preds, sum)
-      # The log-likelihood was incorrectly calculated (see next line) in ENMeval v.0.1.0 when working with >1 model at once.
-      #   LL <- colSums(log(vals/probsum), na.rm=T)
-      # The corrected calculation (since v.0.1.1) is:
-      LL <- colSums(log(t(t(vals)/probsum)), na.rm=T)
-      AICc <- (2*nparams - 2*LL) + (2*(nparams)*(nparams+1)/(nrow(occs)-nparams-1))
-      AICc[AIC.valid==FALSE] <- NA
-      AICc[is.infinite(AICc)] <- NA
-      if(sum(is.na(AICc))==length(AICc)){
-        warning("AICc not valid... returning NAs.")
-      }else{
-        out$AICc <- AICc
-        out$AICc.delta <- (AICc - min(AICc, na.rm=TRUE))
-        out$AICc.weights <- (exp(-0.5*out$AICc.delta))/(sum(exp(-0.5*out$AICc.delta), na.rm=TRUE))
-      }    
-    }
+  out <- as.data.frame(matrix(nrow = length(nparams), ncol = 3, 
+                              dimnames = list(NULL, c("AICc", "AICc.delta", "AICc.weights"))))
+  AIC.valid <- nparams < nrow(occs)
+  if(nlayers(preds) == 0) {
+    warning("Cannot calculate AICc when rasterPreds = FALSE... returning NAs.")
   }else{
-    warning(paste0("AICc is not able to be calculated for ", mod.name, "... returning NAs"))
+    vals <- raster::extract(preds, occs)
+    probsum <- raster::cellStats(preds, sum)
+    # The log-likelihood was incorrectly calculated (see next line) in ENMeval v.0.1.0 when working with >1 model at once.
+    #   LL <- colSums(log(vals/probsum), na.rm=T)
+    # The corrected calculation (since v.0.1.1) is:
+    LL <- colSums(log(t(t(vals)/probsum)), na.rm=T)
+    AICc <- (2*nparams - 2*LL) + (2*(nparams)*(nparams+1)/(nrow(occs)-nparams-1))
+    AICc[AIC.valid==FALSE] <- NA
+    AICc[is.infinite(AICc)] <- NA
+    if(sum(is.na(AICc))==length(AICc)){
+      warning("AICc not valid... returning NAs.")
+    }else{
+      out$AICc <- AICc
+      out$AICc.delta <- (AICc - min(AICc, na.rm=TRUE))
+      out$AICc.weights <- (exp(-0.5*out$AICc.delta))/(sum(exp(-0.5*out$AICc.delta), na.rm=TRUE))
+    }    
   }
   return(out)
+}
+
+# define a corrected variance function
+corrected.var <- function(x, nk){
+  sum((x - mean(x))^2) * ((nk-1)/nk)
 }
 
 # repurposed from dismo::mess(), based on .messi3()
