@@ -8,7 +8,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   mod.full.args <- model.args(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args)
   mod.full <- do.call(mod.fun, mod.full.args)
   # calculate training auc
-  auc.train <- calcAUC(occs.vals, bg.vals, mod.full, mod.name)
+  auc.train <- mod.eval(occs.vals, bg.vals, mod.full, mod.name, doClamp)@auc
   
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
@@ -21,7 +21,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   nk <- length(unique(occs.folds))
   
   # set up empty vectors for stats
-  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p")
+  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p", "or.mss")
   # kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
   #                                dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   kstats.lst <- list()
@@ -31,7 +31,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     # if user selects to use independent testing data, do not do k-fold cross validation
     if(partitions == "independent") {
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
-      auc.test <- calcAUC(occs.ind.vals, bg.vals, mod.full, mod.name)
+      auc.test <- mod.eval(occs.ind.vals, bg.vals, mod.full, mod.name, doClamp)@auc
       e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, 
                      auc.train, mod.full, mod.name, other.args, doClamp, abs.auc.diff)
       kstats.lst[[1]] <- c(fold = 1, e)
@@ -67,7 +67,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
 
 evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
-  auc.test <- calcAUC(occs.test, bg.train, mod, mod.name)
+  auc.test <- mod.eval(occs.test, bg.train, mod, mod.name, doClamp)@auc
   # calculate auc diff
   auc.diff <- auc.train - auc.test
   if(abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
@@ -76,7 +76,10 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   # thus should not need any specific parameter changes for maxent/maxnet
   pred.train <- vectorPred(mod, occs.train, mod.name, other.args, doClamp)
   pred.test <- vectorPred(mod, occs.test, mod.name, other.args, doClamp)
-  # get 10 percentile predicted value
+  # get minimum training presence threshold (expected no omission)
+  min.train.thr <- min(pred.train)
+  or.mtp <- mean(pred.test < min.train.thr)
+  # get 10 percentile training presence threshold (expected 0.1 omission)
   occs.train.n <- nrow(occs.train)
   if(occs.train.n < 10) {
     pct10.train <- floor(occs.train.n * 0.1)
@@ -85,8 +88,10 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   }
   pct10.train.thr <- sort(pred.train)[pct10.train]
   or.10p <- mean(pred.test < pct10.train.thr)
-  min.train.thr <- min(pred.train)
-  or.mtp <- mean(pred.test < min.train.thr)
+  # get maximum sensitivity and specificity of training presence threshold
+  ev.train <- mod.eval(occs.train, bg.train, mod, mod.name, doClamp)
+  mss.train.thr <- dismo::threshold(ev.train, stat = "spec_sens")
+  or.mss <- mean(pred.test < mss.train.thr)
   
   # calculate MESS values if bg.test values are given
   if(!is.null(bg.test)) {
@@ -100,16 +105,12 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
     mss <- mess.vec(p, v)
     mess.quant <- quantile(mss)
     names(mess.quant) <- paste0("mess_", names(mess.quant))
-    # mess.mean <- mean(mss)
-    # mess.min <- min(mss)
   }else{
     mess.quant <- NULL
   }
   
-  stats <- c(auc.test = auc.test, auc.diff = auc.diff, 
-             or.mtp = or.mtp, or.10p = or.10p, mess.quant)
+  stats <- c(auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
+             or.10p = or.10p, or.mss = or.mss, mess.quant)
   
   return(stats)
 }
-
-# out.i <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, stats = stats)

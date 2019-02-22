@@ -1,5 +1,5 @@
-#' Tuning and evaluation of ecological niche models
-#' 
+#' @title Tuning and evaluation of ecological niche models
+#' @description \code{ENMevaluate()} builds ecological niche models iteratively across a range of user-specified tuning settings. Users can choose to tune with cross validation or an independent occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing evaluation statistics (for each combination of settings and for each cross validation fold therein) and raster predictions for each model. The evaluation statistics are meant to aid users in identifying settings that balance model fit and predictive ability.
 #' @param occs matrix or data frame with two columns for longitude and latitude 
 #' of occurrence localities, in that order
 #' @param envs Raster* object of environmental variables (must be in 
@@ -14,7 +14,7 @@
 #' @param bg.vals matrix or data frame of environmental values corresponding
 #' to background (or pseudo-absence) localities, intended to be input when 
 #' environmental rasters are not used (\code{envs} is NULL) 
-#' @param mod.fun function of chosen model
+#' @param mod.name character of the name of the chosen model
 #' @param tune.args named list of model settings to be tuned
 #' @param other.args named list of any additional model arguments not specified 
 #' for tuning
@@ -313,11 +313,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        or.mtp.max = max(or.mtp),
                        or.10p.mean = mean(or.10p),
                        or.10p.var = var(or.10p),
-                       or.10p.max = max(or.10p)) %>%
+                       or.10p.max = max(or.10p),
+                       or.mss.mean = mean(or.mss),
+                       or.mss.var = var(or.mss),
+                       or.mss.max = max(or.mss)) %>%
       dplyr::ungroup()
     if(ns > 0) {
       stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
-                        kstats.avg.df[, seq(ns+1, ns+12)])  
+                        kstats.avg.df[, seq(ns+1, ns+15)])  
     }else{
       stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
     }
@@ -332,7 +335,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(mod.name %in% c("maxent.jar", "maxnet")) {
     stats.df <- cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
   }else{
-    warning(paste0("AICc is not able to be calculated for ", mod.name, "... returning NAs"))
+    warning(paste0("Not able to calculate AICc for ", mod.name, 
+                   "... returning NAs"))
   }
   stats.df$nparam <- nparams
   stats.df <- tibble::as_tibble(stats.df)
@@ -349,7 +353,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                      partition.method = partitions,
                      occs = occs, occs.folds = occs.folds,
                      bg = bg, bg.folds = bg.folds)
-  
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if (overlap == TRUE) {
