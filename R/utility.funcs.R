@@ -110,15 +110,22 @@ model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
 }
 
 # function to calculate AUC based on the model type
-calcAUC <- function(occs.vals, bg.vals, mod, mod.name) {
-  if(mod.name == "brt") {
-    auc <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
+mod.eval <- function(occs.vals, bg.vals, mod, mod.name, doClamp) {
+  if(mod.name == "maxent.jar") {
+    pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
+    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, args = pred.args)
+  }else if(mod.name == "maxnet") {
+    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)
+  }else if(mod.name == "brt") {
+    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))
+  }else if(mod.name == "bioclim") {
+    # if no tails in other.args, defaults to NULL
+    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)
   }else{
     # currently, maxent.jar, maxnet, and BIOCLIM have no additional parameters
-    auc <- dismo::evaluate(occs.vals, bg.vals, mod)@auc
+    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod)
   }
-  
-  return(auc)
+  return(mod.eval)
 }
 
 # function to predict values to a raster based on the model type
@@ -187,6 +194,70 @@ no.params <- function(mod, mod.name) {
 }
 
 #' @title Calculate AICc from Maxent model prediction
+#' @description This function calculates AICc for Maxent models based on Warren 
+#' and Seifert (2011).
+#' @param nparams integer; number of model parameters (non-zero coefficients)
+#' @param occs data frame; longitude (x) and latitude (y) of occurrence 
+#' localities
+#' @param preds Raster*; Maxent model predictions from \code{dismo::predict()}
+#' @return data frame with four columns:
+#' \code{AICc} is the Akaike Information Criterion corrected for small sample
+#' sizes calculated as:
+#' \deqn{ (2 * K - 2 * logLikelihood) + (2 * K) * (K+1) / (n - K - 1)}
+#' where \emph{K} is the number of parameters in the model (i.e., number of
+#' non-zero parameters in Maxent lambda file) and \emph{n} is the number of
+#' occurrence localities.  The \emph{logLikelihood} is calculated as:
+#' \deqn{ sum(log(vals / total))}
+#' where \emph{vals} is a vector of Maxent raw values at occurrence localities
+#' and \emph{total} is the sum of Maxent raw values across the entire study
+#' area.
+#' \code{delta.AICc} is the difference between the AICc of a given model and
+#' the AICc of the model with the lowest AICc.
+#' \code{w.AICc} is the Akaike weight (calculated as the relative likelihood of
+#' a model (exp(-0.5 * \code{delta.AICc})) divided by the sum of the likelihood
+#' values of all models included in a run.  These can be used for model
+#' averaging (Burnham and Anderson 2002).
+#' @aliases calc.aicc get.params
+#' @details As motivated by Warren and Seifert (2011) and implemented in 
+#' ENMTools (Warren  \emph{et al.} 2010), this function calculates the small 
+#' sample size version of Akaike Information Criterion for ENMs (Akaike 1974).  
+#' We use AICc (instead of AIC) regardless of sample size based on the 
+#' recommendation of Burnham and Anderson (1998, 2004).  The number of 
+#' parameters is determined by counting the number of non-zero parameters in 
+#' the \code{maxent} lambda file.  See Warren \emph{et al.} (2014) for 
+#' limitations of this approach, namely that the number of parameters is an 
+#' estimate of the true degrees of freedom.  For Maxent ENMs, AICc is 
+#' calculated by standardizing the raw output such that all cells in the study 
+#' extent sum to 1.  The likelihood of the data for a given model is then 
+#' calculated by taking the product of the raw output values for all grid cells 
+#' that contain an occurrence locality (Warren and Seifert 2011).
+#' @seealso \code{maxent} in the \pkg{dismo} package.
+#' @note Returns all \code{NA}s if the number of parameters is larger than the
+#' number of observations (occurrence localities).
+#' @references Akaike, H. (1974) A new look at the statistical model
+#' identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}:
+#' 716-723.
+#' 
+#' Burnham, K. P. and Anderson, D. R. (1998) Model selection and multimodel
+#' inference: a practical information-theoretic approach. Springer, New York.
+#' 
+#' Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference:
+#' understanding AIC and BIC in model selection. \emph{Sociological Methods and
+#' Research}, \bold{33}: 261-304.
+#' 
+#' Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for
+#' comparative studies of environmental niche models. \emph{Ecography},
+#' \bold{33}: 607-611.
+#' 
+#' Warren, D. L. and Seifert, S. N. (2011) Ecological niche modeling in Maxent:
+#' the importance of model complexity and the performance of model selection
+#' criteria. \emph{Ecological Applications}, \bold{21}: 335-342.
+#' 
+#' Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014)
+#' Incorporating model complexity and sampling bias into ecological niche
+#' models of climate change risks faced by 90 California vertebrate species of
+#' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
+
 #' @export
 calc.aicc <- function(nparams, occs, preds) {
   # only functional for Maxent models currently
