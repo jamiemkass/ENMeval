@@ -6,7 +6,7 @@ get.mod.fun <- function(mod.name) {
   return(x)
 }
 
-model.msgs <- function(tune.args, mod.name) {
+mod.msgs <- function(tune.args, mod.name) {
   # tune.args checks and algorithm-specific set-up
   if(mod.name %in% c("maxent.jar", "maxnet")) {
     if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -58,11 +58,11 @@ model.msgs <- function(tune.args, mod.name) {
   if(mod.name == "gam") {
     algorithm.ver <- paste("Generalized additive model (GAM) from gam package v.", packageVersion('gam'))
   }
-  message(paste("*** Running ENMevaluate using", algorithm.ver, "***"))
+  message(paste("*** Running ENMevaluate using", algorithm.ver, "***\n"))
 }
 
 #' @export
-model.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
+mod.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
   
   out <- list()
   # define data 
@@ -129,24 +129,23 @@ mod.eval <- function(occs.vals, bg.vals, mod, mod.name, doClamp) {
 }
 
 # function to predict values to a raster based on the model type
-rasterPred <- function(mod, envs, mod.name, other.args, doClamp) {
+mod.prediction <- function(mod, envs, mod.name, other.args, doClamp) {
   if(mod.name == "maxent.jar") {
     pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
     pred <- dismo::predict(mod, envs, args = pred.args, na.rm = TRUE)
   }else if(mod.name == "maxnet") {
-    envs.n <- raster::nlayers(envs)
-    envs.pts <- raster::rasterToPoints(envs)
-    origNrow <- nrow(envs.pts)
-    envs.pts <- na.omit(envs.pts)
-    naOmitNrow <- nrow(envs.pts)
-    rowDiff <- origNrow - naOmitNrow
-    if(rowDiff > 0) {
-      message(paste('\n', rowDiff, "grid cells found with at least one NA value: these cells were excluded from raster predictions."))
+    # if input envs is Raster*, return a RasterLayer of predicted values
+    if(inherits(envs, "BasicRaster") == TRUE) {
+      envs.n <- raster::nlayers(envs)
+      envs.pts <- raster::rasterToPoints(envs)
+      # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
+      mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+      envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
+      pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))  
+    }else{
+      # otherwise, envs is data frame, so return data frame of predicted values
+      pred <- dismo::predict(mod, envs, type = 'exponential', clamp = doClamp, na.rm = TRUE)
     }
-    # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
-    mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-    envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
-    pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
   }else if(mod.name == "brt") {
     pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
   }else if(mod.name == "bioclim") {
@@ -159,26 +158,9 @@ rasterPred <- function(mod, envs, mod.name, other.args, doClamp) {
   return(pred)
 }
 
-vectorPred <- function(mod, df, mod.name, other.args, doClamp) {
-  if(mod.name == "maxent.jar") {
-    pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
-    pred <- dismo::predict(mod, df, args = pred.args, na.rm = TRUE)
-  }else if(mod.name == "maxnet") {
-    pred <- dismo::predict(mod, df, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-  }else if(mod.name == "brt") {
-    pred <- dismo::predict(mod, df, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
-  }else if(mod.name == "bioclim") {
-    # if no tails in other.args, defaults to NULL
-    pred <- dismo::predict(mod, df, tails = other.args$tails, na.rm = TRUE)
-  }else{
-    pred <- dismo::predict(mod, df, na.rm = TRUE)
-  }
-  return(pred)
-}
-
 #' @export
 # get total number of parameters
-no.params <- function(mod, mod.name) {
+mod.paramNum <- function(mod, mod.name) {
   if(mod.name == 'maxnet') {
     return(length(mod$betas))
   }else if(mod.name == "maxent.jar") {
@@ -265,7 +247,7 @@ calc.aicc <- function(nparams, occs, preds) {
                               dimnames = list(NULL, c("AICc", "AICc.delta", "AICc.weights"))))
   AIC.valid <- nparams < nrow(occs)
   if(nlayers(preds) == 0) {
-    warning("Cannot calculate AICc when rasterPreds = FALSE... returning NAs.")
+    warning("Cannot calculate AICc when skipRasters = TRUE... returning NAs.")
   }else{
     vals <- raster::extract(preds, occs)
     probsum <- raster::cellStats(preds, sum)
@@ -330,3 +312,19 @@ mess.vec <- function(p, v) {
 #     return(df)
 #   }
 # }
+
+calc.niche.overlap <- function(preds, overlapStat){
+  n <- raster::nlayers(preds)
+  ov <- matrix(nrow = n, ncol = n)
+  pb <- txtProgressBar(0, nlayers(preds) - 1, style = 3)
+  for(i in 1:(n - 1)){
+    setTxtProgressBar(pb, i)
+    for(j in (i + 1):n){
+      ov[j, i] <- dismo::nicheOverlap(preds[[i]], preds[[j]], stat = overlapStat)
+    }
+  }
+  colnames(ov) <- names(preds)
+  rownames(ov) <- names(preds)
+  close(pb)
+  return(ov)
+}
