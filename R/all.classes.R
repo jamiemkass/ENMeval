@@ -10,7 +10,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                   occs.folds='numeric',
                                   bg='data.frame',
                                   bg.folds='numeric',
-                                  overlap='matrix'))
+                                  overlap='list'))
 #' @export
 setMethod("show",
 		  signature="ENMevaluation",
@@ -29,6 +29,6 @@ setMethod("show",
 		  		" ",  "@occs.folds            : vector of bins for occurrence points", '\n',
 		  		" ",  "@bg                    : data.frame of background coordinates", '\n',
 		  		" ",  "@bg.folds              : vector of bins for background points", '\n',
-		  		" ",  if (nrow(object@overlap) > 0){"@overlap     : matrix of pairwise niche overlap metric"}, '\n', sep="")
+		  		" ",  if (length(object@overlap) > 0){"@overlap               : list of matrices of pairwise niche overlap statistic"}, '\n', sep="")
 		  	invisible(NULL)
 		  })

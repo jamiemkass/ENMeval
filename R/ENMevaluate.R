@@ -40,6 +40,8 @@
 #' to sample; necessary if \code{bg} is NULL
 #' @param overlap boolean (TRUE or FALSE); if TRUE, calculate niche overlap 
 #' statistics
+#' @param overlapStat character; one or two (vector) niche overlap statistics:
+#' choices are "D" and "I" -- see ?calc.niche.overlap for more details
 #' @param doClamp boolean (TRUE or FALSE); if TRUE, clamp model responses; only
 #' applicable for Maxent models
 #' @param skipRasters boolean (TRUE or FALSE); if TRUE, skip raster predictions
@@ -56,14 +58,15 @@
 #' @examples
 #'
 #' @importFrom magrittr %>%
+#' @importFrom foreach %dopar%
 #' @export 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
                         mod.name, tune.args = NULL, other.args = NULL, categoricals = NULL, 
                         partitions = NULL, occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, 
-                        kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,   
-                        doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE, 
-                        numCores = NULL, updateProgress = FALSE) {
+                        kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
+                        overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
+                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE) {
   
   # record start time
   start.time <- proc.time()
@@ -84,8 +87,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   # print model-specific message
-  model.msgs(tune.args, mod.name)
+  mod.msgs(tune.args, mod.name)
   
+  # rearrange list entries if first one is integer
+  # this is to ensure the raster names are generated correctly
+  if(class(tune.args[[1]]) == "integer") tune.args <- tune.args[2:1]
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
@@ -94,26 +100,32 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # predictor values (SWD format)
   if(is.null(envs)) {
     if(is.null(occs.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both 
-           occs.vals and bg.vals.")
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
     }
     occs.vals <- as.data.frame(occs.vals)
     if(is.null(bg.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both 
-           occs.vals and bg.vals.")
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
     }
     bg.vals <- as.data.frame(bg.vals)
     if(is.null(bg)) {
-      stop("If inputting data without rasters (SWD), please specify bg in 
-           addition to occs.")
+      stop("If inputting data without rasters (SWD), please specify bg in addition to occs.")
     }
-    message("Data without rasters were input (SWD format), so no raster 
-            predictions will be generated and AICc cannot be calculated.")
+    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n")
   }else{
     # if no background points specified, generate random ones
     if(is.null(bg)) {
       bg <- dismo::randomPoints(envs, n = n.bg)
-    }  
+    } 
+    # check to see if any cells are NA for one or more rasters but not all,
+    # then fix it
+    n <- raster::nlayers(envs)
+    z <- raster::getValues(envs)
+    z.rs <- rowSums(is.na(z))
+    z.i <- which(z.rs < n & z.rs > 0)
+    if(length(z.i) > 0) {
+      envs[z.i] <- NA
+      warning(paste0("Environmental raster grid cells (n = ", length(z.i), ") found with NA values for one or more but not all variables. These cells were converted to NA for all variables.\n"), immediate. = TRUE)
+    }
   }
   
   # make sure occs and bg are data frames with identical column names
@@ -124,39 +136,39 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # for occs.ind settings, partitions should be NULL
   if(partitions == "jackknife") {
     folds <- get.jackknife(occs, bg)
-    message("Doing model evaluations with k-1 jackknife cross validation...")
+    parts.msg <- "Doing model evaluations with k-1 jackknife cross validation...\n"
   }
   if(partitions == "randomkfold") {
     folds <- get.randomkfold(occs, bg, kfolds)
-    message(paste0("Doing model evaluations with random", kfolds, "-fold cross validation..."))
+    parts.msg <- paste0("Doing model evaluations with random", kfolds, "-fold cross validation...\n")
   }
   if(partitions == "block") {
     folds <- get.block(occs, bg)
-    message("Doing model evaluations with spatial block (4-fold) cross validation...")
+    parts.msg <- "Doing model evaluations with spatial block (4-fold) cross validation...\n"
   }
   if(partitions == "checkerboard1") {
     if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
     folds <- get.checkerboard1(occs, envs, bg, aggregation.factor)
-    message("Doing model evaluations with checkerboard (2-fold) cross validation...")
+    parts.msg <- "Doing model evaluations with checkerboard (2-fold) cross validation...\n"
   }
   if(partitions == "checkerboard2") {
     if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
     folds <- get.checkerboard2(occs, envs, bg, aggregation.factor)
-    message("Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...")
+    parts.msg <- "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n"
   }
   if(partitions == "user") {
     folds <- list(occs.folds = occs.folds, bg.folds = bg.folds)
     userk <- length(unique(occs.folds))
-    message(paste0("Doing model evaluations with user-defined ", userk, "-fold cross validation..."))
+    parts.msg <- paste0("Doing model evaluations with user-defined ", userk, "-fold cross validation...\n")
   }
   if(partitions == "independent") {
     if(is.null(occs.ind)) stop("Cannot use independent partitioning if occs.ind is NULL.")
     folds <- NULL
-    message("Doing model evaluations with independent testing data...")
+    parts.msg <- "Doing model evaluations with independent testing data...\n"
   }
   if(partitions == "none") {
     folds <- NULL
-    message("Skipping model evaluations (only calculating AICc)...")
+    parts.msg <- "Skipping model evaluations (only calculating AICc)...\n"
   }
   
   # unpack occs.folds and bg.folds
@@ -181,7 +193,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     occs <- occs[i,]
     occs.folds <- occs.folds[i]
     occs.vals <- occs.vals[i,]
-    message(paste("There were", occs.vals.na, "occurrence records with NA for at least one predictor variable. Removed these from analysis, resulting in", nrow(occs.vals), "occurrence records."))
+    warning(paste0("Occurrence records found (n = ", occs.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(occs.vals), " occurrence records.\n"), immediate. = TRUE)
   }
   # do the same for associated bg variables
   if(bg.vals.na > 0) {
@@ -189,7 +201,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     occs <- occs[i,]
     bg.folds <- bg.folds[i]
     bg.vals <- bg.vals[i,]
-    message(paste("There were", bg.vals.na, "background records with NA for at least one predictor variable. Removed these from analysis, resulting in", nrow(bg.vals), "background records."))
+    warning(paste0("Background records found (n = ", bg.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(bg.vals), " background records.\n"), immediate. = TRUE)
   }
   
   # convert fields for categorical data to factor class
@@ -203,6 +215,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   ################ #
   # tuning 
   ################ #
+  
+  message(parts.msg)
   
   if(parallel == FALSE) {
     # regular implementation
@@ -229,25 +243,26 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }else{
     # parallel implementation
     # set up parallel processing functionality
-    allCores <- detectCores()
+    allCores <- parallel::detectCores()
     if (is.null(numCores)) {
       numCores <- allCores
     }
-    c1 <- makeCluster(numCores)
-    registerDoParallel(c1)
-    numCoresUsed <- getDoParWorkers()
-    message(paste("Of", allCores, "total cores using", numCoresUsed))
+    c1 <- parallel::makeCluster(numCores)
+    doParallel::registerDoParallel(c1)
+    numCoresUsed <- foreach::getDoParWorkers()
+    message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
     
-    if(mod.name == "maxent.jar") pkgs <- c("dismo", "raster", "ENMeval", "rJava")
-    if(mod.name == "maxnet") pkgs <- c("dismo", "raster", "ENMeval", "maxnet")
-    if(mod.name == "brt") pkgs <- c("dismo", "raster", "ENMeval", "gbm")
+    if(mod.name == "maxent.jar") pkgs <- c("dismo", "raster", "rJava")
+    if(mod.name == "maxnet") pkgs <- c("dismo", "raster", "maxnet")
+    if(mod.name == "brt") pkgs <- c("dismo", "raster", "gbm")
     if(mod.name == "bioclim") pkgs <- c("dismo", "raster")
     
     message("Running in parallel...")
     n <- nrow(tune.tbl)
-    results <- foreach(i = 1:n, .packages = pkgs) %dopar% {
-      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, partitions, 
-             tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, skipRasters, abs.auc.diff)
+    results <- foreach::foreach(i = 1:n, .packages = pkgs) %dopar% {
+      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
+             partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
+             skipRasters, abs.auc.diff)
     }
     stopCluster(c1)
   }
@@ -290,9 +305,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
       }  
     }
     
-    # make new column for fold number
-    # kstats.df <- tibble::as_tibble(kstats.df)
-    
     # get number of columns in kstats.df
     nc <- ncol(kstats.df)
     
@@ -330,13 +342,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   # calculate number of non-zero parameters in model
-  nparams <- sapply(mod.full.all, function(x) no.params(x, mod.name))
+  nparams <- sapply(mod.full.all, function(x) mod.paramNum(x, mod.name))
   # calculate AICc for Maxent models
   if(mod.name %in% c("maxent.jar", "maxnet")) {
     stats.df <- cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
   }else{
-    warning(paste0("Not able to calculate AICc for ", mod.name, 
-                   "... returning NAs"))
+    warning(paste0("Not able to calculate AICc for ", mod.name, "... returning NAs.\n"))
   }
   stats.df$nparam <- nparams
   stats.df <- tibble::as_tibble(stats.df)
@@ -355,27 +366,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                      bg = bg, bg.folds = bg.folds)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
-  if (overlap == TRUE) {
-    if (length(args) > 1) {
-      if(nlayers(results@predictions) > 1) {
-        message("Calculating niche overlap")
-        overlap.mat <- calc.niche.overlap(results@predictions, "D")
-        results@overlap <- overlap.mat
+  if(overlap == TRUE) {
+    if(nlayers(e@predictions) > 1) {
+      for(ovStat in overlapStat) {
+        message(paste0("Calculating niche overlap for statistic ", ovStat, "...\n"))
+        overlap.mat <- calc.niche.overlap(e@predictions, ovStat)
+        e@overlap[[ovStat]] <- overlap.mat
       }
-      else {
-        message("Cannot calculate niche overlap without rasterPreds")
-      }
+      
     }
     else {
-      message("Need >1 settings to do niche overlap")
+      warning("Cannot calculate niche overlap without raster predictions.\n")
     }
   }
+  else {
+    warning("Need >1 settings to do niche overlap.\n")
+  }
+  
   
   # calculate time expended and print message
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  message(paste("ENMeval completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  message(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
   return(e)
 }

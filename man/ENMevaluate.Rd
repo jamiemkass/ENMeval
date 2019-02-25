@@ -9,8 +9,9 @@ ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
   categoricals = NULL, partitions = NULL, occs.folds = NULL,
   bg.folds = NULL, occs.ind = NULL, kfolds = NA,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
-  doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE,
-  parallel = FALSE, numCores = NULL, updateProgress = FALSE)
+  overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
+  abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
+  updateProgress = FALSE)
 }
 \arguments{
 \item{occs}{matrix or data frame with two columns for longitude and latitude 
@@ -69,6 +70,9 @@ to sample; necessary if \code{bg} is NULL}
 
 \item{overlap}{boolean (TRUE or FALSE); if TRUE, calculate niche overlap 
 statistics}
+
+\item{overlapStat}{character; one or two (vector) niche overlap statistics:
+choices are "D" and "I" -- see ?calc.niche.overlap for more details}
 
 \item{doClamp}{boolean (TRUE or FALSE); if TRUE, clamp model responses; only
 applicable for Maxent models}

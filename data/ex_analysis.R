@@ -5,7 +5,7 @@
 # envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 # which(rowSums(is.na(raster::extract(envs, occs))) > 0)
 # bg <- dismo::randomPoints(envs, 1000)
-# tune.args <- list(rm = 1:4, fc = c("L", "LQ"))
+# tune.args <- list(fc = c("L", "LQ"), rm = 1:4)
 # partitions <- "block"
 # categoricals <- "biome"
 # 
@@ -24,7 +24,7 @@
 # e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block")
 
 ## regular run
-# e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
 ## run with SWD
 # e <- ENMevaluate(occs, bg = bg, occs.vals = occs.vals, bg.vals = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with independent testing data
@@ -38,3 +38,5 @@
 # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # run with BIOCLIM
 # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
+
+# e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)

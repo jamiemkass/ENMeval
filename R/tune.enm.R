@@ -5,14 +5,15 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
                    doClamp, skipRasters, abs.auc.diff) {
   
   # build the full model from all the data
-  mod.full.args <- model.args(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args)
+  mod.full.args <- mod.args(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args)
   mod.full <- do.call(mod.fun, mod.full.args)
   # calculate training auc
   auc.train <- mod.eval(occs.vals, bg.vals, mod.full, mod.name, doClamp)@auc
   
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
-    mod.full.pred <- rasterPred(mod.full, envs, mod.name, other.args, doClamp)
+    mod.full.pred <- mod.prediction(mod.full, envs, mod.name, other.args, doClamp)
+    names(mod.full.pred) <- paste(tune.tbl.i, collapse = "")
   }else{
     mod.full.pred <- raster::stack()
   }
@@ -47,7 +48,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       bg.train.k <- bg.vals[bg.folds != k,, drop = FALSE]
       bg.test.k <- bg.vals[bg.folds == k,, drop = FALSE]
       # define model arguments for current model k
-      mod.k.args <- model.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
+      mod.k.args <- mod.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
       # run the current model k
       mod.k <- do.call(mod.fun, mod.k.args)
       # calculate the stats for model k
@@ -74,8 +75,8 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, 
   # get model predictions for training and testing data
   # these predictions are used only for calculating omission rate, and
   # thus should not need any specific parameter changes for maxent/maxnet
-  pred.train <- vectorPred(mod, occs.train, mod.name, other.args, doClamp)
-  pred.test <- vectorPred(mod, occs.test, mod.name, other.args, doClamp)
+  pred.train <- mod.prediction(mod, occs.train, mod.name, other.args, doClamp)
+  pred.test <- mod.prediction(mod, occs.test, mod.name, other.args, doClamp)
   # get minimum training presence threshold (expected no omission)
   min.train.thr <- min(pred.train)
   or.mtp <- mean(pred.test < min.train.thr)
