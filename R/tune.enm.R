@@ -53,7 +53,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
       mod.k <- do.call(mod.fun, mod.k.args)
       # calculate the stats for model k
       e <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
-                     auc.train, mod.k, mod.name, other.args, doClamp, abs.auc.diff)
+                     auc.train, mod.k, mod.name, other.args, categoricals, doClamp, abs.auc.diff)
       kstats.lst[[k]] <- c(fold = k, e)
     } 
   }
@@ -66,7 +66,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, other.args, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, auc.train, mod, mod.name, other.args, categoricals, doClamp, abs.auc.diff) {
   # calculate auc on testing data
   auc.test <- mod.eval(occs.test, bg.train, mod, mod.name, doClamp)@auc
   # calculate auc diff

@@ -247,8 +247,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     if (is.null(numCores)) {
       numCores <- allCores
     }
-    c1 <- parallel::makeCluster(numCores)
-    doParallel::registerDoParallel(c1)
+    cl <- parallel::makeCluster(numCores)
+    doSNOW::registerDoSNOW(cl)
     numCoresUsed <- foreach::getDoParWorkers()
     message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
     
@@ -258,13 +258,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     if(mod.name == "bioclim") pkgs <- c("dismo", "raster")
     
     message("Running in parallel...")
-    n <- nrow(tune.tbl)
-    results <- foreach::foreach(i = 1:n, .packages = pkgs) %dopar% {
-      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-             partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
+    n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
+    pb <- txtProgressBar(0, n, style = 3)
+    progress <- function(n) setTxtProgressBar(pb, n)
+    opts <- list(progress=progress)
+    results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
+      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name,
+             partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
              skipRasters, abs.auc.diff)
     }
-    stopCluster(c1)
+    close(pb)
+    parallel::stopCluster(cl)
   }
   
   ################# #
