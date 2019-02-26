@@ -10,7 +10,8 @@ License: GPL
 Encoding: UTF-8
 Depends: methods, R (>= 3.4), raster
 Imports: dismo,
-  doParallel, 
+  doSNOW, 
+  parallel,
 	foreach, 
 	utils, 
 	graphics, 
@@ -18,7 +19,6 @@ Imports: dismo,
 	grDevices, 
 	maxnet
 Suggests: rJava (>= 0.5-0),
-	parallel, 
 	knitr, 
 	rmarkdown, 
 	spocc, 
