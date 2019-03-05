@@ -8,6 +8,10 @@
 # tune.args <- list(fc = c("L", "LQ"), rm = 1:4)
 # partitions <- "block"
 # categoricals <- "biome"
+# skipRasters <- FALSE
+# other.args <- NULL
+# updateProgress <- NULL
+
 # 
 # # SWD
 # colnames(bg) <- c("longitude", "latitude")

@@ -60,9 +60,11 @@
 #' @importFrom magrittr %>%
 #' @importFrom foreach %dopar%
 #' @export 
+#' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
-                        mod.name, tune.args = NULL, other.args = NULL, categoricals = NULL, 
+                        tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name,
+                        ls.user = NULL,
                         partitions = NULL, occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
@@ -70,8 +72,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # record start time
   start.time <- proc.time()
-  # get model function from input name
-  mod.fun <- get.mod.fun(mod.name)
+  
+  if(is.null(ls.user)) ls <- lookup.ls(mod.name)
   
   ########### #
   # CHECKS ####
@@ -87,7 +89,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   # print model-specific message
-  mod.msgs(tune.args, mod.name)
+  msg <- ls$msgs(tune.args)
+  message(paste("*** Running ENMevaluate using", msg, "***\n"))
   
   # rearrange list entries if first one is integer
   # this is to ensure the raster names are generated correctly
@@ -235,9 +238,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         }
         setTxtProgressBar(pb, i)
       }
-      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
-                             partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
-                             skipRasters, abs.auc.diff)
+      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, ls,
+                             partitions, tune.tbl[i,], other.args, categoricals, 
+                             occs.ind, doClamp, skipRasters, abs.auc.diff)
     }
     close(pb)
   }else{
@@ -263,7 +266,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     progress <- function(n) setTxtProgressBar(pb, n)
     opts <- list(progress=progress)
     results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
-      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name,
+      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, ls,
              partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
              skipRasters, abs.auc.diff)
     }
@@ -329,14 +332,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        or.mtp.max = max(or.mtp),
                        or.10p.mean = mean(or.10p),
                        or.10p.var = var(or.10p),
-                       or.10p.max = max(or.10p),
-                       or.mss.mean = mean(or.mss),
-                       or.mss.var = var(or.mss),
-                       or.mss.max = max(or.mss)) %>%
+                       or.10p.max = max(or.10p)) %>%
       dplyr::ungroup()
     if(ns > 0) {
       stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
-                        kstats.avg.df[, seq(ns+1, ns+15)])  
+                        kstats.avg.df[, seq(ns+1, ns+12)])  
     }else{
       stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
     }
@@ -346,7 +346,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   # calculate number of non-zero parameters in model
-  nparams <- sapply(mod.full.all, function(x) mod.paramNum(x, mod.name))
+  nparams <- sapply(mod.full.all, ls$nparams)
   # calculate AICc for Maxent models
   if(mod.name %in% c("maxent.jar", "maxnet")) {
     stats.df <- cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
