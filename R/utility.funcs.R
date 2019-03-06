@@ -133,7 +133,11 @@ brt.ls <- list(fun = dismo::gbm.step,
                     return(e)
                   },
                   predict = function(mod, envs, other.args, doClamp) {
-                    pred <- predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
+                    if(inherits(envs, "BasicRaster") == TRUE) {
+                      pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
+                    }else{
+                      pred <- dismo::predict(mod, envs, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)  
+                    }
                     return(pred)
                   },
                   nparams = function(mod) {
