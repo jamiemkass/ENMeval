@@ -22,16 +22,16 @@
 #' environmental variables
 #' @param partitions character of name of partitioning technique (see
 #' \code{?partitions})
-#' @param occs.folds numeric vector of partition group (fold) for each
+#' @param occs.grp numeric vector of partition group (fold) for each
 #' occurrence locality, intended for user-defined partitions
-#' @param bg.folds numeric vector of partition group (fold) for each background 
+#' @param bg.grp numeric vector of partition group (fold) for each background 
 #' (or pseudo-absence) locality, intended for user-defined partitions
 #' @param occs.ind matrix or data frame with two columns for longitude and latitude 
 #' of occurrence localities, in that order, intended for independent evaluation;
 #' when \code{partitions = "independent"}; these occurrences will be used only 
 #' for evaluation, and not for model training, and thus no cross validation will 
 #' be done
-#' @param kfolds numeric for number of partition groups (folds), only for random
+#' @param kfolds numeric for number of partition groups (grp), only for random
 #' k-fold partitioning
 #' @param aggregation.factor numeric vector with length 2 that specifies the
 #' factors for aggregating \code{envs} in order to perform checkerboard
@@ -62,11 +62,36 @@
 #' @export 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
-                        mod.name, tune.args = NULL, other.args = NULL, categoricals = NULL, 
-                        partitions = NULL, occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, 
+                        mod.name = NULL, tune.args = NULL, other.args = NULL, categoricals = NULL, 
+                        partitions = NULL, occs.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
-                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE) {
+                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE,
+                        # legacy parameters
+                        occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
+                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL) {
+  
+  # legacy parameter handling so ENMevaluate doesn't break for older code
+  all.legacy <- list(occ, env, bg.coords, RMvalues, fc, algorithm, method, bin.output, rasterPreds)
+  if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
+    message("Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n")
+  }
+  if(!is.null(occ)) occs <- occ
+  if(!is.null(env)) envs <- env
+  if(!is.null(bg.coords)) bg <- bg.coords
+  if(!is.null(method)) partitions <- method
+  if(!is.null(rasterPreds)) skipRasters <- rasterPreds
+  if(!is.null(algorithm)) {
+    mod.name <- algorithm
+    tune.args <- list(fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
+                      rm = seq(0.5, 4, 0.5))
+  }
+  if(!is.null(RMvalues)) tune.args$rm <- RMvalues
+  if(!is.null(fc)) tune.args$fc <- fc
+  
+  if(is.null(mod.name)) {
+    stop("Please select a model name.\n")
+  }
   
   # record start time
   start.time <- proc.time()
@@ -80,10 +105,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   ## general parameter checks
   if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", 
                          "checkerboard2", "user", "independent", "none"))) {
-    stop("Please make sure partition method is one of the available options.")
+    stop("Please make sure partition method is one of the available options.\n")
   }
   if(is.null(tune.args) & mod.name != "bioclim") {
-    stop("Must specify tuning.args for all models except BIOCLIM.")
+    stop("Must specify tuning.args for all models except BIOCLIM.\n")
   }
   
   # print model-specific message
@@ -100,15 +125,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # predictor values (SWD format)
   if(is.null(envs)) {
     if(is.null(occs.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
     }
     occs.vals <- as.data.frame(occs.vals)
     if(is.null(bg.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.")
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
     }
     bg.vals <- as.data.frame(bg.vals)
     if(is.null(bg)) {
-      stop("If inputting data without rasters (SWD), please specify bg in addition to occs.")
+      stop("If inputting data without rasters (SWD), please specify bg in addition to occs.\n")
     }
     warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n")
   }else{
@@ -135,45 +160,45 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # print message for selected cross-validation method
   # for occs.ind settings, partitions should be NULL
   if(partitions == "jackknife") {
-    folds <- get.jackknife(occs, bg)
+    grp <- get.jackknife(occs, bg)
     parts.msg <- "Doing model evaluations with k-1 jackknife cross validation...\n"
   }
   if(partitions == "randomkfold") {
-    folds <- get.randomkfold(occs, bg, kfolds)
+    grp <- get.randomkfold(occs, bg, kfolds)
     parts.msg <- paste0("Doing model evaluations with random", kfolds, "-fold cross validation...\n")
   }
   if(partitions == "block") {
-    folds <- get.block(occs, bg)
+    grp <- get.block(occs, bg)
     parts.msg <- "Doing model evaluations with spatial block (4-fold) cross validation...\n"
   }
   if(partitions == "checkerboard1") {
     if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-    folds <- get.checkerboard1(occs, envs, bg, aggregation.factor)
+    grp <- get.checkerboard1(occs, envs, bg, aggregation.factor)
     parts.msg <- "Doing model evaluations with checkerboard (2-fold) cross validation...\n"
   }
   if(partitions == "checkerboard2") {
     if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-    folds <- get.checkerboard2(occs, envs, bg, aggregation.factor)
+    grp <- get.checkerboard2(occs, envs, bg, aggregation.factor)
     parts.msg <- "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n"
   }
   if(partitions == "user") {
-    folds <- list(occs.folds = occs.folds, bg.folds = bg.folds)
-    userk <- length(unique(occs.folds))
+    grp <- list(occs.grp = occs.grp, bg.grp = bg.grp)
+    userk <- length(unique(occs.grp))
     parts.msg <- paste0("Doing model evaluations with user-defined ", userk, "-fold cross validation...\n")
   }
   if(partitions == "independent") {
     if(is.null(occs.ind)) stop("Cannot use independent partitioning if occs.ind is NULL.")
-    folds <- NULL
+    grp <- NULL
     parts.msg <- "Doing model evaluations with independent testing data...\n"
   }
   if(partitions == "none") {
-    folds <- NULL
+    grp <- NULL
     parts.msg <- "Skipping model evaluations (only calculating AICc)...\n"
   }
   
-  # unpack occs.folds and bg.folds
-  occs.folds <- folds$occs.folds
-  bg.folds <- folds$bg.folds
+  # unpack occs.grp and bg.grp
+  occs.grp <- grp$occs.grp
+  bg.grp <- grp$bg.grp
   
   ############# #
   # ANALYSIS ####
@@ -185,13 +210,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     bg.vals <- as.data.frame(raster::extract(envs, bg))  
   }
   
-  # remove rows from occs, occs.vals, occs.folds with NA for any predictor variable
+  # remove rows from occs, occs.vals, occs.grp with NA for any predictor variable
   occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
   bg.vals.na <- sum(rowSums(is.na(bg.vals)) > 0)
   if(occs.vals.na > 0) {
     i <- !apply(occs.vals, 1, anyNA)
     occs <- occs[i,]
-    occs.folds <- occs.folds[i]
+    occs.grp <- occs.grp[i]
     occs.vals <- occs.vals[i,]
     warning(paste0("Occurrence records found (n = ", occs.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(occs.vals), " occurrence records.\n"), immediate. = TRUE)
   }
@@ -199,7 +224,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(bg.vals.na > 0) {
     i <- !apply(bg.vals, 1, anyNA)
     occs <- occs[i,]
-    bg.folds <- bg.folds[i]
+    bg.grp <- bg.grp[i]
     bg.vals <- bg.vals[i,]
     warning(paste0("Background records found (n = ", bg.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(bg.vals), " background records.\n"), immediate. = TRUE)
   }
@@ -235,7 +260,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         }
         setTxtProgressBar(pb, i)
       }
-      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
+      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, mod.fun, mod.name, 
                              partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp, 
                              skipRasters, abs.auc.diff)
     }
@@ -263,7 +288,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     progress <- function(n) setTxtProgressBar(pb, n)
     opts <- list(progress=progress)
     results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
-      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name,
+      cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, mod.fun, mod.name,
              partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
              skipRasters, abs.auc.diff)
     }
@@ -287,10 +312,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     mod.full.pred.all <- raster::stack()
   }
   
-  # make data frame of stats (for all folds)
+  # make data frame of stats (for all grp)
   kstats.df <- dplyr::bind_rows(kstats.all)
   
-  # define number of folds (the value of "k") as number of
+  # define number of grp (the value of "k") as number of
   # rows in one of the model runs
   nk <- nrow(kstats.all[[1]])
   
@@ -312,24 +337,24 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # get number of columns in kstats.df
     nc <- ncol(kstats.df)
     
-    # if model settings for tuning were input, summarize by averaging all folds 
+    # if model settings for tuning were input, summarize by averaging all grp 
     # per model setting combination
     if(ns > 0) {
       kstats.df <- dplyr::group_by_at(kstats.df, 1:ns)
     }
     kstats.avg.df <- kstats.df %>% 
-      dplyr::summarize(auc.test.mean = mean(auc.test),
-                       auc.test.var = corrected.var(auc.test, nk),
-                       auc.test.min = min(auc.test),
-                       auc.diff.mean = mean(auc.diff),
-                       auc.diff.var = corrected.var(auc.diff, nk),
-                       auc.diff.max = max(auc.diff),
-                       or.mtp.mean = mean(or.mtp),
-                       or.mtp.var = var(or.mtp),
-                       or.mtp.max = max(or.mtp),
-                       or.10p.mean = mean(or.10p),
-                       or.10p.var = var(or.10p),
-                       or.10p.max = max(or.10p),
+      dplyr::summarize(avg.test.AUC = mean(auc.test),
+                       var.test.AUC = corrected.var(auc.test, nk),
+                       min.test.AUC = min(auc.test),
+                       avg.diff.AUC = mean(auc.diff),
+                       var.diff.AUC = corrected.var(auc.diff, nk),
+                       max.diff.AUC = max(auc.diff),
+                       avg.test.orMTP = mean(or.mtp),
+                       var.test.orMTP = var(or.mtp),
+                       max.test.orMTP = max(or.mtp),
+                       avg.test.or10pct = mean(or.10p),
+                       var.test.or10pct = var(or.10p),
+                       max.test.or10pct = max(or.10p),
                        or.mss.mean = mean(or.mss),
                        or.mss.var = var(or.mss),
                        or.mss.max = max(or.mss)) %>%
@@ -360,14 +385,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   res <- list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all)
   
-  if(is.null(occs.folds)) occs.folds <- 0
-  if(is.null(bg.folds)) bg.folds <- 0
+  if(is.null(occs.grp)) occs.grp <- 0
+  if(is.null(bg.grp)) bg.grp <- 0
   e <- ENMevaluation(algorithm = mod.name, 
-                     stats = res$stats, kstats = res$kstats,
+                     results = res$stats, results.grp = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,
-                     occs = occs, occs.folds = occs.folds,
-                     bg = bg, bg.folds = bg.folds)
+                     occ.pts = occs, occ.grp = occs.grp,
+                     bg.pts = bg, bg.grp = bg.grp)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {

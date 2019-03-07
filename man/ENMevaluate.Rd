@@ -5,13 +5,15 @@
 \title{Tuning and evaluation of ecological niche models}
 \usage{
 ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
-  bg.vals = NULL, mod.name, tune.args = NULL, other.args = NULL,
-  categoricals = NULL, partitions = NULL, occs.folds = NULL,
-  bg.folds = NULL, occs.ind = NULL, kfolds = NA,
+  bg.vals = NULL, mod.name = NULL, tune.args = NULL,
+  other.args = NULL, categoricals = NULL, partitions = NULL,
+  occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, kfolds = NA,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
   overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
   abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
-  updateProgress = FALSE)
+  updateProgress = FALSE, occ = NULL, env = NULL, bg.coords = NULL,
+  RMvalues = NULL, fc = NULL, algorithm = NULL, method = NULL,
+  bin.output = NULL, rasterPreds = NULL)
 }
 \arguments{
 \item{occs}{matrix or data frame with two columns for longitude and latitude 

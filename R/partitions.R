@@ -5,22 +5,22 @@ get.jackknife <- function(occs, bg) {
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occs.folds <- 1:nrow(occs)
-  bg.folds <- rep(0, nrow(bg))
-  out <- list(occs.folds=occs.folds, bg.folds=bg.folds)
+  occs.grp <- 1:nrow(occs)
+  bg.grp <- rep(0, nrow(bg))
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
 #' @export
 
-get.randomkfold <- function(occs, bg, kfolds){
+get.randomkfold <- function(occs, bg, kgrp){
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occs.folds <- dismo::kfold(occs, kfolds)
-  bg.folds <- rep(0, nrow(bg))
-  out <- list(occs.folds=occs.folds, bg.folds=bg.folds)
+  occs.grp <- dismo::kfold(occs, kgrp)
+  bg.grp <- rep(0, nrow(bg))
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)	
 }
 
@@ -59,16 +59,16 @@ get.block <- function(occs, bg){
   if (nrow(grp2) > 0) grp2$grp <- 2; r <- rbind(r, grp2)
   if (nrow(grp3) > 0) grp3$grp <- 3; r <- rbind(r, grp3)
   if (nrow(grp4) > 0) grp4$grp <- 4; r <- rbind(r, grp4)
-  occs.folds <- r[order(as.numeric(rownames(r))),]$grp
+  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   bgr <- data.frame()
   if (nrow(bggrp1) > 0) bggrp1$grp <- 1; bgr <- rbind(bgr, bggrp1)
   if (nrow(bggrp2) > 0) bggrp2$grp <- 2; bgr <- rbind(bgr, bggrp2)
   if (nrow(bggrp3) > 0) bggrp3$grp <- 3; bgr <- rbind(bgr, bggrp3)
   if (nrow(bggrp4) > 0) bggrp4$grp <- 4; bgr <- rbind(bgr, bggrp4)
-  bg.folds <- bgr[order(as.numeric(rownames(bgr))),]$grp
+  bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
-  out <- list(occs.folds=occs.folds, bg.folds=bg.folds)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -90,29 +90,29 @@ get.checkerboard1 <- function(occs, env, bg, aggregation.factor){
   if(nrow(w) > 0) { w$grp <- 1 }
   if(nrow(b) > 0) { b$grp <- 2 }
   r <- rbind(w, b)
-  occs.folds <- r[order(as.numeric(rownames(r))),]$grp
+  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   if(nrow(bgw) > 0) { bgw$grp <- 1 }
   if(nrow(bgb) > 0) { bgb$grp <- 2 }
   bgr <- rbind(bgw, bgb)
-  bg.folds <- bgr[order(as.numeric(rownames(bgr))),]$grp
+  bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
   # PATCH IF occs OR BG POINTS FALL INTO A SINGLE BIN
-  noccgrp <- length(unique(occs.folds))
-  nbggrp <- length(unique(bg.folds))
+  noccgrp <- length(unique(occs.grp))
+  nbggrp <- length(unique(bg.grp))
   if(noccgrp < 2 ){
     message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
-    bg.folds[ ! bg.folds %in% occs.folds] <- NA
-    occs.folds <- as.numeric(as.factor(occs.folds))
-    bg.folds <- as.numeric(as.factor(bg.folds))
+    bg.grp[ ! bg.grp %in% occs.grp] <- NA
+    occs.grp <- as.numeric(as.factor(occs.grp))
+    bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
-  if(length(unique(bg.folds[!is.na(bg.folds)])) != noccgrp) {
+  if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
     message("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
     stop()
   }
   
-  out <- list(occs.folds=occs.folds, bg.folds=bg.folds)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -146,30 +146,30 @@ get.checkerboard2 <- function(occs, env, bg, aggregation.factor){
   if (nrow(wb) > 0) wb$grp <- 2; r <- rbind(r, wb)
   if (nrow(bw) > 0) bw$grp <- 3; r <- rbind(r, bw)
   if (nrow(bb) > 0) bb$grp <- 4; r <- rbind(r, bb)
-  occs.folds <- r[order(as.numeric(rownames(r))),]$grp
+  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   bgr <- data.frame()
   if (nrow(bgww) > 0) bgww$grp <- 1; bgr <- rbind(bgr, bgww)
   if (nrow(bgwb) > 0) bgwb$grp <- 2; bgr <- rbind(bgr, bgwb)
   if (nrow(bgbw) > 0) bgbw$grp <- 3; bgr <- rbind(bgr, bgbw)
   if (nrow(bgbb) > 0) bgbb$grp <- 4; bgr <- rbind(bgr, bgbb)
-  bg.folds <- bgr[order(as.numeric(rownames(bgr))),]$grp
+  bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
   # PATCH IF occs OR BG POINTS FALL INTO FEWER THAN FOUR BINS
-  noccgrp <- length(unique(occs.folds))
-  nbggrp <- length(unique(bg.folds))
+  noccgrp <- length(unique(occs.grp))
+  nbggrp <- length(unique(bg.grp))
   if(noccgrp < 4 ){
     message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
-    bg.folds[ ! bg.folds %in% occs.folds] <- NA
-    occs.folds <- as.numeric(as.factor(occs.folds))
-    bg.folds <- as.numeric(as.factor(bg.folds))
+    bg.grp[ ! bg.grp %in% occs.grp] <- NA
+    occs.grp <- as.numeric(as.factor(occs.grp))
+    bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
-  if(length(unique(bg.folds[!is.na(bg.folds)])) != noccgrp) {
+  if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
     message("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
     stop()
   }
   
-  out <- list(occs.folds=occs.folds, bg.folds=bg.folds)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
