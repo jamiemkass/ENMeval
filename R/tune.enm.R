@@ -1,6 +1,6 @@
 #' @export
 
-cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.name, 
+cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, mod.fun, mod.name, 
                    partitions, tune.tbl.i, other.args, categoricals, occs.ind, 
                    doClamp, skipRasters, abs.auc.diff) {
   
@@ -18,8 +18,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     mod.full.pred <- raster::stack()
   }
   
-  # define number of folds (the value of "k")
-  nk <- length(unique(occs.folds))
+  # define number of grp (the value of "k")
+  nk <- length(unique(occs.grp))
   
   # set up empty vectors for stats
   cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p", "or.mss")
@@ -27,7 +27,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   #                                dimnames = list(rep("", nk), cnames)), row.names = FALSE)
   kstats.lst <- list()
   
-  # if there are no folds specified...
+  # if there are no grp specified...
   if(nk == 0) {
     # if user selects to use independent testing data, do not do k-fold cross validation
     if(partitions == "independent") {
@@ -43,10 +43,10 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
     # cross-validation on partitions
     for(k in 1:nk) {
       # assign partitions for training and testing occurrence data and for background data
-      occs.train.k <- occs.vals[occs.folds != k,, drop = FALSE]
-      occs.test.k <- occs.vals[occs.folds == k,, drop = FALSE]
-      bg.train.k <- bg.vals[bg.folds != k,, drop = FALSE]
-      bg.test.k <- bg.vals[bg.folds == k,, drop = FALSE]
+      occs.train.k <- occs.vals[occs.grp != k,, drop = FALSE]
+      occs.test.k <- occs.vals[occs.grp == k,, drop = FALSE]
+      bg.train.k <- bg.vals[bg.grp != k,, drop = FALSE]
+      bg.test.k <- bg.vals[bg.grp == k,, drop = FALSE]
       # define model arguments for current model k
       mod.k.args <- mod.args(tune.tbl.i, mod.name, occs.train.k, bg.train.k, other.args)
       # run the current model k
@@ -61,7 +61,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, mod.fun, mod.
   kstats <- as.data.frame(do.call("rbind", kstats.lst))
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
-                 kstats = kstats, auc.train = auc.train)
+                 kstats = kstats, train.AUC = auc.train)
   
   return(cv.res)
 }

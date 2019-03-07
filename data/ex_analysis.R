@@ -17,7 +17,7 @@
 # # divide all grid cells in study extent into same partition groups
 # # as the real occurrence data
 # # envs.xy <- rasterToPoints(envs[[1]], spatial = TRUE)
-# # envs.folds <- ENMeval::get.block(occ=occs, bg.coords=envs.xy@coords)$bg.grp
+# # envs.grp <- ENMeval::get.block(occ=occs, bg.coords=envs.xy@coords)$bg.grp
 # 
 # 
 # ## old ENMeval
@@ -38,5 +38,7 @@
 # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # run with BIOCLIM
 # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
-
+# run parallel
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
+# run with legacy parameters
+# e <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = "maxnet", fc = c("L", "LQ"), RMvalues = 1:3, categoricals = "biome", method = "block", overlap = TRUE)
