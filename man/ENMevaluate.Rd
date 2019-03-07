@@ -5,14 +5,9 @@
 \title{Tuning and evaluation of ecological niche models}
 \usage{
 ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
-<<<<<<< HEAD
-  bg.vals = NULL, mod.name = NULL, tune.args = NULL,
-  other.args = NULL, categoricals = NULL, partitions = NULL,
-=======
   bg.vals = NULL, tune.args = NULL, other.args = NULL,
   categoricals = NULL, mod.name, ls.user = NULL, partitions = NULL,
->>>>>>> fa2604dd3fdc17c6ff27b3834df603e4712d49a3
-  occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, kfolds = NA,
+  occs.grp = NULL, bg.grp = NULL, occs.ind = NULL, kfolds = NA,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
   overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
   abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
@@ -53,10 +48,10 @@ environmental variables}
 \item{partitions}{character of name of partitioning technique (see
 \code{?partitions})}
 
-\item{occs.folds}{numeric vector of partition group (fold) for each
+\item{occs.grp}{numeric vector of partition group (fold) for each
 occurrence locality, intended for user-defined partitions}
 
-\item{bg.folds}{numeric vector of partition group (fold) for each background 
+\item{bg.grp}{numeric vector of partition group (fold) for each background 
 (or pseudo-absence) locality, intended for user-defined partitions}
 
 \item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
@@ -65,7 +60,7 @@ when \code{partitions = "independent"}; these occurrences will be used only
 for evaluation, and not for model training, and thus no cross validation will 
 be done}
 
-\item{kfolds}{numeric for number of partition groups (folds), only for random
+\item{kfolds}{numeric for number of partition groups (grp), only for random
 k-fold partitioning}
 
 \item{aggregation.factor}{numeric vector with length 2 that specifies the

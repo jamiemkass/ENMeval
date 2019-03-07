@@ -1,6 +1,6 @@
 #' @export
 
-cv.enm <- function(occs.vals, bg.vals, occs.folds, bg.folds, envs, ls, 
+cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls, 
                    partitions, tune.tbl.i, other.args, categoricals, occs.ind, 
                    doClamp, skipRasters, abs.auc.diff) {
   
