@@ -65,7 +65,7 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
                         tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name,
                         ls.user = NULL,
-                        partitions = NULL, occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, 
+                        partitions = NULL, occs.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
                         abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE,
@@ -263,7 +263,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         }
         setTxtProgressBar(pb, i)
       }
-      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, ls,
+      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls,
                              partitions, tune.tbl[i,], other.args, categoricals, 
                              occs.ind, doClamp, skipRasters, abs.auc.diff)
     }
@@ -292,7 +292,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     opts <- list(progress=progress)
     results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
 
-      cv.enm(occs.vals, bg.vals, occs.folds, bg.folds, envs, ls,
+      cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls,
              partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
              skipRasters, abs.auc.diff)
     }
@@ -307,7 +307,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # gather all full models into list
   mod.full.all <- lapply(results, function(x) x$mod.full)
   # gather all training AUCs into vector
-  auc.train.all <- sapply(results, function(x) x$auc.train)
+  auc.train.all <- sapply(results, function(x) x$train.AUC)
   # gather all statistics into a data frame
   kstats.all <- lapply(results, function(x) x$kstats)
   if(skipRasters == FALSE & !is.null(envs)) {
@@ -358,12 +358,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        max.test.orMTP = max(or.mtp),
                        avg.test.or10pct = mean(or.10p),
                        var.test.or10pct = var(or.10p),
-                       max.test.or10pct = max(or.10p),
-                       or.mss.mean = mean(or.mss),
-                       or.mss.var = var(or.mss),
-                       or.mss.max = max(or.mss)) %>%
+                       max.test.or10pct = max(or.10p)) %>%
       dplyr::ungroup()
     if(ns > 0) {
+      print(kstats.avg.df)
+      print(auc.train.all)
       stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
                         kstats.avg.df[, seq(ns+1, ns+12)])  
     }else{
@@ -383,8 +382,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     warning(paste0("Not able to calculate AICc for ", mod.name, "... returning NAs.\n"))
   }
   stats.df$nparam <- nparams
-  stats.df <- tibble::as_tibble(stats.df)
-  kstats.df <- tibble::as_tibble(kstats.df)
+  # stats.df <- tibble::as_tibble(stats.df)
+  kstats.df <- as.data.frame(kstats.df)
   
   res <- list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all)
