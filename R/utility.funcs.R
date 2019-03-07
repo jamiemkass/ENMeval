@@ -1,178 +1,182 @@
-get.mod.fun <- function(mod.name) {
-  x <- switch(mod.name, maxent.jar = dismo::maxent,
-              maxnet = maxnet::maxnet,
-              brt = dismo::gbm.step,
-              bioclim = dismo::bioclim)
+
+maxentJar.ls <- list(fun = dismo::maxent,
+                     msgs = function(tune.args) {
+                       if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
+                         stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
+                       }else{
+                         if(!is.numeric(tune.args[["rm"]])) {
+                           stop("Please input numeric values for 'rm' settings for Maxent.")
+                         }
+                         all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
+                         if(any(!tune.args[["fc"]] %in% all.fc)) {
+                           stop("Please input accepted values for 'fc' settings for Maxent.")
+                         }
+                       }
+                       if(is.null(getOption('dismo_rJavaLoaded'))) {
+                         # to avoid trouble on macs
+                         Sys.setenv(NOAWT=TRUE)
+                         if ( requireNamespace('rJava') ) {
+                           rJava::.jpackage('dismo')
+                           options(dismo_rJavaLoaded=TRUE)
+                         } else {
+                           stop('rJava cannot be loaded')
+                         }
+                       }
+                       mxe <- rJava::.jnew("meversion") 
+                       v <- try(rJava::.jcall(mxe, "S", "meversion"))
+                       msg <- paste("maxent.jar v.", v, "from dismo package v.", packageVersion('dismo'))
+                       return(msg)
+                     },
+                     args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+                       out <- list()
+                       out$x <- rbind(occs.vals, bg.vals)
+                       out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
+                       out$args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
+                       if(!grepl("L", tune.tbl.i$fc)) out$args <- c(out$args, "nolinear")
+                       if(!grepl("Q", tune.tbl.i$fc)) out$args <- c(out$args, "noquadratic")
+                       if(!grepl("H", tune.tbl.i$fc)) out$args <- c(out$args, "nohinge")
+                       if(!grepl("P", tune.tbl.i$fc)) out$args <- c(out$args, "noproduct")
+                       if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold")
+                       out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
+                       out <- c(out, other.args)
+                       return(out)
+                     },
+                     calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
+                       e <- dismo::evaluate(occs.vals, bg.vals, mod, args = c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false")))@auc
+                       return(e)
+                     },
+                     predict = function(mod, envs, other.args, doClamp) {
+                       pred <- dismo::predict(mod, envs, args = c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false")), na.rm = TRUE)
+                       return(pred)
+                     },
+                     nparams = function(mod) {
+                       lambdas <- mod@lambdas[1:(length(mod@lambdas)-4)]
+                       countNonZeroParams <- function(x) if(strsplit(x, split=", ")[[1]][2] != '0.0') 1
+                       np <- sum(unlist(sapply(lambdas, countNonZeroParams)))
+                       return(np)
+                     }
+)
+maxnet.ls <- list(fun = maxnet::maxnet,
+                  msgs = function(tune.args) {
+                    if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
+                      stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
+                    }else{
+                      if(!is.numeric(tune.args[["rm"]])) {
+                        stop("Please input numeric values for 'rm' settings for Maxent.")
+                      }
+                      all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
+                      if(any(!tune.args[["fc"]] %in% all.fc)) {
+                        stop("Please input accepted values for 'fc' settings for Maxent.")
+                      }
+                      msg <- paste("maxnet from maxnet package v.", packageVersion('maxnet'))
+                      return(msg)
+                    }
+                  },
+                  args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+                    out <- list()
+                    out$data <- rbind(occs.vals, bg.vals)
+                    out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
+                    out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
+                    out$regmult <- tune.tbl.i$rm
+                    out <- c(out, other.args)
+                    return(out)
+                  },
+                  calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
+                    e <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)@auc
+                    return(e)
+                  },
+                  predict = function(mod, envs, other.args, doClamp) {
+                    if(inherits(envs, "BasicRaster") == TRUE) {
+                      envs.n <- raster::nlayers(envs)
+                      envs.pts <- raster::rasterToPoints(envs)
+                      # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
+                      mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+                      envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
+                      pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
+                    }else{
+                      # otherwise, envs is data frame, so return data frame of predicted values
+                      pred <- dismo::predict(mod, envs, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+                    }
+                    return(pred)
+                  },
+                  nparams = function(mod) {
+                    length(mod$betas)
+                  }
+)
+
+brt.ls <- list(fun = dismo::gbm.step,
+                  msgs = function(tune.args) {
+                    if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
+                      stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
+                    }
+                    # construct user message with version info
+                    msg <- paste("Boosted regression trees (BRTs) using the gbm.step() function from gbm package v.", 
+                                 packageVersion('gbm'), "and dismo package v.", packageVersion('dismo')) 
+                    return(msg)
+                  },
+                  args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+                    out <- list()
+                    d <- rbind(occs.vals, bg.vals)
+                    p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
+                    out$data <- cbind(p, d)
+                    out$tree.complexity <- tune.tbl.i$tree.complexity
+                    out$learning.rate <- tune.tbl.i$learning.rate
+                    out$bag.fraction <- tune.tbl.i$bag.fraction
+                    out$gbm.x <- 2:ncol(out$data)
+                    out$gbm.y <- 1
+                    out$silent <- TRUE
+                    out <- c(out, other.args)
+                    return(out)
+                  },
+                  calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
+                    e <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
+                    return(e)
+                  },
+                  predict = function(mod, envs, other.args, doClamp) {
+                    if(inherits(envs, "BasicRaster") == TRUE) {
+                      pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
+                    }else{
+                      pred <- dismo::predict(mod, envs, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)  
+                    }
+                    return(pred)
+                  },
+                  nparams = function(mod) {
+                    # as no L1 regularization occurs, no parameters are dropped
+                    length(mod$var.names)
+                  }
+)
+
+bioclim.ls <- list(fun = dismo::bioclim,
+               msgs = function(tune.args) {
+                 msg <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
+                 return(msg)
+               },
+               args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+                 out <- list()
+                 out$x <- occs.vals 
+                 out <- c(out, other.args)
+                 return(out)
+               },
+               calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
+                 e <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)@auc
+                 return(e)
+               },
+               predict = function(mod, envs, other.args, doClamp) {
+                 # if no tails in other.args, defaults to NULL
+                 pred <- dismo::predict(mod, envs, tails = other.args$tails, na.rm = TRUE)
+                 return(pred)
+               },
+               nparams = function(mod) {
+                 length(mod@min)
+               }
+)
+
+lookup.ls <- function(mod.name) {
+  x <- switch(mod.name, maxent.jar = maxentJar.ls,
+              maxnet = maxnet.ls,
+              brt = brt.ls,
+              bioclim = bioclim.ls)
   return(x)
-}
-
-mod.msgs <- function(tune.args, mod.name) {
-  # tune.args checks and algorithm-specific set-up
-  if(mod.name %in% c("maxent.jar", "maxnet")) {
-    if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
-      stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
-    }else{
-      if(!is.numeric(tune.args[["rm"]])) {
-        stop("Please input numeric values for 'rm' settings for Maxent.")
-      }
-      all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
-      if(any(!tune.args[["fc"]] %in% all.fc)) {
-        stop("Please input accepted values for 'fc' settings for Maxent.")
-      }
-    }
-    
-    if(mod.name == 'maxent.jar') {
-      if(is.null(getOption('dismo_rJavaLoaded'))) {
-        # to avoid trouble on macs
-        Sys.setenv(NOAWT=TRUE)
-        if ( requireNamespace('rJava') ) {
-          rJava::.jpackage('dismo')
-          options(dismo_rJavaLoaded=TRUE)
-        } else {
-          stop('rJava cannot be loaded')
-        }
-      }
-      mxe <- rJava::.jnew("meversion") 
-      v <- try(rJava::.jcall(mxe, "S", "meversion"))
-      algorithm.ver <- paste("maxent.jar v.", v, "from dismo package v.", packageVersion('dismo'))
-    }
-    
-    if(mod.name == 'maxnet') {
-      # construct user message with version info
-      algorithm.ver <- paste("maxnet from maxnet package v.", packageVersion('maxnet'))
-    }
-  }
-  
-  if(mod.name == 'brt') {
-    if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
-      stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
-    }
-    # construct user message with version info
-    algorithm.ver <- paste("Boosted regression trees (BRTs) using the gbm.step() function from gbm package v.", packageVersion('gbm'), "and dismo package v.", packageVersion('dismo'))
-  }
-  
-  if(mod.name == 'bioclim') {
-    algorithm.ver <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
-  }
-  
-  if(mod.name == "gam") {
-    algorithm.ver <- paste("Generalized additive model (GAM) from gam package v.", packageVersion('gam'))
-  }
-  message(paste("*** Running ENMevaluate using", algorithm.ver, "***\n"))
-}
-
-#' @export
-mod.args <- function(tune.tbl.i, mod.name, occs.vals, bg.vals, other.args) {
-  
-  out <- list()
-  # define data 
-  d <- rbind(occs.vals, bg.vals)
-  # define response
-  p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
-  # maxent.jar
-  if(mod.name == "maxent.jar") {
-    out$x <- d
-    out$p <- p
-    out$args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
-    if(!grepl("L", tune.tbl.i$fc)) out$args <- c(out$args, "nolinear")
-    if(!grepl("Q", tune.tbl.i$fc)) out$args <- c(out$args, "noquadratic")
-    if(!grepl("H", tune.tbl.i$fc)) out$args <- c(out$args, "nohinge")
-    if(!grepl("P", tune.tbl.i$fc)) out$args <- c(out$args, "noproduct")
-    if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold")
-    out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
-  }
-  # maxnet
-  if(mod.name == "maxnet") {
-    out$data <- d
-    out$p <- p
-    out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
-    out$regmult <- tune.tbl.i$rm
-  }
-  # BRT
-  if(mod.name == "brt") {
-    out$tree.complexity <- tune.tbl.i$tree.complexity
-    out$learning.rate <- tune.tbl.i$learning.rate
-    out$bag.fraction <- tune.tbl.i$bag.fraction
-    out$data <- cbind(p, d)
-    out$gbm.x <- 2:ncol(out$data)
-    out$gbm.y <- 1
-    out$silent <- TRUE
-  }
-  # BIOCLIM
-  if(mod.name == "bioclim") {
-    out$x <- occs.vals 
-  }
-  
-  # add other args
-  out <- c(out, other.args)
-  
-  return(out)
-}
-
-# function to calculate AUC based on the model type
-mod.eval <- function(occs.vals, bg.vals, mod, mod.name, doClamp) {
-  if(mod.name == "maxent.jar") {
-    pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
-    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, args = pred.args)
-  }else if(mod.name == "maxnet") {
-    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)
-  }else if(mod.name == "brt") {
-    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))
-  }else if(mod.name == "bioclim") {
-    # if no tails in other.args, defaults to NULL
-    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)
-  }else{
-    # currently, maxent.jar, maxnet, and BIOCLIM have no additional parameters
-    mod.eval <- dismo::evaluate(occs.vals, bg.vals, mod)
-  }
-  return(mod.eval)
-}
-
-# function to predict values to a raster based on the model type
-mod.prediction <- function(mod, envs, mod.name, other.args, doClamp) {
-  if(mod.name == "maxent.jar") {
-    pred.args <- c("outputformat=raw", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false"))
-    pred <- dismo::predict(mod, envs, args = pred.args, na.rm = TRUE)
-  }else if(mod.name == "maxnet") {
-    # if input envs is Raster*, return a RasterLayer of predicted values
-    if(inherits(envs, "BasicRaster") == TRUE) {
-      envs.n <- raster::nlayers(envs)
-      envs.pts <- raster::rasterToPoints(envs)
-      # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
-      mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-      envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
-      pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))  
-    }else{
-      # otherwise, envs is data frame, so return data frame of predicted values
-      pred <- dismo::predict(mod, envs, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-    }
-  }else if(mod.name == "brt") {
-    pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
-  }else if(mod.name == "bioclim") {
-    # if no tails in other.args, defaults to NULL
-    pred <- dismo::predict(mod, envs, tails = other.args$tails, na.rm = TRUE)
-  }else{
-    pred <- dismo::predict(mod, envs, na.rm = TRUE)
-  }
-  
-  return(pred)
-}
-
-#' @export
-# get total number of parameters
-mod.paramNum <- function(mod, mod.name) {
-  if(mod.name == 'maxnet') {
-    return(length(mod$betas))
-  }else if(mod.name == "maxent.jar") {
-    lambdas <- mod@lambdas[1:(length(mod@lambdas)-4)]
-    countNonZeroParams <- function(x) if(strsplit(x, split=", ")[[1]][2] != '0.0') 1
-    return(sum(unlist(sapply(lambdas, countNonZeroParams))))
-  }else if(mod.name == "brt") {
-    # as no L1 regularization occurs, no parameters are dropped
-    return(length(mod$var.names))
-  }else if(mod.name == "bioclim") {
-    return(length(mod@min))
-  }
 }
 
 #' @title Calculate AICc from Maxent model prediction

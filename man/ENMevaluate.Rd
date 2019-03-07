@@ -5,8 +5,13 @@
 \title{Tuning and evaluation of ecological niche models}
 \usage{
 ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
+<<<<<<< HEAD
   bg.vals = NULL, mod.name = NULL, tune.args = NULL,
   other.args = NULL, categoricals = NULL, partitions = NULL,
+=======
+  bg.vals = NULL, tune.args = NULL, other.args = NULL,
+  categoricals = NULL, mod.name, ls.user = NULL, partitions = NULL,
+>>>>>>> fa2604dd3fdc17c6ff27b3834df603e4712d49a3
   occs.folds = NULL, bg.folds = NULL, occs.ind = NULL, kfolds = NA,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
   overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
@@ -35,8 +40,6 @@ are not used (\code{envs} is NULL)}
 to background (or pseudo-absence) localities, intended to be input when 
 environmental rasters are not used (\code{envs} is NULL)}
 
-\item{mod.name}{character of the name of the chosen model}
-
 \item{tune.args}{named list of model settings to be tuned}
 
 \item{other.args}{named list of any additional model arguments not specified 
@@ -44,6 +47,8 @@ for tuning}
 
 \item{categoricals}{character vector of names of categorical 
 environmental variables}
+
+\item{mod.name}{character of the name of the chosen model}
 
 \item{partitions}{character of name of partitioning technique (see
 \code{?partitions})}
