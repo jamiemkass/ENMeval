@@ -22,7 +22,7 @@
 #' environmental variables
 #' @param partitions character of name of partitioning technique (see
 #' \code{?partitions})
-#' @param occs.grp numeric vector of partition group (fold) for each
+#' @param occ.grp numeric vector of partition group (fold) for each
 #' occurrence locality, intended for user-defined partitions
 #' @param bg.grp numeric vector of partition group (fold) for each background 
 #' (or pseudo-absence) locality, intended for user-defined partitions
@@ -65,7 +65,7 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
                         tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name,
                         ls.user = NULL,
-                        partitions = NULL, occs.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
+                        partitions = NULL, occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
                         abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE,
@@ -185,8 +185,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     parts.msg <- "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n"
   }
   if(partitions == "user") {
-    grp <- list(occs.grp = occs.grp, bg.grp = bg.grp)
-    userk <- length(unique(occs.grp))
+    grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
+    userk <- length(unique(occ.grp))
     parts.msg <- paste0("Doing model evaluations with user-defined ", userk, "-fold cross validation...\n")
   }
   if(partitions == "independent") {
@@ -199,8 +199,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     parts.msg <- "Skipping model evaluations (only calculating AICc)...\n"
   }
   
-  # unpack occs.grp and bg.grp
-  occs.grp <- grp$occs.grp
+  # unpack occ.grp and bg.grp
+  occ.grp <- grp$occ.grp
   bg.grp <- grp$bg.grp
   
   ############# #
@@ -213,13 +213,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     bg.vals <- as.data.frame(raster::extract(envs, bg))  
   }
   
-  # remove rows from occs, occs.vals, occs.grp with NA for any predictor variable
+  # remove rows from occs, occs.vals, occ.grp with NA for any predictor variable
   occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
   bg.vals.na <- sum(rowSums(is.na(bg.vals)) > 0)
   if(occs.vals.na > 0) {
     i <- !apply(occs.vals, 1, anyNA)
     occs <- occs[i,]
-    occs.grp <- occs.grp[i]
+    occ.grp <- occ.grp[i]
     occs.vals <- occs.vals[i,]
     warning(paste0("Occurrence records found (n = ", occs.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(occs.vals), " occurrence records.\n"), immediate. = TRUE)
   }
@@ -263,7 +263,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         }
         setTxtProgressBar(pb, i)
       }
-      results[[i]] <- cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls,
+      results[[i]] <- cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
                              partitions, tune.tbl[i,], other.args, categoricals, 
                              occs.ind, doClamp, skipRasters, abs.auc.diff)
     }
@@ -292,7 +292,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     opts <- list(progress=progress)
     results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
 
-      cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls,
+      cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
              partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
              skipRasters, abs.auc.diff)
     }
@@ -388,13 +388,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   res <- list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all)
   
-  if(is.null(occs.grp)) occs.grp <- 0
+  if(is.null(occ.grp)) occ.grp <- 0
   if(is.null(bg.grp)) bg.grp <- 0
   e <- ENMevaluation(algorithm = mod.name, 
                      results = res$stats, results.grp = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,
-                     occ.pts = occs, occ.grp = occs.grp,
+                     occ.pts = occs, occ.grp = occ.grp,
                      bg.pts = bg, bg.grp = bg.grp)
   
   # if niche overlap selected, calculate and add the resulting matrix to results

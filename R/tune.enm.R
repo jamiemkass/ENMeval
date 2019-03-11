@@ -1,6 +1,6 @@
 #' @export
 
-cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls, 
+cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls, 
                    partitions, tune.tbl.i, other.args, categoricals, occs.ind, 
                    doClamp, skipRasters, abs.auc.diff) {
   
@@ -19,7 +19,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls,
   }
   
   # define number of grp (the value of "k")
-  nk <- length(unique(occs.grp))
+  nk <- length(unique(occ.grp))
   
   # set up empty vectors for stats
   cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p")
@@ -43,8 +43,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, ls,
     # cross-validation on partitions
     for(k in 1:nk) {
       # assign partitions for training and testing occurrence data and for background data
-      occs.train.k <- occs.vals[occs.grp != k,, drop = FALSE]
-      occs.test.k <- occs.vals[occs.grp == k,, drop = FALSE]
+      occs.train.k <- occs.vals[occ.grp != k,, drop = FALSE]
+      occs.test.k <- occs.vals[occ.grp == k,, drop = FALSE]
       bg.train.k <- bg.vals[bg.grp != k,, drop = FALSE]
       bg.test.k <- bg.vals[bg.grp == k,, drop = FALSE]
       # define model arguments for current model k

@@ -5,9 +5,9 @@ get.jackknife <- function(occs, bg) {
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occs.grp <- 1:nrow(occs)
+  occ.grp <- 1:nrow(occs)
   bg.grp <- rep(0, nrow(bg))
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
+  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -18,9 +18,9 @@ get.randomkfold <- function(occs, bg, kgrp){
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occs.grp <- dismo::kfold(occs, kgrp)
+  occ.grp <- dismo::kfold(occs, kgrp)
   bg.grp <- rep(0, nrow(bg))
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
+  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
   return(out)	
 }
 
@@ -59,7 +59,7 @@ get.block <- function(occs, bg){
   if (nrow(grp2) > 0) grp2$grp <- 2; r <- rbind(r, grp2)
   if (nrow(grp3) > 0) grp3$grp <- 3; r <- rbind(r, grp3)
   if (nrow(grp4) > 0) grp4$grp <- 4; r <- rbind(r, grp4)
-  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
+  occ.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   bgr <- data.frame()
   if (nrow(bggrp1) > 0) bggrp1$grp <- 1; bgr <- rbind(bgr, bggrp1)
@@ -68,7 +68,7 @@ get.block <- function(occs, bg){
   if (nrow(bggrp4) > 0) bggrp4$grp <- 4; bgr <- rbind(bgr, bggrp4)
   bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
+  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -90,7 +90,7 @@ get.checkerboard1 <- function(occs, env, bg, aggregation.factor){
   if(nrow(w) > 0) { w$grp <- 1 }
   if(nrow(b) > 0) { b$grp <- 2 }
   r <- rbind(w, b)
-  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
+  occ.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   if(nrow(bgw) > 0) { bgw$grp <- 1 }
   if(nrow(bgb) > 0) { bgb$grp <- 2 }
@@ -98,12 +98,12 @@ get.checkerboard1 <- function(occs, env, bg, aggregation.factor){
   bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
   # PATCH IF occs OR BG POINTS FALL INTO A SINGLE BIN
-  noccgrp <- length(unique(occs.grp))
+  noccgrp <- length(unique(occ.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 2 ){
     message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
-    bg.grp[ ! bg.grp %in% occs.grp] <- NA
-    occs.grp <- as.numeric(as.factor(occs.grp))
+    bg.grp[ ! bg.grp %in% occ.grp] <- NA
+    occ.grp <- as.numeric(as.factor(occ.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
@@ -112,7 +112,7 @@ get.checkerboard1 <- function(occs, env, bg, aggregation.factor){
     stop()
   }
   
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
+  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -146,7 +146,7 @@ get.checkerboard2 <- function(occs, env, bg, aggregation.factor){
   if (nrow(wb) > 0) wb$grp <- 2; r <- rbind(r, wb)
   if (nrow(bw) > 0) bw$grp <- 3; r <- rbind(r, bw)
   if (nrow(bb) > 0) bb$grp <- 4; r <- rbind(r, bb)
-  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
+  occ.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   bgr <- data.frame()
   if (nrow(bgww) > 0) bgww$grp <- 1; bgr <- rbind(bgr, bgww)
@@ -156,12 +156,12 @@ get.checkerboard2 <- function(occs, env, bg, aggregation.factor){
   bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
   # PATCH IF occs OR BG POINTS FALL INTO FEWER THAN FOUR BINS
-  noccgrp <- length(unique(occs.grp))
+  noccgrp <- length(unique(occ.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 4 ){
     message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
-    bg.grp[ ! bg.grp %in% occs.grp] <- NA
-    occs.grp <- as.numeric(as.factor(occs.grp))
+    bg.grp[ ! bg.grp %in% occ.grp] <- NA
+    occ.grp <- as.numeric(as.factor(occ.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
@@ -170,6 +170,6 @@ get.checkerboard2 <- function(occs, env, bg, aggregation.factor){
     stop()
   }
   
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
+  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
   return(out)
 }
