@@ -362,8 +362,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        max.test.or10pct = max(or.10p)) %>%
       dplyr::ungroup()
     if(ns > 0) {
-      print(kstats.avg.df)
-      print(auc.train.all)
       stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
                         kstats.avg.df[, seq(ns+1, ns+12)])  
     }else{
@@ -391,7 +389,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   if(is.null(occ.grp)) occ.grp <- 0
   if(is.null(bg.grp)) bg.grp <- 0
-  e <- ENMevaluation(algorithm = mod.name, 
+  e <- ENMevaluation(algorithm = mod.name, tuned.settings = tune.tbl,
                      results = res$stats, results.grp = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,
