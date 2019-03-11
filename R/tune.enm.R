@@ -13,7 +13,6 @@ cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred <- ls$predict(mod.full, envs, other.args, doClamp)
-    names(mod.full.pred) <- paste(tune.tbl.i, collapse = "")
   }else{
     mod.full.pred <- raster::stack()
   }
@@ -34,7 +33,7 @@ cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
       auc.test <- ls$calcAUC(occs.ind.vals, bg.vals, mod.full, other.args, doClamp)
       e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, ls,
-                     auc.train, mod.full, other.args, doClamp, abs.auc.diff)
+                     auc.train, mod.full, categoricals, other.args, doClamp, abs.auc.diff)
       kstats.ls[[1]] <- c(fold = 1, e)
     }
     # # if user selects to only calculate AICc, stop here

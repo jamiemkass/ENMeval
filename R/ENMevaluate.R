@@ -305,14 +305,21 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # collate results 
   ################# #
   
-  # gather all full models into list
+  # define tuned settings names
+  tuned.settings.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = ""))
+  # if not tuned settings, names are equal to model name
+  if(length(tuned.settings.names) == 0) tuned.settings.names <- mod.name
+  # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
+  names(mod.full.all) <- tuned.settings.names
   # gather all training AUCs into vector
   auc.train.all <- sapply(results, function(x) x$train.AUC)
   # gather all statistics into a data frame
   kstats.all <- lapply(results, function(x) x$kstats)
+  # gather all model prediction rasters into a stack and name them
   if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
+    names(mod.full.pred.all) <- tuned.settings.names
   }else{
     mod.full.pred.all <- raster::stack()
   }
