@@ -71,7 +71,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                         abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE,
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
-                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL) {
+                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL,
+                        clamp = NULL, progbar = NULL) {
   
   # legacy parameter handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, algorithm, method, bin.output, rasterPreds)
