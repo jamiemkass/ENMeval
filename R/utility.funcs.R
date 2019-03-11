@@ -250,7 +250,7 @@ calc.aicc <- function(nparams, occs, preds) {
   out <- as.data.frame(matrix(nrow = length(nparams), ncol = 3, 
                               dimnames = list(NULL, c("AICc", "AICc.delta", "AICc.weights"))))
   AIC.valid <- nparams < nrow(occs)
-  if(nlayers(preds) == 0) {
+  if(raster::nlayers(preds) == 0) {
     warning("Cannot calculate AICc when skipRasters = TRUE... returning NAs.")
   }else{
     vals <- raster::extract(preds, occs)
@@ -320,7 +320,7 @@ mess.vec <- function(p, v) {
 calc.niche.overlap <- function(preds, overlapStat){
   n <- raster::nlayers(preds)
   ov <- matrix(nrow = n, ncol = n)
-  pb <- txtProgressBar(0, nlayers(preds) - 1, style = 3)
+  pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
     setTxtProgressBar(pb, i)
     for(j in (i + 1):n){

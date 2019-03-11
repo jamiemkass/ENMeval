@@ -405,7 +405,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
-    if(nlayers(e@predictions) > 1) {
+    if(raster::nlayers(e@predictions) > 1) {
       for(ovStat in overlapStat) {
         message(paste0("Calculating niche overlap for statistic ", ovStat, "...\n"))
         overlap.mat <- calc.niche.overlap(e@predictions, ovStat)
