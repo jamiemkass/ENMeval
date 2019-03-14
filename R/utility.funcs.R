@@ -1,16 +1,16 @@
 
 #' @export
-maxnet.predictRaster <- function(mod, envs, other.args, doClamp) {
+maxnet.predictRaster <- function(mod, envs, other.args, doClamp, type) {
   if(inherits(envs, "BasicRaster") == TRUE) {
     envs.n <- raster::nlayers(envs)
     envs.pts <- raster::rasterToPoints(envs)
     # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
-    mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+    mxnet.p <- predict(mod, envs.pts, type = type, clamp = doClamp, na.rm = TRUE)
     envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
     pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
-    pred <- dismo::predict(mod, envs, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+    pred <- dismo::predict(mod, envs, type = type, clamp = doClamp, na.rm = TRUE)
   }
   return(pred)
 }
@@ -101,7 +101,12 @@ maxnet.ls <- list(fun = maxnet::maxnet,
                     e <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)@auc
                     return(e)
                   },
-                  predict = maxnet.predictRaster,
+                  predict = function(mod, envs, other.args, doClamp, type) {
+                    pred <- maxnet.predictRaster(mod, envs, other.args, doClamp,
+                                                 type = 'exponential')
+                    return(pred)
+                  }
+                    ,
                   nparams = function(mod) {
                     length(mod$betas)
                   }
