@@ -248,7 +248,7 @@ lookup.ls <- function(mod.name) {
 calc.aicc <- function(nparams, occs, preds) {
   # only functional for Maxent models currently
   out <- as.data.frame(matrix(nrow = length(nparams), ncol = 3, 
-                              dimnames = list(NULL, c("AICc", "AICc.delta", "AICc.weights"))))
+                              dimnames = list(NULL, c("AICc", "delta.AICc", "w.AIC"))))
   AIC.valid <- nparams < nrow(occs)
   if(raster::nlayers(preds) == 0) {
     warning("Cannot calculate AICc when skipRasters = TRUE... returning NAs.")
@@ -266,8 +266,8 @@ calc.aicc <- function(nparams, occs, preds) {
       warning("AICc not valid... returning NAs.")
     }else{
       out$AICc <- AICc
-      out$AICc.delta <- (AICc - min(AICc, na.rm=TRUE))
-      out$AICc.weights <- (exp(-0.5*out$AICc.delta))/(sum(exp(-0.5*out$AICc.delta), na.rm=TRUE))
+      out$delta.AICc <- (AICc - min(AICc, na.rm=TRUE))
+      out$w.AIC <- (exp(-0.5*out$delta.AICc))/(sum(exp(-0.5*out$delta.AICc), na.rm=TRUE))
     }    
   }
   return(out)
