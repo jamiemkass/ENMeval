@@ -1,4 +1,20 @@
 
+#' @export
+maxnet.predictRaster <- function(mod, envs, other.args, doClamp) {
+  if(inherits(envs, "BasicRaster") == TRUE) {
+    envs.n <- raster::nlayers(envs)
+    envs.pts <- raster::rasterToPoints(envs)
+    # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
+    mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+    envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
+    pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
+  }else{
+    # otherwise, envs is data frame, so return data frame of predicted values
+    pred <- dismo::predict(mod, envs, type = 'exponential', clamp = doClamp, na.rm = TRUE)
+  }
+  return(pred)
+}
+
 maxentJar.ls <- list(fun = dismo::maxent,
                      msgs = function(tune.args) {
                        if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -85,20 +101,7 @@ maxnet.ls <- list(fun = maxnet::maxnet,
                     e <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)@auc
                     return(e)
                   },
-                  predict = function(mod, envs, other.args, doClamp) {
-                    if(inherits(envs, "BasicRaster") == TRUE) {
-                      envs.n <- raster::nlayers(envs)
-                      envs.pts <- raster::rasterToPoints(envs)
-                      # mxnet.p <- maxnet::predict(mod, envs.pts, type=type, clamp=clamp)
-                      mxnet.p <- predict(mod, envs.pts, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-                      envs.pts <- cbind(envs.pts, as.numeric(mxnet.p))
-                      pred <- raster::rasterFromXYZ(envs.pts[,c(1, 2, envs.n+3)], res=raster::res(envs))
-                    }else{
-                      # otherwise, envs is data frame, so return data frame of predicted values
-                      pred <- dismo::predict(mod, envs, type = 'exponential', clamp = doClamp, na.rm = TRUE)
-                    }
-                    return(pred)
-                  },
+                  predict = maxnet.predictRaster,
                   nparams = function(mod) {
                     length(mod$betas)
                   }
