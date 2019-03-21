@@ -20,7 +20,7 @@ setMethod("show",
 		  definition=function(object) {
 		  	cat("An object of class: ", class(object), "\n", sep="")
 		  	cat(" ", "Occurrence/background points: ",
-		  		paste(nrow(object@occ.pts), '/', nrow(object@bg), sep=''), '\n',
+		  		paste(nrow(object@occ.pts), '/', nrow(object@bg.pts), sep=''), '\n',
 		  		" ",  "Partition method: ", object@partition.method, '\n',
 		  		" ",  "@algorithm             : character of algorithm used", '\n',
 		  		" ",  "@tuned.settings        : data.frame of settings that were tuned", '\n',

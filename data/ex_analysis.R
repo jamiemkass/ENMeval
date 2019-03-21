@@ -1,16 +1,16 @@
-# set.seed(48)
-# bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
-# occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
-# occs <- occs[!duplicated(occs),]
-# envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
-# which(rowSums(is.na(raster::extract(envs, occs))) > 0)
-# bg <- dismo::randomPoints(envs, 1000)
-# tune.args <- list(fc = c("L", "LQ"), rm = 1:4)
-# partitions <- "block"
-# categoricals <- "biome"
-# skipRasters <- FALSE
-# other.args <- NULL
-# updateProgress <- NULL
+set.seed(48)
+bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
+occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+occs <- occs[!duplicated(occs),]
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
+which(rowSums(is.na(raster::extract(envs, occs))) > 0)
+bg <- dismo::randomPoints(envs, 1000)
+tune.args <- list(fc = c("L", "LQ"), rm = 1:4)
+partitions <- "block"
+categoricals <- "biome"
+skipRasters <- FALSE
+other.args <- NULL
+updateProgress <- NULL
 
 # 
 # # SWD
