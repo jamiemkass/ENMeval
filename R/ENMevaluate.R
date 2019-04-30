@@ -404,23 +404,20 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                      bg.pts = bg, bg.grp = bg.grp)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
+  nr <- raster::nlayers(e@predictions)
   if(overlap == TRUE) {
-    if(raster::nlayers(e@predictions) > 1) {
+    if(nr == 0) {
+      warning("Cannot calculate niche overlap without model prediction rasters.\n")
+    }else if(nr == 1) {
+      warning("Only 1 model prediction raster found. Need at least 2 rasters to calculate niche overlap. Increase number of tuning arguments and run again.\n") 
+    }else{
       for(ovStat in overlapStat) {
         message(paste0("Calculating niche overlap for statistic ", ovStat, "...\n"))
         overlap.mat <- calc.niche.overlap(e@predictions, ovStat)
         e@overlap[[ovStat]] <- overlap.mat
       }
-      
-    }
-    else {
-      warning("Cannot calculate niche overlap without raster predictions.\n")
     }
   }
-  else {
-    warning("Need >1 settings to do niche overlap.\n")
-  }
-  
   
   # calculate time expended and print message
   timed <- proc.time() - start.time
