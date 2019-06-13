@@ -227,7 +227,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # do the same for associated bg variables
   if(bg.vals.na > 0) {
     i <- !apply(bg.vals, 1, anyNA)
-    occs <- occs[i,]
+    bg <- bg[i,]
     bg.grp <- bg.grp[i]
     bg.vals <- bg.vals[i,]
     warning(paste0("Background records found (n = ", bg.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(bg.vals), " background records.\n"), immediate. = TRUE)
