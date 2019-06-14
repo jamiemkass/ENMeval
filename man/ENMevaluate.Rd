@@ -6,7 +6,7 @@
 \usage{
 ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
   bg.vals = NULL, tune.args = NULL, other.args = NULL,
-  categoricals = NULL, mod.name, ls.user = NULL, partitions = NULL,
+  categoricals = NULL, mod.name, user.enm = NULL, partitions = NULL,
   occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, kfolds = NA,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
   overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
@@ -45,6 +45,9 @@ for tuning}
 environmental variables}
 
 \item{mod.name}{character of the name of the chosen model}
+
+\item{user.enm}{ENMdetails object specified by the user; this model will be
+used for the analysis, and is an alternative to specifying mod.name}
 
 \item{partitions}{character of name of partitioning technique (see
 \code{?partitions})}

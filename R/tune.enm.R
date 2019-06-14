@@ -1,18 +1,18 @@
 #' @export
 
-cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls, 
+cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, enm, 
                    partitions, tune.tbl.i, other.args, categoricals, occs.ind, 
                    doClamp, skipRasters, abs.auc.diff) {
   
   # build the full model from all the data
-  mod.full.args <- ls$args(occs.vals, bg.vals, tune.tbl.i, other.args)
-  mod.full <- do.call(ls$fun, mod.full.args)
+  mod.full.args <- enm@args(occs.vals, bg.vals, tune.tbl.i, other.args)
+  mod.full <- do.call(enm@fun, mod.full.args)
   # calculate training auc
-  auc.train <- ls$calcAUC(occs.vals, bg.vals, mod.full, other.args, doClamp)
+  auc.train <- enm@auc(occs.vals, bg.vals, mod.full, other.args, doClamp)
   
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
-    mod.full.pred <- ls$predict(mod.full, envs, other.args, doClamp)
+    mod.full.pred <- enm@pred(mod.full, envs, other.args, doClamp)
   }else{
     mod.full.pred <- raster::stack()
   }
@@ -24,17 +24,17 @@ cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
   cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p")
   # kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
   #                                dimnames = list(rep("", nk), cnames)), row.names = FALSE)
-  kstats.ls <- list()
+  kstats.enm <- list()
   
   # if there are no grp specified...
   if(nk == 0) {
     # if user selects to use independent testing data, do not do k-fold cross validation
     if(partitions == "independent") {
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
-      auc.test <- ls$calcAUC(occs.ind.vals, bg.vals, mod.full, other.args, doClamp)
-      e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, ls,
+      auc.test <- enm@auc(occs.ind.vals, bg.vals, mod.full, other.args, doClamp)
+      e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, enm,
                      auc.train, mod.full, categoricals, other.args, doClamp, abs.auc.diff)
-      kstats.ls[[1]] <- c(fold = 1, e)
+      kstats.enm[[1]] <- c(fold = 1, e)
     }
     # # if user selects to only calculate AICc, stop here
     # if(partitions == "none") break
@@ -47,17 +47,17 @@ cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
       bg.train.k <- bg.vals[bg.grp != k,, drop = FALSE]
       bg.test.k <- bg.vals[bg.grp == k,, drop = FALSE]
       # define model arguments for current model k
-      mod.k.args <- ls$args(occs.train.k, bg.train.k, tune.tbl.i, other.args)
+      mod.k.args <- enm@args(occs.train.k, bg.train.k, tune.tbl.i, other.args)
       # run the current model k
-      mod.k <- do.call(ls$fun, mod.k.args)
+      mod.k <- do.call(enm@fun, mod.k.args)
       # calculate the stats for model k
-      e <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k, ls,
+      e <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k, enm,
                      auc.train, mod.k, categoricals, other.args, doClamp, abs.auc.diff)
-      kstats.ls[[k]] <- c(fold = k, e)
+      kstats.enm[[k]] <- c(fold = k, e)
     } 
   }
   
-  kstats <- as.data.frame(do.call("rbind", kstats.ls))
+  kstats <- as.data.frame(do.call("rbind", kstats.enm))
   
   cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
                  kstats = kstats, train.AUC = auc.train)
@@ -65,17 +65,17 @@ cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, ls, auc.train, mod, categoricals, other.args, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train, mod, categoricals, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
-  auc.test <- ls$calcAUC(occs.test, bg.train, mod, other.args, doClamp)
+  auc.test <- enm@auc(occs.test, bg.train, mod, other.args, doClamp)
   # calculate auc diff
   auc.diff <- auc.train - auc.test
   if(abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
   # get model predictions for training and testing data
   # these predictions are used only for calculating omission rate, and
   # thus should not need any specific parameter changes for maxent/maxnet
-  pred.train <- ls$predict(mod, occs.train, other.args, doClamp)
-  pred.test <- ls$predict(mod, occs.test, other.args, doClamp)
+  pred.train <- enm@pred(mod, occs.train, other.args, doClamp)
+  pred.test <- enm@pred(mod, occs.test, other.args, doClamp)
   # get minimum training presence threshold (expected no omission)
   min.train.thr <- min(pred.train)
   or.mtp <- mean(pred.test < min.train.thr)
