@@ -15,6 +15,8 @@
 #' to background (or pseudo-absence) localities, intended to be input when 
 #' environmental rasters are not used (\code{envs} is NULL) 
 #' @param mod.name character of the name of the chosen model
+#' @param user.enm ENMdetails object specified by the user; this model will be
+#' used for the analysis, and is an alternative to specifying mod.name
 #' @param tune.args named list of model settings to be tuned
 #' @param other.args named list of any additional model arguments not specified 
 #' for tuning
@@ -64,7 +66,7 @@
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
                         tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name,
-                        ls.user = NULL,
+                        user.enm = NULL,
                         partitions = NULL, occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
@@ -99,7 +101,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # record start time
   start.time <- proc.time()
   
-  if(is.null(ls.user)) ls <- lookup.ls(mod.name)
+  if(is.null(user.enm)) enm <- lookup.enm(mod.name)
   
   ########### #
   # CHECKS ####
@@ -115,7 +117,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   # print model-specific message
-  msg <- ls$msgs(tune.args)
+  msg <- enm@msgs(tune.args)
   message(paste("*** Running ENMevaluate using", msg, "***\n"))
   
   # rearrange list entries if first one is integer
@@ -264,7 +266,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         }
         setTxtProgressBar(pb, i)
       }
-      results[[i]] <- cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
+      results[[i]] <- cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, enm,
                              partitions, tune.tbl[i,], other.args, categoricals, 
                              occs.ind, doClamp, skipRasters, abs.auc.diff)
     }
@@ -293,7 +295,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     opts <- list(progress=progress)
     results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
 
-      cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, ls,
+      cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, enm,
              partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
              skipRasters, abs.auc.diff)
     }
@@ -380,7 +382,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   # calculate number of non-zero parameters in model
-  nparams <- sapply(mod.full.all, ls$nparams)
+  nparams <- sapply(mod.full.all, enm@nparams)
   # calculate AICc for Maxent models
   if(mod.name %in% c("maxent.jar", "maxnet")) {
     stats.df <- cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))

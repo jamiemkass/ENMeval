@@ -20,18 +20,19 @@ NULL
 
 # class slots match older ENMeval versions
 ENMevaluation <- setClass("ENMevaluation",
-                          slots=c(algorithm='character',
+                          slots = c(algorithm = 'character',
                                   tune.settings = 'data.frame',
-                                  partition.method='character',
-                                  results='data.frame',
-                                  results.grp='data.frame',
-                                  models='list',
-                                  predictions='RasterStack',
-                                  occ.pts='data.frame',
-                                  occ.grp='numeric',
-                                  bg.pts='data.frame',
-                                  bg.grp='numeric',
-                                  overlap='list'))
+                                  partition.method = 'character',
+                                  results = 'data.frame',
+                                  results.grp = 'data.frame',
+                                  models = 'list',
+                                  predictions = 'RasterStack',
+                                  occ.pts = 'data.frame',
+                                  occ.grp = 'numeric',
+                                  bg.pts = 'data.frame',
+                                  bg.grp = 'numeric',
+                                  overlap = 'list'))
+
 setGeneric("algorithm", function(x) standardGeneric("algorithm"))
 #' @export
 setMethod("algorithm", "ENMevaluation", function(x) x@algorithm)
@@ -82,8 +83,8 @@ setMethod("overlap", "ENMevaluation", function(x) x@overlap)
 
 #' @export
 setMethod("show",
-		  signature="ENMevaluation",
-		  definition=function(object) {
+		  signature = "ENMevaluation",
+		  definition = function(object) {
 		  	cat("An object of class: ", class(object), "\n",
 		  	" occurrence/background points: ",
 		  	nrow(object@occ.pts), '/', nrow(object@bg.pts), "\n",
@@ -94,17 +95,88 @@ setMethod("show",
 		  	invisible(NULL)
 		  })
 
-# class slots match older ENMeval versions
-# ENMdesignation <- setClass("ENMdesignation",
-#                           slots=c(fun='closure',
-#                                   msgs = 'data.frame',
-#                                   results='data.frame',
-#                                   results.grp='data.frame',
-#                                   predictions='RasterStack',
-#                                   models='list',
-#                                   partition.method='character',
-#                                   occ.pts='data.frame',
-#                                   occ.grp='numeric',
-#                                   bg.pts='data.frame',
-#                                   bg.grp='numeric',
-#                                   overlap='list'))
+#' @export
+ENMdetails <- setClass("ENMdetails",
+                       slots = c(fun = 'function',
+                                 msgs = 'function',
+                                 args = 'function',
+                                 auc = 'function',
+                                 pred = 'function',
+                                 nparams = 'function'))
+#' @export
+ENMdetails <- function(fun, msgs, args, auc, pred, nparams) {
+  # stopifnot(is.function(fun))
+  # stopifnot(is.function(msgs))
+  # stopifnot(is.function(args))
+  # stopifnot(is.function(auc))
+  # stopifnot(is.function(pred))
+  # stopifnot(is.function(nparams))
+  new("ENMdetails", fun = fun, msgs = msgs, args = args,
+      auc = auc, pred = pred, nparams = nparams)
+}
+
+setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
+setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
+#' @export
+setMethod("enm.fun", "ENMdetails", function(x) x@fun)
+#' @export
+setMethod("enm.fun<-", "ENMdetails", function(x, value) {
+  x@fun <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.msgs", function(x) standardGeneric("enm.msgs"))
+setGeneric("enm.msgs<-", function(x, value) standardGeneric("enm.msgs<-"))
+#' @export
+setMethod("enm.msgs", "ENMdetails", function(x) x@msgs)
+#' @export
+setMethod("enm.msgs<-", "ENMdetails", function(x, value) {
+  x@msgs <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.args", function(x) standardGeneric("enm.args"))
+setGeneric("enm.args<-", function(x, value) standardGeneric("enm.args<-"))
+#' @export
+setMethod("enm.args", "ENMdetails", function(x) x@args)
+#' @export
+setMethod("enm.args<-", "ENMdetails", function(x, value) {
+  x@args <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.auc", function(x) standardGeneric("enm.auc"))
+setGeneric("enm.auc<-", function(x, value) standardGeneric("enm.auc<-"))
+#' @export
+setMethod("enm.auc", "ENMdetails", function(x) x@auc)
+#' @export
+setMethod("enm.auc<-", "ENMdetails", function(x, value) {
+  x@auc <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.pred", function(x) standardGeneric("enm.pred"))
+setGeneric("enm.pred<-", function(x, value) standardGeneric("enm.pred<-"))
+#' @export
+setMethod("enm.pred", "ENMdetails", function(x) x@pred)
+#' @export
+setMethod("enm.pred<-", "ENMdetails", function(x, value) {
+  x@pred <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.nparam", function(x) standardGeneric("enm.nparam"))
+setGeneric("enm.nparam<-", function(x, value) standardGeneric("enm.nparam<-"))
+#' @export
+setMethod("enm.nparam", "ENMdetails", function(x) x@nparam)
+#' @export
+setMethod("enm.nparam<-", "ENMdetails", function(x, value) {
+  x@nparam <- value
+  validObject(x)
+  x
+})
