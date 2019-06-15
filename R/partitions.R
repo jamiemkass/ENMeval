@@ -49,10 +49,10 @@ get.block <- function(occs, bg){
   bvert <- mean(c(max(grp1[, 1]), min(grp2[, 1])))
   tvert <- mean(c(max(grp3[, 1]), min(grp4[, 1])))
   horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))
-  bggrp1 <- bg[bg[, 2] <= horz & bg[, 1]<bvert,]
-  bggrp2 <- bg[bg[, 2] < horz & bg[, 1]>=bvert,]
-  bggrp3 <- bg[bg[, 2] > horz & bg[, 1]<=tvert,]
-  bggrp4 <- bg[bg[, 2] >= horz & bg[, 1]>tvert,]
+  bggrp1 <- bg[bg[, 2] <= horz & bg[, 1] < bvert, ]
+  bggrp2 <- bg[bg[, 2] <= horz & bg[, 1] >= bvert, ]
+  bggrp3 <- bg[bg[, 2] > horz & bg[, 1] <= tvert, ]
+  bggrp4 <- bg[bg[, 2] > horz & bg[, 1] > tvert, ]
   
   r <- data.frame()
   if (nrow(grp1) > 0) grp1$grp <- 1; r <- rbind(r, grp1)
