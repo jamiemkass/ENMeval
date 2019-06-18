@@ -65,7 +65,8 @@ cv.enm <- function(occs.vals, bg.vals, occ.grp, bg.grp, envs, enm,
   return(cv.res)
 }
 
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train, mod, categoricals, other.args, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train, 
+                      mod, categoricals, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
   auc.test <- enm@auc(occs.test, bg.train, mod, other.args, doClamp)
   # calculate auc diff

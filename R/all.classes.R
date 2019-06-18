@@ -86,12 +86,12 @@ setMethod("show",
 		  signature = "ENMevaluation",
 		  definition = function(object) {
 		  	cat("An object of class: ", class(object), "\n",
-		  	" occurrence/background points: ",
-		  	nrow(object@occ.pts), '/', nrow(object@bg.pts), "\n",
+		  	" occurrence/background points: ", nrow(object@occ.pts), '/', nrow(object@bg.pts), "\n",
 		  	" partition method: ", object@partition.method, "\n",
 		  	" algorithm: ", object@algorithm, "\n",
-		  	" tune settings: ", paste(apply(object@tune.settings, 1, function(x) paste(x, collapse = "")), collapse = ", "), "\n", 
-		  	"Refer to ?ENMevaluation for information on slots.\n", sep = "")
+		  	" tune settings: ", ifelse(nrow(object@tune.settings) != 0, paste(names(object@tune.settings), object@tune.settings[1,], collapse = ", "), "none"), "\n",
+		  	ifelse(nrow(object@tune.settings) != 0, paste("               ", apply(object@tune.settings[2:nrow(object@tune.settings),], 1, function(x) paste(names(object@tune.settings), x, collapse = ", ")), collapse = "\n"), ""), "\n",
+		  	"Refer to ?ENMevaluation for information on slots.", sep = "")
 		  	invisible(NULL)
 		  })
 

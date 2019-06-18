@@ -15,6 +15,11 @@ maxnet.predictRaster <- function(mod, envs, other.args, doClamp, type) {
   return(pred)
 }
 
+################################# #
+# maxent.jar ENMdetails object ####
+################################# #
+
+
 mxjar.fun <- dismo::maxent
 mxjar.msgs <- function(tune.args) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -79,118 +84,155 @@ mxjar.nparams <- function(mod) {
 enm.mxjar <- ENMdetails(fun = mxjar.fun, msgs = mxjar.msgs, args = mxjar.args,
                         auc = mxjar.auc, pred = mxjar.pred, nparams = mxjar.nparams)
 
-maxnet.ls <- list(fun = maxnet::maxnet,
-                  msgs = function(tune.args) {
-                    if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
-                      stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
-                    }else{
-                      if(!is.numeric(tune.args[["rm"]])) {
-                        stop("Please input numeric values for 'rm' settings for Maxent.")
-                      }
-                      all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
-                      if(any(!tune.args[["fc"]] %in% all.fc)) {
-                        stop("Please input accepted values for 'fc' settings for Maxent.")
-                      }
-                      msg <- paste("maxnet from maxnet package v.", packageVersion('maxnet'))
-                      return(msg)
-                    }
-                  },
-                  args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
-                    out <- list()
-                    out$data <- rbind(occs.vals, bg.vals)
-                    out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
-                    out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
-                    out$regmult <- tune.tbl.i$rm
-                    out <- c(out, other.args)
-                    return(out)
-                  },
-                  calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
-                    e <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)@auc
-                    return(e)
-                  },
-                  predict = function(mod, envs, other.args, doClamp, type) {
-                    pred <- maxnet.predictRaster(mod, envs, other.args, doClamp,
-                                                 type = 'exponential')
-                    return(pred)
-                  }
-                    ,
-                  nparams = function(mod) {
-                    length(mod$betas)
-                  }
-)
 
-brt.ls <- list(fun = dismo::gbm.step,
-                  msgs = function(tune.args) {
-                    if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
-                      stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
-                    }
-                    # construct user message with version info
-                    msg <- paste("Boosted regression trees (BRTs) using the gbm.step() function from gbm package v.", 
-                                 packageVersion('gbm'), "and dismo package v.", packageVersion('dismo')) 
-                    return(msg)
-                  },
-                  args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
-                    out <- list()
-                    d <- rbind(occs.vals, bg.vals)
-                    p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
-                    out$data <- cbind(p, d)
-                    out$tree.complexity <- tune.tbl.i$tree.complexity
-                    out$learning.rate <- tune.tbl.i$learning.rate
-                    out$bag.fraction <- tune.tbl.i$bag.fraction
-                    out$gbm.x <- 2:ncol(out$data)
-                    out$gbm.y <- 1
-                    out$silent <- TRUE
-                    out <- c(out, other.args)
-                    return(out)
-                  },
-                  calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
-                    e <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
-                    return(e)
-                  },
-                  predict = function(mod, envs, other.args, doClamp) {
-                    if(inherits(envs, "BasicRaster") == TRUE) {
-                      pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
-                    }else{
-                      pred <- dismo::predict(mod, envs, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)  
-                    }
-                    return(pred)
-                  },
-                  nparams = function(mod) {
-                    # as no L1 regularization occurs, no parameters are dropped
-                    length(mod$var.names)
-                  }
-)
+################################# #
+# maxnet ENMdetails object ####
+################################# #
 
-bioclim.ls <- list(fun = dismo::bioclim,
-               msgs = function(tune.args) {
-                 msg <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
-                 return(msg)
-               },
-               args = function(occs.vals, bg.vals, tune.tbl.i, other.args) {
-                 out <- list()
-                 out$x <- occs.vals 
-                 out <- c(out, other.args)
-                 return(out)
-               },
-               calcAUC = function(occs.vals, bg.vals, mod, other.args, doClamp) {
-                 e <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)@auc
-                 return(e)
-               },
-               predict = function(mod, envs, other.args, doClamp) {
-                 # if no tails in other.args, defaults to NULL
-                 pred <- dismo::predict(mod, envs, tails = other.args$tails, na.rm = TRUE)
-                 return(pred)
-               },
-               nparams = function(mod) {
-                 length(mod@min)
-               }
-)
+mxnet.fun <- maxnet::maxnet
+
+mxnet.msgs <- function(tune.args) {
+  if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
+    stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
+  }else{
+    if(!is.numeric(tune.args[["rm"]])) {
+      stop("Please input numeric values for 'rm' settings for Maxent.")
+    }
+    all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
+    if(any(!tune.args[["fc"]] %in% all.fc)) {
+      stop("Please input accepted values for 'fc' settings for Maxent.")
+    }
+    msg <- paste("maxnet from maxnet package v.", packageVersion('maxnet'))
+    return(msg)
+  }
+}
+
+mxnet.args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+  out <- list()
+  out$data <- rbind(occs.vals, bg.vals)
+  out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
+  out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
+  out$regmult <- tune.tbl.i$rm
+  out <- c(out, other.args)
+  return(out)
+}
+
+mxnet.auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
+  e <- dismo::evaluate(occs.vals, bg.vals, mod, type = 'exponential', clamp = doClamp)@auc
+  return(e)
+}
+
+mxnet.pred <- function(mod, envs, other.args, doClamp, type) {
+  pred <- maxnet.predictRaster(mod, envs, other.args, doClamp,
+                               type = 'exponential')
+  return(pred)
+}
+
+mxnet.nparams <- function(mod) {
+  length(mod$betas)
+}
+
+enm.mxnet <- ENMdetails(fun = mxnet.fun, msgs = mxnet.msgs, args = mxnet.args,
+                        auc = mxnet.auc, pred = mxnet.pred, nparams = mxnet.nparams)
+
+
+################################# #
+# brt ENMdetails object ####
+################################# #
+
+brt.fun <- dismo::gbm.step
+
+brt.msgs <- function(tune.args) {
+  if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
+    stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
+  }
+  # construct user message with version info
+  msg <- paste("Boosted regression trees (BRTs) using the gbm.step() function from gbm package v.", 
+               packageVersion('gbm'), "and dismo package v.", packageVersion('dismo')) 
+  return(msg)
+}
+
+brt.args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+  out <- list()
+  d <- rbind(occs.vals, bg.vals)
+  p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
+  out$data <- cbind(p, d)
+  out$tree.complexity <- tune.tbl.i$tree.complexity
+  out$learning.rate <- tune.tbl.i$learning.rate
+  out$bag.fraction <- tune.tbl.i$bag.fraction
+  out$gbm.x <- 2:ncol(out$data)
+  out$gbm.y <- 1
+  out$silent <- TRUE
+  out <- c(out, other.args)
+  return(out)
+}
+
+brt.auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
+  e <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
+  return(e)
+}
+
+brt.pred <- function(mod, envs, other.args, doClamp) {
+  if(inherits(envs, "BasicRaster") == TRUE) {
+    pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
+  }else{
+    pred <- dismo::predict(mod, envs, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)  
+  }
+  return(pred)
+}
+
+brt.nparams <- function(mod) {
+  # as no L1 regularization occurs, no parameters are dropped
+  length(mod$var.names)
+}
+
+enm.brt <- ENMdetails(fun = brt.fun, msgs = brt.msgs, args = brt.args,
+                      auc = brt.auc, pred = brt.pred, nparams = brt.nparams)
+
+
+################################# #
+# bioclim ENMdetails object ####
+################################# #
+
+bc.fun <- dismo::bioclim
+
+bc.msgs <- function(tune.args) {
+  msg <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
+  return(msg)
+}
+
+bc.args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
+  out <- list()
+  out$x <- occs.vals 
+  out <- c(out, other.args)
+  return(out)
+}
+
+bc.auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
+  e <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)@auc
+  return(e)
+}
+
+bc.pred <- function(mod, envs, other.args, doClamp) {
+  # if no tails in other.args, defaults to NULL
+  pred <- dismo::predict(mod, envs, tails = other.args$tails, na.rm = TRUE)
+  return(pred)
+}
+
+bc.nparams <- function(mod) {
+  # as no L1 regularization occurs, no parameters are dropped
+  length(mod@min)
+}
+
+enm.bc <- ENMdetails(fun = bc.fun, msgs = bc.msgs, args = bc.args,
+                     auc = bc.auc, pred = bc.pred, nparams = bc.nparams)
 
 lookup.enm <- function(mod.name) {
-  x <- switch(mod.name, maxent.jar = enm.mxjar,
-              maxnet = maxnet.ls,
-              brt = brt.ls,
-              bioclim = bioclim.ls)
+  x <- switch(mod.name, 
+              maxent.jar = enm.mxjar,
+              maxnet = enm.mxnet,
+              brt = enm.brt,
+              bioclim = enm.bc)
   return(x)
 }
 

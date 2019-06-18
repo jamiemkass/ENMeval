@@ -38,7 +38,7 @@ updateProgress <- NULL
 ## run with maxent.jar
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with BRT
-# tune.args <- list(tree.complexity = 1, learning.rate = 0.1, bag.fraction = 0.5)
+# tune.args <- list(tree.complexity = 1:2, learning.rate = 0.1, bag.fraction = 0.5)
 # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # run with BIOCLIM
 # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
