@@ -147,16 +147,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     if(is.null(bg)) {
       bg <- dismo::randomPoints(envs, n = n.bg)
     } 
-    # check to see if any cells are NA for one or more rasters but not all,
-    # then fix it
-    n <- raster::nlayers(envs)
-    z <- raster::getValues(envs)
-    z.rs <- rowSums(is.na(z))
-    z.i <- which(z.rs < n & z.rs > 0)
-    if(length(z.i) > 0) {
-      envs[z.i] <- NA
-      warning(paste0("Environmental raster grid cells (n = ", length(z.i), ") found with NA values for one or more but not all variables. These cells were converted to NA for all variables.\n"), immediate. = TRUE)
-    }
+    # check to see if any cells are NA for one or more rasters but not all, then fix it
+    # n <- raster::nlayers(envs)
+    # z <- raster::getValues(envs)
+    # z.rs <- rowSums(is.na(z))
+    # z.i <- which(z.rs < n & z.rs > 0)
+    # if(length(z.i) > 0) {
+    #   envs[z.i] <- NA
+    #   warning(paste0("Environmental raster grid cells (n = ", length(z.i), ") found with NA values for one or more but not all variables. These cells were converted to NA for all variables.\n"), immediate. = TRUE)
+    # }
   }
   
   # make sure occs and bg are data frames with identical column names
