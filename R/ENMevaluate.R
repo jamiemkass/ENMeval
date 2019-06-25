@@ -307,7 +307,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   ################# #
   
   # define tuned settings names
-  tune.settings.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = ""))
+  tune.settings.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
   # if not tuned settings, names are equal to model name
   if(length(tune.settings.names) == 0) tune.settings.names <- mod.name
   # gather all full models into list and name them
