@@ -307,12 +307,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   ################# #
   
   # define tuned settings names
-  tune.settings.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
+  tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
   # if not tuned settings, names are equal to model name
-  if(length(tune.settings.names) == 0) tune.settings.names <- mod.name
+  if(length(tune.names) == 0) tune.names <- mod.name
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
-  names(mod.full.all) <- tune.settings.names
+  names(mod.full.all) <- tune.names
   # gather all training AUCs into vector
   auc.train.all <- sapply(results, function(x) x$train.AUC)
   # gather all statistics into a data frame
@@ -320,7 +320,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # gather all model prediction rasters into a stack and name them
   if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
-    names(mod.full.pred.all) <- tune.settings.names
+    names(mod.full.pred.all) <- tune.names
   }else{
     mod.full.pred.all <- raster::stack()
   }
@@ -341,10 +341,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     ns <- ncol(tune.tbl)
     # add in columns for tuning settings
     if(nrow(tune.tbl) > 0) {
-      for(i in 1:ns) {
-        kstats.df <- cbind(rep(tune.tbl[,i], each = nk), kstats.df)
-        names(kstats.df)[1] <- names(tune.tbl)[i]
-      }  
+      kstats.df <- cbind(apply(tune.tbl, 2, rep, each = nk), kstats.df)
     }
     
     # get number of columns in kstats.df
@@ -370,14 +367,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        max.test.or10pct = max(or.10p)) %>%
       dplyr::ungroup()
     if(ns > 0) {
-      stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
+      stats.df <- cbind(kstats.avg.df[, 1:ns], tune.args = tune.names, auc.train = auc.train.all, 
                         kstats.avg.df[, seq(ns+1, ns+12)])  
     }else{
       stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
     }
   }else{
     tune.cols <- tune.tbl[order(tune.tbl[,1]),]
-    stats.df <- cbind(tune.cols, auc.train = auc.train.all)
+    stats.df <- cbind(tune.cols, tune.args = tune.names, auc.train = auc.train.all)
   }
   
   # calculate number of non-zero parameters in model
