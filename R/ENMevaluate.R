@@ -306,10 +306,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # collate results 
   ################# #
   
-  # define tuned settings names
-  tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
-  # if not tuned settings, names are equal to model name
-  if(length(tune.names) == 0) tune.names <- mod.name
+  if(nrow(tune.tbl) == 0) {
+    # if not tuned settings, the "tune name" is the model name
+    tune.names <- mod.name
+  } else {
+    # define tuned settings names and bind them to the tune table
+    tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
+    tune.tbl <- cbind(tune.tbl, tune.args = tune.names)
+  }
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
   names(mod.full.all) <- tune.names
@@ -337,7 +341,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
     # define number of evaluation statistics
     nstat <- ncol(kstats.all[[1]])
-    # define number of settings
+    # define number of settings (plus the tune.args field)
     ns <- ncol(tune.tbl)
     # add in columns for tuning settings
     if(nrow(tune.tbl) > 0) {
@@ -367,14 +371,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        max.test.or10pct = max(or.10p)) %>%
       dplyr::ungroup()
     if(ns > 0) {
-      stats.df <- cbind(kstats.avg.df[, 1:ns], tune.args = tune.names, auc.train = auc.train.all, 
+      stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
                         kstats.avg.df[, seq(ns+1, ns+12)])  
     }else{
       stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
     }
   }else{
     tune.cols <- tune.tbl[order(tune.tbl[,1]),]
-    stats.df <- cbind(tune.cols, tune.args = tune.names, auc.train = auc.train.all)
+    stats.df <- cbind(tune.cols, auc.train = auc.train.all)
   }
   
   # calculate number of non-zero parameters in model
