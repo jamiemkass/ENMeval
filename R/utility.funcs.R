@@ -20,6 +20,7 @@ maxnet.predictRaster <- function(mod, envs, doClamp, type, other.args) {
 
 
 mxjar.fun <- dismo::maxent
+mxjar.pkgs <- c("dismo", "raster", "rJava")
 mxjar.msgs <- function(tune.args) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
     stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
@@ -80,8 +81,9 @@ mxjar.nparams <- function(mod) {
   return(np)
 }
 
-enm.mxjar <- ENMdetails(fun = mxjar.fun, msgs = mxjar.msgs, args = mxjar.args,
-                        auc = mxjar.auc, pred = mxjar.pred, nparams = mxjar.nparams)
+enm.mxjar <- ENMdetails(fun = mxjar.fun, pkgs = mxjar.pkgs, msgs = mxjar.msgs, 
+                        args = mxjar.args, auc = mxjar.auc, pred = mxjar.pred, 
+                        nparams = mxjar.nparams)
 
 
 ################################# #
@@ -89,6 +91,8 @@ enm.mxjar <- ENMdetails(fun = mxjar.fun, msgs = mxjar.msgs, args = mxjar.args,
 ################################# #
 
 mxnet.fun <- maxnet::maxnet
+
+mxnet.pkgs <- c("dismo", "raster", "maxnet")
 
 mxnet.msgs <- function(tune.args) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -130,8 +134,9 @@ mxnet.nparams <- function(mod) {
   length(mod$betas)
 }
 
-enm.mxnet <- ENMdetails(fun = mxnet.fun, msgs = mxnet.msgs, args = mxnet.args,
-                        auc = mxnet.auc, pred = mxnet.pred, nparams = mxnet.nparams)
+enm.mxnet <- ENMdetails(fun = mxnet.fun, pkgs = mxnet.pkgs, msgs = mxnet.msgs, 
+                        args = mxnet.args, auc = mxnet.auc, pred = mxnet.pred, 
+                        nparams = mxnet.nparams)
 
 
 ################################# #
@@ -139,6 +144,8 @@ enm.mxnet <- ENMdetails(fun = mxnet.fun, msgs = mxnet.msgs, args = mxnet.args,
 ################################# #
 
 brt.fun <- dismo::gbm.step
+
+brt.pkgs <- c("dismo", "raster", "gbm")
 
 brt.msgs <- function(tune.args) {
   if(!all("tree.complexity" %in% names(tune.args), "learning.rate" %in% names(tune.args), "bag.fraction" %in% names(tune.args))) {
@@ -184,8 +191,9 @@ brt.nparams <- function(mod) {
   length(mod$var.names)
 }
 
-enm.brt <- ENMdetails(fun = brt.fun, msgs = brt.msgs, args = brt.args,
-                      auc = brt.auc, pred = brt.pred, nparams = brt.nparams)
+enm.brt <- ENMdetails(fun = brt.fun, pkgs = brt.pkgs, msgs = brt.msgs, 
+                      args = brt.args, auc = brt.auc, pred = brt.pred, 
+                      nparams = brt.nparams)
 
 
 ################################# #
@@ -193,6 +201,8 @@ enm.brt <- ENMdetails(fun = brt.fun, msgs = brt.msgs, args = brt.args,
 ################################# #
 
 bc.fun <- dismo::bioclim
+
+bc.pkgs <- c("dismo", "raster")
 
 bc.msgs <- function(tune.args) {
   msg <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
@@ -222,8 +232,9 @@ bc.nparams <- function(mod) {
   length(mod@min)
 }
 
-enm.bc <- ENMdetails(fun = bc.fun, msgs = bc.msgs, args = bc.args,
-                     auc = bc.auc, pred = bc.pred, nparams = bc.nparams)
+enm.bc <- ENMdetails(fun = bc.fun, pkgs = bc.pkgs, msgs = bc.msgs, 
+                     args = bc.args, auc = bc.auc, pred = bc.pred, 
+                     nparams = bc.nparams)
 
 lookup.enm <- function(mod.name) {
   x <- switch(mod.name, 

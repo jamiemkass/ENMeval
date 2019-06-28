@@ -101,8 +101,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # record start time
   start.time <- proc.time()
   
-  if(is.null(user.enm)) enm <- lookup.enm(mod.name)
-  
   ########### #
   # CHECKS ####
   ########### #
@@ -116,13 +114,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(is.null(tune.args) & mod.name != "bioclim") {
     stop("Please specify tuning.args.\n")
   }
-  
-  # print model-specific message
-  msg <- enm@msgs(tune.args)
-  message(paste("*** Running ENMevaluate using", msg, "***\n"))
-  
-  # make table for all tuning parameter combinations
-  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   ## data checks and formatting
   # if occs is combined occurrence and background with environmental
@@ -148,14 +139,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # make sure occs and bg are data frames with identical column names
   if(all(names(occs) != names(bg))) {
-    warning('Datasets "occs" and "bg" have different column names. Assuming the first column is longitude and the second is latitude...\n')
+    warning('Datasets "occs" and "bg" have different column names. Assuming the first column for each is longitude and the second is latitude...\n')
     occs <- data.frame(x = occs[,1], y = occs[,2])
     bg <- data.frame(x = bg[,1], y = bg[,2])
   }
   
   # partition occs based on selected partition method
   # for occs.ind settings, partitions should be NULL
-  grp <- switch(partitions, 
+  grps <- switch(partitions, 
                 jackknife = get.jackknife(occs, bg),
                 randomkfold = get.randomkfold(occs, bg),
                 block = get.block(occs, bg),
@@ -175,25 +166,30 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                       none = "Skipping model evaluations (only calculating AICc)...\n")
   message(parts.msg)
   
-  # unpack occ.grp and bg.grp
-  occs.df <- cbind(occs.vals, grp = grp$occ.grp)
-  bg.df <- cbind(bg.vals, grp = grp$bg.grp)
+  # unpack partition values
+  occs.grp <- grps$occ.grp
+  bg.grp <- grps$bg.grp
   
   ############# #
   # ANALYSIS ####
   ############# #
   
-  # remove rows from occs, occs.vals, occ.grp with NA for any predictor variable
-  occs.vals.rmNA <- na.omit(occs.vals)
-  recsNA <- nrow(occs) - nrow(occs.vals.rmNA)
-  if(recsNA > 0) warning(paste0("Occurrence records found (n = ", recsNA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
-  occs.vals <- occs.vals.rmNA
-  
-  bg.vals.rmNA <- na.omit(bg.vals)
-  recsNA <- nrow(bg) - nrow(bg.vals.rmNA)
-  if(recsNA > 0) warning(paste0("Background records found (n = ", recsNA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
-  bg.vals <- bg.vals.rmNA
-  
+  # remove rows from occs.vals and occ.grp with NA for any predictor variable
+  occs.vals.naRows <- which(rowSums(is.na(occs.vals)) > 0)
+  occs.num.NA <- length(occs.vals.naRows)
+  if(occs.num.NA > 0) {
+    warning(paste0("Occurrence records found (n = ", occs.num.NA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
+    occs.vals <- occs.vals[-occs.vals.naRows,]
+    occs.grp <- occs.grp[-occs.vals.naRows]
+  }
+  # remove rows from bg.vals and bg.grp with NA for any predictor variable
+  bg.vals.naRows <- which(rowSums(is.na(bg.vals)) > 0)
+  bg.num.NA <- length(bg.vals.naRows)
+  if(bg.num.NA > 0) {
+    warning(paste0("Background records found (n = ", bg.num.NA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
+    bg.vals <- bg.vals[-bg.vals.naRows,]
+    bg.grp <- bg.grp[-bg.vals.naRows]
+  }  
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
@@ -206,58 +202,22 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # tuning 
   ################ #
   
-  if(parallel == FALSE) {
-    # regular implementation
-    results <- list()
-    n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
-    
-    # set up the console progress bar
-    pb <- txtProgressBar(0, n, style = 3)
-    
-    for(i in 1:n) {
-      # and (optionally) the shiny progress bar (updateProgress)
-      if(n > 1) {
-        if(is.function(updateProgress)) {
-          text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
-          updateProgress(detail = text)
-        }
-        setTxtProgressBar(pb, i)
-      }
-      results[[i]] <- cv.enm(occs.df, bg.df, envs, enm,
-                             partitions, tune.tbl[i,], other.args, categoricals, 
-                             occs.ind, doClamp, skipRasters, abs.auc.diff)
-    }
-    close(pb)
+  # print model-specific message
+  if(is.null(user.enm)) enm <- lookup.enm(mod.name)
+  msg <- enm@msgs(tune.args)
+  message(paste("*** Running ENMevaluate using", msg, "***\n"))
+  
+  # make table for all tuning parameter combinations
+  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
+  
+  if(parallel) {
+    results <- tune.parallel(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
+                  partitions, tune.tbl, other.args, categoricals, 
+                  occs.ind, doClamp, skipRasters, abs.auc.diff, numCores)  
   }else{
-    # parallel implementation
-    # set up parallel processing functionality
-    allCores <- parallel::detectCores()
-    if (is.null(numCores)) {
-      numCores <- allCores
-    }
-    cl <- parallel::makeCluster(numCores)
-    doSNOW::registerDoSNOW(cl)
-    numCoresUsed <- foreach::getDoParWorkers()
-    message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
-    
-    if(mod.name == "maxent.jar") pkgs <- c("dismo", "raster", "rJava")
-    if(mod.name == "maxnet") pkgs <- c("dismo", "raster", "maxnet")
-    if(mod.name == "brt") pkgs <- c("dismo", "raster", "gbm")
-    if(mod.name == "bioclim") pkgs <- c("dismo", "raster")
-    
-    message("Running in parallel...")
-    n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
-    pb <- txtProgressBar(0, n, style = 3)
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress=progress)
-    results <- foreach::foreach(i = 1:n, .packages = pkgs, .options.snow = opts) %dopar% {
-
-      cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, enm,
-             partitions, tune.tbl[i,], other.args, categoricals, occs.ind, doClamp,
-             skipRasters, abs.auc.diff)
-    }
-    close(pb)
-    parallel::stopCluster(cl)
+    results <- tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
+                 partitions, tune.tbl, other.args, categoricals, 
+                 occs.ind, doClamp, skipRasters, abs.auc.diff)
   }
   
   ################# #
