@@ -108,21 +108,19 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   ########### #
   
   ## general parameter checks
-  if(!(partitions %in% c("jackknife", "randomkfold", "block", "checkerboard1", 
-                         "checkerboard2", "user", "independent", "none"))) {
-    stop("Please make sure partition method is one of the available options.\n")
+  all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
+                      "checkerboard2", "user", "independent", "none")
+  if(!(partitions %in% all.partitions)) {
+    stop("Please enter an accepted partition method.\n")
   }
   if(is.null(tune.args) & mod.name != "bioclim") {
-    stop("Must specify tuning.args for all models except BIOCLIM.\n")
+    stop("Please specify tuning.args.\n")
   }
   
   # print model-specific message
   msg <- enm@msgs(tune.args)
   message(paste("*** Running ENMevaluate using", msg, "***\n"))
   
-  # rearrange list entries if first one is integer
-  # this is to ensure the raster names are generated correctly
-  if(class(tune.args[[1]]) == "integer") tune.args <- tune.args[2:1]
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
@@ -132,12 +130,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(is.null(envs)) {
     if(is.null(occs.vals)) {
       stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
+      occs.vals <- as.data.frame(occs.vals)
     }
-    occs.vals <- as.data.frame(occs.vals)
     if(is.null(bg.vals)) {
       stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
+      bg.vals <- as.data.frame(bg.vals)
     }
-    bg.vals <- as.data.frame(bg.vals)
     if(is.null(bg)) {
       stop("If inputting data without rasters (SWD), please specify bg in addition to occs.\n")
     }
@@ -146,16 +144,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # if no background points specified, generate random ones
     if(is.null(bg)) {
       bg <- dismo::randomPoints(envs, n = n.bg)
-    } 
-    # check to see if any cells are NA for one or more rasters but not all, then fix it
-    # n <- raster::nlayers(envs)
-    # z <- raster::getValues(envs)
-    # z.rs <- rowSums(is.na(z))
-    # z.i <- which(z.rs < n & z.rs > 0)
-    # if(length(z.i) > 0) {
-    #   envs[z.i] <- NA
-    #   warning(paste0("Environmental raster grid cells (n = ", length(z.i), ") found with NA values for one or more but not all variables. These cells were converted to NA for all variables.\n"), immediate. = TRUE)
-    # }
+    }
   }
   
   # make sure occs and bg are data frames with identical column names
@@ -312,7 +301,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   } else {
     # define tuned settings names and bind them to the tune table
     tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
-    tune.tbl <- cbind(tune.tbl, tune.args = tune.names)
+    tune.tbl <- cbind(tune.tbl, tune.args = tune.names, stringsAsFactors = FALSE)
   }
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
@@ -345,7 +334,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     ns <- ncol(tune.tbl)
     # add in columns for tuning settings
     if(nrow(tune.tbl) > 0) {
-      kstats.df <- cbind(apply(tune.tbl, 2, rep, each = nk), kstats.df)
+      kstats.df <- cbind(apply(tune.tbl, 2, rep, each = nk), kstats.df, stringsAsFactors = FALSE)
     }
     
     # get number of columns in kstats.df
@@ -370,6 +359,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        var.test.or10pct = var(or.10p),
                        max.test.or10pct = max(or.10p)) %>%
       dplyr::ungroup()
+    # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
+    kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
     if(ns > 0) {
       stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
                         kstats.avg.df[, seq(ns+1, ns+12)])  
