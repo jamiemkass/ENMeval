@@ -98,20 +98,21 @@ setMethod("show",
 #' @export
 ENMdetails <- setClass("ENMdetails",
                        slots = c(fun = 'function',
+                                 pkgs = 'character',
                                  msgs = 'function',
                                  args = 'function',
                                  auc = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(fun, msgs, args, auc, pred, nparams) {
+ENMdetails <- function(fun, pkgs, msgs, args, auc, pred, nparams) {
   # stopifnot(is.function(fun))
   # stopifnot(is.function(msgs))
   # stopifnot(is.function(args))
   # stopifnot(is.function(auc))
   # stopifnot(is.function(pred))
   # stopifnot(is.function(nparams))
-  new("ENMdetails", fun = fun, msgs = msgs, args = args,
+  new("ENMdetails", fun = fun, pkgs = pkgs, msgs = msgs, args = args,
       auc = auc, pred = pred, nparams = nparams)
 }
 
@@ -122,6 +123,17 @@ setMethod("enm.fun", "ENMdetails", function(x) x@fun)
 #' @export
 setMethod("enm.fun<-", "ENMdetails", function(x, value) {
   x@fun <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.pkgs", function(x) standardGeneric("enm.pkgs"))
+setGeneric("enm.pkgs<-", function(x, value) standardGeneric("enm.pkgs<-"))
+#' @export
+setMethod("enm.pkgs", "ENMdetails", function(x) x@pkgs)
+#' @export
+setMethod("enm.pkgs<-", "ENMdetails", function(x, value) {
+  x@pkgs <- value
   validObject(x)
   x
 })

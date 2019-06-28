@@ -1,8 +1,62 @@
-#' @export
 
-cv.enm <- function(occs.vals, bg.vals, envs, enm, 
-                   partitions, tune.tbl.i, other.args, categoricals, occs.ind, 
-                   doClamp, skipRasters, abs.auc.diff) {
+tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
+                          partitions, tune.tbl, other.args, categoricals, 
+                          occs.ind, doClamp, skipRasters, abs.auc.diff, numCores) {
+  # set up parallel processing functionality
+  allCores <- parallel::detectCores()
+  if (is.null(numCores)) {
+    numCores <- allCores
+  }
+  cl <- parallel::makeCluster(numCores)
+  doSNOW::registerDoSNOW(cl)
+  numCoresUsed <- foreach::getDoParWorkers()
+  message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
+  
+  message("Running in parallel...")
+  n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
+  pb <- txtProgressBar(0, n, style = 3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress=progress)
+  results <- foreach::foreach(i = 1:n, .packages = pkgs(enm), .options.snow = opts) %dopar% {
+    
+    cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, partitions, tune.tbl[i,], 
+           other.args, categoricals, occs.ind, doClamp,
+           skipRasters, abs.auc.diff)
+  }
+  close(pb)
+  parallel::stopCluster(cl)
+  return(results)
+}
+
+tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
+                         partitions, tune.tbl, other.args, categoricals, 
+                         occs.ind, doClamp, skipRasters, abs.auc.diff) {
+  results <- list()
+  n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
+  
+  # set up the console progress bar
+  pb <- txtProgressBar(0, n, style = 3)
+  
+  for(i in 1:n) {
+    # and (optionally) the shiny progress bar (updateProgress)
+    if(n > 1) {
+      if(is.function(updateProgress)) {
+        text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
+        updateProgress(detail = text)
+      }
+      setTxtProgressBar(pb, i)
+    }
+    results[[i]] <- cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
+                           partitions, tune.tbl[i,], other.args, categoricals, 
+                           occs.ind, doClamp, skipRasters, abs.auc.diff)
+  }
+  close(pb)
+  return(results)
+}
+
+cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
+                   partitions, tune.tbl.i, other.args, categoricals, 
+                   occs.ind, doClamp, skipRasters, abs.auc.diff) {
   
   # build the full model from all the data
   mod.full.args <- enm@args(occs.vals, bg.vals, tune.tbl.i, other.args)
@@ -18,7 +72,7 @@ cv.enm <- function(occs.vals, bg.vals, envs, enm,
   }
   
   # define number of grp (the value of "k")
-  nk <- length(unique(occs.vals$grp))
+  nk <- length(unique(occs.grp))
   
   # set up empty vectors for stats
   cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p")
@@ -42,10 +96,10 @@ cv.enm <- function(occs.vals, bg.vals, envs, enm,
     # cross-validation on partitions
     for(k in 1:nk) {
       # assign partitions for training and testing occurrence data and for background data
-      occs.train.k <- occs.vals[occs.vals$grp != k,, drop = FALSE]
-      occs.test.k <- occs.vals[occs.vals$grp == k,, drop = FALSE]
-      bg.train.k <- bg.vals[bg.vals$grp != k,, drop = FALSE]
-      bg.test.k <- bg.vals[bg.vals$grp == k,, drop = FALSE]
+      occs.train.k <- occs.vals[occs.grp != k,, drop = FALSE]
+      occs.test.k <- occs.vals[occs.grp == k,, drop = FALSE]
+      bg.train.k <- bg.vals[bg.grp != k,, drop = FALSE]
+      bg.test.k <- bg.vals[bg.grp == k,, drop = FALSE]
       # define model arguments for current model k
       mod.k.args <- enm@args(occs.train.k, bg.train.k, tune.tbl.i, other.args)
       # run the current model k
