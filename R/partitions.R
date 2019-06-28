@@ -74,14 +74,14 @@ get.block <- function(occs, bg){
 
 #' @export
 
-get.checkerboard1 <- function(occs, env, bg, aggregation.factor){
-  
+get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
+  if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
   
-  grid <- aggregate(env[[1]], fact=aggregation.factor[1])
+  grid <- aggregate(envs[[1]], fact=aggregation.factor[1])
   w <- gridSample(occs, grid, n=1e6, chess='white')
   b <- gridSample(occs, grid, n=1e6, chess='black')
   bgw <- gridSample(bg, grid, n=1e6, chess='white')
@@ -118,15 +118,15 @@ get.checkerboard1 <- function(occs, env, bg, aggregation.factor){
 
 #' @export
 
-get.checkerboard2 <- function(occs, env, bg, aggregation.factor){
-  
+get.checkerboard2 <- function(occs, envs, bg, aggregation.factor){
+  if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
   
   if (length(aggregation.factor) == 1) aggregation.factor <- rep(aggregation.factor, 2)
-  grid <- aggregate(env[[1]], fact=aggregation.factor[1])
+  grid <- aggregate(envs[[1]], fact=aggregation.factor[1])
   grid2 <- aggregate(grid, aggregation.factor[2])
   w <- gridSample(occs, grid, n=1e4, chess='white')
   b <- gridSample(occs, grid, n=1e4, chess='black')

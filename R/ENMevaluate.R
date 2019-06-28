@@ -128,6 +128,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # if occs is combined occurrence and background with environmental
   # predictor values (SWD format)
   if(is.null(envs)) {
+    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n")
     if(is.null(occs.vals)) {
       stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
       occs.vals <- as.data.frame(occs.vals)
@@ -136,92 +137,62 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
       stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
       bg.vals <- as.data.frame(bg.vals)
     }
-    if(is.null(bg)) {
-      stop("If inputting data without rasters (SWD), please specify bg in addition to occs.\n")
-    }
-    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n")
+  # if not SWD (envs is not NULL)
   }else{
     # if no background points specified, generate random ones
-    if(is.null(bg)) {
-      bg <- dismo::randomPoints(envs, n = n.bg)
-    }
+    if(is.null(bg)) bg <- dismo::randomPoints(envs, n = n.bg)
+    # extract predictor variable values at coordinates for occs and bg
+    occs.vals <- as.data.frame(raster::extract(envs, occs))
+    bg.vals <- as.data.frame(raster::extract(envs, bg))
   }
   
   # make sure occs and bg are data frames with identical column names
-  occs <- data.frame(longitude = occs[,1], latitude = occs[,2])
-  bg <- data.frame(longitude = bg[,1], latitude = bg[,2])
+  if(all(names(occs) != names(bg))) {
+    warning('Datasets "occs" and "bg" have different column names. Assuming the first column is longitude and the second is latitude...\n')
+    occs <- data.frame(x = occs[,1], y = occs[,2])
+    bg <- data.frame(x = bg[,1], y = bg[,2])
+  }
   
-  # print message for selected cross-validation method
+  # partition occs based on selected partition method
   # for occs.ind settings, partitions should be NULL
-  if(partitions == "jackknife") {
-    grp <- get.jackknife(occs, bg)
-    parts.msg <- "Doing model evaluations with k-1 jackknife cross validation...\n"
-  }
-  if(partitions == "randomkfold") {
-    grp <- get.randomkfold(occs, bg, kfolds)
-    parts.msg <- paste0("Doing model evaluations with random", kfolds, "-fold cross validation...\n")
-  }
-  if(partitions == "block") {
-    grp <- get.block(occs, bg)
-    parts.msg <- "Doing model evaluations with spatial block (4-fold) cross validation...\n"
-  }
-  if(partitions == "checkerboard1") {
-    if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-    grp <- get.checkerboard1(occs, envs, bg, aggregation.factor)
-    parts.msg <- "Doing model evaluations with checkerboard (2-fold) cross validation...\n"
-  }
-  if(partitions == "checkerboard2") {
-    if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-    grp <- get.checkerboard2(occs, envs, bg, aggregation.factor)
-    parts.msg <- "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n"
-  }
-  if(partitions == "user") {
-    grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
-    userk <- length(unique(occ.grp))
-    parts.msg <- paste0("Doing model evaluations with user-defined ", userk, "-fold cross validation...\n")
-  }
-  if(partitions == "independent") {
-    if(is.null(occs.ind)) stop("Cannot use independent partitioning if occs.ind is NULL.")
-    grp <- NULL
-    parts.msg <- "Doing model evaluations with independent testing data...\n"
-  }
-  if(partitions == "none") {
-    grp <- NULL
-    parts.msg <- "Skipping model evaluations (only calculating AICc)...\n"
-  }
+  grp <- switch(partitions, 
+                jackknife = get.jackknife(occs, bg),
+                randomkfold = get.randomkfold(occs, bg),
+                block = get.block(occs, bg),
+                checkerboard1 = get.checkerboard1(occs, envs, bg, aggregation.factor),
+                checkerboard2 = get.checkerboard2(occs, envs, bg, aggregation.factor),
+                user = list(occ.grp = occ.grp, bg.grp = bg.grp),
+                independent = NULL,
+                none = NULL)
+  parts.msg <- switch(partitions,
+                      jackknife = "Doing model evaluations with k-1 jackknife cross validation...\n",
+                      randomkfold = paste0("Doing model evaluations with random", get.randomkfold(occs, bg, kfolds), "-fold cross validation...\n"),
+                      block = "Doing model evaluations with spatial block (4-fold) cross validation...\n",
+                      checkerboard1 = "Doing model evaluations with checkerboard (2-fold) cross validation...\n",
+                      checkerboard2 = "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
+                      user = paste0("Doing model evaluations with user-defined ", length(unique(occ.grp)), "-fold cross validation...\n"),
+                      independent = "Doing model evaluations with independent testing data...\n",
+                      none = "Skipping model evaluations (only calculating AICc)...\n")
+  message(parts.msg)
   
   # unpack occ.grp and bg.grp
-  occ.grp <- grp$occ.grp
-  bg.grp <- grp$bg.grp
+  occs.df <- cbind(occs.vals, grp = grp$occ.grp)
+  bg.df <- cbind(bg.vals, grp = grp$bg.grp)
   
   ############# #
   # ANALYSIS ####
   ############# #
   
-  # extract predictor variable values at coordinates for occs and bg
-  if(!is.null(envs)) {
-    occs.vals <- as.data.frame(raster::extract(envs, occs))
-    bg.vals <- as.data.frame(raster::extract(envs, bg))  
-  }
-  
   # remove rows from occs, occs.vals, occ.grp with NA for any predictor variable
-  occs.vals.na <- sum(rowSums(is.na(occs.vals)) > 0)
-  bg.vals.na <- sum(rowSums(is.na(bg.vals)) > 0)
-  if(occs.vals.na > 0) {
-    i <- !apply(occs.vals, 1, anyNA)
-    occs <- occs[i,]
-    occ.grp <- occ.grp[i]
-    occs.vals <- occs.vals[i,]
-    warning(paste0("Occurrence records found (n = ", occs.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(occs.vals), " occurrence records.\n"), immediate. = TRUE)
-  }
-  # do the same for associated bg variables
-  if(bg.vals.na > 0) {
-    i <- !apply(bg.vals, 1, anyNA)
-    bg <- bg[i,]
-    bg.grp <- bg.grp[i]
-    bg.vals <- bg.vals[i,]
-    warning(paste0("Background records found (n = ", bg.vals.na, ") with NA for at least one predictor variable. Removed these from analysis, resulting in ", nrow(bg.vals), " background records.\n"), immediate. = TRUE)
-  }
+  occs.vals.rmNA <- na.omit(occs.vals)
+  recsNA <- nrow(occs) - nrow(occs.vals.rmNA)
+  if(recsNA > 0) warning(paste0("Occurrence records found (n = ", recsNA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
+  occs.vals <- occs.vals.rmNA
+  
+  bg.vals.rmNA <- na.omit(bg.vals)
+  recsNA <- nrow(bg) - nrow(bg.vals.rmNA)
+  if(recsNA > 0) warning(paste0("Background records found (n = ", recsNA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
+  bg.vals <- bg.vals.rmNA
   
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
@@ -234,8 +205,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   ################ #
   # tuning 
   ################ #
-  
-  message(parts.msg)
   
   if(parallel == FALSE) {
     # regular implementation
@@ -254,7 +223,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         }
         setTxtProgressBar(pb, i)
       }
-      results[[i]] <- cv.enm(occs.vals, bg.vals, occ.grp, bg.grp, envs, enm,
+      results[[i]] <- cv.enm(occs.df, bg.df, envs, enm,
                              partitions, tune.tbl[i,], other.args, categoricals, 
                              occs.ind, doClamp, skipRasters, abs.auc.diff)
     }
