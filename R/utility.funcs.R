@@ -317,7 +317,7 @@ calc.aicc <- function(nparams, occs, preds) {
                               dimnames = list(NULL, c("AICc", "delta.AICc", "w.AIC"))))
   AIC.valid <- nparams < nrow(occs)
   if(raster::nlayers(preds) == 0) {
-    warning("Cannot calculate AICc when skipRasters = TRUE... returning NAs.")
+    warning("Cannot calculate AICc without prediction rasters... returning NAs.", immediate. = TRUE)
   }else{
     vals <- raster::extract(preds, occs)
     probsum <- raster::cellStats(preds, sum)

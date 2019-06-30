@@ -14,9 +14,8 @@ updateProgress <- NULL
 
 # 
 # # SWD
-# colnames(bg) <- c("longitude", "latitude")
-# occs.vals <- raster::extract(envs, occs)
-# bg.vals <- raster::extract(envs, bg)
+occs.vals <- raster::extract(envs, occs)
+bg.vals <- raster::extract(envs, bg)
 # 
 # # divide all grid cells in study extent into same partition groups
 # # as the real occurrence data
