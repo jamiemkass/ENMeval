@@ -115,31 +115,31 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     stop("Please specify tuning.args.\n")
   }
   
-  ## data checks and formatting
   # if occs is combined occurrence and background with environmental
   # predictor values (SWD format)
-  if(is.null(envs)) {
-    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n")
-    if(is.null(occs.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
-      occs.vals <- as.data.frame(occs.vals)
-    }
-    if(is.null(bg.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
-      bg.vals <- as.data.frame(bg.vals)
-    }
-  # if not SWD (envs is not NULL)
-  }else{
+  if(!is.null(envs)) {
     # if no background points specified, generate random ones
     if(is.null(bg)) bg <- dismo::randomPoints(envs, n = n.bg)
     # extract predictor variable values at coordinates for occs and bg
-    occs.vals <- as.data.frame(raster::extract(envs, occs))
-    bg.vals <- as.data.frame(raster::extract(envs, bg))
+    occs.vals <- raster::extract(envs, occs)
+    bg.vals <- raster::extract(envs, bg)
+  # if envs is NULL and values are specified (SWD), make sure they are data frames
+  }else{
+    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n", immediate. = TRUE)
+    if(is.null(occs.vals)) {
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
+    }
+    if(is.null(bg.vals)) {
+      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
+    }
   }
+  # make sure values are data frames
+  occs.vals <- as.data.frame(occs.vals)
+  bg.vals <- as.data.frame(bg.vals)
   
   # make sure occs and bg are data frames with identical column names
   if(all(names(occs) != names(bg))) {
-    warning('Datasets "occs" and "bg" have different column names. Assuming the first column for each is longitude and the second is latitude...\n')
+    warning('Datasets "occs" and "bg" have different column names. Assuming the first column for each is longitude and the second is latitude...\n', immediate. = TRUE)
     occs <- data.frame(x = occs[,1], y = occs[,2])
     bg <- data.frame(x = bg[,1], y = bg[,2])
   }
@@ -170,10 +170,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   occs.grp <- grps$occ.grp
   bg.grp <- grps$bg.grp
   
-  ############# #
-  # ANALYSIS ####
-  ############# #
-  
   # remove rows from occs.vals and occ.grp with NA for any predictor variable
   occs.vals.naRows <- which(rowSums(is.na(occs.vals)) > 0)
   occs.num.NA <- length(occs.vals.naRows)
@@ -202,8 +198,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # tuning 
   ################ #
   
-  # print model-specific message
+  # choose a built-in ENMdetails object matching the input model name
+  # unless the model is chosen by the user
   if(is.null(user.enm)) enm <- lookup.enm(mod.name)
+  # print model-specific message
   msg <- enm@msgs(tune.args)
   message(paste("*** Running ENMevaluate using", msg, "***\n"))
   
@@ -221,7 +219,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }
   
   ################# #
-  # collate results 
+  # results 
   ################# #
   
   if(nrow(tune.tbl) == 0) {
@@ -237,43 +235,36 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   names(mod.full.all) <- tune.names
   # gather all training AUCs into vector
   auc.train.all <- sapply(results, function(x) x$train.AUC)
-  # gather all statistics into a data frame
-  kstats.all <- lapply(results, function(x) x$kstats)
   # gather all model prediction rasters into a stack and name them
+  # if skipRasters is TRUE or no envs, make an empty stack
   if(skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
     names(mod.full.pred.all) <- tune.names
   }else{
     mod.full.pred.all <- raster::stack()
   }
-  
-  # make data frame of stats (for all grp)
-  kstats.df <- dplyr::bind_rows(kstats.all)
-  
+  # gather all k-fold statistics into a list of data frames,
+  # (these are a single set of stats if no partitions were chosen)
+  kstats.all <- lapply(results, function(x) x$kstats)
   # define number of grp (the value of "k") as number of
   # rows in one of the model runs
   nk <- nrow(kstats.all[[1]])
+  # bind all kstats into a single data frame
+  kstats.df <- dplyr::bind_rows(kstats.all)
+
   
-  if(partitions != "none") {
-    # define number of rows in tune.tbl
-    n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
-    # define number of evaluation statistics
-    nstat <- ncol(kstats.all[[1]])
+  
+  if(!is.null(tune.tbl)) {
     # define number of settings (plus the tune.args field)
-    ns <- ncol(tune.tbl)
+    nset <- ncol(tune.tbl)
     # add in columns for tuning settings
     if(nrow(tune.tbl) > 0) {
-      kstats.df <- cbind(apply(tune.tbl, 2, rep, each = nk), kstats.df, stringsAsFactors = FALSE)
+      tune.tbl.reps <- apply(tune.tbl, 2, rep, each = nk)
+      kstats.df <- cbind(tune.tbl.reps, kstats.df, stringsAsFactors = FALSE)
     }
-    
-    # get number of columns in kstats.df
-    nc <- ncol(kstats.df)
-    
     # if model settings for tuning were input, summarize by averaging all grp 
     # per model setting combination
-    if(ns > 0) {
-      kstats.df <- dplyr::group_by_at(kstats.df, 1:ns)
-    }
+    if(nset > 0) kstats.df <- dplyr::group_by_at(kstats.df, 1:nset)
     kstats.avg.df <- kstats.df %>% 
       dplyr::summarize(avg.test.AUC = mean(auc.test),
                        var.test.AUC = corrected.var(auc.test, nk),
@@ -290,17 +281,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
       dplyr::ungroup()
     # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
     kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
-    if(ns > 0) {
-      stats.df <- cbind(kstats.avg.df[, 1:ns], auc.train = auc.train.all, 
-                        kstats.avg.df[, seq(ns+1, ns+12)])  
+    if(nset > 0) {
+      stats.df <- cbind(tune.tbl, auc.train = auc.train.all, kstats.avg.df[, seq(-1, -nset)])
     }else{
       stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
     }
-  }else{
-    tune.cols <- tune.tbl[order(tune.tbl[,1]),]
-    stats.df <- cbind(tune.cols, auc.train = auc.train.all)
+    if(partitions == "independent") stats.df <- kstats.df
   }
-  
+  if(partitions == "none") stats.df <- cbind(tune.tbl, auc.train = auc.train.all)
+    
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, enm@nparams)
   # calculate AICc for Maxent models
