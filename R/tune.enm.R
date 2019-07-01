@@ -17,11 +17,10 @@ tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
   pb <- txtProgressBar(0, n, style = 3)
   progress <- function(n) setTxtProgressBar(pb, n)
   opts <- list(progress=progress)
-  results <- foreach::foreach(i = 1:n, .packages = pkgs(enm), .options.snow = opts) %dopar% {
-    
-    cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, partitions, tune.tbl[i,], 
-           other.args, categoricals, occs.ind, doClamp,
-           skipRasters, abs.auc.diff)
+  results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts) %dopar% {
+    cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
+           partitions, tune.tbl[i,], other.args, categoricals, 
+           occs.ind, doClamp, skipRasters, abs.auc.diff)
   }
   close(pb)
   parallel::stopCluster(cl)
