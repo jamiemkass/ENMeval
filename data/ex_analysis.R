@@ -11,6 +11,8 @@ categoricals <- "biome"
 skipRasters <- FALSE
 other.args <- NULL
 updateProgress <- NULL
+doClamp <- TRUE
+abs.auc.diff <- TRUE
 
 # 
 # # SWD
@@ -40,7 +42,7 @@ bg.vals <- raster::extract(envs, bg)
 # tune.args <- list(tree.complexity = 1:2, learning.rate = 0.1, bag.fraction = 0.5)
 # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # run with BIOCLIM
-# e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
+# e <- ENMevaluate(occs, envs, bg, tune.args = NULL, mod.name = "bioclim", categoricals = "biome", partitions = "block")
 # run parallel
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # run with legacy parameters

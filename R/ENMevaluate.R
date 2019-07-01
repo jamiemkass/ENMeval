@@ -123,7 +123,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # extract predictor variable values at coordinates for occs and bg
     occs.vals <- raster::extract(envs, occs)
     bg.vals <- raster::extract(envs, bg)
-  # if envs is NULL and values are specified (SWD), make sure they are data frames
+    # if envs is NULL and values are specified (SWD), make sure they are data frames
   }else{
     warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n", immediate. = TRUE)
     if(is.null(occs.vals)) {
@@ -147,14 +147,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # partition occs based on selected partition method
   # for occs.ind settings, partitions should be NULL
   grps <- switch(partitions, 
-                jackknife = get.jackknife(occs, bg),
-                randomkfold = get.randomkfold(occs, bg),
-                block = get.block(occs, bg),
-                checkerboard1 = get.checkerboard1(occs, envs, bg, aggregation.factor),
-                checkerboard2 = get.checkerboard2(occs, envs, bg, aggregation.factor),
-                user = list(occ.grp = occ.grp, bg.grp = bg.grp),
-                independent = NULL,
-                none = NULL)
+                 jackknife = get.jackknife(occs, bg),
+                 randomkfold = get.randomkfold(occs, bg),
+                 block = get.block(occs, bg),
+                 checkerboard1 = get.checkerboard1(occs, envs, bg, aggregation.factor),
+                 checkerboard2 = get.checkerboard2(occs, envs, bg, aggregation.factor),
+                 user = list(occ.grp = occ.grp, bg.grp = bg.grp),
+                 independent = NULL,
+                 none = NULL)
   parts.msg <- switch(partitions,
                       jackknife = "Doing model evaluations with k-1 jackknife cross validation...\n",
                       randomkfold = paste0("Doing model evaluations with random", get.randomkfold(occs, bg, kfolds), "-fold cross validation...\n"),
@@ -210,12 +210,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   if(parallel) {
     results <- tune.parallel(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                  partitions, tune.tbl, other.args, categoricals, 
-                  occs.ind, doClamp, skipRasters, abs.auc.diff, numCores)  
+                             partitions, tune.tbl, other.args, categoricals, 
+                             occs.ind, doClamp, skipRasters, abs.auc.diff, numCores)  
   }else{
     results <- tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                 partitions, tune.tbl, other.args, categoricals, 
-                 occs.ind, doClamp, skipRasters, abs.auc.diff)
+                            partitions, tune.tbl, other.args, categoricals, 
+                            occs.ind, doClamp, skipRasters, abs.auc.diff)
   }
   
   ################# #
@@ -225,10 +225,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(nrow(tune.tbl) == 0) {
     # if not tuned settings, the "tune name" is the model name
     tune.names <- mod.name
-  } else {
+  }else{
     # define tuned settings names and bind them to the tune table
     tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
-    tune.tbl <- cbind(tune.tbl, tune.args = tune.names, stringsAsFactors = FALSE)
+    tune.tbl <- dplyr::bind_cols(tune.tbl, tune.args = tune.names)
   }
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
@@ -251,16 +251,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   nk <- nrow(kstats.all[[1]])
   # bind all kstats into a single data frame
   kstats.df <- dplyr::bind_rows(kstats.all)
-
   
-  
-  if(!is.null(tune.tbl)) {
+  if(partitions != "none") {
+    # if tune settings were specified and there is at least one partition,
+    # calculate the kstats tbl
+    # if(nrow(tune.tbl) > 0) {
     # define number of settings (plus the tune.args field)
     nset <- ncol(tune.tbl)
     # add in columns for tuning settings
     if(nrow(tune.tbl) > 0) {
-      tune.tbl.reps <- apply(tune.tbl, 2, rep, each = nk)
-      kstats.df <- cbind(tune.tbl.reps, kstats.df, stringsAsFactors = FALSE)
+      tune.tbl.reps <- as.data.frame(apply(tune.tbl, 2, rep, each = nk))
+      kstats.df <- dplyr::bind_cols(tune.tbl.reps, kstats.df)
     }
     # if model settings for tuning were input, summarize by averaging all grp 
     # per model setting combination
@@ -280,21 +281,26 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                        max.test.or10pct = max(or.10p)) %>%
       dplyr::ungroup()
     # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
-    kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
+    if(nrow(tune.tbl) > 0) kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
     if(nset > 0) {
-      stats.df <- cbind(tune.tbl, auc.train = auc.train.all, kstats.avg.df[, seq(-1, -nset)])
+      if(partitions == "independent") {
+        stats.df <- dplyr::bind_cols(kstats.df[, seq(1, nset)], auc.train = auc.train.all, kstats.df[, seq(-1, -(nset+1))])
+      }else{
+        stats.df <- dplyr::bind_cols(tune.tbl, auc.train = auc.train.all, kstats.avg.df[, seq(-1, -nset)])  
+      }
     }else{
-      stats.df <- cbind(auc.train = auc.train.all, kstats.avg.df) 
+      stats.df <- dplyr::bind_cols(auc.train = auc.train.all, kstats.avg.df) 
     }
-    if(partitions == "independent") stats.df <- kstats.df
+  }else{
+    # if no partitions were specified, make the stats tbl without cross validation stats
+    stats.df <- dplyr::bind_cols(tune.tbl, auc.train = auc.train.all)
   }
-  if(partitions == "none") stats.df <- cbind(tune.tbl, auc.train = auc.train.all)
-    
+  
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, enm@nparams)
   # calculate AICc for Maxent models
   if(mod.name %in% c("maxent.jar", "maxnet")) {
-    stats.df <- cbind(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
+    stats.df <- dplyr::bind_cols(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
   }else{
     warning(paste0("Not able to calculate AICc for ", mod.name, "... returning NAs.\n"))
   }
