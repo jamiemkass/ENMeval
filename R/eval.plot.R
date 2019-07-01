@@ -2,6 +2,8 @@
 #########	 PLOT OPTIMIZATION CRITERIA #############
 #####################################################
 
+#' @export
+
 eval.plot <- function(results, value="delta.AICc", variance=NULL, legend=TRUE, legend.position="topright") {
 	res <- results
 	if(!class(res)=='data.frame') {
