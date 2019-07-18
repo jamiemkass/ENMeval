@@ -215,7 +215,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   }else{
     results <- tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                             partitions, tune.tbl, other.args, categoricals, 
-                            occs.ind, doClamp, skipRasters, abs.auc.diff)
+                            occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
   ################# #

@@ -29,7 +29,7 @@ tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
 
 tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                          partitions, tune.tbl, other.args, categoricals, 
-                         occs.ind, doClamp, skipRasters, abs.auc.diff) {
+                         occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
