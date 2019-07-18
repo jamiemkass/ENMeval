@@ -314,7 +314,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(is.null(occ.grp)) occ.grp <- 0
   if(is.null(bg.grp)) bg.grp <- 0
   e <- ENMevaluation(algorithm = mod.name, tune.settings = tune.tbl,
-                     results = res$stats, results.grp = res$kstats,
+                     results = as.data.frame(res$stats), results.grp = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,
                      occ.pts = occs, occ.grp = occ.grp,
