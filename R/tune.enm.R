@@ -144,7 +144,7 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train,
   or.10p <- mean(pred.test < pct10.train.thr)
   
   # calculate MESS values if bg.test values are given
-  if(!is.null(bg.test)) {
+  if(!is.null(bg.test) & ncol(bg.test) > 1) {
     p <- rbind(occs.train, bg.train)
     v <- rbind(occs.test, bg.test)
     cat.i <- which(names(occs.train) == categoricals)
