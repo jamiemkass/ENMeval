@@ -118,6 +118,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # if occs is combined occurrence and background with environmental
   # predictor values (SWD format)
   if(!is.null(envs)) {
+    # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
+    envs <- raster::stack(envs)
     # if no background points specified, generate random ones
     if(is.null(bg)) bg <- dismo::randomPoints(envs, n = n.bg)
     # extract predictor variable values at coordinates for occs and bg
@@ -136,6 +138,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # make sure values are data frames
   occs.vals <- as.data.frame(occs.vals)
   bg.vals <- as.data.frame(bg.vals)
+  if(ncol(occs.vals) == 1) names(occs.vals) <- names(envs)
+  if(ncol(bg.vals) == 1) names(bg.vals) <- names(envs)
   
   # make sure occs and bg are data frames with identical column names
   if(all(names(occs) != names(bg))) {
@@ -183,7 +187,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   bg.num.NA <- length(bg.vals.naRows)
   if(bg.num.NA > 0) {
     warning(paste0("Background records found (n = ", bg.num.NA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
-    bg.vals <- bg.vals[-bg.vals.naRows,]
+    bg.vals <- bg.vals[-bg.vals.naRows,, drop = FALSE]
     bg.grp <- bg.grp[-bg.vals.naRows]
   }  
   # convert fields for categorical data to factor class
