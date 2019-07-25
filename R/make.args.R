@@ -13,7 +13,9 @@ make.args <- function(RMvalues=seq(0.5, 4, 0.5), fc=c("L", "LQ", "H", "LQH", "LQ
 			if(!grepl("Q", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "noquadratic")
 			if(!grepl("H", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "nohinge")
 			if(!grepl("P", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "noproduct")
-			if(!grepl("T", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "nothreshold")
+			if(!grepl("T", fc[[i]])) args.list[[i]] <- c(args.list[[i]], "nothreshold") else {
+				args.list[[i]] <- c(args.list[[i]], "threshold")
+			}
 		}
 
 	RM.lab <- rep(RMvalues, each=length(fc))
