@@ -34,8 +34,13 @@ x <- (rpois(nocc, 2) + abs(rnorm(nocc)))/11
 y <- runif(nocc, 0, .99)
 occ <- cbind(x,y)
 \dontrun{
-### This gives the results that are loaded below:
-enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500, categoricals=4, algorithm='maxent.jar')
+enmeval_results <- ENMevaluate(occs, env, n.bg=500, 
+                               partitions="block", 
+                               categoricals="layer.4",
+                               mod.name='maxnet', 
+                               tune.args=list(fc = c("L","LQ","LQH","LQHP","LQHPT"), 
+                                              rm = 1:4),
+                               overlap=T, overlapStat="D")
 }
 
 data(enmeval_results)
