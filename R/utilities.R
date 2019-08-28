@@ -196,7 +196,7 @@ mess.vec <- function(p, v) {
 #' 
 #' @aliases calc.niche.overlap
 #' @usage 
-#' calc.niche.overlap(predictive.maps, stat = "D", maxent.args)
+#' calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
 #' @param preds A rasterStack of at least 2 Maxent predictive raster layers.
 #' @param overlapStat The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
