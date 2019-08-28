@@ -4,7 +4,7 @@
 \alias{calc.niche.overlap}
 \title{Calculate Similarity of ENMs in Geographic Space}
 \usage{
-calc.niche.overlap(predictive.maps, stat = "D", maxent.args)
+calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
 }
 \arguments{
 \item{preds}{A rasterStack of at least 2 Maxent predictive raster layers.}
