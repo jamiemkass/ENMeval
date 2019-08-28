@@ -16,9 +16,9 @@
 #' 
 #' par(mfrow=c(2,2))
 #' eval.plot(enmeval_results@results, legend.position="topright")
-#' eval.plot(enmeval_results@results, "Mean.AUC", )
-#' eval.plot(enmeval_results@results, "Mean.AUC.DIFF", variance="Var.AUC.DIFF")
-#' eval.plot(enmeval_results@results, "Mean.ORmin")
+#' eval.plot(enmeval_results@results, "avg.test.AUC")
+#' eval.plot(enmeval_results@results, "avg.test.AUC", variance="var.test.AUC")
+#' eval.plot(enmeval_results@results, "max.test.orMTP")
 
 #' @export
 eval.plot <- function(results, value="delta.AICc", variance=NULL, legend=TRUE, legend.position="topright") {
