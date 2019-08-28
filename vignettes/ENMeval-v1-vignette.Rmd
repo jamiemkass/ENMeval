@@ -33,7 +33,7 @@ The primary function, `ENMevaluate`, does all the heavy lifting and returns seve
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/web/packages/maxnet/index.html), but v1.0.0 and onward can implement any ENM in theory provided its settings are specified in a named list. This version comes out of the box with Maxent, maxnet, [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), and [BRT](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boosted regression trees), but users can provide their own custom model specifications. 
+Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/package=maxnet), but v1.0.0 and onward can implement any ENM in theory provided its settings are specified in a named list. This version comes out of the box with Maxent, maxnet, [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), and [BRT](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boosted regression trees), but users can provide their own custom model specifications. 
 
 
 
