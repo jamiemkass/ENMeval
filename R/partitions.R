@@ -14,13 +14,13 @@
 #' 
 #' Users can also define evaluation bins \emph{a priori} directly in the call to `ENMevaluate`.  With this method, occurrence and background localities, as well as evaluation bin designation for each locality, are supplied by the user.
 #' 
-#' @param occ Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.
+#' @param occs Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.
 #' @param bg.coords Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.
 #' @param env RasterStack of environmental predictor variables.
 #' @param aggregation.factor A vector or list of 1 or 2 numbers giving the scale for aggregation used for the \code{get.checkerboard1} and \code{get.checkerboard2} methods.  If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.
 #' @param kfolds Number of random \emph{k}-folds for \code{get.randomkfold} method.
-#' @param occ.grp Vector of user-defined bins for occurrence localities for \code{get.user} method.
-#' @param bg.grp Vector of user-defined bins for background localities for \code{get.user} method.
+# #' @param occ.grp Vector of user-defined bins for occurrence localities for \code{get.user} method.
+# #' @param bg.grp Vector of user-defined bins for background localities for \code{get.user} method.
 #' 
 #' @return
 #' A named list of two items:
@@ -103,15 +103,15 @@
 #' plot(env)
 #' points(bg.pts, pch=21, bg=jack.pts$bg.grp)
 #' 
-#' ### User-defined partitions
-#' # Note background is not partitioned
-#' occ.grp <- c(rep(1, 10), rep(2, 5), rep(3, 10))
-#' bg.grp <- c(rep(1, 200), rep(2, 100), rep(3, 200))
-#' user.pts <- get.user(occ.grp, bg.grp)
-#' plot(env)
-#' points(occ.pts, pch=23, bg=user.pts$occ.grp)
-#' plot(env)
-#' points(bg.pts, pch=21, bg=user.pts$bg.grp)
+# ## User-defined partitions
+# #' # Note background is not partitioned
+# #' occ.grp <- c(rep(1, 10), rep(2, 5), rep(3, 10))
+# #' bg.grp <- c(rep(1, 200), rep(2, 100), rep(3, 200))
+# #' user.pts <- get.user(occ.grp, bg.grp)
+# #' plot(env)
+# #' points(occ.pts, pch=23, bg=user.pts$occ.grp)
+# #' plot(env)
+# #' points(bg.pts, pch=21, bg=user.pts$bg.grp)
 
 #' @name partitions
 NULL
