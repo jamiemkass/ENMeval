@@ -272,55 +272,70 @@ Unless you supply the function with background points (which is recommended in m
 
 ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
-```{r load_vignette_data, echo = FALSE}
-data(eval2)
-```
+<!-- ```{r load_vignette_data, echo = FALSE} -->
+<!-- data(eval2) -->
+<!-- ``` -->
 
 ``` {r enmeval1a, eval=FALSE}
-eval1 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L'), algorithm='maxent.jar')
+eval1 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
+                     partitions='checkerboard2', 
+                     tune.args=list(fc="L", rm=1:2), 
+                     mod.name='maxent.jar')
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
 
-``` {r enmeval1b, eval=FALSE}
-eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), algorithm='maxent.jar')
+``` {r enmeval1b, eval=TRUE}
+eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
+                     partitions='checkerboard2', 
+                     tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), 
+                     mod.name='maxent.jar')
 ```
 
-When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel can be faster.
+When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
 
 ``` {r enmeval2par, eval=FALSE}
-eval2.par <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), parallel=TRUE, algorithm='maxent.jar')
+eval2.par <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
+                         partitions='checkerboard2', 
+                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), 
+                         mod.name='maxnet', parallel=T)
 ```
 
-Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (rasterPreds). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to FALSE.
+Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to FALSE.
 
 ``` {r enmeval3, eval=FALSE}
-eval3 <- ENMevaluate(occs, envs, bg, method='checkerboard2', RMvalues=c(1,2), fc=c('L','LQ','LQP'), rasterPreds=FALSE, algorithm='maxent.jar')
+eval3 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
+                         partitions='checkerboard2', 
+                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2),
+                         mod.name='maxnet', rasterPreds=F)
 ```
 
-We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the `niche.overlap` argument, which supports Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
+We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
 ``` {r enmeval4, results='hide'}
-overlap <- calc.niche.overlap(eval2@predictions, stat='D')
+overlap <- calc.niche.overlap(eval2@predictions, overlapStat="D")
 ```
 ``` {r enmeval5}
 overlap
 ```
 
-The `bin.output` argument determines if separate evaluation statistics for each testing bin are included in the results file.  If `bin.output=FALSE`, only the mean and variance of evaluation statistics across k bins is returned.
+<!-- The `bin.output` argument determines if separate evaluation statistics for each testing bin are included in the results file.  If `bin.output=FALSE`, only the mean and variance of evaluation statistics across k bins is returned. -->
 
 #### Exploring the results {#eval.explore}
-Now let's take a look at the ENMeval object in more detail.  It contains the following slots:
+Now let's take a look at the output from `ENMevaluate` (which is an object of class `ENMevaluation`) in more detail (also see `?ENMevaluation`).  It contains the following slots:
 
-- A character vector showing which algorithm was used
-- A data.frame holding the model evaluation statistics
-- A RasterStack of the model predictions
-- A list of maxent model objects
-- A data.frame of the original occurrence coordinates
-- A vector of the evaluation bins used for the occurrence points
-- A data.frame of the background coordinates
-- A vector of the evaluation bins used for the background points
-- (if `overlap=T`) A matrix of the pairwise niche overlap metric
+- `algorithm` A character vector showing which algorithm was used
+- `tune.settings` A data.frame of settings that were tuned
+- `partition.method` A character of partition method used
+- `results` A data.frame of evaluation summary statistics
+- `results.grp` A data.frame of evaluation k-fold statistics
+- `models` A list of model objects
+- `predictions` A RasterStack of model predictions
+- `occ.pts` A data.frame of occurrence coordinates used for model training
+- `occ.grp` A vector of partition groups for occurrence points
+- `bg.pts` A data.frame of background coordinates used for model training
+- `bg.grp` A vector of partition groups for background points
+- `overlap` A list of matrices of pairwise niche overlap statistics
 
 Let's first examine the structure of the object:
 ``` {r stuff}
@@ -334,21 +349,30 @@ The first slot tells which algorithm was used (maxent.jar or maxnet) and which v
 eval2@algorithm
 ```
 
-The next slot holds the table of evaluation metrics.  We can use this to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
+The next two slots hold information on which tuning settings and partitioning method were used.  The details of the tuning settings will depend on the algorithm used.
+``` {r stuff1b}
+eval2@tune.settings
+
+eval2@partition.method
+```
+
+The original data (occurrence and background points), as well as which of the k-fold groups they belong to, are all held in `ENMevaluation` object.
+``` {r stuff1c}
+eval2@occ.pts
+eval2@occ.grp
+eval2@bg.pts
+eval2@bg.grp
+```
+
+The next two slots hold the overall table of evaluation metrics and then the results for each k-fold group.  We can use these to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
 ``` {r stuff2}
+# Overall results
 eval2@results
 
 eval2@results[which(eval2@results$delta.AICc==0),]
-```
 
-Now let's access the RasterStack of the model predictions.  Note that these predictions are in the 'raw' output format.
-``` {r stuff3}
-eval2@predictions
-```
-
-Now plot the model with the lowest AICc:
-``` {r stuff4, fig.width = 5, fig.height = 5}
-plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occurrence rate")
+# Results for individual k-fold groups
+eval2@results.grp
 ```
 
 If we used the 'maxent.jar' algorithm, we can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not** kept.
@@ -367,10 +391,20 @@ The "results" slot shows the Maxent model statistics:
 aic.opt@results
 ```
 
-You can use the `var.importance` function to get a data.frame of two variable importance metrics: percent contribution and permutation importance.  See the function help file for more information on these metrics.
-```{r mod.obj4}
-var.importance(aic.opt)
+Now let's access the RasterStack of the model predictions.  Note that these predictions are in the 'raw' output format.
+``` {r stuff3}
+eval2@predictions
 ```
+
+Now plot the model with the lowest AICc:
+``` {r stuff4, fig.width = 5, fig.height = 5}
+plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occurrence rate")
+```
+
+<!-- You can use the `var.importance` function to get a data.frame of two variable importance metrics: percent contribution and permutation importance.  See the function help file for more information on these metrics. -->
+<!-- ```{r mod.obj4} -->
+<!-- var.importance(aic.opt) -->
+<!-- ``` -->
 
 The "lambdas" slot shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model.  You will likely find the syntax to be cryptic and the information is not stored in a very user-friendly way.  Fortunately, John Baumgartner has developed a useful function to parse this file into a more user-friendly data.frame.  See the `parse_lambdas.R` function in his [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R) package for more details.
 
@@ -378,10 +412,6 @@ The "lambdas" slot shows which variables were included in the model. After the v
 aic.opt@lambdas
 ```
 
-Finally, the ENMevaluate object also remembers which occurrence partitioning method you used:
-```{r mod.obj5}
-eval2@partition.method
-```
 
 ## Plotting results {#plot}
 Plotting options in R are extremely flexible and here we demonstrate some key tools to explore the results of an ENMevaluate object graphically.
@@ -397,14 +427,14 @@ eval.plot(eval2@results)
 
 You can choose which evaluation metric to plot, and you can also include error bars, if relevant.
 ``` {r plot.res2, fig.width = 5, fig.height = 5}
-eval.plot(eval2@results, 'Mean.AUC', var='Var.AUC')
+eval.plot(eval2@results, 'avg.test.AUC', var='var.test.AUC')
 ```
 
-You can also plot the permutation importance or percent contribution.
-``` {r plot.res3, fig.width = 5, fig.height = 5}
-df <- var.importance(aic.opt)
-barplot(df$permutation.importance, names.arg=df$variable, las=2, ylab="Permutation Importance")
-```
+<!-- You can also plot the permutation importance or percent contribution. -->
+<!-- ``` {r plot.res3, fig.width = 5, fig.height = 5} -->
+<!-- df <- var.importance(aic.opt) -->
+<!-- barplot(df$permutation.importance, names.arg=df$variable, las=2, ylab="Permutation Importance") -->
+<!-- ``` -->
 
 #### Plotting model predictions {#plot.preds}
 If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis - remember that the output values are in Maxent's 'raw' units.  
@@ -432,7 +462,7 @@ plot(eval2@predictions[['LQP_1']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, ma
 We can also plot the response curves of our model to see how different input variables influence our model predictions.  (Note that, as with the `dismo::maxent` function, using this function requires that the maxent.jar file be installed in the `dismo` package java folder).
 
 ``` {r response_curves, eval=FALSE}
-  response(eval2@models[[1]])
+response(eval2@models[[1]])
 ```
 
 ## Downstream Analyses (*under construction*) {#downstream}
