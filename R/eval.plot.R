@@ -29,7 +29,7 @@ eval.plot <- function(results, value="delta.AICc", variance=NULL, legend=TRUE, l
 	if(sum(value %in% colnames(res))==0) {
 			stop("value not in results table provided", call.=F)
 		}
-	fc <- length(unique(res$features))
+	fc <- length(unique(res$fc))
 	col <- rainbow(fc)
 	rm <- length(unique(res$rm))
 	xlab <- "Regularization Multiplier"
@@ -51,7 +51,7 @@ eval.plot <- function(results, value="delta.AICc", variance=NULL, legend=TRUE, l
 	axis(1, at= unique(res$rm))
 	axis(2)
 	box()
-	for (j in 1:length(unique(res$features))){
+	for (j in 1:length(unique(res$fc))){
 		s <- ((fc*rm)-fc+j)
 		points(res$rm[seq(j, s, fc)], y[seq(j, s, fc)], type="l", col=col[j])
 		if(!is.null(variance)){
@@ -65,6 +65,6 @@ eval.plot <- function(results, value="delta.AICc", variance=NULL, legend=TRUE, l
 	points(res$rm, y, bg=col, pch=21)
 
 	if(legend==TRUE){
-	legend(legend.position, legend=unique(res$features), pt.bg=col, pch=21, bg='white')
+	legend(legend.position, legend=unique(res$fc), pt.bg=col, pch=21, bg='white')
 	}
 }
