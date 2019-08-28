@@ -20,19 +20,15 @@ get.jackknife(occs, bg)
 get.randomkfold(occs, bg, kgrp)
 }
 \arguments{
-\item{aggregation.factor}{A vector or list of 1 or 2 numbers giving the scale for aggregation used for the \code{get.checkerboard1} and \code{get.checkerboard2} methods.  If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.}
+\item{occs}{Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.}
 
-\item{occ}{Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.}
+\item{aggregation.factor}{A vector or list of 1 or 2 numbers giving the scale for aggregation used for the \code{get.checkerboard1} and \code{get.checkerboard2} methods.  If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.}
 
 \item{bg.coords}{Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.}
 
 \item{env}{RasterStack of environmental predictor variables.}
 
 \item{kfolds}{Number of random \emph{k}-folds for \code{get.randomkfold} method.}
-
-\item{occ.grp}{Vector of user-defined bins for occurrence localities for \code{get.user} method.}
-
-\item{bg.grp}{Vector of user-defined bins for background localities for \code{get.user} method.}
 }
 \value{
 A named list of two items:
@@ -121,15 +117,6 @@ points(occ.pts, pch=23, bg=rainbow(length(jack.pts$occ.grp)))
 plot(env)
 points(bg.pts, pch=21, bg=jack.pts$bg.grp)
 
-### User-defined partitions
-# Note background is not partitioned
-occ.grp <- c(rep(1, 10), rep(2, 5), rep(3, 10))
-bg.grp <- c(rep(1, 200), rep(2, 100), rep(3, 200))
-user.pts <- get.user(occ.grp, bg.grp)
-plot(env)
-points(occ.pts, pch=23, bg=user.pts$occ.grp)
-plot(env)
-points(bg.pts, pch=21, bg=user.pts$bg.grp)
 }
 \references{
 Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. 2011. dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
