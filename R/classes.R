@@ -85,13 +85,13 @@ setMethod("overlap", "ENMevaluation", function(x) x@overlap)
 setMethod("show",
 		  signature = "ENMevaluation",
 		  definition = function(object) {
-		  	cat("An object of class: ", class(object), "\n",
-		  	" occurrence/background points: ", nrow(object@occ.pts), '/', nrow(object@bg.pts), "\n",
-		  	" partition method: ", object@partition.method, "\n",
-		  	" algorithm: ", object@algorithm, "\n",
-		  	" tune settings: ", ifelse(nrow(object@tune.settings) != 0, paste(names(object@tune.settings), object@tune.settings[1,], collapse = ", "), "none"), "\n",
-		  	ifelse(nrow(object@tune.settings) != 0, paste("               ", apply(object@tune.settings[2:nrow(object@tune.settings),], 1, function(x) paste(names(object@tune.settings), x, collapse = ", ")), collapse = "\n"), ""), "\n",
-		  	"Refer to ?ENMevaluation for information on slots.", sep = "")
+		  	cat("An object of class: ", class(object), "\n")
+		  	cat(" occurrence/background points: ", nrow(object@occ.pts), '/', nrow(object@bg.pts), "\n")
+		  	cat(" partition method: ", object@partition.method, "\n")
+		  	cat(" algorithm: ", object@algorithm, "\n")
+		  	cat(" tune settings: \n")
+		  	print(object@tune.settings[,-ncol(object@tune.settings)], row.names = FALSE)
+		  	cat("Refer to ?ENMevaluation for information on slots.", sep = "")
 		  	invisible(NULL)
 		  })
 
