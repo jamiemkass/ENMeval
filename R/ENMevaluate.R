@@ -315,7 +315,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   res <- list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
               preds = mod.full.pred.all)
   
-  if(is.null(occ.grp)) occ.grp <- 0
+  if(is.null(occs.grp)) occs.grp <- 0
   if(is.null(bg.grp)) bg.grp <- 0
   e <- ENMevaluation(algorithm = mod.name, tune.settings = tune.tbl,
                      results = as.data.frame(res$stats), results.grp = res$kstats,

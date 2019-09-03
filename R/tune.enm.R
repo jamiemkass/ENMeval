@@ -1,3 +1,44 @@
+#' @title Functions for tuning ENMs
+#' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.
+#' @aliases tune.parallel tune.regular cv.enm evalStats
+#' @param occs.vals matrix or data frame of environmental values corresponding
+#' to occurrence localities, intended to be input when environmental rasters
+#' are not used (\code{envs} is NULL) 
+#' @param bg.vals matrix or data frame of environmental values corresponding
+#' to background (or pseudo-absence) localities, intended to be input when 
+#' environmental rasters are not used (\code{envs} is NULL) 
+#' @param occs.grp numeric vector of partition group (fold) for each
+#' occurrence locality, intended for user-defined partitions
+#' @param bg.grp numeric vector of partition group (fold) for each background 
+#' (or pseudo-absence) locality, intended for user-defined partitions
+#' @param envs Raster* object of environmental variables (must be in 
+#' same geographic projection as occurrence data)
+#' @param enm Object of class \link{ENMdetails}.
+#' @param partitions character of name of partitioning technique (see
+#' \code{?partitions})
+#' @param tune.tbl Data frame of tuning parameter combinations.
+#' @param tune.tbl.i Vector of one row in `tune.tbl` tuning parameter combinations.
+#' @param other.args named list of any additional model arguments not specified 
+#' for tuning
+#' @param categoricals character vector of names of categorical 
+#' environmental variables
+#' @param occs.ind matrix or data frame with two columns for longitude and latitude 
+#' of occurrence localities, in that order, intended for independent evaluation;
+#' when \code{partitions = "independent"}; these occurrences will be used only 
+#' for evaluation, and not for model training, and thus no cross validation will 
+#' be done
+#' @param doClamp boolean (TRUE or FALSE); if TRUE, clamp model responses; only
+#' applicable for Maxent models
+#' @param skipRasters boolean (TRUE or FALSE); if TRUE, skip raster predictions
+#' @param abs.auc.diff boolean (TRUE or FALSE); if TRUE, take absolute value of
+#' AUCdiff; default is TRUE
+#' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores
+#' for parallel processing
+
+#' @name tune.enm
+NULL
+
+#' @rdname tune.enm
 
 tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                           partitions, tune.tbl, other.args, categoricals, 
@@ -27,6 +68,7 @@ tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
   return(results)
 }
 
+#' @rdname tune.enm
 tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                          partitions, tune.tbl, other.args, categoricals, 
                          occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress) {
@@ -53,6 +95,7 @@ tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
   return(results)
 }
 
+#' @rdname tune.enm
 cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                    partitions, tune.tbl.i, other.args, categoricals, 
                    occs.ind, doClamp, skipRasters, abs.auc.diff) {
@@ -118,6 +161,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
   return(cv.res)
 }
 
+#' @rdname tune.enm
 evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train, 
                       mod, categoricals, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data

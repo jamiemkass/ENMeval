@@ -108,12 +108,49 @@ calc.aicc <- function(nparams, occs, preds) {
   return(out)
 }
 
-# define a corrected variance function
+# Define a corrected variance function
+#' Calculate variance corrected for non-independence of \emph{k}-fold iterations
+#'
+#' `corrected.var` calculates variance corrected for non-independence of \emph{k}-fold iterations.  See Appendix of Shcheglovitova & Anderson (2013) and other references (Miller 1974; Parr 1985; Shao and Wu 1989) for additional details. 
+#' 
+#' This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  Following Shao and Wu (1989): 
+#' 
+#' \deqn{Sum Of Squares * ((n-1)/n)} 
+#' 
+#' where \emph{n} = the number of \emph{k}-fold iterations.
+#'
+#' @param x A numeric vector.
+#' @param nk Number of \emph{k}-fold iterations.
+#' @return A numeric value of the corrected variance.
+#' @author Robert Muscarella <bob.muscarella@gmail.com>
+#' @references 
+#'   Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15.
+#'   
+#'   Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66.
+#'   
+#'   Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197.
+#'   
+#'   Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17.
+#'   
+# #' @export
 corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
 }
 
-# repurposed from dismo::mess(), based on .messi3()
+
+#' @title Compute multivariate environmental similarity surfaces (MESS)
+#' @description Compute multivariate environmental similarity surfaces (MESS) (i.e., Elith \emph{et al.} 2010).
+#' @details Repurposed from dismo::mess(), based on .messi3()
+#' @param p Raster object
+#' @param v Matrix with reference values
+#' @return 
+#' A RasterBrick with layers corresponding to the input layers and an additional layer with the mess values (if full=TRUE and nlayers(x) > 1) or a RasterLayer with the MESS values (if full=FALSE).
+#' @references 
+#' Elith J., M. Kearney M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342.
+#' @author 
+#' Based on \pkg{dismo}::\code{mess}
+#' Jean-Pierre Rossi <jean-pierre.rossi@supagro.inra.fr>, Robert Hijmans, Paulo van Breugel
+
 mess.vec <- function(p, v) {
   calc.mess <- function(p, v) {
     v <- stats::na.omit(v)
@@ -137,7 +174,7 @@ mess.vec <- function(p, v) {
   return(rmess)
 }
 
-#' @export
+# #' @export
 
 # var.importance <- function(mod) {
 #   if(!'MaxEnt' %in% class(mod)){
@@ -152,6 +189,29 @@ mess.vec <- function(p, v) {
 #   }
 # }
 
+
+#' @title Calculate Similarity of ENMs in Geographic Space
+#' 
+#' @description Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
+#' 
+#' @aliases calc.niche.overlap
+#' @usage 
+#' calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
+#' @param preds A rasterStack of at least 2 Maxent predictive raster layers.
+#' @param overlapStat The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
+#' @return 
+#' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
+#' @references 
+#' Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
+#' Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726.
+#' Warren, D. L., Glor, R. E., Turelli, M. and Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883.
+#' @author 
+#' Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}
+#' Robert Muscarella <bob.muscarella@gmail.com>
+#' @seealso 
+#' `nicheOverlap` in the \pkg{dismo} package
+
+#' @export
 calc.niche.overlap <- function(preds, overlapStat){
   n <- raster::nlayers(preds)
   ov <- matrix(nrow = n, ncol = n)
@@ -398,3 +458,50 @@ lookup.enm <- function(mod.name) {
               bioclim = enm.bc)
   return(x)
 }
+
+
+#' @title An object of class `ENMevaluation`.
+#' @description An example results file based on a call of `ENMevaluate` (see example).
+#' @details The dataset is based on the simulated dataset and call of \code{\link{ENMevaluate}} shown in the example section below.
+#' @format An object of class `ENMevaluation`.
+#' @source Simulated data from `ENMevaluate`.
+#' @examples
+#' require(raster)
+#' ### Simulated data environmental covariates
+#' set.seed(1)
+#' r1 <- raster(matrix(nrow=50, ncol=50, data=runif(10000, 0, 25)))
+#' r2 <- raster(matrix(nrow=50, ncol=50, data=rep(1:100, each=100), byrow=TRUE))
+#' r3 <- raster(matrix(nrow=50, ncol=50, data=rep(1:100, each=100)))
+#' r4 <- raster(matrix(nrow=50, ncol=50, data=c(rep(1,1000),rep(2,500)),byrow=TRUE))
+#' values(r4) <- as.factor(values(r4))
+#' env <- stack(r1,r2,r3,r4)
+#' 
+#' ### Simulate occurrence localities
+#' nocc <- 50
+#' x <- (rpois(nocc, 2) + abs(rnorm(nocc)))/11
+#' y <- runif(nocc, 0, .99)
+#' occ <- cbind(x,y)
+#' \dontrun{
+#' enmeval_results <- ENMevaluate(occs, env, n.bg=500, 
+#'                                partitions="block", 
+#'                                categoricals="layer.4",
+#'                                mod.name='maxnet', 
+#'                                tune.args=list(fc = c("L","LQ","LQH","LQHP","LQHPT"), 
+#'                                               rm = 1:4),
+#'                                overlap=T, overlapStat="D")
+#' }
+#' 
+#' data(enmeval_results)
+#' enmeval_results
+#' 
+#' ### See table of evaluation metrics
+#' enmeval_results@results
+#' 
+#' ### Plot prediction with lowest AICc
+#' plot(enmeval_results@predictions[[which (enmeval_results@results$delta.AICc == 0) ]])
+#' points(enmeval_results@occ.pts, pch=21, bg= enmeval_results@occ.grp)
+#' 
+#' ### Niche overlap statistics between model predictions
+#' enmeval_results@overlap
+"enmeval_results"
+
