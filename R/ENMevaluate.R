@@ -321,7 +321,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                      results = as.data.frame(res$stats), results.grp = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,
-                     occ.pts = occs, occ.grp = occ.grp,
+                     occ.pts = occs, occ.grp = occs.grp,
                      bg.pts = bg, bg.grp = bg.grp)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
