@@ -39,7 +39,6 @@
 NULL
 
 #' @rdname tune.enm
-
 tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                           partitions, tune.tbl, other.args, categoricals, 
                           occs.ind, doClamp, skipRasters, abs.auc.diff, numCores) {
@@ -179,12 +178,12 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train,
   or.mtp <- mean(pred.test < min.train.thr)
   # get 10 percentile training presence threshold (expected 0.1 omission)
   occs.train.n <- nrow(occs.train)
-  if(occs.train.n < 10) {
-    pct10.train <- floor(occs.train.n * 0.1)
+  if (occs.train.n < 10) {
+    pct90.train <- floor(occs.train.n * 0.9)
   } else {
-    pct10.train <- ceiling(occs.train.n * 0.1)
+    pct90.train <- ceiling(occs.train.n * 0.9)
   }
-  pct10.train.thr <- sort(pred.train)[pct10.train]
+  pct10.train.thr <- rev(sort(pred.train))[pct90.train]
   or.10p <- mean(pred.test < pct10.train.thr)
   
   # calculate MESS values if bg.test values are given
