@@ -146,8 +146,8 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       # run the current model k
       mod.k <- do.call(enm@fun, mod.k.args)
       # calculate the stats for model k
-      e <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k, enm,
-                     auc.train, mod.k, other.args, doClamp, abs.auc.diff)
+      e <- enm@kstats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
+                      auc.train, mod.k, other.args, doClamp, abs.auc.diff)
       kstats.enm[[k]] <- c(fold = k, e)
     } 
   }
@@ -158,37 +158,4 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
                  kstats = kstats, train.AUC = auc.train)
   
   return(cv.res)
-}
-
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, 
-                      enm, auc.train, mod, 
-                      other.args, doClamp, abs.auc.diff) {
-  # calculate auc on testing data
-  auc.test <- enm@auc(occs.test, bg.train, mod, other.args, doClamp)
-  # calculate auc diff
-  auc.diff <- auc.train - auc.test
-  if(abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
-  # get model predictions for training and testing data
-  # these predictions are used only for calculating omission rate, and
-  # thus should not need any specific parameter changes for maxent/maxnet
-  pred.train <- enm@pred(mod, occs.train, other.args, doClamp)
-  pred.test <- enm@pred(mod, occs.test, other.args, doClamp)
-  # get minimum training presence threshold (expected no omission)
-  min.train.thr <- min(pred.train)
-  or.mtp <- mean(pred.test < min.train.thr)
-  # get 10 percentile training presence threshold (expected 0.1 omission)
-  pct10.train.thr <- calc.10p.trainThresh(occs.train, pred.train)
-  or.10p <- mean(pred.test < pct10.train.thr)
-  
-  # calculate MESS values if bg.test values are given
-  if(!is.null(bg.test) & ncol(bg.test) > 1) {
-    mess.quant <- calc.mess.kstats(occs.train, bg.train, occs.test, bg.test)
-  }else{
-    mess.quant <- NULL
-  }
-  
-  stats <- c(auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
-             or.10p = or.10p, other = 3, mess.quant)
-  
-  return(stats)
 }
