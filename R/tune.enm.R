@@ -17,7 +17,7 @@
 #' @param partitions character of name of partitioning technique (see
 #' \code{?partitions})
 #' @param tune.tbl Data frame of tuning parameter combinations.
-#' @param tune.tbl.i Vector of one row in `tune.tbl` tuning parameter combinations.
+#' @param tune.settings Vector of tune settings from `tune.tbl`.
 #' @param other.args named list of any additional model arguments not specified 
 #' for tuning
 #' @param categoricals character vector of names of categorical 
@@ -87,8 +87,8 @@ tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       setTxtProgressBar(pb, i)
     }
     results[[i]] <- cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
-                           partitions, tune.tbl[i,], other.args, categoricals, 
-                           occs.ind, doClamp, skipRasters, abs.auc.diff)
+                           partitions, tune.settings = tune.tbl[i,], other.args, 
+                           categoricals, occs.ind, doClamp, skipRasters, abs.auc.diff)
   }
   close(pb)
   return(results)
@@ -96,11 +96,11 @@ tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
 
 #' @rdname tune.enm
 cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                   partitions, tune.tbl.i, other.args, categoricals, 
+                   partitions, tune.settings, other.args, categoricals, 
                    occs.ind, doClamp, skipRasters, abs.auc.diff) {
   
   # build the full model from all the data
-  mod.full.args <- enm@args(occs.vals, bg.vals, tune.tbl.i, other.args)
+  mod.full.args <- enm@args(occs.vals, bg.vals, tune.settings, other.args)
   mod.full <- do.call(enm@fun, mod.full.args)
   # calculate training auc
   auc.train <- enm@auc(occs.vals, bg.vals, mod.full, other.args, doClamp)
@@ -142,7 +142,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       bg.train.k <- bg.vals[bg.grp != k,, drop = FALSE]
       bg.test.k <- bg.vals[bg.grp == k,, drop = FALSE]
       # define model arguments for current model k
-      mod.k.args <- enm@args(occs.train.k, bg.train.k, tune.tbl.i, other.args)
+      mod.k.args <- enm@args(occs.train.k, bg.train.k, tune.settings, other.args)
       # run the current model k
       mod.k <- do.call(enm@fun, mod.k.args)
       # calculate the stats for model k
@@ -197,13 +197,13 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train,
     }
     mss <- mess.vec(p, v)
     mess.quant <- quantile(mss)
-    names(mess.quant) <- paste0("mess_", names(mess.quant))
+    names(mess.quant) <- paste0("mess.", gsub("%", "p", names(mess.quant)))
   }else{
     mess.quant <- NULL
   }
   
   stats <- c(auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
-             or.10p = or.10p, mess.quant)
+             or.10p = or.10p, other = 3, mess.quant)
   
   return(stats)
 }
