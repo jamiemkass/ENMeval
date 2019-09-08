@@ -128,7 +128,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
       auc.test <- enm@auc(occs.ind.vals, bg.vals, mod.full, other.args, doClamp)
       e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, enm,
-                     auc.train, mod.full, categoricals, other.args, doClamp, abs.auc.diff)
+                     auc.train, mod.full, other.args, doClamp, abs.auc.diff)
       kstats.enm[[1]] <- c(fold = 1, e)
     }
     # # if user selects to only calculate AICc, stop here
@@ -147,7 +147,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       mod.k <- do.call(enm@fun, mod.k.args)
       # calculate the stats for model k
       e <- evalStats(occs.train.k, bg.vals, occs.test.k, bg.test.k, enm,
-                     auc.train, mod.k, categoricals, other.args, doClamp, abs.auc.diff)
+                     auc.train, mod.k, other.args, doClamp, abs.auc.diff)
       kstats.enm[[k]] <- c(fold = k, e)
     } 
   }
@@ -160,9 +160,9 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
   return(cv.res)
 }
 
-#' @rdname tune.enm
-evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train, 
-                      mod, categoricals, other.args, doClamp, abs.auc.diff) {
+evalStats <- function(occs.train, bg.train, occs.test, bg.test, 
+                      enm, auc.train, mod, 
+                      other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
   auc.test <- enm@auc(occs.test, bg.train, mod, other.args, doClamp)
   # calculate auc diff
@@ -177,27 +177,12 @@ evalStats <- function(occs.train, bg.train, occs.test, bg.test, enm, auc.train,
   min.train.thr <- min(pred.train)
   or.mtp <- mean(pred.test < min.train.thr)
   # get 10 percentile training presence threshold (expected 0.1 omission)
-  occs.train.n <- nrow(occs.train)
-  if (occs.train.n < 10) {
-    pct90.train <- floor(occs.train.n * 0.9)
-  } else {
-    pct90.train <- ceiling(occs.train.n * 0.9)
-  }
-  pct10.train.thr <- rev(sort(pred.train))[pct90.train]
+  pct10.train.thr <- calc.10p.trainThresh(occs.train, pred.train)
   or.10p <- mean(pred.test < pct10.train.thr)
   
   # calculate MESS values if bg.test values are given
   if(!is.null(bg.test) & ncol(bg.test) > 1) {
-    p <- rbind(occs.train, bg.train)
-    v <- rbind(occs.test, bg.test)
-    cat.i <- which(names(occs.train) == categoricals)
-    if(length(cat.i) > 0) {
-      p <- p[,-cat.i]
-      v <- v[,-cat.i]
-    }
-    mss <- mess.vec(p, v)
-    mess.quant <- quantile(mss)
-    names(mess.quant) <- paste0("mess.", gsub("%", "p", names(mess.quant)))
+    mess.quant <- calc.mess.kstats(occs.train, bg.train, occs.test, bg.test)
   }else{
     mess.quant <- NULL
   }
