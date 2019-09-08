@@ -270,20 +270,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # if model settings for tuning were input, summarize by averaging all grp 
     # per model setting combination
     if(nset > 0) kstats.df <- dplyr::group_by_at(kstats.df, 1:nset)
-    kstats.avg.df <- kstats.df %>% 
-      dplyr::summarize(avg.test.AUC = mean(auc.test),
-                       var.test.AUC = corrected.var(auc.test, nk),
-                       min.test.AUC = min(auc.test),
-                       avg.diff.AUC = mean(auc.diff),
-                       var.diff.AUC = corrected.var(auc.diff, nk),
-                       max.diff.AUC = max(auc.diff),
-                       avg.test.orMTP = mean(or.mtp),
-                       var.test.orMTP = var(or.mtp),
-                       max.test.orMTP = max(or.mtp),
-                       avg.test.or10pct = mean(or.10p),
-                       var.test.or10pct = var(or.10p),
-                       max.test.or10pct = max(or.10p)) %>%
+    # if jackknife cross-validation (leave-one-out), correct variance for
+    # non-independent samples (Shcheglovitova & Anderson 2013)
+    var.calc <- ifelse(partitions == "jackknife", corrected.var, var)
+    # set the variables to summarize (excludes the tuning settings and the "fold" column)
+    vars.summarize <- names(kstats.df)[-1:-(nset+1)]
+    kstats.avg.df <- kstats.df %>% dplyr::summarize_at(vars.summarize, list(avg = mean, var = var.calc, 
+                                                                            min = min, max = max)) %>%
       dplyr::ungroup()
+    # change names
+    names(kstats.avg.df)[-1:-(nset)] <- gsub("(.*)_([a-z]{3}$)", "\\2.\\1", names(kstats.avg.df)[-1:-(nset)])
     # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
     if(nrow(tune.tbl) > 0) kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
     if(nset > 0) {
