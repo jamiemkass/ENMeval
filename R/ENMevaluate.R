@@ -151,7 +151,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   # for occs.ind settings, partitions should be NULL
   grps <- switch(partitions, 
                  jackknife = get.jackknife(occs, bg),
-                 randomkfold = get.randomkfold(occs, bg),
+                 randomkfold = get.randomkfold(occs, bg, kfolds),
                  block = get.block(occs, bg),
                  checkerboard1 = get.checkerboard1(occs, envs, bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(occs, envs, bg, aggregation.factor),
@@ -160,7 +160,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                  none = NULL)
   parts.msg <- switch(partitions,
                       jackknife = "Doing model evaluations with k-1 jackknife cross validation...\n",
-                      randomkfold = paste0("Doing model evaluations with random", get.randomkfold(occs, bg, kfolds), "-fold cross validation...\n"),
+                      randomkfold = paste0("Doing model evaluations with random ", kfolds, "-fold cross validation...\n"),
                       block = "Doing model evaluations with spatial block (4-fold) cross validation...\n",
                       checkerboard1 = "Doing model evaluations with checkerboard (2-fold) cross validation...\n",
                       checkerboard2 = "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
@@ -206,7 +206,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(is.null(user.enm)) enm <- lookup.enm(mod.name)
   # print model-specific message
   msg <- enm@msgs(tune.args)
-  message(paste("*** Running ENMevaluate using", msg, "***\n"))
+  message(paste("*** Running ENMeval v1.0.0 using", msg, "***\n"))
   
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
@@ -270,7 +270,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # per model setting combination
     if(nset > 0) kstats.df <- dplyr::group_by_at(kstats.df, 1:nset)
     # set the variables to summarize (excludes the tuning settings and the "fold" column)
-    vars.summarize <- names(kstats.df)[-1:-(nset+1)]
+    colsExcl <- seq(-1, -(nset+1))
+    vars.summarize <- names(kstats.df)[colsExcl]
     # if jackknife cross-validation (leave-one-out), correct variance for
     # non-independent samples (Shcheglovitova & Anderson 2013)
     if(partitions == "jackknife") {
@@ -283,7 +284,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
         dplyr::ungroup()
     }
     # change names
-    names(kstats.avg.df)[-1:-(nset)] <- gsub("(.*)_([a-z]{3}$)", "\\2.\\1", names(kstats.avg.df)[-1:-(nset)])
+    colsExcl <- seq(-1, -nset)
+    names(kstats.avg.df)[colsExcl] <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(kstats.avg.df)[colsExcl])
+    
     # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
     if(nrow(tune.tbl) > 0) kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
     if(nset > 0) {
