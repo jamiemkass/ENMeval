@@ -5,7 +5,7 @@ occs <- occs[!duplicated(occs),]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 which(rowSums(is.na(raster::extract(envs, occs))) > 0)
 bg <- dismo::randomPoints(envs, 1000)
-tune.args <- list(fc = c("L", "LQ", "H"), rm = seq(2,3,by=0.5))
+tune.args <- list(fc = c("L", "LQ"), rm = 2:3)
 # tune.args <- list(fc = "L", rm = 1)
 partitions <- "block"
 categoricals <- "biome"
