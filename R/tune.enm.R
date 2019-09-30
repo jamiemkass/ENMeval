@@ -146,7 +146,7 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       # run the current model k
       mod.k <- do.call(enm@fun, mod.k.args)
       # calculate the stats for model k
-      e <- enm@kstats(occs.train.k, bg.vals, occs.test.k, bg.test.k,
+      e <- enm@kstats(occs.train.k, bg.vals, occs.test.k, bg.test.k, categoricals,
                       auc.train, mod.k, other.args, doClamp, abs.auc.diff)
       kstats.enm[[k]] <- c(fold = k, e)
     } 
