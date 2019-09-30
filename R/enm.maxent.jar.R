@@ -79,7 +79,7 @@ kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals,
   }
   
   stats <- c(auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
-             or.10p = or.10p, other = 3, mess.quant)
+             or.10p = or.10p, mess.quant)
   
   return(stats)
 }

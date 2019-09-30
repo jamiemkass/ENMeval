@@ -291,12 +291,12 @@ get.jackknife <- function(occs, bg) {
 #' 
 #' @export
 
-get.randomkfold <- function(occs, bg, kgrp){
+get.randomkfold <- function(occs, bg, kfolds){
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occ.grp <- dismo::kfold(occs, kgrp)
+  occ.grp <- dismo::kfold(occs, kfolds)
   bg.grp <- rep(0, nrow(bg))
   out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
   return(out)	
