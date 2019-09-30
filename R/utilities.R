@@ -185,7 +185,7 @@ mess.vec <- function(p, v) {
   return(rmess)
 }
 
-calc.mess.kstats <- function(occs.train, bg.train, occs.test, bg.test) {
+calc.mess.kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals) {
   p <- rbind(occs.train, bg.train)
   v <- rbind(occs.test, bg.test)
   cat.i <- which(names(occs.train) == categoricals)

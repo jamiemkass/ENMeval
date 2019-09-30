@@ -52,7 +52,7 @@ auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
   return(e)
 }
 
-kstats <- function(occs.train, bg.train, occs.test, bg.test, 
+kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals,
                    auc.train, mod, other.args, doClamp, abs.auc.diff) {
   # calculate auc on testing data
   auc.test <- auc(occs.test, bg.train, mod, other.args, doClamp)
@@ -73,7 +73,7 @@ kstats <- function(occs.train, bg.train, occs.test, bg.test,
   
   # calculate MESS values if bg.test values are given
   if(!is.null(bg.test) & ncol(bg.test) > 1) {
-    mess.quant <- calc.mess.kstats(occs.train, bg.train, occs.test, bg.test)
+    mess.quant <- calc.mess.kstats(occs.train, bg.train, occs.test, bg.test, categoricals)
   }else{
     mess.quant <- NULL
   }
