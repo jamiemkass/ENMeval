@@ -50,8 +50,7 @@
 #' @param abs.auc.diff boolean (TRUE or FALSE); if TRUE, take absolute value of
 #' AUCdiff; default is TRUE
 #' @param parallel boolean (TRUE or FALSE); if TRUE, run with parallel processing
-#' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores
-#' for parallel processing
+#' @param numCores numeric for number of cores to use for parallel processing
 #' @param updateProgress boolean (TRUE or FALSE); if TRUE, use shiny progress
 #' bar; only for use in shiny apps
 #'
