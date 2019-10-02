@@ -10,18 +10,15 @@
 \usage{
 tune.parallel(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, partitions,
   tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
-  abs.auc.diff, numCores)
+  abs.auc.diff, numCores, parallelType)
 
 tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, partitions,
   tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
   abs.auc.diff, updateProgress)
 
 cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, partitions,
-  tune.tbl.i, other.args, categoricals, occs.ind, doClamp, skipRasters,
+  tune.settings, other.args, categoricals, occs.ind, doClamp, skipRasters,
   abs.auc.diff)
-
-evalStats(occs.train, bg.train, occs.test, bg.test, enm, auc.train, mod,
-  categoricals, other.args, doClamp, abs.auc.diff)
 }
 \arguments{
 \item{occs.vals}{matrix or data frame of environmental values corresponding
@@ -71,7 +68,7 @@ AUCdiff; default is TRUE}
 \item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores
 for parallel processing}
 
-\item{tune.tbl.i}{Vector of one row in `tune.tbl` tuning parameter combinations.}
+\item{tune.settings}{Vector of tune settings from `tune.tbl`.}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.

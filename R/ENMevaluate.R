@@ -51,6 +51,7 @@
 #' AUCdiff; default is TRUE
 #' @param parallel boolean (TRUE or FALSE); if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
+#' @param parallelType character; either "doParallel" or "doSNOW"
 #' @param updateProgress boolean (TRUE or FALSE); if TRUE, use shiny progress
 #' bar; only for use in shiny apps
 #'
@@ -69,7 +70,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                         partitions = NULL, occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
-                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, updateProgress = FALSE,
+                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW",
+                        updateProgress = FALSE,
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
                         algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL,
@@ -214,7 +216,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(parallel) {
     results <- tune.parallel(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                              partitions, tune.tbl, other.args, categoricals, 
-                             occs.ind, doClamp, skipRasters, abs.auc.diff, numCores)  
+                             occs.ind, doClamp, skipRasters, abs.auc.diff, numCores, parallelType)  
   }else{
     results <- tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                             partitions, tune.tbl, other.args, categoricals, 

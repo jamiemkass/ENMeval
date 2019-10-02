@@ -41,22 +41,29 @@ NULL
 #' @rdname tune.enm
 tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
                           partitions, tune.tbl, other.args, categoricals, 
-                          occs.ind, doClamp, skipRasters, abs.auc.diff, numCores) {
+                          occs.ind, doClamp, skipRasters, abs.auc.diff, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
     numCores <- allCores
   }
   cl <- parallel::makeCluster(numCores)
-  doSNOW::registerDoSNOW(cl)
-  numCoresUsed <- foreach::getDoParWorkers()
-  message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
-  
-  message("Running in parallel...")
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   pb <- txtProgressBar(0, n, style = 3)
   progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress=progress)
+  
+  if(parallelType == "doParallel") {
+    doParallel::registerDoParallel(cl)
+    opts <- NULL
+  } else if(parallelType == "doSNOW") {
+    doSNOW::registerDoSNOW(cl)
+    opts <- list(progress=progress)
+  }
+  numCoresUsed <- foreach::getDoParWorkers()
+  message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
+  
+  message(paste0("Running in parallel using ", parallelType, "..."))
+  
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts) %dopar% {
     cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
            partitions, tune.tbl[i,], other.args, categoricals, 

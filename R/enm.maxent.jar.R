@@ -41,7 +41,7 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
   if(!grepl("Q", tune.tbl.i$fc)) out$args <- c(out$args, "noquadratic")
   if(!grepl("H", tune.tbl.i$fc)) out$args <- c(out$args, "nohinge")
   if(!grepl("P", tune.tbl.i$fc)) out$args <- c(out$args, "noproduct")
-  if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold")
+  if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold") else out$args <- c(out$args, "threshold")
   out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
   out <- c(out, other.args)
   return(out)
