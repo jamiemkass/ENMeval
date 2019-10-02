@@ -2,6 +2,8 @@
 # bioclim ENMdetails object ####
 ################################# #
 
+name <- "bioclim"
+
 fun <- dismo::bioclim
 
 pkgs <- c("dismo", "raster")
@@ -17,6 +19,8 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
   out <- c(out, other.args)
   return(out)
 }
+
+aic <- function(occs, nparam, mod.full.pred.all) NULL
 
 auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
   e <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)@auc
@@ -66,6 +70,7 @@ nparams <- function(mod) {
   length(mod@min)
 }
 
-enm.bioclim <- ENMdetails(fun = fun, pkgs = pkgs, msgs = msgs, 
-                     args = args, auc = auc, kstats = kstats, 
+#' @export
+enm.bioclim <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
+                     args = args, aic = aic, auc = auc, kstats = kstats, 
                      pred = pred, nparams = nparams)

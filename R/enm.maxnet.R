@@ -2,6 +2,8 @@
 # maxnet ENMdetails object ####
 ################################# #
 
+name <- "maxnet"
+
 fun <- maxnet::maxnet
 
 pkgs <- c("dismo", "raster", "maxnet")
@@ -30,6 +32,10 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
   out$regmult <- tune.tbl.i$rm
   out <- c(out, other.args)
   return(out)
+}
+
+aic <- function(occs, nparams, mod.full.pred.all) {
+  calc.aicc(occs, nparams, mod.full.pred.all)
 }
 
 auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
@@ -78,6 +84,7 @@ nparams <- function(mod) {
   length(mod$betas)
 }
 
-enm.maxnet <- ENMdetails(fun = fun, pkgs = pkgs, msgs = msgs, 
-                        args = args, auc = auc, kstats = kstats, 
+#' @export
+enm.maxnet <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
+                        args = args, aic = aic, auc = auc, kstats = kstats, 
                         pred = pred, nparams = nparams)

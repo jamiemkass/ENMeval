@@ -6,15 +6,16 @@
 \usage{
 ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
   bg.vals = NULL, tune.args = NULL, other.args = NULL,
-  categoricals = NULL, mod.name, user.enm = NULL, partitions = NULL,
-  occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, kfolds = NA,
-  aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
-  overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
-  abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
-  parallelType = NULL, updateProgress = FALSE, occ = NULL,
-  env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
-  algorithm = NULL, method = NULL, bin.output = NULL,
-  rasterPreds = NULL, clamp = NULL, progbar = NULL)
+  categoricals = NULL, mod.name = NULL, user.enm = NULL,
+  partitions = NULL, occ.grp = NULL, bg.grp = NULL,
+  occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2),
+  n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"),
+  doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE,
+  parallel = FALSE, numCores = NULL, parallelType = "doSNOW",
+  updateProgress = FALSE, occ = NULL, env = NULL, bg.coords = NULL,
+  RMvalues = NULL, fc = NULL, algorithm = NULL, method = NULL,
+  bin.output = NULL, rasterPreds = NULL, clamp = NULL,
+  progbar = NULL)
 }
 \arguments{
 \item{occs}{matrix or data frame with two columns for longitude and latitude 

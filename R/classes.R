@@ -97,25 +97,39 @@ setMethod("show",
 
 #' @export
 ENMdetails <- setClass("ENMdetails",
-                       slots = c(fun = 'function',
+                       slots = c(name = 'character',
+                                 fun = 'function',
                                  pkgs = 'character',
                                  msgs = 'function',
                                  args = 'function',
+                                 aic = 'function',
                                  auc = 'function',
                                  kstats = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(fun, pkgs, msgs, args, auc, kstats, pred, nparams) {
+ENMdetails <- function(name, fun, pkgs, msgs, args, aic, auc, kstats, pred, nparams) {
   # stopifnot(is.function(fun))
   # stopifnot(is.function(msgs))
   # stopifnot(is.function(args))
   # stopifnot(is.function(auc))
   # stopifnot(is.function(pred))
   # stopifnot(is.function(nparams))
-  new("ENMdetails", fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      auc = auc, kstats = kstats, pred = pred, nparams = nparams)
+  new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
+      aic = aic, auc = auc, kstats = kstats, pred = pred, nparams = nparams)
 }
+
+setGeneric("enm.name", function(x) standardGeneric("enm.name"))
+setGeneric("enm.name<-", function(x, value) standardGeneric("enm.name<-"))
+#' @export
+setMethod("enm.name", "ENMdetails", function(x) x@name)
+#' @export
+setMethod("enm.name<-", "ENMdetails", function(x, value) {
+  x@name <- value
+  validObject(x)
+  x
+})
+
 
 setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
 setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
@@ -157,6 +171,17 @@ setMethod("enm.args", "ENMdetails", function(x) x@args)
 #' @export
 setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x@args <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.aic", function(x) standardGeneric("enm.aic"))
+setGeneric("enm.aic<-", function(x, value) standardGeneric("enm.aic<-"))
+#' @export
+setMethod("enm.aic", "ENMdetails", function(x) x@aic)
+#' @export
+setMethod("enm.aic<-", "ENMdetails", function(x, value) {
+  x@aic <- value
   validObject(x)
   x
 })

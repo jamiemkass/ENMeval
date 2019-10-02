@@ -17,9 +17,9 @@ maxnet.predictRaster <- function(mod, envs, doClamp, type, other.args) {
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
 #' and Seifert (2011).
-#' @param nparams integer; number of model parameters (non-zero coefficients)
 #' @param occs data frame; longitude (x) and latitude (y) of occurrence 
 #' localities
+#' @param nparam integer; number of model parameters (non-zero coefficients)
 #' @param preds Raster*; Maxent model predictions from \code{dismo::predict()}
 #' @return data frame with four columns:
 #' \code{AICc} is the Akaike Information Criterion corrected for small sample
@@ -80,11 +80,11 @@ maxnet.predictRaster <- function(mod, envs, doClamp, type, other.args) {
 #' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
 
 #' @export
-calc.aicc <- function(nparams, occs, preds) {
+calc.aicc <- function(occs, nparam, preds) {
   # only functional for Maxent models currently
-  out <- as.data.frame(matrix(nrow = length(nparams), ncol = 3, 
+  out <- as.data.frame(matrix(nrow = length(nparam), ncol = 3, 
                               dimnames = list(NULL, c("AICc", "delta.AICc", "w.AIC"))))
-  AIC.valid <- nparams < nrow(occs)
+  AIC.valid <- nparam < nrow(occs)
   if(raster::nlayers(preds) == 0) {
     warning("Cannot calculate AICc without prediction rasters... returning NAs.", immediate. = TRUE)
   }else{
@@ -94,7 +94,7 @@ calc.aicc <- function(nparams, occs, preds) {
     #   LL <- colSums(log(vals/probsum), na.rm=T)
     # The corrected calculation (since v.0.1.1) is:
     LL <- colSums(log(t(t(vals)/probsum)), na.rm=T)
-    AICc <- (2*nparams - 2*LL) + (2*(nparams)*(nparams+1)/(nrow(occs)-nparams-1))
+    AICc <- (2*nparam - 2*LL) + (2*(nparam)*(nparam+1)/(nrow(occs)-nparam-1))
     AICc[AIC.valid==FALSE] <- NA
     AICc[is.infinite(AICc)] <- NA
     if(sum(is.na(AICc))==length(AICc)){
