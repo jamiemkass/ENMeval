@@ -65,7 +65,7 @@
 #' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
-                        tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name,
+                        tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
                         user.enm = NULL,
                         partitions = NULL, occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
@@ -95,8 +95,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
   
-  if(is.null(mod.name)) {
-    stop("Please select a model name.\n")
+  if(is.null(mod.name) & is.null(user.enm)) {
+    stop("Please select a model name (mod.name) or specify a user model (user.enm).\n")
   }
   
   # record start time
@@ -112,9 +112,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(!(partitions %in% all.partitions)) {
     stop("Please enter an accepted partition method.\n")
   }
-  if(is.null(tune.args) & mod.name != "bioclim") {
-    stop("Please specify tuning.args.\n")
-  }
+  # if(is.null(tune.args) & !is.null(mod.name) & mod.name != "bioclim") {
+    # stop("Please specify tuning.args.\n")
+  # }
   
   # if occs is combined occurrence and background with environmental
   # predictor values (SWD format)
@@ -205,7 +205,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # choose a built-in ENMdetails object matching the input model name
   # unless the model is chosen by the user
-  if(is.null(user.enm)) enm <- lookup.enm(mod.name)
+  if(is.null(user.enm)) {
+    enm <- lookup.enm(mod.name)
+  }else{
+    enm <- user.enm
+  }
   # print model-specific message
   msg <- enm@msgs(tune.args)
   message(paste("*** Running ENMeval v1.0.0 using", msg, "***\n"))
@@ -307,12 +311,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, enm@nparams)
-  # calculate AICc for Maxent models
-  if(mod.name %in% c("maxent.jar", "maxnet")) {
-    stats.df <- dplyr::bind_cols(stats.df, calc.aicc(nparams, occs, mod.full.pred.all))
-  }else{
-    warning(paste0("Not able to calculate AICc for ", mod.name, "... returning NAs.\n"))
-  }
+  # calculate AICc
+  stats.df <- dplyr::bind_cols(stats.df, enm@aic(occs, nparams, mod.full.pred.all))
   stats.df$nparam <- nparams
   # stats.df <- tibble::as_tibble(stats.df)
   kstats.df <- as.data.frame(kstats.df)
@@ -322,7 +322,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   
   if(is.null(occs.grp)) occs.grp <- 0
   if(is.null(bg.grp)) bg.grp <- 0
-  e <- ENMevaluation(algorithm = mod.name, tune.settings = tune.tbl,
+  e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
                      results = as.data.frame(res$stats), results.grp = res$kstats,
                      predictions = res$preds, models = res$mods, 
                      partition.method = partitions,

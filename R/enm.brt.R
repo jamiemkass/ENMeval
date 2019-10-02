@@ -2,6 +2,8 @@
 # brt ENMdetails object ####
 ################################# #
 
+name <- "brt"
+
 fun <- dismo::gbm.step
 
 pkgs <- c("dismo", "raster", "gbm")
@@ -30,6 +32,8 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
   out <- c(out, other.args)
   return(out)
 }
+
+aic <- function(occs, nparam, mod.full.pred.all) NULL
 
 auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
   e <- dismo::evaluate(occs.vals, bg.vals, mod, n.trees = length(mod$trees))@auc
@@ -82,6 +86,7 @@ nparams <- function(mod) {
   length(mod$var.names)
 }
 
-enm.brt <- ENMdetails(fun = fun, pkgs = pkgs, msgs = msgs, 
-                      args = args, auc = auc, kstats = kstats,
+#' @export
+enm.brt <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
+                      args = args, aic = aic, auc = auc, kstats = kstats,
                       pred = pred, nparams = nparams)

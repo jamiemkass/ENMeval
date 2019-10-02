@@ -2,6 +2,8 @@
 # maxent.jar ENMdetails object ####
 ################################# #
 
+name <- "maxent.jar"
+
 fun <- dismo::maxent
 pkgs <- c("dismo", "raster", "rJava")
 msgs <- function(tune.args) {
@@ -45,6 +47,10 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
   out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
   out <- c(out, other.args)
   return(out)
+}
+
+aic <- function(occs, nparam, mod.full.pred.all) {
+  calc.aicc(occs, nparam, mod.full.pred.all)
 }
 
 auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
@@ -96,6 +102,7 @@ nparams <- function(mod) {
   return(np)
 }
 
-enm.maxent.jar <- ENMdetails(fun = fun, pkgs = pkgs, msgs = msgs, 
-                        args = args, auc = auc, kstats = kstats, 
+#' @export
+enm.maxent.jar <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
+                        args = args, aic = aic, auc = auc, kstats = kstats, 
                         pred = pred, nparams = nparams)
