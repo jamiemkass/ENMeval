@@ -13,22 +13,23 @@ get.block(occs, bg)
 
 get.checkerboard1(occs, envs, bg, aggregation.factor)
 
-get.checkerboard2(occs, envs, bg, aggregation.factor)
+get.checkerboard2(occs, envs, bg, aggregation.factor,
+  gridSampleN = 10000)
 
 get.jackknife(occs, bg)
 
-get.randomkfold(occs, bg, kgrp)
+get.randomkfold(occs, bg, kfolds)
 }
 \arguments{
 \item{occs}{Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.}
 
 \item{aggregation.factor}{A vector or list of 1 or 2 numbers giving the scale for aggregation used for the \code{get.checkerboard1} and \code{get.checkerboard2} methods.  If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.}
 
+\item{kfolds}{Number of random \emph{k}-folds for \code{get.randomkfold} method.}
+
 \item{bg.coords}{Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.}
 
 \item{env}{RasterStack of environmental predictor variables.}
-
-\item{kfolds}{Number of random \emph{k}-folds for \code{get.randomkfold} method.}
 }
 \value{
 A named list of two items:

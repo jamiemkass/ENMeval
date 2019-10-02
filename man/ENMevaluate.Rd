@@ -11,10 +11,10 @@ ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
   overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
   abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
-  updateProgress = FALSE, occ = NULL, env = NULL, bg.coords = NULL,
-  RMvalues = NULL, fc = NULL, algorithm = NULL, method = NULL,
-  bin.output = NULL, rasterPreds = NULL, clamp = NULL,
-  progbar = NULL)
+  parallelType = NULL, updateProgress = FALSE, occ = NULL,
+  env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
+  algorithm = NULL, method = NULL, bin.output = NULL,
+  rasterPreds = NULL, clamp = NULL, progbar = NULL)
 }
 \arguments{
 \item{occs}{matrix or data frame with two columns for longitude and latitude 
@@ -90,8 +90,9 @@ AUCdiff; default is TRUE}
 
 \item{parallel}{boolean (TRUE or FALSE); if TRUE, run with parallel processing}
 
-\item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores
-for parallel processing}
+\item{numCores}{numeric for number of cores to use for parallel processing}
+
+\item{parallelType}{character; either "doParallel" or "doSNOW"}
 
 \item{updateProgress}{boolean (TRUE or FALSE); if TRUE, use shiny progress
 bar; only for use in shiny apps}

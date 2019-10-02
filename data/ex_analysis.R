@@ -31,6 +31,9 @@ bg.vals <- raster::extract(envs, bg)
 
 ## regular run
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
+## regular run with NA in occurrences
+# occs[18,] <- c(0,0)
+# e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 ## run with SWD
 # e <- ENMevaluate(occs, bg = bg, occs.vals = occs.vals, bg.vals = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with independent testing data

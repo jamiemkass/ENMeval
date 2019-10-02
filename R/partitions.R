@@ -143,10 +143,10 @@ get.block <- function(occs, bg){
   bvert <- mean(c(max(grp1[, 1]), min(grp2[, 1])))
   tvert <- mean(c(max(grp3[, 1]), min(grp4[, 1])))
   horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))
-  bggrp1 <- bg[bg[, 2] <= horz & bg[, 1]<bvert,]
-  bggrp2 <- bg[bg[, 2] < horz & bg[, 1]>=bvert,]
-  bggrp3 <- bg[bg[, 2] > horz & bg[, 1]<=tvert,]
-  bggrp4 <- bg[bg[, 2] >= horz & bg[, 1]>tvert,]
+  bggrp1 <- bg[bg[, 2] <= horz & bg[, 1] < bvert,]
+  bggrp2 <- bg[bg[, 2] <= horz & bg[, 1] >= bvert,]
+  bggrp3 <- bg[bg[, 2] > horz & bg[, 1] <= tvert,]
+  bggrp4 <- bg[bg[, 2] > horz & bg[, 1] > tvert,]
   
   r <- data.frame()
   if (nrow(grp1) > 0) grp1$grp <- 1; r <- rbind(r, grp1)
@@ -216,7 +216,7 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
 #' 
 #' @export
 
-get.checkerboard2 <- function(occs, envs, bg, aggregation.factor){
+get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
@@ -226,18 +226,18 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor){
   if (length(aggregation.factor) == 1) aggregation.factor <- rep(aggregation.factor, 2)
   grid <- aggregate(envs[[1]], fact=aggregation.factor[1])
   grid2 <- aggregate(grid, aggregation.factor[2])
-  w <- gridSample(occs, grid, n=1e4, chess='white')
-  b <- gridSample(occs, grid, n=1e4, chess='black')
-  ww <- gridSample(w, grid2, n=1e4, chess='white')
-  wb <- gridSample(w, grid2, n=1e4, chess='black')
-  bw <- gridSample(b, grid2, n=1e4, chess='white')
-  bb <- gridSample(b, grid2, n=1e4, chess='black')
-  bgw <- gridSample(bg, grid, n=1e4, chess='white')
-  bgb <- gridSample(bg, grid, n=1e4, chess='black')
-  bgww <- gridSample(bgw, grid2, n=1e4, chess='white')
-  bgwb <- gridSample(bgw, grid2, n=1e4, chess='black')
-  bgbw <- gridSample(bgb, grid2, n=1e4, chess='white')
-  bgbb <- gridSample(bgb, grid2, n=1e4, chess='black')
+  w <- gridSample(occs, grid, n=gridSampleN, chess='white')
+  b <- gridSample(occs, grid, n=gridSampleN, chess='black')
+  ww <- gridSample(w, grid2, n=gridSampleN, chess='white')
+  wb <- gridSample(w, grid2, n=gridSampleN, chess='black')
+  bw <- gridSample(b, grid2, n=gridSampleN, chess='white')
+  bb <- gridSample(b, grid2, n=gridSampleN, chess='black')
+  bgw <- gridSample(bg, grid, n=gridSampleN, chess='white')
+  bgb <- gridSample(bg, grid, n=gridSampleN, chess='black')
+  bgww <- gridSample(bgw, grid2, n=gridSampleN, chess='white')
+  bgwb <- gridSample(bgw, grid2, n=gridSampleN, chess='black')
+  bgbw <- gridSample(bgb, grid2, n=gridSampleN, chess='white')
+  bgbb <- gridSample(bgb, grid2, n=gridSampleN, chess='black')
   
   r <- data.frame()
   if (nrow(ww) > 0) ww$grp <- 1; r <- rbind(r, ww)

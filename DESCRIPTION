@@ -11,6 +11,7 @@ Encoding: UTF-8
 Depends: methods, R (>= 3.5.0), raster
 Imports: dismo,
   doSNOW, 
+  doParallel,
   parallel,
 	foreach, 
 	utils, 
