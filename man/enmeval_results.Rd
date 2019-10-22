@@ -34,7 +34,7 @@ x <- (rpois(nocc, 2) + abs(rnorm(nocc)))/11
 y <- runif(nocc, 0, .99)
 occ <- cbind(x,y)
 \dontrun{
-enmeval_results <- ENMevaluate(occs, env, n.bg=500, 
+enmeval_results <- ENMevaluate(occ, env, n.bg=500, 
                                partitions="block", 
                                categoricals="layer.4",
                                mod.name='maxnet', 
