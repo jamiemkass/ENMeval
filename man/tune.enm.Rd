@@ -5,51 +5,27 @@
 \alias{tune.parallel}
 \alias{tune.regular}
 \alias{cv.enm}
-\alias{evalStats}
 \title{Functions for tuning ENMs}
 \usage{
-tune.parallel(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, partitions,
-  tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
-  abs.auc.diff, numCores, parallelType)
+tune.parallel(d, envs, enm, tune.tbl, other.args, occs.ind, doClamp,
+  skipRasters, abs.auc.diff, numCores, parallelType)
 
-tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, partitions,
-  tune.tbl, other.args, categoricals, occs.ind, doClamp, skipRasters,
-  abs.auc.diff, updateProgress)
+tune.regular(d, envs, enm, tune.tbl, other.args, occs.ind, doClamp,
+  skipRasters, abs.auc.diff, updateProgress)
 
-cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, partitions,
-  tune.settings, other.args, categoricals, occs.ind, doClamp, skipRasters,
+cv.enm(d, envs, enm, tune.i, other.args, occs.ind, doClamp, skipRasters,
   abs.auc.diff)
 }
 \arguments{
-\item{occs.vals}{matrix or data frame of environmental values corresponding
-to occurrence localities, intended to be input when environmental rasters
-are not used (\code{envs} is NULL)}
-
-\item{bg.vals}{matrix or data frame of environmental values corresponding
-to background (or pseudo-absence) localities, intended to be input when 
-environmental rasters are not used (\code{envs} is NULL)}
-
-\item{occs.grp}{numeric vector of partition group (fold) for each
-occurrence locality, intended for user-defined partitions}
-
-\item{bg.grp}{numeric vector of partition group (fold) for each background 
-(or pseudo-absence) locality, intended for user-defined partitions}
-
 \item{envs}{Raster* object of environmental variables (must be in 
 same geographic projection as occurrence data)}
 
 \item{enm}{Object of class \link{ENMdetails}.}
 
-\item{partitions}{character of name of partitioning technique (see
-\code{?partitions})}
-
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
 
 \item{other.args}{named list of any additional model arguments not specified 
 for tuning}
-
-\item{categoricals}{character vector of names of categorical 
-environmental variables}
 
 \item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
 of occurrence localities, in that order, intended for independent evaluation;
@@ -68,7 +44,27 @@ AUCdiff; default is TRUE}
 \item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores
 for parallel processing}
 
+\item{occs.vals}{matrix or data frame of environmental values corresponding
+to occurrence localities, intended to be input when environmental rasters
+are not used (\code{envs} is NULL)}
+
+\item{bg.vals}{matrix or data frame of environmental values corresponding
+to background (or pseudo-absence) localities, intended to be input when 
+environmental rasters are not used (\code{envs} is NULL)}
+
+\item{occs.grp}{numeric vector of partition group (fold) for each
+occurrence locality, intended for user-defined partitions}
+
+\item{bg.grp}{numeric vector of partition group (fold) for each background 
+(or pseudo-absence) locality, intended for user-defined partitions}
+
+\item{partitions}{character of name of partitioning technique (see
+\code{?partitions})}
+
 \item{tune.settings}{Vector of tune settings from `tune.tbl`.}
+
+\item{categoricals}{character vector of names of categorical 
+environmental variables}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.

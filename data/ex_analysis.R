@@ -4,7 +4,8 @@ occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 occs <- occs[!duplicated(occs),]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 which(rowSums(is.na(raster::extract(envs, occs))) > 0)
-bg <- dismo::randomPoints(envs, 1000)
+bg <- as.data.frame(dismo::randomPoints(envs, 1000))
+names(bg) <- names(occs)
 tune.args <- list(fc = c("L", "LQ"), rm = 2:3)
 # tune.args <- list(fc = "L", rm = 1)
 partitions <- "block"
@@ -17,8 +18,8 @@ abs.auc.diff <- TRUE
 
 # 
 # # SWD
-occs.vals <- raster::extract(envs, occs)
-bg.vals <- raster::extract(envs, bg)
+occs <- cbind(occs, raster::extract(envs, occs))
+bg <- cbind(bg, raster::extract(envs, bg))
 # 
 # # divide all grid cells in study extent into same partition groups
 # # as the real occurrence data

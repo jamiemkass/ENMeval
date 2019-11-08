@@ -103,20 +103,20 @@ ENMdetails <- setClass("ENMdetails",
                                  msgs = 'function',
                                  args = 'function',
                                  aic = 'function',
-                                 auc = 'function',
+                                 eval = 'function',
                                  kstats = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, aic, auc, kstats, pred, nparams) {
+ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval, kstats, pred, nparams) {
   # stopifnot(is.function(fun))
   # stopifnot(is.function(msgs))
   # stopifnot(is.function(args))
-  # stopifnot(is.function(auc))
+  # stopifnot(is.function(eval))
   # stopifnot(is.function(pred))
   # stopifnot(is.function(nparams))
   new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      aic = aic, auc = auc, kstats = kstats, pred = pred, nparams = nparams)
+      aic = aic, eval = eval, kstats = kstats, pred = pred, nparams = nparams)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -186,13 +186,13 @@ setMethod("enm.aic<-", "ENMdetails", function(x, value) {
   x
 })
 
-setGeneric("enm.auc", function(x) standardGeneric("enm.auc"))
-setGeneric("enm.auc<-", function(x, value) standardGeneric("enm.auc<-"))
+setGeneric("enm.eval", function(x) standardGeneric("enm.eval"))
+setGeneric("enm.eval<-", function(x, value) standardGeneric("enm.eval<-"))
 #' @export
-setMethod("enm.auc", "ENMdetails", function(x) x@auc)
+setMethod("enm.eval", "ENMdetails", function(x) x@eval)
 #' @export
-setMethod("enm.auc<-", "ENMdetails", function(x, value) {
-  x@auc <- value
+setMethod("enm.eval<-", "ENMdetails", function(x, value) {
+  x@eval <- value
   validObject(x)
   x
 })

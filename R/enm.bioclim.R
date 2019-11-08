@@ -22,8 +22,8 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
 
 aic <- function(occs, nparam, mod.full.pred.all) NULL
 
-auc <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
-  e <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)@auc
+eval <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
+  e <- dismo::evaluate(occs.vals, bg.vals, mod, tails = other.args$tails)
   return(e)
 }
 
@@ -72,5 +72,5 @@ nparams <- function(mod) {
 
 #' @export
 enm.bioclim <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
-                     args = args, aic = aic, auc = auc, kstats = kstats, 
+                     args = args, aic = aic, eval = eval, kstats = kstats, 
                      pred = pred, nparams = nparams)

@@ -1,3 +1,32 @@
+#' Pipe operator
+#'
+#' @name %>%
+#' @rdname pipe
+#' @keywords internal
+#' @export
+#' @importFrom magrittr %>%
+#' @usage lhs \%>\% rhs
+NULL
+
+#' @export
+remove.env.na <- function(d) {
+  d.envs <- d[,3:ncol(d)]
+  d.envs.occs <- d.envs[d.envs$pb == 1,]
+  d.envs.bg <- d.envs[d.envs$pb == 0,]
+  d.envs.occs.NA <- which(rowSums(is.na(d.envs.occs)) > 0)
+  occs.msg <- paste0("occurrences: ", d.envs.occs.NA)
+  d.envs.bg.NA <- which(rowSums(is.na(d.envs.bg)) > 0)
+  bg.msg <- paste0("background: ", d.envs.bg.NA)
+  if(length(d.envs.occs.NA) > 0 | length(d.envs.occs.NA) > 0) {
+    msg <- dplyr::case_when(length(d.envs.occs.NA) > 0 & length(d.envs.occs.NA) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
+                            length(d.envs.occs.NA) > 0 ~ occs.msg,
+                            length(d.envs.bg.NA) > 0 ~ bg.msg)
+    message(paste0("Records found with NA for at least one predictor variable with the following row numbers: (", msg, "). Removing from analysis...\n"))
+    d.naRem <- d[-c(d.envs.occs.NA, d.envs.bg.NA),]
+    return(d.naRem)    
+  }
+  return(d)
+}
 
 #' @export
 maxnet.predictRaster <- function(mod, envs, doClamp, type, other.args) {
@@ -80,21 +109,20 @@ maxnet.predictRaster <- function(mod, envs, doClamp, type, other.args) {
 #' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
 
 #' @export
-calc.aicc <- function(occs, nparam, preds) {
+calc.aicc <- function(occs.preds, nparams, preds) {
   # only functional for Maxent models currently
-  out <- as.data.frame(matrix(nrow = length(nparam), ncol = 3, 
+  out <- as.data.frame(matrix(nrow = length(nparams), ncol = 3, 
                               dimnames = list(NULL, c("AICc", "delta.AICc", "w.AIC"))))
-  AIC.valid <- nparam < nrow(occs)
+  AIC.valid <- nparams < nrow(occs.preds)
   if(raster::nlayers(preds) == 0) {
     warning("Cannot calculate AICc without prediction rasters... returning NAs.", immediate. = TRUE)
   }else{
-    vals <- raster::extract(preds, occs)
     probsum <- raster::cellStats(preds, sum)
     # The log-likelihood was incorrectly calculated (see next line) in ENMeval v.0.1.0 when working with >1 model at once.
     #   LL <- colSums(log(vals/probsum), na.rm=T)
     # The corrected calculation (since v.0.1.1) is:
-    LL <- colSums(log(t(t(vals)/probsum)), na.rm=T)
-    AICc <- (2*nparam - 2*LL) + (2*(nparam)*(nparam+1)/(nrow(occs)-nparam-1))
+    LL <- colSums(log(t(t(occs.preds)/probsum)), na.rm=T)
+    AICc <- (2*nparams - 2*LL) + (2*(nparams)*(nparams+1)/(nrow(occs.preds)-nparams-1))
     AICc[AIC.valid==FALSE] <- NA
     AICc[is.infinite(AICc)] <- NA
     if(sum(is.na(AICc))==length(AICc)){
@@ -185,13 +213,13 @@ mess.vec <- function(p, v) {
   return(rmess)
 }
 
-calc.mess.kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals) {
+calc.mess.kstats <- function(occs.train, bg.train, occs.test, bg.test) {
   p <- rbind(occs.train, bg.train)
   v <- rbind(occs.test, bg.test)
-  cat.i <- which(names(occs.train) == categoricals)
-  if(length(cat.i) > 0) {
-    p <- p[,-cat.i]
-    v <- v[,-cat.i]
+  cat.j <- which(sapply(occs.train, is.factor) == 1)
+  if(length(cat.j) > 0) {
+    p <- p[,-cat.j]
+    v <- v[,-cat.j]
   }
   mss <- mess.vec(p, v)
   mess.quant <- quantile(mss)
