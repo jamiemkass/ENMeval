@@ -4,18 +4,17 @@
 \alias{ENMevaluate}
 \title{Tuning and evaluation of ecological niche models}
 \usage{
-ENMevaluate(occs, envs = NULL, bg = NULL, occs.vals = NULL,
-  bg.vals = NULL, tune.args = NULL, other.args = NULL,
-  categoricals = NULL, mod.name = NULL, user.enm = NULL,
-  partitions = NULL, occ.grp = NULL, bg.grp = NULL,
-  occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2),
-  n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"),
-  doClamp = TRUE, skipRasters = FALSE, abs.auc.diff = TRUE,
-  parallel = FALSE, numCores = NULL, parallelType = "doSNOW",
-  updateProgress = FALSE, occ = NULL, env = NULL, bg.coords = NULL,
-  RMvalues = NULL, fc = NULL, algorithm = NULL, method = NULL,
-  bin.output = NULL, rasterPreds = NULL, clamp = NULL,
-  progbar = NULL)
+ENMevaluate(occs, envs = NULL, bg = NULL, tune.args = NULL,
+  other.args = NULL, categoricals = NULL, mod.name = NULL,
+  user.enm = NULL, cvBoyce = TRUE, partitions = NULL,
+  occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, kfolds = NA,
+  aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
+  overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
+  abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
+  parallelType = "doSNOW", updateProgress = FALSE, occ = NULL,
+  env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
+  algorithm = NULL, method = NULL, bin.output = NULL,
+  rasterPreds = NULL, clamp = NULL, progbar = NULL)
 }
 \arguments{
 \item{occs}{matrix or data frame with two columns for longitude and latitude 
@@ -28,14 +27,6 @@ same geographic projection as occurrence data)}
 background (or pseudo-absence) localities, in that order; if NULL, points 
 will be randomly sampled across \code{envs} with the number specified by 
 parameter \code{n.bg}}
-
-\item{occs.vals}{matrix or data frame of environmental values corresponding
-to occurrence localities, intended to be input when environmental rasters
-are not used (\code{envs} is NULL)}
-
-\item{bg.vals}{matrix or data frame of environmental values corresponding
-to background (or pseudo-absence) localities, intended to be input when 
-environmental rasters are not used (\code{envs} is NULL)}
 
 \item{tune.args}{named list of model settings to be tuned}
 
@@ -97,6 +88,14 @@ AUCdiff; default is TRUE}
 
 \item{updateProgress}{boolean (TRUE or FALSE); if TRUE, use shiny progress
 bar; only for use in shiny apps}
+
+\item{occs.vals}{matrix or data frame of environmental values corresponding
+to occurrence localities, intended to be input when environmental rasters
+are not used (\code{envs} is NULL)}
+
+\item{bg.vals}{matrix or data frame of environmental values corresponding
+to background (or pseudo-absence) localities, intended to be input when 
+environmental rasters are not used (\code{envs} is NULL)}
 }
 \value{
 

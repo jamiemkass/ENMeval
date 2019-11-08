@@ -64,9 +64,9 @@
 #' @export 
 #' 
 
-ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals = NULL, 
+ENMevaluate <- function(occs, envs = NULL, bg = NULL, 
                         tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
-                        user.enm = NULL,
+                        user.enm = NULL, cvBoyce = TRUE,
                         partitions = NULL, occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
@@ -112,12 +112,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
   if(!(partitions %in% all.partitions)) {
     stop("Please enter an accepted partition method.\n")
   }
-  # if(is.null(tune.args) & !is.null(mod.name) & mod.name != "bioclim") {
-    # stop("Please specify tuning.args.\n")
-  # }
   
-  # if occs is combined occurrence and background with environmental
-  # predictor values (SWD format)
+  # coerce occs and bg to df
+  occs <- as.data.frame(occs)
+  bg <- as.data.frame(bg)
+  
+  # make sure occs and bg are data frames with identical column names
+  if(all(names(occs) != names(bg))) {
+    stop('Datasets "occs" and "bg" have different column names. Please make them identical and try again.')
+  }
+  
+  # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
     envs <- raster::stack(envs)
@@ -126,40 +131,49 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
     # extract predictor variable values at coordinates for occs and bg
     occs.vals <- raster::extract(envs, occs)
     bg.vals <- raster::extract(envs, bg)
-    # if envs is NULL and values are specified (SWD), make sure they are data frames
+    # bind coordinates to predictor variable values for occs and bg
+    xy <- rbind(occs, bg)
+    vals <- rbind(occs.vals, bg.vals)
+    # make main df with coordinates and predictor variable values and remove records with NA values
+    d <- cbind(xy, vals)
   }else{
-    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated.\n", immediate. = TRUE)
-    if(is.null(occs.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
-    }
-    if(is.null(bg.vals)) {
-      stop("If inputting data without rasters (SWD), please specify both occs.vals and bg.vals.\n")
-    }
+    # for occ and bg coordinates with environmental predictor values (SWD format)
+    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
+    # make sure both occ and bg have predictor variable values
+    if(ncol(occs) < 3 | ncol(bg) < 3) stop("If inputting data without rasters (SWD), please add columns representing predictor variable values to occs and bg.\n")
+    # make main df with coordinates and predictor variable values
+    d <- rbind(occs, bg)
   }
-  # make sure values are data frames
-  occs.vals <- as.data.frame(occs.vals)
-  bg.vals <- as.data.frame(bg.vals)
-  if(ncol(occs.vals) == 1) names(occs.vals) <- names(envs)
-  if(ncol(bg.vals) == 1) names(bg.vals) <- names(envs)
   
-  # make sure occs and bg are data frames with identical column names
-  if(all(names(occs) != names(bg))) {
-    warning('Datasets "occs" and "bg" have different column names. Assuming the first column for each is longitude and the second is latitude...\n', immediate. = TRUE)
-    occs <- data.frame(x = occs[,1], y = occs[,2])
-    bg <- data.frame(x = bg[,1], y = bg[,2])
+  # add presence-background identifier for occs and bg
+  d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
+  
+  # remove records with NA for any predictor variable
+  d <- remove.env.na(d)
+  
+  # convert fields for categorical data to factor class
+  if(!is.null(categoricals)) {
+    for(i in 1:length(categoricals)) {
+      message(paste0("Assigning variable ", categoricals[i], " to categorical ..."))
+      d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
+    }
   }
   
   # partition occs based on selected partition method
   # for occs.ind settings, partitions should be NULL
+  d.occs <- d[d$pb == 1,]
+  d.bg <- d[d$pb == 0,]
   grps <- switch(partitions, 
-                 jackknife = get.jackknife(occs, bg),
-                 randomkfold = get.randomkfold(occs, bg, kfolds),
-                 block = get.block(occs, bg),
-                 checkerboard1 = get.checkerboard1(occs, envs, bg, aggregation.factor),
-                 checkerboard2 = get.checkerboard2(occs, envs, bg, aggregation.factor),
+                 jackknife = get.jackknife(d.occs, d.bg),
+                 randomkfold = get.randomkfold(d.occs, d.bg, kfolds),
+                 block = get.block(d.occs, d.bg),
+                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
+                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = list(occ.grp = occ.grp, bg.grp = bg.grp),
-                 independent = NULL,
+                 independent = list(occ.grp = rep(2, nrow(occs)), bg.grp = rep(2, nrow(bg))),
                  none = NULL)
+  
+  # choose a user message reporting on partition choice
   parts.msg <- switch(partitions,
                       jackknife = "Doing model evaluations with k-1 jackknife cross validation...\n",
                       randomkfold = paste0("Doing model evaluations with random ", kfolds, "-fold cross validation...\n"),
@@ -171,33 +185,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, occs.vals = NULL, bg.vals 
                       none = "Skipping model evaluations (only calculating AICc)...\n")
   message(parts.msg)
   
-  # unpack partition values
-  occs.grp <- grps$occ.grp
-  bg.grp <- grps$bg.grp
+  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
+  # on testing data is problematic, as 1) the full study area must be considered, and
+  # 2) too few test records are considered, so currently we turn it off
+  if(partitions %in% c("jackknife", "block", "checkerboard1", "checkerboard2")) cvBoyce <- FALSE
   
-  # remove rows from occs.vals and occ.grp with NA for any predictor variable
-  occs.vals.naRows <- which(rowSums(is.na(occs.vals)) > 0)
-  occs.num.NA <- length(occs.vals.naRows)
-  if(occs.num.NA > 0) {
-    warning(paste0("Occurrence records found (n = ", occs.num.NA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
-    occs.vals <- occs.vals[-occs.vals.naRows,]
-    occs.grp <- occs.grp[-occs.vals.naRows]
+  # add partition group values to main df
+  d$grp <- c(grps$occ.grp, grps$bg.grp)
+  
+  # add independent tesing data to main df if provided
+  if(partitions == "independent") {
+    occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
+    occs.ind.vals <- cbind(occs.ind, occs.ind.vals)
+    occs.ind.vals$pb <- 1
+    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the independent data
+    # and the second iteration is not performed
+    occs.ind.vals$grp <- 1
+    d <- rbind(d, occs.ind.vals)
   }
-  # remove rows from bg.vals and bg.grp with NA for any predictor variable
-  bg.vals.naRows <- which(rowSums(is.na(bg.vals)) > 0)
-  bg.num.NA <- length(bg.vals.naRows)
-  if(bg.num.NA > 0) {
-    warning(paste0("Background records found (n = ", bg.num.NA, ") with NA for at least one predictor variable. Removing these from analysis...\n"), immediate. = TRUE)
-    bg.vals <- bg.vals[-bg.vals.naRows,, drop = FALSE]
-    bg.grp <- bg.grp[-bg.vals.naRows]
-  }  
-  # convert fields for categorical data to factor class
-  if(!is.null(categoricals)) {
-    for(i in 1:length(categoricals)) {
-      occs.vals[, categoricals[i]] <- as.factor(occs.vals[, categoricals[i]])
-      bg.vals[, categoricals[i]] <- as.factor(bg.vals[, categoricals[i]])
-    }
-  }
+  
   
   ################ #
   # tuning 

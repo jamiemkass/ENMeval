@@ -1,6 +1,6 @@
 #' @title Functions for tuning ENMs
 #' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.
-#' @aliases tune.parallel tune.regular cv.enm evalStats
+#' @aliases tune.parallel tune.regular cv.enm
 #' @param occs.vals matrix or data frame of environmental values corresponding
 #' to occurrence localities, intended to be input when environmental rasters
 #' are not used (\code{envs} is NULL) 
@@ -39,9 +39,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                          partitions, tune.tbl, other.args, categoricals, 
-                          occs.ind, doClamp, skipRasters, abs.auc.diff, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, tune.tbl, other.args,  partitions, doClamp, skipRasters, abs.auc.diff, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -75,9 +73,7 @@ tune.parallel <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
 }
 
 #' @rdname tune.enm
-tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                         partitions, tune.tbl, other.args, categoricals, 
-                         occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress) {
+tune.regular <- function(d, envs, enm, tune.tbl, other.args, partitions, doClamp, skipRasters, abs.auc.diff, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -93,24 +89,25 @@ tune.regular <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
       }
       setTxtProgressBar(pb, i)
     }
-    results[[i]] <- cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
-                           partitions, tune.settings = tune.tbl[i,], other.args, 
-                           categoricals, occs.ind, doClamp, skipRasters, abs.auc.diff)
+    # set the current tune settings
+    tune.i <- tune.tbl[i,]
+    results[[i]] <- cv.enm(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters, abs.auc.diff)
   }
   close(pb)
   return(results)
 }
 
 #' @rdname tune.enm
-cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                   partitions, tune.settings, other.args, categoricals, 
-                   occs.ind, doClamp, skipRasters, abs.auc.diff) {
-  
+cv.enm <- function(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters, abs.auc.diff) {
+  # unpack predictor variable values for occs and bg
+  occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(names(envs))
+  bg.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(names(envs))
   # build the full model from all the data
-  mod.full.args <- enm@args(occs.vals, bg.vals, tune.settings, other.args)
+  mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, other.args)
   mod.full <- do.call(enm@fun, mod.full.args)
   # calculate training auc
-  auc.train <- enm@auc(occs.vals, bg.vals, mod.full, other.args, doClamp)
+  e.train <- enm@eval(occs.vals, bg.vals, mod.full, other.args, doClamp)
+  auc.train <- e.train@auc
   
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(skipRasters == FALSE & !is.null(envs)) {
@@ -119,50 +116,84 @@ cv.enm <- function(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
     mod.full.pred <- raster::stack()
   }
   
+  # training CBI
+  d.occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
+  cbi.train <- ecospat::ecospat.boyce(mod.full.pred, d.occs.xy, PEplot = FALSE)
+  
+  train.stats.df <- data.frame(auc.train = auc.train, cbi.train = cbi.train$Spearman.cor)
+  
   # define number of grp (the value of "k")
-  nk <- length(unique(occs.grp))
+  nk <- unique(d$grp)
+  # k is only one for independent testing data
+  if(partitions == "independent") nk <- 1
   
-  # set up empty vectors for stats
-  cnames <- c("fold", "auc.test", "auc.diff", "or.mtp", "or.10p")
-  # kstats <- as.data.frame(matrix(nrow = nk, ncol = length(cnames), 
-  #                                dimnames = list(rep("", nk), cnames)), row.names = FALSE)
-  kstats.enm <- list()
   
-  # if there are no grp specified...
-  if(nk == 0) {
-    # if user selects to use independent testing data, do not do k-fold cross validation
-    if(partitions == "independent") {
-      occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
-      auc.test <- enm@auc(occs.ind.vals, bg.vals, mod.full, other.args, doClamp)
-      e <- evalStats(occs.vals, bg.vals, occs.ind.vals, bg.test = NULL, enm,
-                     auc.train, mod.full, other.args, doClamp, abs.auc.diff)
-      kstats.enm[[1]] <- c(fold = 1, e)
+  
+  # list to contain cv statistics
+  cv.stats <- list()
+  
+  for(k in 1:nk) {
+    # assign partitions for training and testing occurrence data and for background data
+    occs.train.vals <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(names(envs))
+    occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(names(envs))
+    bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(names(envs))
+    bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(names(envs))
+    # define model arguments for current model k
+    mod.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.args)
+    # run the current model k
+    mod <- do.call(enm@fun, mod.args)
+    # calculate the stats for model k
+    
+    # calculate auc on testing data
+    # NOTE: switch to bg.test??
+    e.test <- enm@eval(occs.test.vals, bg.train.vals, mod, other.args, doClamp)
+    auc.test <- e.test@auc
+    # calculate auc diff
+    auc.diff <- auc.train - auc.test
+    if(abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
+    
+    # get model predictions for training and testing data
+    # these predictions are used only for calculating omission rate, and
+    # thus should not need any specific parameter changes for maxent/maxnet
+    d.vals <- d %>% dplyr::select(names(envs))
+    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals, other.args, doClamp))
+    occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred)
+    occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred)
+    # get minimum training presence threshold (expected no omission)
+    min.train.thr <- min(occs.train.pred)
+    or.mtp <- mean(occs.test.pred < min.train.thr)
+    # get 10 percentile training presence threshold (expected 0.1 omission)
+    pct10.train.thr <- calc.10p.trainThresh(occs.train.vals, occs.train.pred)
+    or.10p <- mean(occs.test.pred < pct10.train.thr)
+    
+    # calculate continuous Boyce Index
+    if(cvBoyce == TRUE) {
+      occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
+      cbi.test <- ecospat::ecospat.boyce(mod.full.pred, occs.test.xy, PEplot = FALSE)
+    }else{
+      cbi.test <- NULL
     }
-    # # if user selects to only calculate AICc, stop here
-    # if(partitions == "none") break
-  }else{
-    # cross-validation on partitions
-    for(k in 1:nk) {
-      # assign partitions for training and testing occurrence data and for background data
-      occs.train.k <- occs.vals[occs.grp != k,, drop = FALSE]
-      occs.test.k <- occs.vals[occs.grp == k,, drop = FALSE]
-      bg.train.k <- bg.vals[bg.grp != k,, drop = FALSE]
-      bg.test.k <- bg.vals[bg.grp == k,, drop = FALSE]
-      # define model arguments for current model k
-      mod.k.args <- enm@args(occs.train.k, bg.train.k, tune.settings, other.args)
-      # run the current model k
-      mod.k <- do.call(enm@fun, mod.k.args)
-      # calculate the stats for model k
-      e <- enm@kstats(occs.train.k, bg.vals, occs.test.k, bg.test.k, categoricals,
-                      auc.train, mod.k, other.args, doClamp, abs.auc.diff)
-      kstats.enm[[k]] <- c(fold = k, e)
-    } 
-  }
+    
+    # calculate MESS values if bg.test values are given
+    if(!is.null(bg.test.vals) & ncol(bg.test.vals) > 1) {
+      mess.quant <- calc.mess.kstats(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals)
+    }else{
+      mess.quant <- NULL
+    }
+    
+    # gather all evaluation statistics for k
+    eval.stats <- c(fold = k, auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, or.10p = or.10p, cbi.test = cbi.test$Spearman.cor)
+    
+    # add any additional cross-validation statistics chosen by the user
+    eval.stats <- enm@kstats(eval.stats, e.test, mod, occs.train.vals, occs.test.vals, bg.train.vals, bg.test.vals, occs.train.pred, occs.test.pred, other.args)
+    eval.stats <- c(eval.stats, mess.quant)
+    # put into list as one-row data frame for easy binding
+    cv.stats[[k]] <- data.frame(rbind(eval.stats), row.names=NULL)
+  } 
   
-  kstats <- as.data.frame(do.call("rbind", kstats.enm))
+  cv.stats.df <- dplyr::bind_rows(cv.stats)
   
-  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
-                 kstats = kstats, train.AUC = auc.train)
+  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = cv.stats.df)
   
   return(cv.res)
 }
