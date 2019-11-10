@@ -224,13 +224,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   if(parallel) {
-    results <- tune.parallel(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                             partitions, tune.tbl, other.args, categoricals, 
-                             occs.ind, doClamp, skipRasters, abs.auc.diff, numCores, parallelType)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.args, 
+                             doClamp, skipRasters, abs.auc.diff, numCores, parallelType)  
   }else{
-    results <- tune.regular(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm, 
-                            partitions, tune.tbl, other.args, categoricals, 
-                            occs.ind, doClamp, skipRasters, abs.auc.diff, updateProgress)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.args, 
+                            doClamp, skipRasters, abs.auc.diff, updateProgress)
   }
   
   ################# #

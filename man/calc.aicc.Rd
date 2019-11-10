@@ -5,15 +5,15 @@
 \alias{get.params}
 \title{Calculate AICc from Maxent model prediction}
 \usage{
-calc.aicc(occs, nparam, preds)
+calc.aicc(occs.preds, nparams, preds)
 }
 \arguments{
+\item{preds}{Raster*; Maxent model predictions from \code{dismo::predict()}}
+
 \item{occs}{data frame; longitude (x) and latitude (y) of occurrence 
 localities}
 
 \item{nparam}{integer; number of model parameters (non-zero coefficients)}
-
-\item{preds}{Raster*; Maxent model predictions from \code{dismo::predict()}}
 }
 \value{
 data frame with four columns:

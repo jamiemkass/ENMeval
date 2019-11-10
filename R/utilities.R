@@ -11,18 +11,19 @@ NULL
 #' @export
 remove.env.na <- function(d) {
   d.envs <- d[,3:ncol(d)]
-  d.envs.occs <- d.envs[d.envs$pb == 1,]
-  d.envs.bg <- d.envs[d.envs$pb == 0,]
-  d.envs.occs.NA <- which(rowSums(is.na(d.envs.occs)) > 0)
-  occs.msg <- paste0("occurrences: ", d.envs.occs.NA)
-  d.envs.bg.NA <- which(rowSums(is.na(d.envs.bg)) > 0)
-  bg.msg <- paste0("background: ", d.envs.bg.NA)
-  if(length(d.envs.occs.NA) > 0 | length(d.envs.occs.NA) > 0) {
-    msg <- dplyr::case_when(length(d.envs.occs.NA) > 0 & length(d.envs.occs.NA) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
-                            length(d.envs.occs.NA) > 0 ~ occs.msg,
-                            length(d.envs.bg.NA) > 0 ~ bg.msg)
+  ind.NA <- which(is.na(d.envs), arr.ind = TRUE)[,1]
+  names(ind.NA) <- NULL
+  d.envs.NA <- d.envs[ind.NA,]
+  ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]
+  ind.NA.bg <- ind.NA[which(d.envs.NA$pb == 0)]
+  occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
+  bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
+  if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
+    msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
+                            length(ind.NA.occs) > 0 ~ occs.msg,
+                            length(ind.NA.bg) > 0 ~ bg.msg)
     message(paste0("Records found with NA for at least one predictor variable with the following row numbers: (", msg, "). Removing from analysis...\n"))
-    d.naRem <- d[-c(d.envs.occs.NA, d.envs.bg.NA),]
+    d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
     return(d.naRem)    
   }
   return(d)
