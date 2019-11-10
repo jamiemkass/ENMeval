@@ -7,13 +7,13 @@
 \alias{cv.enm}
 \title{Functions for tuning ENMs}
 \usage{
-tune.parallel(d, envs, enm, tune.tbl, other.args, occs.ind, doClamp,
+tune.parallel(d, envs, enm, partitions, tune.tbl, other.args, doClamp,
   skipRasters, abs.auc.diff, numCores, parallelType)
 
-tune.regular(d, envs, enm, tune.tbl, other.args, occs.ind, doClamp,
+tune.regular(d, envs, enm, partitions, tune.tbl, other.args, doClamp,
   skipRasters, abs.auc.diff, updateProgress)
 
-cv.enm(d, envs, enm, tune.i, other.args, occs.ind, doClamp, skipRasters,
+cv.enm(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters,
   abs.auc.diff)
 }
 \arguments{
@@ -22,16 +22,13 @@ same geographic projection as occurrence data)}
 
 \item{enm}{Object of class \link{ENMdetails}.}
 
+\item{partitions}{character of name of partitioning technique (see
+\code{?partitions})}
+
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
 
 \item{other.args}{named list of any additional model arguments not specified 
 for tuning}
-
-\item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
-of occurrence localities, in that order, intended for independent evaluation;
-when \code{partitions = "independent"}; these occurrences will be used only 
-for evaluation, and not for model training, and thus no cross validation will 
-be done}
 
 \item{doClamp}{boolean (TRUE or FALSE); if TRUE, clamp model responses; only
 applicable for Maxent models}
@@ -58,13 +55,16 @@ occurrence locality, intended for user-defined partitions}
 \item{bg.grp}{numeric vector of partition group (fold) for each background 
 (or pseudo-absence) locality, intended for user-defined partitions}
 
-\item{partitions}{character of name of partitioning technique (see
-\code{?partitions})}
-
 \item{tune.settings}{Vector of tune settings from `tune.tbl`.}
 
 \item{categoricals}{character vector of names of categorical 
 environmental variables}
+
+\item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
+of occurrence localities, in that order, intended for independent evaluation;
+when \code{partitions = "independent"}; these occurrences will be used only 
+for evaluation, and not for model training, and thus no cross validation will 
+be done}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.

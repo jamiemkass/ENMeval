@@ -39,7 +39,8 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, tune.tbl, other.args,  partitions, doClamp, skipRasters, abs.auc.diff, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.args, 
+                          doClamp, skipRasters, abs.auc.diff, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -63,9 +64,7 @@ tune.parallel <- function(d, envs, enm, tune.tbl, other.args,  partitions, doCla
   message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts) %dopar% {
-    cv.enm(occs.vals, bg.vals, occs.grp, bg.grp, envs, enm,
-           partitions, tune.tbl[i,], other.args, categoricals, 
-           occs.ind, doClamp, skipRasters, abs.auc.diff)
+    cv.enm(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters, abs.auc.diff)
   }
   close(pb)
   parallel::stopCluster(cl)
@@ -73,7 +72,8 @@ tune.parallel <- function(d, envs, enm, tune.tbl, other.args,  partitions, doCla
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, tune.tbl, other.args, partitions, doClamp, skipRasters, abs.auc.diff, updateProgress) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.args, 
+                         doClamp, skipRasters, abs.auc.diff, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -123,7 +123,7 @@ cv.enm <- function(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRa
   train.stats.df <- data.frame(auc.train = auc.train, cbi.train = cbi.train$Spearman.cor)
   
   # define number of grp (the value of "k")
-  nk <- unique(d$grp)
+  nk <- length(unique(d$grp))
   # k is only one for independent testing data
   if(partitions == "independent") nk <- 1
   
