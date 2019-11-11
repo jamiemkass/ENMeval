@@ -66,8 +66,10 @@ kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals,
   return(stats)
 }
 
-pred <- function(mod, envs, other.args, doClamp) {
-  pred <- dismo::predict(mod, envs, args = c("outputformat=cloglog", ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false")), na.rm = TRUE)
+pred <- function(mod, envs, other.args, doClamp, pred.type) {
+  type.arg <- paste("outputformat", pred.type, sep = "=")
+  clamp.arg <- ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false")
+  pred <- dismo::predict(mod, envs, args = c(type.arg, clamp.arg), na.rm = TRUE)
   return(pred)
 }
 

@@ -39,8 +39,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.args, 
-                          doClamp, skipRasters, abs.auc.diff, numCores, parallelType) {
+tune.parallel <- function(d, envs, envs.names, enm, partitions, tune.tbl, settings, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -64,7 +63,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.args,
   message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts) %dopar% {
-    cv.enm(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters, abs.auc.diff)
+    cv.enm(d, envs, envs.names, enm, tune.i, partitions, settings)
   }
   close(pb)
   parallel::stopCluster(cl)
@@ -72,8 +71,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.args,
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.args, 
-                         doClamp, skipRasters, abs.auc.diff, updateProgress) {
+tune.regular <- function(d, envs, envs.names, enm, partitions, tune.tbl, settings, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -91,72 +89,75 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.args,
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters, abs.auc.diff)
+    results[[i]] <- cv.enm(d, envs, envs.names, enm, tune.i, partitions, settings)
   }
   close(pb)
   return(results)
 }
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRasters, abs.auc.diff) {
+cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
   # unpack predictor variable values for occs and bg
-  occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(names(envs))
-  bg.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(names(envs))
+  occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
+  bg.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
   # build the full model from all the data
-  mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, other.args)
+  mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, settings$other.args)
   mod.full <- do.call(enm@fun, mod.full.args)
   # calculate training auc
-  e.train <- enm@eval(occs.vals, bg.vals, mod.full, other.args, doClamp)
+  e.train <- enm@eval(occs.vals, bg.vals, mod.full, settings$other.args, settings$doClamp)
   auc.train <- e.train@auc
-  
+  train.stats.df <- data.frame(auc.train = auc.train)
   # if rasters selected and envs is not NULL, predict raster for the full model
-  if(skipRasters == FALSE & !is.null(envs)) {
-    mod.full.pred <- enm@pred(mod.full, envs, other.args, doClamp)
+  if(settings$skipRasters == FALSE & !is.null(envs)) {
+    mod.full.pred <- enm@pred(mod.full, envs, settings$other.args, settings$doClamp, settings$pred.type)
+    # training CBI
+    d.occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
+    cbi.train <- ecospat::ecospat.boyce(mod.full.pred, d.occs.xy, PEplot = FALSE)
+    train.stats.df$cbi.train <- cbi.train$Spearman.cor
   }else{
     mod.full.pred <- raster::stack()
   }
-  
-  # training CBI
-  d.occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
-  cbi.train <- ecospat::ecospat.boyce(mod.full.pred, d.occs.xy, PEplot = FALSE)
-  
-  train.stats.df <- data.frame(auc.train = auc.train, cbi.train = cbi.train$Spearman.cor)
   
   # define number of grp (the value of "k")
   nk <- length(unique(d$grp))
   # k is only one for independent testing data
   if(partitions == "independent") nk <- 1
   
-  
+  # if no partitions, return results without cv.stats
+  if(nk == 0) {
+    cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = NULL)
+    return(cv.res)
+  }
   
   # list to contain cv statistics
   cv.stats <- list()
   
   for(k in 1:nk) {
     # assign partitions for training and testing occurrence data and for background data
-    occs.train.vals <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(names(envs))
-    occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(names(envs))
-    bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(names(envs))
-    bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(names(envs))
+    occs.train.vals <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(envs.names)
+    occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(envs.names)
+    bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(envs.names)
+    bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     # define model arguments for current model k
-    mod.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.args)
+    mod.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
     # run the current model k
     mod <- do.call(enm@fun, mod.args)
     # calculate the stats for model k
     
     # calculate auc on testing data
     # NOTE: switch to bg.test??
-    e.test <- enm@eval(occs.test.vals, bg.train.vals, mod, other.args, doClamp)
+    if(is.null(mod)) next
+    e.test <- enm@eval(occs.test.vals, bg.train.vals, mod, settings$other.args, settings$doClamp)
     auc.test <- e.test@auc
     # calculate auc diff
     auc.diff <- auc.train - auc.test
-    if(abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
+    if(settings$abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
     
     # get model predictions for training and testing data
     # these predictions are used only for calculating omission rate, and
     # thus should not need any specific parameter changes for maxent/maxnet
-    d.vals <- d %>% dplyr::select(names(envs))
-    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals, other.args, doClamp))
+    d.vals <- d %>% dplyr::select(envs.names)
+    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals, settings$other.args, settings$doClamp, settings$pred.type))
     occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred)
     occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred)
     # get minimum training presence threshold (expected no omission)
@@ -167,7 +168,7 @@ cv.enm <- function(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRa
     or.10p <- mean(occs.test.pred < pct10.train.thr)
     
     # calculate continuous Boyce Index
-    if(cvBoyce == TRUE) {
+    if(settings$cvBoyce == TRUE) {
       occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       cbi.test <- ecospat::ecospat.boyce(mod.full.pred, occs.test.xy, PEplot = FALSE)
     }else{
@@ -182,18 +183,23 @@ cv.enm <- function(d, envs, enm, tune.i, other.args, partitions, doClamp, skipRa
     }
     
     # gather all evaluation statistics for k
-    eval.stats <- c(fold = k, auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, or.10p = or.10p, cbi.test = cbi.test$Spearman.cor)
+    
+    kstats <- c(fold = k, auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
+                or.10p = or.10p, cbi.test = cbi.test$Spearman.cor)
     
     # add any additional cross-validation statistics chosen by the user
-    eval.stats <- enm@kstats(eval.stats, e.test, mod, occs.train.vals, occs.test.vals, bg.train.vals, bg.test.vals, occs.train.pred, occs.test.pred, other.args)
-    eval.stats <- c(eval.stats, mess.quant)
+    kstats <- enm@kstats(kstats, e.test, mod, occs.train.vals, occs.test.vals, bg.train.vals, 
+                         bg.test.vals, occs.train.pred, occs.test.pred, settings$other.args)
+    kstats <- c(kstats, mess.quant)
     # put into list as one-row data frame for easy binding
-    cv.stats[[k]] <- data.frame(rbind(eval.stats), row.names=NULL)
+    tune.args.col <- paste(tune.i, collapse = "_")
+    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL)
   } 
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)
   
-  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = cv.stats.df)
+  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
+                 train.stats = train.stats.df, cv.stats = cv.stats.df)
   
   return(cv.res)
 }
