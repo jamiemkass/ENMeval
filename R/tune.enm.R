@@ -142,11 +142,17 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     mod.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
     # run the current model k
     mod <- do.call(enm@fun, mod.args)
+    
+    # if model is NULL for some reason, continue but report to user
+    if(is.null(mod)) {
+      message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model.\n"))
+      next
+    }
+    
     # calculate the stats for model k
     
     # calculate auc on testing data
     # NOTE: switch to bg.test??
-    if(is.null(mod)) next
     e.test <- enm@eval(occs.test.vals, bg.train.vals, mod, settings$other.args, settings$doClamp)
     auc.test <- e.test@auc
     # calculate auc diff
@@ -193,7 +199,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     kstats <- c(kstats, mess.quant)
     # put into list as one-row data frame for easy binding
     tune.args.col <- paste(tune.i, collapse = "_")
-    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL)
+    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL, stringsAsFactors = FALSE)
   } 
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)
