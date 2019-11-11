@@ -11,7 +11,7 @@ NULL
 #' @export
 remove.env.na <- function(d) {
   d.envs <- d[,3:ncol(d)]
-  ind.NA <- which(is.na(d.envs), arr.ind = TRUE)[,1]
+  ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
   names(ind.NA) <- NULL
   d.envs.NA <- d.envs[ind.NA,]
   ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]

@@ -51,8 +51,8 @@ kstats <- function(eval.stats, e.test, mod, occs.train.vals, occs.test.vals, bg.
   return(eval.stats)
 }
 
-pred <- function(mod, envs, other.args, doClamp) {
-  pred <- maxnet.predictRaster(mod, envs, doClamp, type = "cloglog", other.args)
+pred <- function(mod, envs, other.args, doClamp, pred.type) {
+  pred <- maxnet.predictRaster(mod, envs, doClamp, type = pred.type, other.args)
   return(pred)
 }
 

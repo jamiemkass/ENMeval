@@ -67,9 +67,9 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, 
                         tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
                         user.enm = NULL, cvBoyce = TRUE,
-                        partitions = NULL, occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, 
+                        partitions = NULL, user.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
-                        overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE, 
+                        overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", skipRasters = FALSE, 
                         abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW",
                         updateProgress = FALSE,
                         # legacy parameters
@@ -113,6 +113,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     stop("Please enter an accepted partition method.\n")
   }
   
+  if(partitions == "independent" & is.null(occs.ind)) {
+    stop("If doing independent evaluations, please provide independent testing data (occs.ind).")
+  }
+  
   # coerce occs and bg to df
   occs <- as.data.frame(occs)
   bg <- as.data.frame(bg)
@@ -136,17 +140,30 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     vals <- rbind(occs.vals, bg.vals)
     # make main df with coordinates and predictor variable values and remove records with NA values
     d <- cbind(xy, vals)
+    envs.names <- names(envs)
   }else{
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    warning("Data without rasters were input (SWD format), so no raster predictions will be generated and AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
+    warning("Data without rasters were input (SWD format), so no raster predictions will be generated. Thus, continuous Boyce index cannot be calculated, and neither can AICc for Maxent models.\n", immediate. = TRUE)
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("If inputting data without rasters (SWD), please add columns representing predictor variable values to occs and bg.\n")
     # make main df with coordinates and predictor variable values
     d <- rbind(occs, bg)
+    # make envs a data frame of predictor variable values here
+    # so that names(envs) pulls the names of these variables
+    # in tune.enm.R
+    envs.names <- names(d[,3:ncol(d)])
   }
   
   # add presence-background identifier for occs and bg
   d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
+  
+  # if user-defined partitions, assign grp variable first
+  # so that records with NA predictor variable values have
+  # their grp values filtered out too
+  if(!is.null(user.grp)) {
+    d[d$pb == 1, "grp"] <- user.grp$occ.grp
+    d[d$pb == 0, "grp"] <- user.grp$bg.grp
+  }
   
   # remove records with NA for any predictor variable
   d <- remove.env.na(d)
@@ -159,19 +176,26 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     }
   }
   
-  # partition occs based on selected partition method
-  # for occs.ind settings, partitions should be NULL
+  # unpack occs and bg records for partitioning
   d.occs <- d[d$pb == 1,]
   d.bg <- d[d$pb == 0,]
+  
+  # if occs.ind input, coerce partitions to 'independent'
+  if(!is.null(occs.ind) & partitions != "independent") {
+    partitions <- "independent"
+  }
+  
+  # partition occs based on selected partition method
   grps <- switch(partitions, 
                  jackknife = get.jackknife(d.occs, d.bg),
                  randomkfold = get.randomkfold(d.occs, d.bg, kfolds),
                  block = get.block(d.occs, d.bg),
                  checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
-                 user = list(occ.grp = occ.grp, bg.grp = bg.grp),
-                 independent = list(occ.grp = rep(2, nrow(occs)), bg.grp = rep(2, nrow(bg))),
+                 user = NULL,
+                 independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(2, nrow(d.bg))),
                  none = NULL)
+  
   
   # choose a user message reporting on partition choice
   parts.msg <- switch(partitions,
@@ -190,8 +214,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   # 2) too few test records are considered, so currently we turn it off
   if(partitions %in% c("jackknife", "block", "checkerboard1", "checkerboard2")) cvBoyce <- FALSE
   
-  # add partition group values to main df
-  d$grp <- c(grps$occ.grp, grps$bg.grp)
+  # if not user-defined or 'none', add these values as the 'grp' column
+  if(!is.null(grps)) d$grp <- c(grps$occ.grp, grps$bg.grp)
+  
   
   # add independent tesing data to main df if provided
   if(partitions == "independent") {
@@ -223,12 +248,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
+  # put all settings into list
+  settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type,
+                   skipRasters = skipRasters, abs.auc.diff = abs.auc.diff, cvBoyce = cvBoyce)
+  
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.args, 
-                             doClamp, skipRasters, abs.auc.diff, numCores, parallelType)  
+    results <- tune.parallel(d, envs, envs.names, enm, partitions, tune.tbl, settings, numCores, parallelType)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.args, 
-                            doClamp, skipRasters, abs.auc.diff, updateProgress)
+    results <- tune.regular(d, envs, envs.names, enm, partitions, tune.tbl, settings, updateProgress)
   }
   
   ################# #
@@ -247,7 +274,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   mod.full.all <- lapply(results, function(x) x$mod.full)
   names(mod.full.all) <- tune.names
   # gather all training AUCs into vector
-  auc.train.all <- sapply(results, function(x) x$train.AUC)
+  train.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$train.stats))
   # gather all model prediction rasters into a stack and name them
   # if skipRasters is TRUE or no envs, make an empty stack
   if(skipRasters == FALSE & !is.null(envs)) {
@@ -258,80 +285,71 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   }
   # gather all k-fold statistics into a list of data frames,
   # (these are a single set of stats if no partitions were chosen)
-  kstats.all <- lapply(results, function(x) x$kstats)
+  cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
   # define number of grp (the value of "k") as number of
   # rows in one of the model runs
-  nk <- nrow(kstats.all[[1]])
-  # bind all kstats into a single data frame
-  kstats.df <- dplyr::bind_rows(kstats.all)
+  nk <- length(unique(d$grp))
   
-  if(partitions != "none") {
+  if(nk > 0 & nrow(tune.tbl) > 0) {
     # if tune settings were specified and there is at least one partition,
     # calculate the kstats tbl
     # if(nrow(tune.tbl) > 0) {
     # define number of settings (plus the tune.args field)
     nset <- ncol(tune.tbl)
-    # add in columns for tuning settings
-    if(nrow(tune.tbl) > 0) {
-      tune.tbl.reps <- as.data.frame(apply(tune.tbl, 2, rep, each = nk))
-      kstats.df <- dplyr::bind_cols(tune.tbl.reps, kstats.df)
-    }
-    # if model settings for tuning were input, summarize by averaging all grp 
-    # per model setting combination
-    if(nset > 0) kstats.df <- dplyr::group_by_at(kstats.df, 1:nset)
-    # set the variables to summarize (excludes the tuning settings and the "fold" column)
-    colsExcl <- seq(-1, -(nset+1))
-    vars.summarize <- names(kstats.df)[colsExcl]
     # if jackknife cross-validation (leave-one-out), correct variance for
     # non-independent samples (Shcheglovitova & Anderson 2013)
+    
     if(partitions == "jackknife") {
-      kstats.avg.df <- kstats.df %>% dplyr::summarize_at(vars.summarize, list(avg = mean, var = ~corrected.var(., nk), 
-                                                                            min = min, max = max)) %>%
-      dplyr::ungroup()
+      sum.list <- list(avg = mean, var = ~corrected.var(., nk), min = min, max = max)
     }else{
-      kstats.avg.df <- kstats.df %>% dplyr::summarize_at(vars.summarize, list(avg = mean, var = var, 
-                                                                              min = min, max = max)) %>%
-        dplyr::ungroup()
-    }
-    # change names
-    colsExcl <- seq(-1, -nset)
-    names(kstats.avg.df)[colsExcl] <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(kstats.avg.df)[colsExcl])
+      sum.list <- list(avg = mean, var = var, min = min, max = max)
+    } 
+    
+    if(nk == 1) sum.list <- list(function(x) {x})
+        
+    cv.stats.sum <- cv.stats.all %>% 
+      dplyr::group_by(tune.args) %>%
+      dplyr::select(-fold) %>% 
+      dplyr::summarize_all(sum.list) %>%
+      dplyr::ungroup()
     
     # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
-    if(nrow(tune.tbl) > 0) kstats.avg.df <- kstats.avg.df[match(tune.names, kstats.avg.df$tune.args),]
-    if(nset > 0) {
-      if(partitions == "independent") {
-        stats.df <- dplyr::bind_cols(kstats.df[, seq(1, nset)], auc.train = auc.train.all, kstats.df[, seq(-1, -(nset+1))])
-      }else{
-        stats.df <- dplyr::bind_cols(tune.tbl, auc.train = auc.train.all, kstats.avg.df[, seq(-1, -nset)])  
-      }
-    }else{
-      stats.df <- dplyr::bind_cols(auc.train = auc.train.all, kstats.avg.df) 
-    }
+    cv.stats.sum <- cv.stats.sum[match(tune.names, cv.stats.sum$tune.args),] %>%
+      dplyr::select(-tune.args)
+    # change names (replace _ with .)
+    names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+    
+    # put tuning table, training stats, and cv stats together
+    eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all, cv.stats.sum)
   }else{
-    # if no partitions were specified, make the stats tbl without cross validation stats
-    stats.df <- dplyr::bind_cols(tune.tbl, auc.train = auc.train.all)
+    eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all)
   }
   
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, enm@nparams)
+  
   # calculate AICc
-  stats.df <- dplyr::bind_cols(stats.df, enm@aic(occs, nparams, mod.full.pred.all))
-  stats.df$nparam <- nparams
-  # stats.df <- tibble::as_tibble(stats.df)
-  kstats.df <- as.data.frame(kstats.df)
+  if((mod.name == "maxnet" | mod.name == "maxent.jar") & !is.null(envs)) {
+    pred.type.raw <- switch(mod.name, maxnet = "exponential", maxent.jar = "raw")
+    pred.all.raw <- raster::stack(lapply(mod.full.all, function(x) enm@pred(x, envs, other.args, doClamp, pred.type = pred.type.raw)))
+    occs.pred.raw <- raster::extract(pred.all.raw, occs)
+    aic <- enm@aic(occs.pred.raw, nparams, pred.all.raw)
+    eval.stats <- dplyr::bind_cols(eval.stats, aic)
+  }
   
-  res <- list(stats = stats.df, kstats = kstats.df, mods = mod.full.all,
-              preds = mod.full.pred.all)
+  # add nparam column
+  eval.stats$nparam <- nparams
   
-  if(is.null(occs.grp)) occs.grp <- 0
-  if(is.null(bg.grp)) bg.grp <- 0
+  # assign all groups to 1 if no partitions were selected
+  # this avoids putting a NULL in the object slot
+  if(nk == 0) d$grp <- 1
+  
   e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
-                     results = as.data.frame(res$stats), results.grp = res$kstats,
-                     predictions = res$preds, models = res$mods, 
+                     results = eval.stats, results.grp = cv.stats.all,
+                     predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions,
-                     occ.pts = occs, occ.grp = occs.grp,
-                     bg.pts = bg, bg.grp = bg.grp)
+                     occ.pts = occs, occ.grp = d[d$pb == 1, "grp"],
+                     bg.pts = bg, bg.grp = d[d$pb == 0, "grp"])
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   nr <- raster::nlayers(e@predictions)

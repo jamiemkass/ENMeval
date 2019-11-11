@@ -15,11 +15,20 @@ other.args <- NULL
 updateProgress <- NULL
 doClamp <- TRUE
 abs.auc.diff <- TRUE
+pred.type <- "cloglog"
+cvBoyce <- TRUE
+user.grp = NULL
+occs.ind = NULL
 
-# 
-# # SWD
-occs <- cbind(occs, raster::extract(envs, occs))
-bg <- cbind(bg, raster::extract(envs, bg))
+# user groups
+user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
+
+# independent partitions
+occs.ind <- occs[1:50,]
+occs <- occs[51:nrow(occs),]
+
+# SWD
+
 # 
 # # divide all grid cells in study extent into same partition groups
 # # as the real occurrence data
@@ -36,7 +45,9 @@ bg <- cbind(bg, raster::extract(envs, bg))
 # occs[18,] <- c(0,0)
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 ## run with SWD
-# e <- ENMevaluate(occs, bg = bg, occs.vals = occs.vals, bg.vals = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# occs <- cbind(occs, raster::extract(envs, occs))
+# bg <- cbind(bg, raster::extract(envs, bg))
+# e <- ENMevaluate(occs, bg = bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with independent testing data
 # e <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
 ## run with just AIC
