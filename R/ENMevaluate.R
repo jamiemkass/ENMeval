@@ -358,12 +358,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
                      results = eval.stats, results.grp = cv.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions,
-                     occ.pts = occs, occ.grp = d[d$pb == 1, "grp"],
-                     bg.pts = bg, bg.grp = d[d$pb == 0, "grp"])
-  
+                     occ.pts = d[d$pb == 1, 1:2], occ.grp = d[d$pb == 1, "grp"],
+                     bg.pts = d[d$pb == 0, 1:2], bg.grp = d[d$pb == 0, "grp"])
+    
   # if niche overlap selected, calculate and add the resulting matrix to results
-  nr <- raster::nlayers(e@predictions)
   if(overlap == TRUE) {
+    nr <- raster::nlayers(e@predictions)
     if(nr == 0) {
       warning("Cannot calculate niche overlap without model prediction rasters.\n")
     }else if(nr == 1) {
