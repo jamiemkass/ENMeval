@@ -214,10 +214,10 @@ mess.vec <- function(p, v) {
   return(rmess)
 }
 
-calc.mess.kstats <- function(occs.train, bg.train, occs.test, bg.test) {
-  p <- rbind(occs.train, bg.train)
-  v <- rbind(occs.test, bg.test)
-  cat.j <- which(sapply(occs.train, is.factor) == 1)
+calc.mess.kstats <- function(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals) {
+  p <- rbind(occs.train.vals, bg.train.vals)
+  v <- rbind(occs.test.vals, bg.test.vals)
+  cat.j <- which(sapply(occs.train.vals, is.factor) == 1)
   if(length(cat.j) > 0) {
     p <- p[,-cat.j]
     v <- v[,-cat.j]
@@ -226,6 +226,28 @@ calc.mess.kstats <- function(occs.train, bg.train, occs.test, bg.test) {
   mess.quant <- quantile(mss)
   names(mess.quant) <- paste0("mess.", gsub("%", "p", names(mess.quant)))
   return(mess.quant)
+}
+
+partitions.mess <- function(e, envs, categoricals) {
+  pts <- rbind(e@occ.pts, e@bg.pts)
+  vals <- as.data.frame(raster::extract(envs, pts)) %>% dplyr::select(-categoricals)
+  vals$grp <- c(e@occ.grp, e@bg.grp)
+  i <- which(names(envs) == categoricals)
+  envs.mess <- envs[[-i]]
+  pts$grp <- c(e@occ.grp, e@bg.grp)
+  test.mss <- list()
+  for(k in 1:nk) {
+    test.vals <- vals %>% dplyr::filter(grp == k) %>% dplyr::select(-grp)
+    test.xy <- pts %>% dplyr::filter(grp == k) %>% dplyr::select(-grp)
+    test.ext <- as(raster::extent(sp::bbox(sp::SpatialPoints(test.xy))), "SpatialPolygons")
+    envs.mess.train <- raster::mask(envs.mess, test.ext, inverse = TRUE)
+    mss <- dismo::mess(envs.mess.train, test.vals)
+    test.mss[[k]] <- data.frame(mess.value = raster::extract(mss, test.xy), grp = k)
+  }
+  test.mss.df <- dplyr::bind_rows(test.mss)
+  ggplot2::ggplot(test.mss.df, ggplot2::aes(x = mess.value)) + 
+    ggplot2::geom_density() +
+    ggplot2::facet_grid(ggplot2::vars(grp))
 }
 
 # #' @export

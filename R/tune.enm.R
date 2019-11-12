@@ -181,12 +181,12 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
       cbi.test <- NULL
     }
     
-    # calculate MESS values if bg.test values are given
-    if(!is.null(bg.test.vals) & ncol(bg.test.vals) > 1) {
-      mess.quant <- calc.mess.kstats(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals)
-    }else{
-      mess.quant <- NULL
-    }
+    # # calculate MESS values if bg.test values are given
+    # if(!is.null(bg.test.vals) & ncol(bg.test.vals) > 1) {
+    #   mess.quant <- calc.mess.kstats(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals)
+    # }else{
+    #   mess.quant <- NULL
+    # }
     
     # gather all evaluation statistics for k
     
@@ -196,7 +196,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     # add any additional cross-validation statistics chosen by the user
     kstats <- enm@kstats(kstats, e.test, mod, occs.train.vals, occs.test.vals, bg.train.vals, 
                          bg.test.vals, occs.train.pred, occs.test.pred, settings$other.args)
-    kstats <- c(kstats, mess.quant)
+    # kstats <- c(kstats, mess.quant)
     # put into list as one-row data frame for easy binding
     tune.args.col <- paste(tune.i, collapse = "_")
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL, stringsAsFactors = FALSE)
