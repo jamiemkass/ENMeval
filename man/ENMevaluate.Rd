@@ -7,13 +7,13 @@
 ENMevaluate(occs, envs = NULL, bg = NULL, tune.args = NULL,
   other.args = NULL, categoricals = NULL, mod.name = NULL,
   user.enm = NULL, cvBoyce = TRUE, partitions = NULL,
-  occ.grp = NULL, bg.grp = NULL, occs.ind = NULL, kfolds = NA,
+  user.grp = NULL, occs.ind = NULL, kfolds = NA,
   aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
-  overlapStat = c("D", "I"), doClamp = TRUE, skipRasters = FALSE,
-  abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL,
-  parallelType = "doSNOW", updateProgress = FALSE, occ = NULL,
-  env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
-  algorithm = NULL, method = NULL, bin.output = NULL,
+  overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog",
+  skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE,
+  numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
+  occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL,
+  fc = NULL, algorithm = NULL, method = NULL, bin.output = NULL,
   rasterPreds = NULL, clamp = NULL, progbar = NULL)
 }
 \arguments{
@@ -43,12 +43,6 @@ used for the analysis, and is an alternative to specifying mod.name}
 
 \item{partitions}{character of name of partitioning technique (see
 \code{?partitions})}
-
-\item{occ.grp}{numeric vector of partition group (fold) for each
-occurrence locality, intended for user-defined partitions}
-
-\item{bg.grp}{numeric vector of partition group (fold) for each background 
-(or pseudo-absence) locality, intended for user-defined partitions}
 
 \item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
 of occurrence localities, in that order, intended for independent evaluation;
@@ -96,6 +90,12 @@ are not used (\code{envs} is NULL)}
 \item{bg.vals}{matrix or data frame of environmental values corresponding
 to background (or pseudo-absence) localities, intended to be input when 
 environmental rasters are not used (\code{envs} is NULL)}
+
+\item{occ.grp}{numeric vector of partition group (fold) for each
+occurrence locality, intended for user-defined partitions}
+
+\item{bg.grp}{numeric vector of partition group (fold) for each background 
+(or pseudo-absence) locality, intended for user-defined partitions}
 }
 \value{
 
