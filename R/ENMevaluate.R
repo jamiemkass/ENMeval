@@ -199,14 +199,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   
   # choose a user message reporting on partition choice
   parts.msg <- switch(partitions,
-                      jackknife = "Doing model evaluations with k-1 jackknife cross validation...\n",
+                      jackknife = "Doing model evaluations with k-1 jackknife (leave-one-out) cross validation...\n",
                       randomkfold = paste0("Doing model evaluations with random ", kfolds, "-fold cross validation...\n"),
                       block = "Doing model evaluations with spatial block (4-fold) cross validation...\n",
                       checkerboard1 = "Doing model evaluations with checkerboard (2-fold) cross validation...\n",
                       checkerboard2 = "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
                       user = paste0("Doing model evaluations with user-defined ", length(unique(occ.grp)), "-fold cross validation...\n"),
                       independent = "Doing model evaluations with independent testing data...\n",
-                      none = "Skipping model evaluations (only calculating AICc)...\n")
+                      none = "Skipping model evaluations (only calculating full model statistics)...\n")
   message(parts.msg)
   
   # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
@@ -216,7 +216,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   
   # if not user-defined or 'none', add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- c(grps$occ.grp, grps$bg.grp)
-  
   
   # add independent tesing data to main df if provided
   if(partitions == "independent") {
@@ -228,7 +227,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     occs.ind.vals$grp <- 1
     d <- rbind(d, occs.ind.vals)
   }
-  
   
   ################ #
   # tuning 
@@ -290,10 +288,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   # rows in one of the model runs
   nk <- length(unique(d$grp))
   
-  if(nk > 0 & nrow(tune.tbl) > 0) {
-    # if tune settings were specified and there is at least one partition,
-    # calculate the kstats tbl
-    # if(nrow(tune.tbl) > 0) {
+  # if partitions were specified
+  if(nk > 0) {
     # define number of settings (plus the tune.args field)
     nset <- ncol(tune.tbl)
     # if jackknife cross-validation (leave-one-out), correct variance for
@@ -305,7 +301,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
       sum.list <- list(avg = mean, var = var, min = min, max = max)
     } 
     
-    if(nk == 1) sum.list <- list(function(x) {x})
+    # if there is one partition, or if using an independent evaluation dataset,
+    # do not take summary statistics
+    if(nk == 1 | partitions == "independent") sum.list <- list(function(x) {x})
         
     cv.stats.sum <- cv.stats.all %>% 
       dplyr::group_by(tune.args) %>%
@@ -313,18 +311,30 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
       dplyr::summarize_all(sum.list) %>%
       dplyr::ungroup()
     
-    # reorder based on original order of tune names (summarize forces an alphanumeric reorder)
-    cv.stats.sum <- cv.stats.sum[match(tune.names, cv.stats.sum$tune.args),] %>%
-      dplyr::select(-tune.args)
-    # change names (replace _ with .)
-    names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
-    
-    # put tuning table, training stats, and cv stats together
-    eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all, cv.stats.sum)
+    # if tuning settings were chosen, reorder based on original order of tune names 
+    # (summarize forces an alphanumeric reorder), and build evaluation statistics
+    # table from tune.tbl, training stats, and cv stats
+    if(nrow(tune.tbl) > 0) {
+      cv.stats.sum <- cv.stats.sum[match(tune.names, cv.stats.sum$tune.args),] %>%
+        dplyr::select(-tune.args)  
+      # change names (replace _ with .)
+      names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+      # put tuning table, training stats, and cv stats together
+      eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all, cv.stats.sum)
+    }else{
+      # if no tuning settings chosen, no reordering is necessary, and build evaluation 
+      # statistics table from training stats and cv stats summary
+      cv.stats.sum <- dplyr::select(cv.stats.sum, -tune.args)
+      # change names (replace _ with .)
+      names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+      eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
+    }
   }else{
+    # if no partitions assigned, build evaluation statistics from tune.tbl and
+    # training stats
     eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all)
   }
-  
+    
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, enm@nparams)
   

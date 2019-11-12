@@ -27,9 +27,10 @@ eval <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
   return(e)
 }
 
-kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals,
-                   auc.train, mod, other.args, doClamp, abs.auc.diff) {
+kstats <- function(kstats, e.test, mod, occs.train.vals, occs.test.vals, 
+                   bg.train.vals, bg.test.vals, occs.train.pred, occs.test.pred, other.args) {
   
+  return(kstats)
 }
 
 pred <- function(mod, envs, other.args, doClamp, pred.type) {

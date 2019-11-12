@@ -62,8 +62,8 @@ tune.parallel <- function(d, envs, envs.names, enm, partitions, tune.tbl, settin
   
   message(paste0("Running in parallel using ", parallelType, "..."))
   
-  results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts) %dopar% {
-    cv.enm(d, envs, envs.names, enm, tune.i, partitions, settings)
+  results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
+    cv.enm(d, envs, envs.names, enm, tune.tbl[i,], partitions, settings)
   }
   close(pb)
   parallel::stopCluster(cl)
