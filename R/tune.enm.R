@@ -119,8 +119,8 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     mod.full.pred <- raster::stack()
   }
   
-  # define number of grp (the value of "k")
-  nk <- length(unique(d$grp))
+  # define number of grp (the value of "k") for occurrences
+  nk <- length(unique(d[d$pb == 1, "grp"]))
   # k is only one for independent testing data
   if(partitions == "independent") nk <- 1
   
@@ -139,6 +139,11 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(envs.names)
     bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(envs.names)
     bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
+    
+    # if bg has a grp that is not partitioned (e.g., for randomkfold, bg is given "0"),
+    # use the full background for each cross validation
+    # if(nrow(bg.train.vals) == 0) bg.train.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
+    
     # define model arguments for current model k
     mod.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
     # run the current model k

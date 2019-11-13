@@ -19,7 +19,7 @@ msgs <- function(tune.args) {
     if(any(!tune.args[["fc"]] %in% all.fc)) {
       stop("Please input accepted values for 'fc' settings for Maxent.")
     }
-    msg <- paste("maxnet from maxnet package v.", packageVersion('maxnet'))
+    msg <- paste0("maxnet from maxnet package v", packageVersion('maxnet'))
     return(msg)
   }
 }

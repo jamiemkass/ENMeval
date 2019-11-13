@@ -53,3 +53,20 @@ plot.grps.mess <- function(e, envs, categoricals, pts.type, plot.type = "density
       )  
   }
 }
+
+#' @export
+plot.eval <- function(e, x, color, vars) {
+  exp <- paste(paste0("*", vars), collapse = "|")
+  res <- e@results %>% 
+    tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
+    dplyr::filter(grepl(exp, metric)) %>% 
+    tidyr::separate(metric, sep = "_", fill = "right", c("metric", "statistic")) %>%
+    tidyr::replace_na(list(statistic = "avg")) %>%
+    tidyr::pivot_wider(names_from = statistic, values_from = value) %>%
+    dplyr::mutate(lower = avg - sd, upper = avg + sd)
+  
+  ggplot2::ggplot(res, ggplot2::aes_string(x = x, y = "avg", color = color, group = color)) + 
+    ggplot2::geom_point() + ggplot2::geom_line() + 
+    ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.1) +
+    ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(vars)) + ggplot2::theme_bw()
+}

@@ -5,8 +5,9 @@ set.seed(48)
 occs <- readRDS("data/bvariegatus.rds")
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
                                  pattern='grd', full.names=TRUE))
-bg <- as.data.frame(dismo::randomPoints(envs, 10000))
+bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
+tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args <- list(fc = "L", rm = 2:3)
 # random sample of occs for runs that use subsets
 i <- sample(1:nrow(occs))
@@ -21,8 +22,8 @@ e.cb1 <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args,
 e.cb2 <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
                   partitions = "checkerboard2", overlap = TRUE)
 # random k-fold partitions
-e4 <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
-                  partitions = "randomkfold", kfolds = 2, overlap = TRUE)
+e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
+                  partitions = "randomkfold", kfolds = 4, overlap = TRUE)
 # jackknife partitions
 e5 <- ENMevaluate(occs[i[1:10],], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
                   partitions = "jackknife", overlap = TRUE)
@@ -34,5 +35,5 @@ e7 <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, ca
                   partitions = "none", overlap = TRUE)
 
 
-test_that("")
+# test_that("")
 
