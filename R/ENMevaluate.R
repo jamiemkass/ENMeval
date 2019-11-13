@@ -266,7 +266,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   }else{
     # define tuned settings names and bind them to the tune table
     tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
-    tune.tbl <- dplyr::bind_cols(tune.tbl, tune.args = tune.names)
+    tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
@@ -304,35 +304,41 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     # if there is one partition, or if using an independent evaluation dataset,
     # do not take summary statistics
     if(nk == 1 | partitions == "independent") sum.list <- list(function(x) {x})
+    
+    # if tune.tbl exists, make tune.args column a factor to keep order after
+    # using dplyr functions
+    if(nrow(tune.tbl) > 0) cv.stats.all$tune.args <- factor(cv.stats.all$tune.args, levels = tune.names)
         
     cv.stats.sum <- cv.stats.all %>% 
       dplyr::group_by(tune.args) %>%
       dplyr::select(-fold) %>% 
       dplyr::summarize_all(sum.list) %>%
-      dplyr::ungroup()
+      dplyr::ungroup() 
     
-    # if tuning settings were chosen, reorder based on original order of tune names 
-    # (summarize forces an alphanumeric reorder), and build evaluation statistics
-    # table from tune.tbl, training stats, and cv stats
+    # change names (replace _ with .)
+    names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+
+    # bind together training and testing (cv) stats
+    # eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
+    
+    # if tune.tbl exists
     if(nrow(tune.tbl) > 0) {
-      cv.stats.sum <- cv.stats.sum[match(tune.names, cv.stats.sum$tune.args),] %>%
-        dplyr::select(-tune.args)  
-      # change names (replace _ with .)
-      names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
-      # put tuning table, training stats, and cv stats together
-      eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all, cv.stats.sum)
+      # make tune.args column in training stats factor too for smooth join
+      train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
+      # eval.stats is the join of tune.tbl, training stats, and cv stats
+      eval.stats <- tune.tbl %>% dplyr::left_join(train.stats.all, by = "tune.args") %>%
+        dplyr::left_join(cv.stats.sum, by = "tune.args")
     }else{
-      # if no tuning settings chosen, no reordering is necessary, and build evaluation 
-      # statistics table from training stats and cv stats summary
-      cv.stats.sum <- dplyr::select(cv.stats.sum, -tune.args)
-      # change names (replace _ with .)
-      names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+      # if tune.tbl does not exist, eval.stats is the binding of training stats to cv stats
+      train.stats.all$tune.args <- NULL
+      cv.stats.sum$tune.args <- NULL
       eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
     }
   }else{
-    # if no partitions assigned, build evaluation statistics from tune.tbl and
-    # training stats
-    eval.stats <- dplyr::bind_cols(tune.tbl, train.stats.all)
+    # make tune.args column in training stats factor too for smooth join
+    train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
+    # if no partitions assigned, eval.stats is the join of tune.tbl to training stats
+    eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args")
   }
     
   # calculate number of non-zero parameters in model
