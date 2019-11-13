@@ -6,7 +6,7 @@
 #' 
 #' The \code{get.block} method partitions occurrence localities by finding the latitude and longitude that divide the occurrence localities into four groups of (insofar as possible) equal numbers.  Background localities are assigned to each of the four groups based on their position with respect to these lines.  While the \code{get.block} method results in (approximately) equal division of occurrence localities among four groups, the number of background localities (and, consequently, environmental and geographic space) in each group depends on the distribution of occurrence localities across the study area.
 #' 
-#' The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants of a checkerboard approach to partition occurrence localities.  These methods use the \code{gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) to partition records according to checkerboard grids across the study extent.  The spatial grain of these grids is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor of 2 results in a checkerboard with grid cells four times as large in area as the original input grids).  The \code{get.checkerboard1} method partitions data into two groups according to a single checkerboard pattern, and the \code{get.checkerboard2} method partitions data into four groups according to two nested checkerboard grids.  In contrast to the \code{get.block} method, both the \code{get.checkerboard1} and \code{get.checkerboard2} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group.  The two \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
+#' The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants of a checkerboard approach to partition occurrence localities.  These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) to partition records according to checkerboard grids across the study extent.  The spatial grain of these grids is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor of 2 results in a checkerboard with grid cells four times as large in area as the original input grids).  The \code{get.checkerboard1} method partitions data into two groups according to a single checkerboard pattern, and the \code{get.checkerboard2} method partitions data into four groups according to two nested checkerboard grids.  In contrast to the \code{get.block} method, both the \code{get.checkerboard1} and \code{get.checkerboard2} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group.  The two \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
 #' 
 #' The \code{get.jackknife} method is a special case of \emph{k}-fold cross validation where the number of bins (\emph{k}) is equal to the number of occurrence localities (\emph{n}) in the dataset.  It is suggested for datasets of relatively small sample size (generally < 25 localities) (Pearson \emph{et al.} 2007; Shcheglovitova and Anderson 2013).
 #' 
@@ -177,11 +177,11 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
   
-  grid <- aggregate(envs[[1]], fact=aggregation.factor[1])
-  w <- gridSample(occs, grid, n=1e6, chess='white')
-  b <- gridSample(occs, grid, n=1e6, chess='black')
-  bgw <- gridSample(bg, grid, n=1e6, chess='white')
-  bgb <- gridSample(bg, grid, n=1e6, chess='black')
+  grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
+  w <- dismo::gridSample(occs, grid, n=1e6, chess='white')
+  b <- dismo::gridSample(occs, grid, n=1e6, chess='black')
+  bgw <- dismo::gridSample(bg, grid, n=1e6, chess='white')
+  bgb <- dismo::gridSample(bg, grid, n=1e6, chess='black')
   
   if(nrow(w) > 0) { w$grp <- 1 }
   if(nrow(b) > 0) { b$grp <- 2 }
@@ -224,20 +224,20 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   rownames(bg) <- 1:nrow(bg)
   
   if (length(aggregation.factor) == 1) aggregation.factor <- rep(aggregation.factor, 2)
-  grid <- aggregate(envs[[1]], fact=aggregation.factor[1])
-  grid2 <- aggregate(grid, aggregation.factor[2])
-  w <- gridSample(occs, grid, n=gridSampleN, chess='white')
-  b <- gridSample(occs, grid, n=gridSampleN, chess='black')
-  ww <- gridSample(w, grid2, n=gridSampleN, chess='white')
-  wb <- gridSample(w, grid2, n=gridSampleN, chess='black')
-  bw <- gridSample(b, grid2, n=gridSampleN, chess='white')
-  bb <- gridSample(b, grid2, n=gridSampleN, chess='black')
-  bgw <- gridSample(bg, grid, n=gridSampleN, chess='white')
-  bgb <- gridSample(bg, grid, n=gridSampleN, chess='black')
-  bgww <- gridSample(bgw, grid2, n=gridSampleN, chess='white')
-  bgwb <- gridSample(bgw, grid2, n=gridSampleN, chess='black')
-  bgbw <- gridSample(bgb, grid2, n=gridSampleN, chess='white')
-  bgbb <- gridSample(bgb, grid2, n=gridSampleN, chess='black')
+  grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
+  grid2 <- raster::aggregate(grid, aggregation.factor[2])
+  w <- dismo::gridSample(occs, grid, n=gridSampleN, chess='white')
+  b <- dismo::gridSample(occs, grid, n=gridSampleN, chess='black')
+  ww <- dismo::gridSample(w, grid2, n=gridSampleN, chess='white')
+  wb <- dismo::gridSample(w, grid2, n=gridSampleN, chess='black')
+  bw <- dismo::gridSample(b, grid2, n=gridSampleN, chess='white')
+  bb <- dismo::gridSample(b, grid2, n=gridSampleN, chess='black')
+  bgw <- dismo::gridSample(bg, grid, n=gridSampleN, chess='white')
+  bgb <- dismo::gridSample(bg, grid, n=gridSampleN, chess='black')
+  bgww <- dismo::gridSample(bgw, grid2, n=gridSampleN, chess='white')
+  bgwb <- dismo::gridSample(bgw, grid2, n=gridSampleN, chess='black')
+  bgbw <- dismo::gridSample(bgb, grid2, n=gridSampleN, chess='white')
+  bgbb <- dismo::gridSample(bgb, grid2, n=gridSampleN, chess='black')
   
   r <- data.frame()
   if (nrow(ww) > 0) ww$grp <- 1; r <- rbind(r, ww)

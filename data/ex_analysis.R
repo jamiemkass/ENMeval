@@ -1,5 +1,5 @@
 set.seed(48)
-bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
+bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=500, has_coords=TRUE)
 occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 occs <- occs[!duplicated(occs),]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))

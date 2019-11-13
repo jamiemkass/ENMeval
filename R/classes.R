@@ -28,9 +28,9 @@ ENMevaluation <- setClass("ENMevaluation",
                                   models = 'list',
                                   predictions = 'RasterStack',
                                   occ.pts = 'data.frame',
-                                  occ.grp = 'numeric',
+                                  occ.grp = 'factor',
                                   bg.pts = 'data.frame',
-                                  bg.grp = 'numeric',
+                                  bg.grp = 'factor',
                                   overlap = 'list'))
 
 setGeneric("algorithm", function(x) standardGeneric("algorithm"))

@@ -177,8 +177,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   }
   
   # unpack occs and bg records for partitioning
-  d.occs <- d[d$pb == 1,]
-  d.bg <- d[d$pb == 0,]
+  d.occs <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
+  d.bg <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
   
   # if occs.ind input, coerce partitions to 'independent'
   if(!is.null(occs.ind) & partitions != "independent") {
@@ -215,7 +215,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   if(partitions %in% c("jackknife", "block", "checkerboard1", "checkerboard2")) cvBoyce <- FALSE
   
   # if not user-defined or 'none', add these values as the 'grp' column
-  if(!is.null(grps)) d$grp <- c(grps$occ.grp, grps$bg.grp)
+  if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
   
   # add independent tesing data to main df if provided
   if(partitions == "independent") {
@@ -364,8 +364,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
                      results = eval.stats, results.grp = cv.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions,
-                     occ.pts = d[d$pb == 1, 1:2], occ.grp = d[d$pb == 1, "grp"],
-                     bg.pts = d[d$pb == 0, 1:2], bg.grp = d[d$pb == 0, "grp"])
+                     occ.pts = d[d$pb == 1, 1:2], occ.grp = factor(d[d$pb == 1, "grp"]),
+                     bg.pts = d[d$pb == 0, 1:2], bg.grp = factor(d[d$pb == 0, "grp"]))
     
   # if niche overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
