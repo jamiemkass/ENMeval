@@ -106,7 +106,8 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
   # calculate training auc
   e.train <- enm@eval(occs.vals, bg.vals, mod.full, settings$other.args, settings$doClamp)
   auc.train <- e.train@auc
-  train.stats.df <- data.frame(auc.train = auc.train)
+  tune.args.col <- paste(tune.i, collapse = "_")
+  train.stats.df <- data.frame(tune.args = tune.args.col, auc.train = auc.train, stringsAsFactors = FALSE)
   # if rasters selected and envs is not NULL, predict raster for the full model
   if(settings$skipRasters == FALSE & !is.null(envs)) {
     mod.full.pred <- enm@pred(mod.full, envs, settings$other.args, settings$doClamp, settings$pred.type)
@@ -198,7 +199,6 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
                          bg.test.vals, occs.train.pred, occs.test.pred, settings$other.args)
     # kstats <- c(kstats, mess.quant)
     # put into list as one-row data frame for easy binding
-    tune.args.col <- paste(tune.i, collapse = "_")
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL, stringsAsFactors = FALSE)
   } 
   
