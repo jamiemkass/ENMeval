@@ -9,7 +9,7 @@ fun <- dismo::bioclim
 pkgs <- c("dismo", "raster")
 
 msgs <- function(tune.args) {
-  msg <- paste("BIOCLIM from dismo v.", packageVersion('dismo'))
+  msg <- paste0("BIOCLIM from dismo v", packageVersion('dismo'))
   return(msg)
 }
 

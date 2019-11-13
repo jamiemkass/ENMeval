@@ -30,7 +30,7 @@ msgs <- function(tune.args) {
   }
   mxe <- rJava::.jnew("meversion") 
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
-  msg <- paste("maxent.jar v.", v, "from dismo package v.", packageVersion('dismo'))
+  msg <- paste0("maxent.jar v", v, " from dismo package v", packageVersion('dismo'))
   return(msg)
 }
 

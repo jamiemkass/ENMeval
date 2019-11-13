@@ -266,6 +266,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   }else{
     # define tuned settings names and bind them to the tune table
     tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
+    tune.tbl <- dplyr::mutate_all(tune.tbl, as.factor)
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
   # gather all full models into list and name them
@@ -284,9 +285,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   # gather all k-fold statistics into a list of data frames,
   # (these are a single set of stats if no partitions were chosen)
   cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
-  # define number of grp (the value of "k") as number of
-  # rows in one of the model runs
-  nk <- length(unique(d$grp))
+  
+  # define number of grp (the value of "k") for occurrences
+  nk <- length(unique(d[d$pb == 1, "grp"]))
   
   # if partitions were specified
   if(nk > 0) {
@@ -296,9 +297,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     # non-independent samples (Shcheglovitova & Anderson 2013)
     
     if(partitions == "jackknife") {
-      sum.list <- list(avg = mean, var = ~corrected.var(., nk), min = min, max = max)
+      sum.list <- list(avg = mean, sd = ~sqrt(corrected.var(., nk)), min = min, max = max)
     }else{
-      sum.list <- list(avg = mean, var = var, min = min, max = max)
+      sum.list <- list(avg = mean, sd = sd, min = min, max = max)
     } 
     
     # if there is one partition, or if using an independent evaluation dataset,
@@ -316,7 +317,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
       dplyr::ungroup() 
     
     # change names (replace _ with .)
-    names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+    # names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
 
     # bind together training and testing (cv) stats
     # eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
