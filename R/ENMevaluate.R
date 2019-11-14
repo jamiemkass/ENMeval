@@ -225,6 +225,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
     # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the independent data
     # and the second iteration is not performed
     occs.ind.vals$grp <- 1
+    levels(d$grp) <- 1:2
+    d$grp <- 2
     d <- rbind(d, occs.ind.vals)
   }
   
