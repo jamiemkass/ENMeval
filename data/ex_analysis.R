@@ -37,7 +37,7 @@ occs <- occs[51:nrow(occs),]
 # 
 # 
 # ## old ENMeval
-# e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block")
+# e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block", occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
 
 ## regular run
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
