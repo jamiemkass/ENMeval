@@ -79,7 +79,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   
   # legacy parameter handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, algorithm, method, bin.output, rasterPreds, occ.grp,
-                     bg.grp)
+                     bg.grp, clamp)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
     message("Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n")
   }
@@ -102,6 +102,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   if (!is.null(occ.grp) & !is.null(bg.grp)) {
     user.grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
   }
+  
+  if(!is.null(clamp)) doClamp <- clamp
   
   if(is.null(mod.name) & is.null(user.enm)) {
     stop("Please select a model name (mod.name) or specify a user model (user.enm).\n")
