@@ -85,7 +85,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
-  if(!is.null(bg.coords)) bg <- bg.coords
+  if (!is.null(bg.coords)) {
+    bg <- bg.coords
+    names(bg) <- names(occs)
+  }
   if(!is.null(method)) partitions <- method
   if(!is.null(rasterPreds)) skipRasters <- rasterPreds
   if(!is.null(algorithm)) {
