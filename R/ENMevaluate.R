@@ -204,7 +204,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
                       block = "Doing model evaluations with spatial block (4-fold) cross validation...\n",
                       checkerboard1 = "Doing model evaluations with checkerboard (2-fold) cross validation...\n",
                       checkerboard2 = "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
-                      user = paste0("Doing model evaluations with user-defined ", length(unique(occ.grp)), "-fold cross validation...\n"),
+                      user = paste0("Doing model evaluations with user-defined ", length(unique(d.occs$grp)), "-fold cross validation...\n"),
                       independent = "Doing model evaluations with independent testing data...\n",
                       none = "Skipping model evaluations (only calculating full model statistics)...\n")
   message(parts.msg)
