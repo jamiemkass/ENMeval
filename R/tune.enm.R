@@ -180,9 +180,17 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     or.10p <- mean(occs.test.pred < pct10.train.thr)
     
     # calculate continuous Boyce Index
-    if(settings$cvBoyce == TRUE) {
+    if(settings$cbi.cv == TRUE) {
       occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
-      cbi.test <- ecospat::ecospat.boyce(mod.full.pred, occs.test.xy, PEplot = FALSE)
+      if(settings$cbi.eval == "envs") {
+        fit <- envs  
+        obs <- occs.test.xy
+      }else if(settings$cbi.eval == "bg") {
+        # use full background to calculate cbi
+        fit <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred)
+        obs <- occs.test.pred
+      }
+      cbi.test <- ecospat::ecospat.boyce(fit, obs, PEplot = FALSE)
     }else{
       cbi.test <- NULL
     }
