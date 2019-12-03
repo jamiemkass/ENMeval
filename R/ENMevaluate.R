@@ -1,59 +1,56 @@
 #' @title Tuning and evaluation of ecological niche models
-#' @description \code{ENMevaluate()} builds ecological niche models iteratively across a range of user-specified tuning settings. Users can choose to tune with cross validation or an independent occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing evaluation statistics (for each combination of settings and for each cross validation fold therein) and raster predictions for each model. The evaluation statistics are meant to aid users in identifying settings that balance model fit and predictive ability.
+#' @description \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
+#' user-specified tuning settings. Users can choose to tune with cross validation or an independent 
+#' occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+#' evaluation statistics (for each combination of settings and for each cross validation fold therein) 
+#' and raster predictions for each model. The evaluation statistics are meant to aid users in identifying 
+#' settings that balance model fit and predictive ability.
+#' 
 #' @param occs matrix or data frame with two columns for longitude and latitude 
-#' of occurrence localities, in that order
-#' @param envs Raster* object of environmental variables (must be in 
-#' same geographic projection as occurrence data)
+#' of occurrence localities, in that order; if specifying predictor variable values
+#' assigned to presence/background localities (species with data "SWD" form), this table will also have 
+#' one column for each predictor variable
+#' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
 #' @param bg matrix or data frame with two columns for longitude and latitude of 
-#' background (or pseudo-absence) localities, in that order; if NULL, points 
-#' will be randomly sampled across \code{envs} with the number specified by 
-#' parameter \code{n.bg}
-#' @param occs.vals matrix or data frame of environmental values corresponding
-#' to occurrence localities, intended to be input when environmental rasters
-#' are not used (\code{envs} is NULL) 
-#' @param bg.vals matrix or data frame of environmental values corresponding
-#' to background (or pseudo-absence) localities, intended to be input when 
-#' environmental rasters are not used (\code{envs} is NULL) 
+#' background (or pseudo-absence) localities, in that order; if specifying predictor variable values
+#' assigned to presence/background localities (species with data "SWD" form), this table will also have 
+#' one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
+#' with the number specified by parameter \code{n.bg}
+#' @param tune.args named list of model settings to be tuned
+#' @param other.args named list of any additional model arguments not specified for tuning
+#' @param categoricals character vector of names of categorical environmental variables
 #' @param mod.name character of the name of the chosen model
 #' @param user.enm ENMdetails object specified by the user; this model will be
 #' used for the analysis, and is an alternative to specifying mod.name
-#' @param tune.args named list of model settings to be tuned
-#' @param other.args named list of any additional model arguments not specified 
-#' for tuning
-#' @param categoricals character vector of names of categorical 
-#' environmental variables
-#' @param partitions character of name of partitioning technique (see
-#' \code{?partitions})
-#' @param occ.grp numeric vector of partition group (fold) for each
-#' occurrence locality, intended for user-defined partitions
-#' @param bg.grp numeric vector of partition group (fold) for each background 
-#' (or pseudo-absence) locality, intended for user-defined partitions
+#' @param partitions character of name of partitioning technique (see \code{?partitions})
+#' @param user.grp named list with occ.grp = vector of partition group (fold) for each
+#' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
+#' background (or pseudo-absence) localities
 #' @param occs.ind matrix or data frame with two columns for longitude and latitude 
 #' of occurrence localities, in that order, intended for independent evaluation;
 #' when \code{partitions = "independent"}; these occurrences will be used only 
-#' for evaluation, and not for model training, and thus no cross validation will 
-#' be done
-#' @param kfolds numeric for number of partition groups (grp), only for random
-#' k-fold partitioning
-#' @param aggregation.factor numeric vector with length 2 that specifies the
-#' factors for aggregating \code{envs} in order to perform checkerboard
-#' partitioning
-#' @param n.bg numeric for number of random background (or pseudo-absence) points
-#' to sample; necessary if \code{bg} is NULL
-#' @param overlap boolean (TRUE or FALSE); if TRUE, calculate niche overlap 
-#' statistics
-#' @param overlapStat character; one or two (vector) niche overlap statistics:
+#' for evaluation, and not for model training, and thus no cross validation will be done
+#' @param kfolds numeric for number of partition groups (grp), only for random k-fold partitioning
+#' @param aggregation.factor numeric vector with length 2 that specifies the factors for aggregating 
+#' \code{envs} in order to perform checkerboard partitioning
+#' @param n.bg numeric (default: 10000) for number of random background (or pseudo-absence) points to
+#'  sample; necessary if \code{bg} is NULL
+#' @param overlap boolean (TRUE or FALSE) which if TRUE, calculate niche overlap statistics
+#' @param overlapStat character for one or two (vector) niche overlap statistics:
 #' choices are "D" and "I" -- see ?calc.niche.overlap for more details
-#' @param doClamp boolean (TRUE or FALSE); if TRUE, clamp model responses; only
-#' applicable for Maxent models
-#' @param skipRasters boolean (TRUE or FALSE); if TRUE, skip raster predictions
-#' @param abs.auc.diff boolean (TRUE or FALSE); if TRUE, take absolute value of
-#' AUCdiff; default is TRUE
-#' @param parallel boolean (TRUE or FALSE); if TRUE, run with parallel processing
+#' @param doClamp boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
+#' applicable for maxent.jar/maxnet models
+#' @param pred.type character (default: "cloglog") that specifies which prediction type should be used to
+#' generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models
+#' @param cbi.eval character (default: "bg") specifying which should be used to calculate the expected frequency
+#' of occurrences for the Continuous Boyce Index: "envs" for the predictions over the entire predictor variable rasters,
+#' and "bg" for the predictions at all background localities (training + testing)
+#' @param skipRasters boolean (TRUE or FALSE) which if TRUE, skip raster predictions
+#' @param abs.auc.diff boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE
+#' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
-#' @param parallelType character; either "doParallel" or "doSNOW"
-#' @param updateProgress boolean (TRUE or FALSE); if TRUE, use shiny progress
-#' bar; only for use in shiny apps
+#' @param parallelType character (default: "doSNOW") specifying either "doParallel" or "doSNOW"
+#' @param updateProgress boolean (TRUE or FALSE) which if TRUE, use shiny progress bar; only for use in shiny apps
 #'
 #' @return 
 #'
@@ -64,14 +61,11 @@
 #' @export 
 #' 
 
-ENMevaluate <- function(occs, envs = NULL, bg = NULL, 
-                        tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
-                        user.enm = NULL, cvBoyce = TRUE,
-                        partitions = NULL, user.grp = NULL, occs.ind = NULL, 
+ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
+                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
-                        overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", skipRasters = FALSE, 
-                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW",
-                        updateProgress = FALSE,
+                        overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "bg", skipRasters = FALSE, 
+                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
                         occ.grp = NULL, bg.grp = NULL,
@@ -214,7 +208,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
   # on testing data is problematic, as 1) the full study area must be considered, and
   # 2) too few test records are considered, so currently we turn it off
-  if(partitions %in% c("jackknife", "block", "checkerboard1", "checkerboard2")) cvBoyce <- FALSE
+  if(partitions %in% c("jackknife", "block", "checkerboard1", "checkerboard2")) {
+    message("Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for spatial or jackknife cross-validation. \n
+            Please use randomkfold, independent, or user partitions for CBI test evaluation calculations.")
+    cbi.cv <- FALSE
+  }else{
+    cbi.cv <- TRUE
+  }
   
   # if not user-defined or 'none', add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
@@ -251,8 +251,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL,
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   # put all settings into list
-  settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type,
-                   skipRasters = skipRasters, abs.auc.diff = abs.auc.diff, cvBoyce = cvBoyce)
+  settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, skipRasters = skipRasters, 
+                   abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
     results <- tune.parallel(d, envs, envs.names, enm, partitions, tune.tbl, settings, numCores, parallelType)  
