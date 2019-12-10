@@ -191,7 +191,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
         obs <- occs.test.xy
       }else{
         # use full background to calculate cbi
-        mod.k.pred <- d.pred %>% dplyr::pull(pred)
+        mod.k.pred <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred)
         obs <- occs.test.pred
       }
       cbi.test <- ecospat::ecospat.boyce(mod.k.pred, obs, PEplot = FALSE)
