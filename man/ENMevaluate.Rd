@@ -4,104 +4,125 @@
 \alias{ENMevaluate}
 \title{Tuning and evaluation of ecological niche models}
 \usage{
-ENMevaluate(occs, envs = NULL, bg = NULL, tune.args = NULL,
-  other.args = NULL, categoricals = NULL, mod.name = NULL,
-  user.enm = NULL, cvBoyce = TRUE, partitions = NULL,
-  user.grp = NULL, occs.ind = NULL, kfolds = NA,
-  aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE,
-  overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog",
-  skipRasters = FALSE, abs.auc.diff = TRUE, parallel = FALSE,
-  numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
-  occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL,
-  fc = NULL, algorithm = NULL, method = NULL, bin.output = NULL,
-  rasterPreds = NULL, clamp = NULL, progbar = NULL)
+ENMevaluate(
+  occs,
+  envs = NULL,
+  bg = NULL,
+  tune.args = NULL,
+  other.args = NULL,
+  categoricals = NULL,
+  mod.name = NULL,
+  user.enm = NULL,
+  partitions = NULL,
+  user.grp = NULL,
+  occs.ind = NULL,
+  kfolds = NA,
+  aggregation.factor = c(2, 2),
+  n.bg = 10000,
+  overlap = FALSE,
+  overlapStat = c("D", "I"),
+  doClamp = TRUE,
+  pred.type = "cloglog",
+  cbi.eval = "bg",
+  abs.auc.diff = TRUE,
+  parallel = FALSE,
+  numCores = NULL,
+  parallelType = "doSNOW",
+  updateProgress = FALSE,
+  occ = NULL,
+  env = NULL,
+  bg.coords = NULL,
+  RMvalues = NULL,
+  fc = NULL,
+  occ.grp = NULL,
+  bg.grp = NULL,
+  algorithm = NULL,
+  method = NULL,
+  bin.output = NULL,
+  rasterPreds = NULL,
+  clamp = NULL,
+  progbar = NULL
+)
 }
 \arguments{
 \item{occs}{matrix or data frame with two columns for longitude and latitude 
-of occurrence localities, in that order}
+of occurrence localities, in that order; if specifying predictor variable values
+assigned to presence/background localities (species with data "SWD" form), this table will also have 
+one column for each predictor variable}
 
-\item{envs}{Raster* object of environmental variables (must be in 
-same geographic projection as occurrence data)}
+\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
 
 \item{bg}{matrix or data frame with two columns for longitude and latitude of 
-background (or pseudo-absence) localities, in that order; if NULL, points 
-will be randomly sampled across \code{envs} with the number specified by 
-parameter \code{n.bg}}
+background (or pseudo-absence) localities, in that order; if specifying predictor variable values
+assigned to presence/background localities (species with data "SWD" form), this table will also have 
+one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
+with the number specified by parameter \code{n.bg}}
 
 \item{tune.args}{named list of model settings to be tuned}
 
-\item{other.args}{named list of any additional model arguments not specified 
-for tuning}
+\item{other.args}{named list of any additional model arguments not specified for tuning}
 
-\item{categoricals}{character vector of names of categorical 
-environmental variables}
+\item{categoricals}{character vector of names of categorical environmental variables}
 
 \item{mod.name}{character of the name of the chosen model}
 
 \item{user.enm}{ENMdetails object specified by the user; this model will be
 used for the analysis, and is an alternative to specifying mod.name}
 
-\item{partitions}{character of name of partitioning technique (see
-\code{?partitions})}
+\item{partitions}{character of name of partitioning technique (see \code{?partitions})}
+
+\item{user.grp}{named list with occ.grp = vector of partition group (fold) for each
+occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
+background (or pseudo-absence) localities}
 
 \item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
 of occurrence localities, in that order, intended for independent evaluation;
 when \code{partitions = "independent"}; these occurrences will be used only 
-for evaluation, and not for model training, and thus no cross validation will 
-be done}
+for evaluation, and not for model training, and thus no cross validation will be done}
 
-\item{kfolds}{numeric for number of partition groups (grp), only for random
-k-fold partitioning}
+\item{kfolds}{numeric for number of partition groups (grp), only for random k-fold partitioning}
 
-\item{aggregation.factor}{numeric vector with length 2 that specifies the
-factors for aggregating \code{envs} in order to perform checkerboard
-partitioning}
+\item{aggregation.factor}{numeric vector with length 2 that specifies the factors for aggregating 
+\code{envs} in order to perform checkerboard partitioning}
 
-\item{n.bg}{numeric for number of random background (or pseudo-absence) points
-to sample; necessary if \code{bg} is NULL}
+\item{n.bg}{numeric (default: 10000) for number of random background (or pseudo-absence) points to
+sample; necessary if \code{bg} is NULL}
 
-\item{overlap}{boolean (TRUE or FALSE); if TRUE, calculate niche overlap 
-statistics}
+\item{overlap}{boolean (TRUE or FALSE) which if TRUE, calculate niche overlap statistics}
 
-\item{overlapStat}{character; one or two (vector) niche overlap statistics:
+\item{overlapStat}{character for one or two (vector) niche overlap statistics:
 choices are "D" and "I" -- see ?calc.niche.overlap for more details}
 
-\item{doClamp}{boolean (TRUE or FALSE); if TRUE, clamp model responses; only
-applicable for Maxent models}
+\item{doClamp}{boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
+applicable for maxent.jar/maxnet models}
 
-\item{skipRasters}{boolean (TRUE or FALSE); if TRUE, skip raster predictions}
+\item{pred.type}{character (default: "cloglog") that specifies which prediction type should be used to
+generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models}
 
-\item{abs.auc.diff}{boolean (TRUE or FALSE); if TRUE, take absolute value of
-AUCdiff; default is TRUE}
+\item{cbi.eval}{character (default: "bg") specifying which should be used to calculate the expected frequency
+of occurrences for the Continuous Boyce Index: "envs" for the predictions over the entire predictor variable rasters,
+and "bg" for the predictions at all background localities (training + testing)}
 
-\item{parallel}{boolean (TRUE or FALSE); if TRUE, run with parallel processing}
+\item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
+
+\item{parallel}{boolean (TRUE or FALSE) which if TRUE, run with parallel processing}
 
 \item{numCores}{numeric for number of cores to use for parallel processing}
 
-\item{parallelType}{character; either "doParallel" or "doSNOW"}
+\item{parallelType}{character (default: "doSNOW") specifying either "doParallel" or "doSNOW"}
 
-\item{updateProgress}{boolean (TRUE or FALSE); if TRUE, use shiny progress
-bar; only for use in shiny apps}
-
-\item{occs.vals}{matrix or data frame of environmental values corresponding
-to occurrence localities, intended to be input when environmental rasters
-are not used (\code{envs} is NULL)}
-
-\item{bg.vals}{matrix or data frame of environmental values corresponding
-to background (or pseudo-absence) localities, intended to be input when 
-environmental rasters are not used (\code{envs} is NULL)}
-
-\item{occ.grp}{numeric vector of partition group (fold) for each
-occurrence locality, intended for user-defined partitions}
-
-\item{bg.grp}{numeric vector of partition group (fold) for each background 
-(or pseudo-absence) locality, intended for user-defined partitions}
+\item{updateProgress}{boolean (TRUE or FALSE) which if TRUE, use shiny progress bar; only for use in shiny apps}
 }
 \value{
 
 }
 \description{
-\code{ENMevaluate()} builds ecological niche models iteratively across a range of user-specified tuning settings. Users can choose to tune with cross validation or an independent occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing evaluation statistics (for each combination of settings and for each cross validation fold therein) and raster predictions for each model. The evaluation statistics are meant to aid users in identifying settings that balance model fit and predictive ability.
+\code{ENMevaluate()} builds ecological niche models iteratively across a range of 
+user-specified tuning settings. Users can choose to tune with cross validation or an independent 
+occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+evaluation statistics (for each combination of settings and for each cross validation fold therein) 
+and raster predictions for each model. The evaluation statistics are meant to aid users in identifying 
+settings that balance model fit and predictive ability.
 }
 \examples{
 

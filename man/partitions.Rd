@@ -13,8 +13,7 @@ get.block(occs, bg)
 
 get.checkerboard1(occs, envs, bg, aggregation.factor)
 
-get.checkerboard2(occs, envs, bg, aggregation.factor,
-  gridSampleN = 10000)
+get.checkerboard2(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
 
 get.jackknife(occs, bg)
 
@@ -48,7 +47,7 @@ The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants o
 
 The \code{get.jackknife} method is a special case of \emph{k}-fold cross validation where the number of bins (\emph{k}) is equal to the number of occurrence localities (\emph{n}) in the dataset.  It is suggested for datasets of relatively small sample size (generally < 25 localities) (Pearson \emph{et al.} 2007; Shcheglovitova and Anderson 2013).
 
-The \code{get.randomkfold} method partitions occurrence localities randomly into a user-specified number of (\emph{k}) bins.   This is equivalent to the method of \emph{k}-fold cross valiation currently provided by Maxent.
+The \code{get.randomkfold} method partitions occurrence localities randomly into a user-specified number of (\emph{k}) bins.   This is equivalent to the method of \emph{k}-fold cross valiation currently provided by Maxent. 
 
 Users can also define evaluation bins \emph{a priori} directly in the call to `ENMevaluate`.  With this method, occurrence and background localities, as well as evaluation bin designation for each locality, are supplied by the user.
 }

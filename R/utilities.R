@@ -166,12 +166,12 @@ corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
 }
 
-calc.10p.trainThresh <- function(occs.train, pred.train) {
-  occs.train.n <- nrow(occs.train)
-  if (occs.train.n < 10) {
-    pct90.train <- floor(occs.train.n * 0.9)
-  } else {
-    pct90.train <- ceiling(occs.train.n * 0.9)
+calc.10p.trainThresh <- function(pred.train) {
+  n <- nrow(pred.train)
+  if(n < 10) {
+    pct90.train <- floor(n * 0.9)
+  }else{
+    pct90.train <- ceiling(n * 0.9)
   }
   pct10.train.thr <- rev(sort(pred.train))[pct90.train]
   return(pct10.train.thr)
