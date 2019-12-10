@@ -29,7 +29,6 @@
 #' be done
 #' @param doClamp boolean (TRUE or FALSE); if TRUE, clamp model responses; only
 #' applicable for Maxent models
-#' @param skipRasters boolean (TRUE or FALSE); if TRUE, skip raster predictions
 #' @param abs.auc.diff boolean (TRUE or FALSE); if TRUE, take absolute value of
 #' AUCdiff; default is TRUE
 #' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores
@@ -98,8 +97,9 @@ tune.regular <- function(d, envs, envs.names, enm, partitions, tune.tbl, setting
 #' @rdname tune.enm
 cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
   # unpack predictor variable values for occs and bg
-  occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
-  bg.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
+  d.vals <- d %>% dplyr::select(pb, envs.names)
+  occs.vals <- d.vals %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
+  bg.vals <- d.vals %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
   # build the full model from all the data
   mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, settings$other.args)
   mod.full <- do.call(enm@fun, mod.full.args)
@@ -108,17 +108,21 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
   auc.train <- e.train@auc
   tune.args.col <- paste(tune.i, collapse = "_")
   train.stats.df <- data.frame(tune.args = tune.args.col, auc.train = auc.train, stringsAsFactors = FALSE)
-  # if rasters selected and envs is not NULL, predict raster for the full model
-  if(settings$skipRasters == FALSE & !is.null(envs)) {
+  # if envs is not NULL, predict raster for the full model and calculate CBI.train on this raster
+  if(!is.null(envs)) {
     mod.full.pred <- enm@pred(mod.full, envs, settings$other.args, settings$doClamp, settings$pred.type)
     # training CBI
     d.occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
     cbi.train <- ecospat::ecospat.boyce(mod.full.pred, d.occs.xy, PEplot = FALSE)
     train.stats.df$cbi.train <- cbi.train$Spearman.cor
   }else{
-    mod.full.pred <- raster::stack()
+    # if envs is NULL, calculate CBI.train with the occurrence + background points
+    d.full.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals %>% dplyr::select(envs.names), settings$other.args, settings$doClamp, settings$pred.type))
+    occs.full.pred <- d.full.pred %>% dplyr::filter(pb == 1)
+    cbi.train <- ecospat::ecospat.boyce(d.full.pred$pred, occs.full.pred$pred, PEplot = FALSE)
+    mod.full.pred <- d.full.pred$pred
   }
-  
+    
   # define number of grp (the value of "k") for occurrences
   nk <- length(unique(d[d$pb == 1, "grp"]))
   # k is only one for independent testing data
@@ -145,12 +149,12 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     # if(nrow(bg.train.vals) == 0) bg.train.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
     
     # define model arguments for current model k
-    mod.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
+    mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
     # run the current model k
-    mod <- do.call(enm@fun, mod.args)
+    mod.k <- do.call(enm@fun, mod.k.args)
     
     # if model is NULL for some reason, continue but report to user
-    if(is.null(mod)) {
+    if(is.null(mod.k)) {
       message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model.\n"))
       next
     }
@@ -159,7 +163,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     
     # calculate auc on testing data
     # NOTE: switch to bg.test??
-    e.test <- enm@eval(occs.test.vals, bg.train.vals, mod, settings$other.args, settings$doClamp)
+    e.test <- enm@eval(occs.test.vals, bg.train.vals, mod.k, settings$other.args, settings$doClamp)
     auc.test <- e.test@auc
     # calculate auc diff
     auc.diff <- auc.train - auc.test
@@ -169,28 +173,28 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     # these predictions are used only for calculating omission rate, and
     # thus should not need any specific parameter changes for maxent/maxnet
     d.vals <- d %>% dplyr::select(envs.names)
-    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals, settings$other.args, settings$doClamp, settings$pred.type))
+    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.k, d.vals, settings$other.args, settings$doClamp, settings$pred.type))
     occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred)
     occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred)
     # get minimum training presence threshold (expected no omission)
     min.train.thr <- min(occs.train.pred)
     or.mtp <- mean(occs.test.pred < min.train.thr)
     # get 10 percentile training presence threshold (expected 0.1 omission)
-    pct10.train.thr <- calc.10p.trainThresh(occs.train.vals, occs.train.pred)
+    pct10.train.thr <- calc.10p.trainThresh(occs.train.pred)
     or.10p <- mean(occs.test.pred < pct10.train.thr)
     
     # calculate continuous Boyce Index
     if(settings$cbi.cv == TRUE) {
-      occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
-      if(settings$cbi.eval == "envs") {
-        fit <- envs  
+      if(!is.null(envs) & cbi.eval == "envs") {
+        mod.k.pred <- enm@pred(mod.k, envs, settings$other.args, settings$doClamp, settings$pred.type)
+        occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
         obs <- occs.test.xy
-      }else if(settings$cbi.eval == "bg") {
+      }else{
         # use full background to calculate cbi
-        fit <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred)
+        mod.k.pred <- d.pred %>% dplyr::pull(pred)
         obs <- occs.test.pred
       }
-      cbi.test <- ecospat::ecospat.boyce(fit, obs, PEplot = FALSE)
+      cbi.test <- ecospat::ecospat.boyce(mod.k.pred, obs, PEplot = FALSE)
     }else{
       cbi.test <- NULL
     }
@@ -208,7 +212,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
                 or.10p = or.10p, cbi.test = cbi.test$Spearman.cor)
     
     # add any additional cross-validation statistics chosen by the user
-    kstats <- enm@kstats(kstats, e.test, mod, occs.train.vals, occs.test.vals, bg.train.vals, 
+    kstats <- enm@kstats(kstats, e.test, mod.k, occs.train.vals, occs.test.vals, bg.train.vals, 
                          bg.test.vals, occs.train.pred, occs.test.pred, settings$other.args)
     # kstats <- c(kstats, mess.quant)
     # put into list as one-row data frame for easy binding

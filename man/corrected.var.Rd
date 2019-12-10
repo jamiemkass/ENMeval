@@ -18,9 +18,9 @@ A numeric value of the corrected variance.
 `corrected.var` calculates variance corrected for non-independence of \emph{k}-fold iterations.  See Appendix of Shcheglovitova & Anderson (2013) and other references (Miller 1974; Parr 1985; Shao and Wu 1989) for additional details.
 }
 \details{
-This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  Following Shao and Wu (1989):
+This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  Following Shao and Wu (1989): 
 
-\deqn{Sum Of Squares * ((n-1)/n)}
+\deqn{Sum Of Squares * ((n-1)/n)} 
 
 where \emph{n} = the number of \emph{k}-fold iterations.
 }

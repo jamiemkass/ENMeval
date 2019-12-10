@@ -8,7 +8,8 @@ bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
 tune.args <- list(fc = c("L", "LQ"), rm = 2:3)
 # tune.args <- list(fc = "L", rm = 1)
-partitions <- "block"
+partitions <- "randomkfold"
+kfolds <- 2
 categoricals <- "biome"
 skipRasters <- FALSE
 other.args <- NULL

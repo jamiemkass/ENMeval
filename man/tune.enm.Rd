@@ -7,11 +7,28 @@
 \alias{cv.enm}
 \title{Functions for tuning ENMs}
 \usage{
-tune.parallel(d, envs, envs.names, enm, partitions, tune.tbl, settings,
-  numCores, parallelType)
+tune.parallel(
+  d,
+  envs,
+  envs.names,
+  enm,
+  partitions,
+  tune.tbl,
+  settings,
+  numCores,
+  parallelType
+)
 
-tune.regular(d, envs, envs.names, enm, partitions, tune.tbl, settings,
-  updateProgress)
+tune.regular(
+  d,
+  envs,
+  envs.names,
+  enm,
+  partitions,
+  tune.tbl,
+  settings,
+  updateProgress
+)
 
 cv.enm(d, envs, envs.names, enm, tune.i, partitions, settings)
 }
@@ -59,8 +76,6 @@ be done}
 
 \item{doClamp}{boolean (TRUE or FALSE); if TRUE, clamp model responses; only
 applicable for Maxent models}
-
-\item{skipRasters}{boolean (TRUE or FALSE); if TRUE, skip raster predictions}
 
 \item{abs.auc.diff}{boolean (TRUE or FALSE); if TRUE, take absolute value of
 AUCdiff; default is TRUE}

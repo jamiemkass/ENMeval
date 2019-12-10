@@ -42,10 +42,10 @@
 #' applicable for maxent.jar/maxnet models
 #' @param pred.type character (default: "cloglog") that specifies which prediction type should be used to
 #' generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models
-#' @param cbi.eval character (default: "bg") specifying which should be used to calculate the expected frequency
-#' of occurrences for the Continuous Boyce Index: "envs" for the predictions over the entire predictor variable rasters,
-#' and "bg" for the predictions at all background localities (training + testing)
-#' @param skipRasters boolean (TRUE or FALSE) which if TRUE, skip raster predictions
+#' @param cbi.eval character (default: "envs") specifying which should be used to calculate the expected frequency
+#' of occurrences for the Continuous Boyce Index: "envs" for the predictions over the entire predictor variable rasters
+#' (which necessitates creating a new prediction raster over the full extent for every partition), and "bg" for the 
+#' predictions at all localities (training and testing occurrences and backgrounds)
 #' @param abs.auc.diff boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE
 #' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
@@ -64,7 +64,7 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
-                        overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "bg", skipRasters = FALSE, 
+                        overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "envs", 
                         abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
@@ -81,7 +81,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(env)) envs <- env
   if(!is.null(bg.coords)) bg <- bg.coords
   if(!is.null(method)) partitions <- method
-  if(!is.null(rasterPreds)) skipRasters <- rasterPreds
+  # as the skip rasters option was deprecated, turning off rasterPreds in the older version
+  # will render envs NULL, whereupon the user will be told to use SWD format
+  if(!is.null(rasterPreds)) envs <- NULL
   if(!is.null(algorithm)) {
     mod.name <- algorithm
     tune.args <- list(fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
@@ -139,7 +141,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     envs.names <- names(envs)
   }else{
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    warning("Data without rasters were input (SWD format), so no raster predictions will be generated. Thus, continuous Boyce index cannot be calculated, and neither can AICc for Maxent models.\n", immediate. = TRUE)
+    warning("Data without rasters were input (SWD format), so no raster predictions will be generated. Thus, AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("If inputting data without rasters (SWD), please add columns representing predictor variable values to occs and bg.\n")
     # make main df with coordinates and predictor variable values
@@ -251,7 +253,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   # put all settings into list
-  settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, skipRasters = skipRasters, 
+  settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, 
                    abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
@@ -279,8 +281,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # gather all training AUCs into vector
   train.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$train.stats))
   # gather all model prediction rasters into a stack and name them
-  # if skipRasters is TRUE or no envs, make an empty stack
-  if(skipRasters == FALSE & !is.null(envs)) {
+  # if envs is null, make an empty stack
+  if(!is.null(envs)) {
     mod.full.pred.all <- raster::stack(sapply(results, function(x) x$mod.full.pred))
     names(mod.full.pred.all) <- tune.names
   }else{
