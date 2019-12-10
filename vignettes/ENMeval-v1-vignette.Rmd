@@ -33,19 +33,14 @@ The primary function, `ENMevaluate`, does all the heavy lifting and returns seve
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/package=maxnet), but v1.0.0 and onward can implement any ENM in theory provided its settings are specified in a named list. This version comes out of the box with Maxent, maxnet, [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), and [BRT](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boosted regression trees), but users can provide their own custom model specifications. 
-
-
+Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/package=maxnet), but v1.0.0 and onward can implement any ENM in theory provided its settings are specified in a ENMdetails object (see below for an example). This version comes out of the box with Maxent, maxnet, [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), and [BRT](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boosted regression trees), but users can provide their own custom model specifications. 
 
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
 
-We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` and [`spocc`](https://cran.r-project.org/package=spocc) packages.  (We are using `spocc` to download occurrence records).
+We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` and [`spocc`](https://cran.r-project.org/package=spocc) packages (which we use to download occurrence records).
 
 ```{r occDownload}
-if (!require('spocc')) install.packages('spocc', repos="http://cran.us.r-project.org")
-if (!require('ENMeval')) install.packages('ENMeval', repos="http://cran.us.r-project.org")
-
 library(spocc)
 library(ENMeval)
 
@@ -111,8 +106,6 @@ envs.backg <- crop(envs, bb.buf)
 We may also, however, want to remove the Caribbean islands (for example) from our background extent. For this, we can use tools from the [`maptools`](https://cran.r-project.org/package=maptools) package, which is not automatically loaded with `ENMeval`.
 
 ```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5}
-if (!require('maptools')) install.packages('maptools', repos="http://cran.us.r-project.org")
-if (!require('rgeos')) install.packages('rgeos', repos="http://cran.us.r-project.org")
 library(maptools)
 library(rgeos)
 
@@ -152,12 +145,13 @@ points(bg, col='red')
 ## Partitioning Occurrences for Evaluation {#partition}
 A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for k-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Generally, the data partitioning step is done within the main 'ENMevaluate' function call.  In this section, we illustrate the different options.
 
-1. [Block](#block)
-2. [Checkerboard1](#cb1)
-3. [Checkerboard2](#cb2)
-4. [k-1 Jackknife](#jack)
+1. [Spatial Block](#block)
+2. [Spatial Checkerboard](#cb1)
+3. [Spatial Hierarchical Checkerboard](#cb2)
+4. [Jackknife (leave-one-out)](#jack)
 5. [Random k-fold](#rand)
-6. [User-defined](#user)
+6. [Independent](#ind)
+7. [User](#user)
 
 The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence records and background points into evaluation bins based on some spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the testing and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009; Hijmans 2012; Wenger and Olden 2012).
 
@@ -225,7 +219,13 @@ plot(envs.backg[[1]], col='gray', legend=FALSE)
 points(occs, pch=21, bg=random$occ.grp)
 ```
 
-#### 6. User-defined {#user}
+#### 6. Independent {#ind}: 
+The 'independent' method evaluates the model on an independent dataset that is not used to create the full model, and thus cross validation statistics are not calculated. 
+```{r part.ind, fig.width = 5, fig.height = 5}
+occs.ind <- read.csv("independent_testing_data_xy.csv")
+```
+
+#### 7. User-defined {#user}
 For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, perhaps we would like to partition points based on a k-means clustering routine.
 
 ``` {r part.user1, fig.width = 5, fig.height = 5}
@@ -262,8 +262,52 @@ Choosing among these data partitioning methods depends on the research objective
 ## Running ENMeval {#eval}
 Once you decide which method of data partitioning you would like to use, you are ready to start building models. We now move on to the main function in ENMeval: `ENMevaluate`.
 
+- [Different parameterizations](#eval.parameterizations)
 - [Initial considerations](#eval.consid)
 - [Exploring the results (the ENMevaluate object)](#eval.explore)
+
+#### Different parameterizations {#eval.parameterizations}
+There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
+
+full.mod.pred: raster model prediction based on `envs`
+cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test cannot only be calculated for partitions "randomkfold", "independent", or "user"
+
+
+```{r}
+# This example is for Maxent models, and so we will specify the tune.tbl with ranges of feature classes and regularization multipliers
+tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
+
+# 1. Standard
+e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+
+# 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset
+# that is not used to create the full model
+occs.ind <- read.csv("independent_testing_data_xy.csv")
+e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs.ind)
+
+# 3. User partitions
+user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
+e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp)
+
+# 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
+e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
+
+# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train
+# and cbi.test will be calculated on the point data (training and testing background) instead of on the "envs" rasters (default)
+occs.vals <- cbind(occs, raster::extract(envs, occs))
+bg.vals <- cbind(bg, raster::extract(envs, bg))
+e <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+
+# 6. Background test CBI: this will calculate cbi.test on the point data (training and testing background) instead of on the
+# "envs" rasters (default)
+e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", cbi.eval = "bg")
+
+# 7. User model: models will be fit and evaluated with the user-specified model and associated settings 
+mod1 <- ENMdetails(...)
+e <- ENMevaluate(occs, envs, bg, user.enm = mod1, tune.args = tune.args, categoricals = "biome", partitions = "block")
+```
+
+
 
 #### Initial considerations {#eval.consid}
 The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for adding parameters to the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. Much more description of these parameters is available in the [Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.

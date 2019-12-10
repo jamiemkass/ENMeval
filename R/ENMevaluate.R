@@ -62,15 +62,12 @@
 #' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
-                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, 
-                        kfolds = NA, aggregation.factor = c(2, 2), n.bg = 10000, overlap = FALSE, 
-                        overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "envs", 
+                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2), 
+                        n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "envs", 
                         abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
                         # legacy parameters
-                        occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
-                        occ.grp = NULL, bg.grp = NULL,
-                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL,
-                        clamp = NULL, progbar = NULL) {
+                        occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
+                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, clamp = NULL, progbar = NULL) {
   
   # legacy parameter handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
@@ -210,9 +207,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
   # on testing data is problematic, as 1) the full study area must be considered, and
   # 2) too few test records are considered, so currently we turn it off
-  if(partitions %in% c("jackknife", "block", "checkerboard1", "checkerboard2")) {
-    message("Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for spatial or jackknife cross-validation. \n
-            Please use randomkfold, independent, or user partitions for CBI test evaluation calculations.")
+  if(unique(grps$bg.grp) == 0 | partitions == "jackknife") {
+    message("Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).")
     cbi.cv <- FALSE
   }else{
     cbi.cv <- TRUE
