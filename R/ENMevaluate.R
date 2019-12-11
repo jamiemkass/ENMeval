@@ -97,9 +97,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # record start time
   start.time <- proc.time()
   
-  ########### #
-  # CHECKS ####
-  ########### #
+  ######################## #
+  # INITIAL DATA CHECKS ####
+  ######################## #
   
   ## general parameter checks
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
@@ -121,6 +121,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.\n')
   }
   
+  ########################################################### #
+  # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
+  ########################################################### #
+  
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
@@ -135,33 +139,39 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     vals <- rbind(occs.vals, bg.vals)
     # make main df with coordinates and predictor variable values and remove records with NA values
     d <- cbind(xy, vals)
+    # get envs variable names from the raster stack 
     envs.names <- names(envs)
   }else{
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    warning("* Data without rasters were input (SWD format), so no raster predictions will be generated. Thus, AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
+    warning("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
     # make sure both occ and bg have predictor variable values
-    if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting data without rasters (SWD), please add columns representing predictor variable values to occs and bg.\n")
+    if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.\n")
     # make main df with coordinates and predictor variable values
     d <- rbind(occs, bg)
-    # make envs a data frame of predictor variable values here
-    # so that names(envs) pulls the names of these variables
-    # in tune.enm.R
+    # get envs variable names from the table
     envs.names <- names(d[,3:ncol(d)])
   }
   
   # add presence-background identifier for occs and bg
   d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
   
-  # if user-defined partitions, assign grp variable first
-  # so that records with NA predictor variable values have
-  # their grp values filtered out too
+  # if user-defined partitions, assign grp variable before filtering out records with NA predictor variable values
+  # for all other partitioning methods, grp assignments occur after filtering
   if(!is.null(user.grp)) {
     d[d$pb == 1, "grp"] <- user.grp$occ.grp
     d[d$pb == 0, "grp"] <- user.grp$bg.grp
   }
   
+  ####################################### #
+  # REMOVE RECORDS WITH NA ENVIRONMENT ####
+  ####################################### #
+  
   # remove records with NA for any predictor variable
   d <- remove.env.na(d)
+  
+  ################################# #
+  # ASSIGN CATEGORICAL VARIABLES ####
+  ################################# #
   
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
@@ -170,6 +180,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
     }
   }
+  
+  ###################### #
+  # ASSIGN PARTITIONS ####
+  ###################### #
   
   # unpack occs and bg records for partitioning
   d.occs <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
@@ -188,7 +202,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                  checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = NULL,
-                 independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(2, nrow(d.bg))),
+                 independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = NULL)
   
   
@@ -207,6 +221,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # if not user-defined or 'none', add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
   
+  ############################################ #
+  # ADD INDEPENDENT TESTING DATA (IF INPUT) ####
+  ############################################ #
+  
   # add independent tesing data to main df if provided
   if(partitions == "independent") {
     occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
@@ -215,25 +233,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the independent data
     # and the second iteration is not performed
     occs.ind.vals$grp <- 1
-    levels(d$grp) <- 1:2
-    d$grp <- 2
+    # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
+    d$grp <- factor(d$grp, levels = 0:2)
+    # and then add the independent testing data with grp value 1
     d <- rbind(d, occs.ind.vals)
   }
   
-  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
-  # on testing data is problematic, as 1) the full study area must be considered, and
-  # 2) too few test records are considered, so currently we turn it off
+  ##################################### #
+  # TURN ON/OFF CBI.TEST CALCULATION ####
+  ##################################### #
+  
+  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index on testing data is problematic, as
+  # 1) the full study area must be considered, and 2) too few test records are considered, so currently we turn it off
   bg.grp.vals <- unique(d[d$pb==0,"grp"]) == 0
-  if(partitions != "independent" & (!all(bg.grp.vals) == TRUE | partitions == "jackknife")) {
+  if(!all(bg.grp.vals) == TRUE | partitions == "jackknife") {
     message("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).\n")
     cbi.cv <- FALSE
   }else{
     cbi.cv <- TRUE
   }
   
-  ################ #
-  # tuning 
-  ################ #
+  ################# #
+  # MODEL TUNING #### 
+  ################# #
   
   # choose a built-in ENMdetails object matching the input model name
   # unless the model is chosen by the user
@@ -259,9 +281,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     results <- tune.regular(d, envs, envs.names, enm, partitions, tune.tbl, settings, updateProgress)
   }
   
-  ################# #
-  # results 
-  ################# #
+  ##################### #
+  # ASSEMBLE RESULTS #### 
+  ##################### #
   
   if(nrow(tune.tbl) == 0) {
     # if not tuned settings, the "tune name" is the model name
@@ -296,23 +318,22 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(nk > 0) {
     # define number of settings (plus the tune.args field)
     nset <- ncol(tune.tbl)
+    
     # if jackknife cross-validation (leave-one-out), correct variance for
     # non-independent samples (Shcheglovitova & Anderson 2013)
-    
     if(partitions == "jackknife") {
-      sum.list <- list(avg = mean, sd = ~sqrt(corrected.var(., nk)), min = min, max = max)
+      sum.list <- list(avg = mean, sd = ~sqrt(corrected.var(., nk)))
     }else{
-      sum.list <- list(avg = mean, sd = sd, min = min, max = max)
+      sum.list <- list(avg = mean, sd = sd)
     } 
     
-    # if there is one partition, or if using an independent evaluation dataset,
-    # do not take summary statistics
+    # if there is one partition, or if using an independent evaluation dataset, do not take summary statistics
     if(nk == 1 | partitions == "independent") sum.list <- list(function(x) {x})
     
-    # if tune.tbl exists, make tune.args column a factor to keep order after
-    # using dplyr functions
+    # if tune.tbl exists, make tune.args column a factor to keep order after using dplyr functions
     if(nrow(tune.tbl) > 0) cv.stats.all$tune.args <- factor(cv.stats.all$tune.args, levels = tune.names)
-        
+    
+    # calculate summary statistics
     cv.stats.sum <- cv.stats.all %>% 
       dplyr::group_by(tune.args) %>%
       dplyr::select(-fold) %>% 
@@ -320,11 +341,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       dplyr::ungroup() 
     
     # change names (replace _ with .)
-    # names(cv.stats.sum) <- gsub("(.*)_([a-z]{3}$)", "\\1.\\2", names(cv.stats.sum))
+    names(cv.stats.sum) <- gsub("(.*)_(.*)", "\\1.\\2", names(cv.stats.sum))
+    # order columns alphabetically
+    cv.stats.sum <- cv.stats.sum[, order(colnames(cv.stats.sum))]
 
-    # bind together training and testing (cv) stats
-    # eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
-    
     # if tune.tbl exists
     if(nrow(tune.tbl) > 0) {
       # make tune.args column in training stats factor too for smooth join

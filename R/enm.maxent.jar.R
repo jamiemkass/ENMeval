@@ -59,11 +59,9 @@ eval <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
   return(e)
 }
 
-kstats <- function(occs.train, bg.train, occs.test, bg.test, categoricals,
-                   auc.train, mod, other.args, doClamp, abs.auc.diff) {
- 
-  
-  return(stats)
+kstats <- function(e.test, mod, other.args) {
+  user.kstats <- c(maxTSS.test = max(e.test@TPR + e.test@TNR) - 1, maxKappa.test = max(e.test@kappa))
+  return(user.kstats)
 }
 
 pred <- function(mod, envs, other.args, doClamp, pred.type) {

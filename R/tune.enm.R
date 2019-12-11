@@ -124,9 +124,8 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
   }
     
   # define number of grp (the value of "k") for occurrences
-  nk <- length(unique(d[d$pb == 1, "grp"]))
   # k is only one for independent testing data
-  if(partitions == "independent") nk <- 1
+  nk <- ifelse(partitions == "independent", 1, length(unique(d[d$pb == 1, "grp"])))
   
   # if no partitions, return results without cv.stats
   if(nk == 0) {
@@ -144,10 +143,6 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(envs.names)
     bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     
-    # if bg has a grp that is not partitioned (e.g., for randomkfold, bg is given "0"),
-    # use the full background for each cross validation
-    # if(nrow(bg.train.vals) == 0) bg.train.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
-    
     # define model arguments for current model k
     mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
     # run the current model k
@@ -161,9 +156,9 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     
     # calculate the stats for model k
     
-    # calculate auc on testing data
+    # calculate auc on testing data: test occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
     # NOTE: switch to bg.test??
-    e.test <- enm@eval(occs.test.vals, bg.train.vals, mod.k, settings$other.args, settings$doClamp)
+    e.test <- enm@eval(occs.test.vals, bg.vals, mod.k, settings$other.args, settings$doClamp)
     auc.test <- e.test@auc
     # calculate auc diff
     auc.diff <- auc.train - auc.test
@@ -186,15 +181,17 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     # calculate continuous Boyce Index
     if(settings$cbi.cv == TRUE) {
       if(!is.null(envs) & settings$cbi.eval == "envs") {
+        # use full model prediction over envs
         mod.k.pred <- enm@pred(mod.k, envs, settings$other.args, settings$doClamp, settings$pred.type)
-        occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
-        obs <- occs.test.xy
+        # input test occs are coordinates
+        occs.test.in <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       }else{
-        # use full background to calculate cbi
+        # use full background to approximate full model prediction
         mod.k.pred <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred)
-        obs <- occs.test.pred
+        # input test occs are values
+        occs.test.in <- occs.test.pred
       }
-      cbi.test <- ecospat::ecospat.boyce(mod.k.pred, obs, PEplot = FALSE)
+      cbi.test <- ecospat::ecospat.boyce(mod.k.pred, occs.test.in, PEplot = FALSE)
     }else{
       cbi.test <- NULL
     }
@@ -207,14 +204,11 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     # }
     
     # gather all evaluation statistics for k
-    
     kstats <- c(fold = k, auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
-                or.10p = or.10p, cbi.test = cbi.test$Spearman.cor)
+                or.10p = or.10p, cbi.test = cbi.test$Spearman.cor,
+                # add any additional cross-validation statistics chosen by the user
+                enm@kstats(e.test, mod.k, settings$other.args))
     
-    # add any additional cross-validation statistics chosen by the user
-    kstats <- enm@kstats(kstats, e.test, mod.k, occs.train.vals, occs.test.vals, bg.train.vals, 
-                         bg.test.vals, occs.train.pred, occs.test.pred, settings$other.args)
-    # kstats <- c(kstats, mess.quant)
     # put into list as one-row data frame for easy binding
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL, stringsAsFactors = FALSE)
   } 

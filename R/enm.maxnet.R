@@ -43,12 +43,9 @@ eval <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
   return(e)
 }
 
-kstats <- function(eval.stats, e.test, mod, occs.train.vals, occs.test.vals, bg.train.vals, bg.test.vals, occs.train.pred, occs.test.pred, other.args) {
-  thresh <- dismo::threshold(e.test)
-  maxKappa <- thresh$kappa
-  mss <- thresh$spec_sens
-  eval.stats <- c(eval.stats, maxKappa = maxKappa, mss = mss)
-  return(eval.stats)
+kstats <- function(e.test, mod, other.args) {
+  user.kstats <- c(maxTSS.test = max(e.test@TPR + e.test@TNR) - 1, maxKappa.test = max(e.test@kappa))
+  return(user.kstats)
 }
 
 pred <- function(mod, envs, other.args, doClamp, pred.type) {
