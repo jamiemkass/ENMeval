@@ -280,8 +280,7 @@ tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 # 1. Standard
 e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 
-# 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset
-# that is not used to create the full model
+# 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
 occs.ind <- read.csv("independent_testing_data_xy.csv")
 e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs.ind)
 
@@ -292,14 +291,12 @@ e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, cat
 # 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
 e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 
-# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train
-# and cbi.test will be calculated on the point data (training and testing background) instead of on the "envs" rasters (default)
+# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.test will be calculated on the point data (training and testing background) instead of on the "envs" rasters (default)
 occs.vals <- cbind(occs, raster::extract(envs, occs))
 bg.vals <- cbind(bg, raster::extract(envs, bg))
 e <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 
-# 6. Background test CBI: this will calculate cbi.test on the point data (training and testing background) instead of on the
-# "envs" rasters (default)
+# 6. Background test CBI: this will calculate cbi.test on the point data (training and testing background) instead of on the "envs" rasters (default)
 e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", cbi.eval = "bg")
 
 # 7. User model: models will be fit and evaluated with the user-specified model and associated settings 

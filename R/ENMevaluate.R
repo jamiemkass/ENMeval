@@ -72,7 +72,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # legacy parameter handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
-    message("Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n")
+    message("* Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n")
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
@@ -91,7 +91,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(occ.grp) & !is.null(bg.grp)) user.grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
   
   if(is.null(mod.name) & is.null(user.enm)) {
-    stop("Please select a model name (mod.name) or specify a user model (user.enm).\n")
+    stop("* Please select a model name (mod.name) or specify a user model (user.enm).\n")
   }
   
   # record start time
@@ -105,11 +105,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
                       "checkerboard2", "user", "independent", "none")
   if(!(partitions %in% all.partitions)) {
-    stop("Please enter an accepted partition method.\n")
+    stop("* Please enter an accepted partition method.\n")
   }
   
   if(partitions == "independent" & is.null(occs.ind)) {
-    stop("If doing independent evaluations, please provide independent testing data (occs.ind).")
+    stop("* If doing independent evaluations, please provide independent testing data (occs.ind).\n")
   }
   
   # coerce occs and bg to df
@@ -118,7 +118,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   
   # make sure occs and bg are data frames with identical column names
   if(all(names(occs) != names(bg))) {
-    stop('Datasets "occs" and "bg" have different column names. Please make them identical and try again.')
+    stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.\n')
   }
   
   # if environmental rasters are input as predictor variables
@@ -138,9 +138,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     envs.names <- names(envs)
   }else{
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    warning("Data without rasters were input (SWD format), so no raster predictions will be generated. Thus, AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
+    warning("* Data without rasters were input (SWD format), so no raster predictions will be generated. Thus, AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
     # make sure both occ and bg have predictor variable values
-    if(ncol(occs) < 3 | ncol(bg) < 3) stop("If inputting data without rasters (SWD), please add columns representing predictor variable values to occs and bg.\n")
+    if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting data without rasters (SWD), please add columns representing predictor variable values to occs and bg.\n")
     # make main df with coordinates and predictor variable values
     d <- rbind(occs, bg)
     # make envs a data frame of predictor variable values here
@@ -166,7 +166,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      message(paste0("Assigning variable ", categoricals[i], " to categorical ..."))
+      message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
     }
   }
@@ -194,25 +194,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   
   # choose a user message reporting on partition choice
   parts.msg <- switch(partitions,
-                      jackknife = "Doing model evaluations with k-1 jackknife (leave-one-out) cross validation...\n",
-                      randomkfold = paste0("Doing model evaluations with random ", kfolds, "-fold cross validation...\n"),
-                      block = "Doing model evaluations with spatial block (4-fold) cross validation...\n",
-                      checkerboard1 = "Doing model evaluations with checkerboard (2-fold) cross validation...\n",
-                      checkerboard2 = "Doing model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
-                      user = paste0("Doing model evaluations with user-defined ", length(unique(d.occs$grp)), "-fold cross validation...\n"),
-                      independent = "Doing model evaluations with independent testing data...\n",
-                      none = "Skipping model evaluations (only calculating full model statistics)...\n")
+                      jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...\n",
+                      randomkfold = paste0("* Model evaluations with random ", kfolds, "-fold cross validation...\n"),
+                      block = "* Model evaluations with spatial block (4-fold) cross validation...\n",
+                      checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...\n",
+                      checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
+                      user = paste0("* Model evaluations with user-defined ", length(unique(d.occs$grp)), "-fold cross validation...\n"),
+                      independent = "* Model evaluations with independent testing data...\n",
+                      none = "* Skipping model evaluations (only calculating full model statistics)...\n")
   message(parts.msg)
-  
-  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
-  # on testing data is problematic, as 1) the full study area must be considered, and
-  # 2) too few test records are considered, so currently we turn it off
-  if(unique(grps$bg.grp) == 0 | partitions == "jackknife") {
-    message("Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).")
-    cbi.cv <- FALSE
-  }else{
-    cbi.cv <- TRUE
-  }
   
   # if not user-defined or 'none', add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
@@ -228,6 +218,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     levels(d$grp) <- 1:2
     d$grp <- 2
     d <- rbind(d, occs.ind.vals)
+  }
+  
+  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index
+  # on testing data is problematic, as 1) the full study area must be considered, and
+  # 2) too few test records are considered, so currently we turn it off
+  bg.grp.vals <- unique(d[d$pb==0,"grp"]) == 0
+  if(partitions != "independent" & (!all(bg.grp.vals) == TRUE | partitions == "jackknife")) {
+    message("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).\n")
+    cbi.cv <- FALSE
+  }else{
+    cbi.cv <- TRUE
   }
   
   ################ #

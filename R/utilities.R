@@ -22,7 +22,7 @@ remove.env.na <- function(d) {
     msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
                             length(ind.NA.occs) > 0 ~ occs.msg,
                             length(ind.NA.bg) > 0 ~ bg.msg)
-    message(paste0("Records found with NA for at least one predictor variable with the following row numbers: (", msg, "). Removing from analysis...\n"))
+    message(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", msg, "). Removing from analysis...\n"))
     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
     return(d.naRem)    
   }
