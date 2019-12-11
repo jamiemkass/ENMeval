@@ -185,7 +185,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     
     # calculate continuous Boyce Index
     if(settings$cbi.cv == TRUE) {
-      if(!is.null(envs) & cbi.eval == "envs") {
+      if(!is.null(envs) & settings$cbi.eval == "envs") {
         mod.k.pred <- enm@pred(mod.k, envs, settings$other.args, settings$doClamp, settings$pred.type)
         occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
         obs <- occs.test.xy
