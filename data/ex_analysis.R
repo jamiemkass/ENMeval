@@ -17,7 +17,6 @@ updateProgress <- NULL
 doClamp <- TRUE
 abs.auc.diff <- TRUE
 pred.type <- "cloglog"
-cvBoyce <- TRUE
 user.grp = NULL
 occs.ind = NULL
 

@@ -161,11 +161,12 @@ calc.aicc <- function(occs.preds, nparams, preds) {
 #'   
 #'   Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17.
 #'   
-# #' @export
+#' @export
 corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
 }
 
+#' @export
 calc.10p.trainThresh <- function(pred.train) {
   n <- nrow(pred.train)
   if(n < 10) {
@@ -283,7 +284,7 @@ calc.niche.overlap <- function(preds, overlapStat){
 }
 
 
-
+#' @export
 lookup.enm <- function(mod.name) {
   x <- switch(mod.name, 
               maxent.jar = enm.maxent.jar,
