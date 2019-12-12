@@ -5,11 +5,15 @@ set.seed(48)
 occs <- readRDS("data/bvariegatus.rds")
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
                                  pattern='grd', full.names=TRUE))
+occs.vals <- cbind(occs, raster::extract(envs, occs))
+bg.vals <- cbind(bg, raster::extract(envs, bg))
 bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args <- list(fc = "L", rm = 2:3)
 tune.args.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
+tune.args.brt <- list(tree.complexity = 1:2, learning.rate = 0.1, bag.fraction = 0.5)
+tune.args.brt.tbl <- expand.grid(tune.args.brt, stringsAsFactors = FALSE)
 parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "independent", "none", "user")
 kfolds.n <- 4
 user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
@@ -41,6 +45,19 @@ e.ls$no <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.arg
 # user partitions
 e.ls$user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
                       user.grp = user.grp, partitions = parts[8], overlap = TRUE)
+
+# no envs (SWD)
+e.ls$swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
+                         partitions = parts[4], kfolds = kfolds.n, overlap = TRUE)
+# no bg
+e.ls$nobg <- ENMevaluate(occs, envs, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", 
+                        partitions = parts[4], kfolds = kfolds.n, overlap = TRUE)
+# bioclim
+e.ls$bioclim <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", 
+                        partitions = parts[4], kfolds = kfolds.n, overlap = TRUE)
+# brt
+e.ls$brt <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args.brt, categoricals = "biome", 
+                            partitions = parts[4], kfolds = kfolds.n, overlap = TRUE)
 
 test_that("ENMevaluation object and slots exist", {
   for(x in 1:length(e.ls)) {
@@ -142,10 +159,52 @@ test_that("User has correct number of partitions", {
 
 # check results of specific parameterizations
 
+test_that("Block test results table has correct form", {
+  block.res <- e.ls$block@results.grp
+  expect_true(nrow(block.res) == 4 * nrow(tune.args.tbl))
+  expect_true(max(block.res$fold) == 4)
+  expect_false("cbi.test" %in% names(block.res))
+  expect_true(sum(is.na(block.res)) == 0)
+})
+
+test_that("Checkerboard1 test results table has correct form", {
+  cb1.res <- e.ls$cb1@results.grp
+  expect_true(nrow(cb1.res) == 2 * nrow(tune.args.tbl))
+  expect_true(max(cb1.res$fold) == 2)
+  expect_false("cbi.test" %in% names(cb1.res))
+  expect_true(sum(is.na(cb1.res)) == 0)
+})
+
+test_that("Checkerboard2 test results table has correct form", {
+  cb2.res <- e.ls$cb2@results.grp
+  expect_true(nrow(cb2.res) == 4 * nrow(tune.args.tbl))
+  expect_true(max(cb2.res$fold) == 4)
+  expect_false("cbi.test" %in% names(cb2.res))
+  expect_true(sum(is.na(cb2.res)) == 0)
+})
+
+test_that("Random test results table has correct form", {
+  rand.res <- e.ls$rand@results.grp
+  expect_true(nrow(rand.res) == kfolds.n * nrow(tune.args.tbl))
+  expect_true(max(rand.res$fold) == kfolds.n)
+  expect_true("cbi.test" %in% names(rand.res))
+  expect_true(sum(is.na(rand.res)) == 0)
+})
+
+test_that("Jackknife test results table has correct form", {
+  jack.res <- e.ls$jack@results.grp
+  expect_true(nrow(jack.res) == 10 * nrow(tune.args.tbl))
+  expect_true(max(jack.res$fold) == 10)
+  expect_false("cbi.test" %in% names(jack.res))
+  expect_true(sum(is.na(jack.res)) == 0)
+})
+
 test_that("Independent test results table has correct form", {
   ind.res <- e.ls$ind@results.grp
   expect_true(nrow(ind.res) == nrow(tune.args.tbl))
+  expect_true(max(ind.res$fold) == 1)
   expect_true("cbi.test" %in% names(ind.res))
+  expect_true(sum(is.na(ind.res)) == 0)
 })
 
 test_that("No partition has no test results table", {

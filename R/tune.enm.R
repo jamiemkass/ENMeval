@@ -169,8 +169,8 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
     # thus should not need any specific parameter changes for maxent/maxnet
     d.vals <- d %>% dplyr::select(envs.names)
     d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.k, d.vals, settings$other.args, settings$doClamp, settings$pred.type))
-    occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred)
-    occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred)
+    occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred) %>% as.numeric()
+    occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred) %>% as.numeric()
     # get minimum training presence threshold (expected no omission)
     min.train.thr <- min(occs.train.pred)
     or.mtp <- mean(occs.test.pred < min.train.thr)
@@ -187,7 +187,7 @@ cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
         occs.test.in <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       }else{
         # use full background to approximate full model prediction
-        mod.k.pred <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred)
+        mod.k.pred <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred) %>% as.numeric()
         # input test occs are values
         occs.test.in <- occs.test.pred
       }

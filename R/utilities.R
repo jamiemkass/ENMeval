@@ -168,7 +168,7 @@ corrected.var <- function(x, nk){
 
 #' @export
 calc.10p.trainThresh <- function(pred.train) {
-  n <- nrow(pred.train)
+  n <- length(pred.train)
   if(n < 10) {
     pct90.train <- floor(n * 0.9)
   }else{

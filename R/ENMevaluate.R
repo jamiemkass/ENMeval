@@ -104,12 +104,26 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   ## general parameter checks
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
                       "checkerboard2", "user", "independent", "none")
+  
   if(!(partitions %in% all.partitions)) {
     stop("* Please enter an accepted partition method.\n")
   }
   
   if(partitions == "independent" & is.null(occs.ind)) {
     stop("* If doing independent evaluations, please provide independent testing data (occs.ind).\n")
+  }
+  
+  if(partitions == "checkerboard1" | partitions == "checkerboard2" & is.null(envs)) {
+    stop('* For checkerboard partitioning, predictor variable rasters "envs" are required.\n')
+  }
+  
+  if(partitions == "randomkfold" & is.null(kfolds) | kfolds == 0) {
+    stop('* For random k-fold partitioning, a value of "kfolds" greater than 0 is required.\n')
+  }
+  
+  if(is.null(tune.args) & overlap == TRUE) {
+    message('* As no tuning arguments were specified, turning off niche overlap.\n')
+    overlap <- FALSE
   }
   
   # coerce occs and bg to df
@@ -176,8 +190,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
-      d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
+      if(mod.name == "bioclim") {
+        message("* As specified model is BIOCLIM, removing categorical variables.\n")
+        d[, categoricals[i]] <- NULL
+        envs.names <- envs.names[-which(envs.names == categoricals[i])]
+      }else{
+        message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
+        d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
+      }
     }
   }
   
