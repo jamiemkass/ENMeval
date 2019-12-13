@@ -1,38 +1,16 @@
-#' @title Functions for tuning ENMs
-#' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.
+#' @title Iterate tuning of ENMs
+#' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
+#' Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and testing evaluation statistics for one set of specified tuning parameters.
 #' @aliases tune.parallel tune.regular cv.enm
-#' @param occs.vals matrix or data frame of environmental values corresponding
-#' to occurrence localities, intended to be input when environmental rasters
-#' are not used (\code{envs} is NULL) 
-#' @param bg.vals matrix or data frame of environmental values corresponding
-#' to background (or pseudo-absence) localities, intended to be input when 
-#' environmental rasters are not used (\code{envs} is NULL) 
-#' @param occs.grp numeric vector of partition group (fold) for each
-#' occurrence locality, intended for user-defined partitions
-#' @param bg.grp numeric vector of partition group (fold) for each background 
-#' (or pseudo-absence) locality, intended for user-defined partitions
-#' @param envs Raster* object of environmental variables (must be in 
-#' same geographic projection as occurrence data)
+#' @param d data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
+#' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
+#' @param envs.names vector of names of the environmental predictor variables (necessary to keep track of if \code{envs} is NULL)
 #' @param enm Object of class \link{ENMdetails}.
-#' @param partitions character of name of partitioning technique (see
-#' \code{?partitions})
+#' @param partitions character of name of partitioning technique (see \code{?partitions})
 #' @param tune.tbl Data frame of tuning parameter combinations.
-#' @param tune.settings Vector of tune settings from `tune.tbl`.
-#' @param other.args named list of any additional model arguments not specified 
-#' for tuning
-#' @param categoricals character vector of names of categorical 
-#' environmental variables
-#' @param occs.ind matrix or data frame with two columns for longitude and latitude 
-#' of occurrence localities, in that order, intended for independent evaluation;
-#' when \code{partitions = "independent"}; these occurrences will be used only 
-#' for evaluation, and not for model training, and thus no cross validation will 
-#' be done
-#' @param doClamp boolean (TRUE or FALSE); if TRUE, clamp model responses; only
-#' applicable for Maxent models
-#' @param abs.auc.diff boolean (TRUE or FALSE); if TRUE, take absolute value of
-#' AUCdiff; default is TRUE
-#' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores
-#' for parallel processing
+#' @param settings list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval
+#' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing
+#' @param parallelType character of either "doParallel" or "doSNOW" to conduct parallelization
 
 #' @name tune.enm
 NULL
@@ -62,7 +40,7 @@ tune.parallel <- function(d, envs, envs.names, enm, partitions, tune.tbl, settin
   message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, envs.names, enm, tune.tbl[i,], partitions, settings)
+    cv.enm(d, envs, envs.names, enm, partitions, tune.tbl[i,], settings)
   }
   close(pb)
   parallel::stopCluster(cl)
@@ -88,14 +66,16 @@ tune.regular <- function(d, envs, envs.names, enm, partitions, tune.tbl, setting
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, envs.names, enm, tune.i, partitions, settings)
+    results[[i]] <- cv.enm(d, envs, envs.names, enm, partitions, tune.i, settings)
   }
   close(pb)
   return(results)
 }
 
+#' @param tune.i vector of single set of tuning parameters
+
 #' @rdname tune.enm
-cv.enm <- function(d, envs, envs.names, enm, tune.i, partitions, settings) {
+cv.enm <- function(d, envs, envs.names, enm, partitions, tune.i, settings) {
   # unpack predictor variable values for occs and bg
   d.vals <- d %>% dplyr::select(pb, envs.names)
   occs.vals <- d.vals %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)

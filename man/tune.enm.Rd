@@ -5,7 +5,7 @@
 \alias{tune.parallel}
 \alias{tune.regular}
 \alias{cv.enm}
-\title{Functions for tuning ENMs}
+\title{Iterate tuning of ENMs}
 \usage{
 tune.parallel(
   d,
@@ -30,56 +30,30 @@ tune.regular(
   updateProgress
 )
 
-cv.enm(d, envs, envs.names, enm, tune.i, partitions, settings)
+cv.enm(d, envs, envs.names, enm, partitions, tune.i, settings)
 }
 \arguments{
-\item{envs}{Raster* object of environmental variables (must be in 
-same geographic projection as occurrence data)}
+\item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
+
+\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
+
+\item{envs.names}{vector of names of the environmental predictor variables (necessary to keep track of if \code{envs} is NULL)}
 
 \item{enm}{Object of class \link{ENMdetails}.}
 
-\item{partitions}{character of name of partitioning technique (see
-\code{?partitions})}
+\item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
 
-\item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores
-for parallel processing}
+\item{settings}{list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval}
 
-\item{occs.vals}{matrix or data frame of environmental values corresponding
-to occurrence localities, intended to be input when environmental rasters
-are not used (\code{envs} is NULL)}
+\item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing}
 
-\item{bg.vals}{matrix or data frame of environmental values corresponding
-to background (or pseudo-absence) localities, intended to be input when 
-environmental rasters are not used (\code{envs} is NULL)}
+\item{parallelType}{character of either "doParallel" or "doSNOW" to conduct parallelization}
 
-\item{occs.grp}{numeric vector of partition group (fold) for each
-occurrence locality, intended for user-defined partitions}
-
-\item{bg.grp}{numeric vector of partition group (fold) for each background 
-(or pseudo-absence) locality, intended for user-defined partitions}
-
-\item{tune.settings}{Vector of tune settings from `tune.tbl`.}
-
-\item{other.args}{named list of any additional model arguments not specified 
-for tuning}
-
-\item{categoricals}{character vector of names of categorical 
-environmental variables}
-
-\item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
-of occurrence localities, in that order, intended for independent evaluation;
-when \code{partitions = "independent"}; these occurrences will be used only 
-for evaluation, and not for model training, and thus no cross validation will 
-be done}
-
-\item{doClamp}{boolean (TRUE or FALSE); if TRUE, clamp model responses; only
-applicable for Maxent models}
-
-\item{abs.auc.diff}{boolean (TRUE or FALSE); if TRUE, take absolute value of
-AUCdiff; default is TRUE}
+\item{tune.i}{vector of single set of tuning parameters}
 }
 \description{
-Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings.
+Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
+Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and testing evaluation statistics for one set of specified tuning parameters.
 }
