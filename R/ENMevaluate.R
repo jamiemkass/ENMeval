@@ -104,6 +104,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   ## general parameter checks
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
                       "checkerboard2", "user", "independent", "none")
+  
   if(!(partitions %in% all.partitions)) {
     stop("* Please enter an accepted partition method.\n")
   }
@@ -112,14 +113,27 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     stop("* If doing independent evaluations, please provide independent testing data (occs.ind).\n")
   }
   
-  # coerce occs and bg to df
-  occs <- as.data.frame(occs)
-  bg <- as.data.frame(bg)
+  if((partitions == "checkerboard1" | partitions == "checkerboard2") & is.null(envs)) {
+    stop('* For checkerboard partitioning, predictor variable rasters "envs" are required.\n')
+  }
+  
+  if(partitions == "randomkfold" & (is.null(kfolds) | kfolds == 0)) {
+    stop('* For random k-fold partitioning, a value of "kfolds" greater than 0 is required.\n')
+  }
+  
+  if(is.null(tune.args) & overlap == TRUE) {
+    message('* As no tuning arguments were specified, turning off niche overlap.\n')
+    overlap <- FALSE
+  }
   
   # make sure occs and bg are data frames with identical column names
-  if(all(names(occs) != names(bg))) {
+  if(all(names(occs) != names(bg)) & !is.null(bg)) {
     stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.\n')
   }
+  
+  # coerce occs and bg to df
+  occs <- as.data.frame(occs)
+  if(!is.null(bg)) bg <- as.data.frame(bg)
   
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
@@ -130,7 +144,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
     envs <- raster::stack(envs)
     # if no background points specified, generate random ones
-    if(is.null(bg)) bg <- dismo::randomPoints(envs, n = n.bg)
+    if(is.null(bg)) {
+      message(paste0('* Randomly sampling ", n.bg, " background points from "envs" rasters...\n'))
+      bg <- as.data.frame(dismo::randomPoints(envs, n = n.bg))
+      names(bg) <- names(occs)
+    }
     # extract predictor variable values at coordinates for occs and bg
     occs.vals <- raster::extract(envs, occs)
     bg.vals <- raster::extract(envs, bg)
@@ -142,8 +160,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # get envs variable names from the raster stack 
     envs.names <- names(envs)
   }else{
+    # if no bg included, stop
+    if(is.null(bg)) {
+      stop("* If inputting variable values without rasters, please make sure to input background coordinates with values as well as occurrences.\n")
+    }
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    warning("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
+    message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.\n")
     # make main df with coordinates and predictor variable values
@@ -176,8 +198,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
-      d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
+      if(mod.name == "bioclim") {
+        message("* As specified model is BIOCLIM, removing categorical variables.\n")
+        d[, categoricals[i]] <- NULL
+        envs.names <- envs.names[-which(envs.names == categoricals[i])]
+      }else{
+        message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
+        d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
+      }
     }
   }
   
@@ -213,7 +241,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                       block = "* Model evaluations with spatial block (4-fold) cross validation...\n",
                       checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...\n",
                       checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...\n",
-                      user = paste0("* Model evaluations with user-defined ", length(unique(d.occs$grp)), "-fold cross validation...\n"),
+                      user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occ.grp)), "-fold cross validation...\n"),
                       independent = "* Model evaluations with independent testing data...\n",
                       none = "* Skipping model evaluations (only calculating full model statistics)...\n")
   message(parts.msg)
