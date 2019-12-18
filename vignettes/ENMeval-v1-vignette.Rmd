@@ -47,6 +47,9 @@ library(spocc)
 library(dplyr)
 library(ENMeval)
 
+# set a random seed for reproducibility
+set.seed(48)
+
 # Search GBIF for occurrence data.
 bv <- occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
 
@@ -80,6 +83,10 @@ occs <- filter(occs, latitude > -20, longitude < -45)
 
 # Plot the subsetted occurrences over the original ones to make sure we excluded the right ones
 points(occs, col='red')
+
+# As we will demonstrate model evaluation using independent data, we will specify a fake independent occurrence dataset
+occs.ind <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 0, 5))
+points(occs.ind, col="blue")
 ```
 
 Next, we will specify the background extent by cropping (or "clipping" in ArcGIS terms) our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
@@ -125,7 +132,7 @@ ca.sa.buf <- st_buffer(ca.sa, dist = 1)
 envs.bg <- mask(envs.bg, ca.sa.buf)
 
 # Plot one of the new masked rasters -- we still have a few cells from the Galapagos, but are now missing the Caribbean
-plot(envs.backg[[1]], main=names(envs.backg)[1])
+plot(envs.bg[[1]], main=names(envs.bg)[1])
 points(occs)
 ```
 
@@ -139,103 +146,92 @@ bg <- randomPoints(envs.bg[[9]], n=10000)
 bg <- as.data.frame(bg)
 
 # Notice how we have pretty good coverage (every cell).
-plot(envs.backg[[1]], legend=FALSE)
+plot(envs.bg[[1]], legend=FALSE)
 points(bg, col='red')
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
-A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for k-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Generally, the data partitioning step is done within the main 'ENMevaluate' function call.  In this section, we illustrate the different options.
+A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for *k*-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()`, but can also be done externally with the partitioning functions. In this section, we explain and illustrate these different functions.
 
 1. [Spatial Block](#block)
 2. [Spatial Checkerboard](#cb1)
 3. [Spatial Hierarchical Checkerboard](#cb2)
 4. [Jackknife (leave-one-out)](#jack)
-5. [Random k-fold](#rand)
+5. [Random *k*-fold](#rand)
 6. [Independent](#ind)
 7. [User](#user)
 
 The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence records and background points into evaluation bins based on some spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the testing and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009; Hijmans 2012; Wenger and Olden 2012).
 
 #### 1. Block {#block}
-First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four bins of (insofar as possible) equal numbers. Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines. The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point.
+First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four spatial groups of (insofar as possible) equal numbers. Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines. The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point.
 
 ```{r part.block, fig.width = 5, fig.height = 5}
-blocks <- get.block(occs, bg)
-str(blocks)
-
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(occs, pch=21, bg=blocks$occ.grp)
+block <- get.block(occs, bg)
+plot.grps(pts = occs, pts.grp = block$occ.grp, envs = envs.bg)
 ```
 
 #### 2. Checkerboard1 {#cb1}
-The next two partitioning methods are variants of a 'checkerboard' approach to partition occurrence localities. These generate checkerboard grids across the study extent and partition the localities into bins based on where they fall in the checkerboard. In contrast to the block method, both checkerboard methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each bin. For these methods, the user needs to provide a raster layer on which to base the underlying checkerboard pattern. Here we simply use the predictor variable RasterStack. Additionally, the user needs to define an *aggregation.factor*. This value tells the number of grids cells to aggregate when making the underlying checkerboard pattern.
+The next two partitioning methods are variants of a 'checkerboard' approach to partition occurrence localities. These generate checkerboard grids across the study extent and partition the localities into groups based on where they fall on the checkerboard. In contrast to the block method, both checkerboard methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each bin. For these methods, the user needs to provide a raster layer on which to base the underlying checkerboard pattern. Here we simply use the predictor variable RasterStack. Additionally, the user needs to define an *aggregation.factor*. This value tells the number of grids cells to aggregate when making the underlying checkerboard pattern.
 
-The Checkerboard1 method partitions the points into k=2 bins using a simple checkerboard pattern.
+The Checkerboard1 method partitions the points into *k* = 2 spatial groups using a simple checkerboard pattern.
 
 ``` {r part.ck1, fig.width = 5, fig.height = 5}
-check1 <- get.checkerboard1(occs, envs, bg, aggregation.factor=5)
+cb1 <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=5)
+plot.grps(pts = occs, pts.grp = cb1$occ.grp, envs = envs.bg)
+# Plotting the background points shows the checkerboard pattern very clearly
+plot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
 
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(occs, pch=21, bg=check1$occ.grp)
-
-# The partitioning method is more clearly illustrated by looking at the background points:
-points(bg, pch=21, bg=check1$bg.grp)
-
-# We can change the aggregation factor to better illustrate how this partitioning method works:
-check1.large <- get.checkerboard1(occs, envs, bg, aggregation.factor=30)
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(bg, pch=21, bg=check1.large$bg.grp)
-points(occs, pch=21, bg=check1.large$occ.grp, col='white', cex=1.5)
+# We can increase the aggregation factor to give the groups bigger boxes
+cb1.large <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=30)
+plot.grps(pts = occs, pts.grp = cb1.large$occ.grp, envs = envs.bg)
+plot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
 ```
 
 #### 3. Checkerboard2 {#cb2}
-The Checkerboard2 method partitions the data into k=4 bins. This is done by aggregating the input raster at two scales. Presence and background points are assigned to a bin with respect to where they fall in checkerboards of both scales.
+The Checkerboard2 method partitions the data into *k* = 4 spatial groups. This is done by hierarchically aggregating the input raster at two scales. Presence and background groups are assigned based on which box they fall on the hierarchical checkerboard.
 
 ``` {r part.ck2, fig.width = 5, fig.height = 5}
-check2 <- get.checkerboard2(occs, envs, bg, aggregation.factor=c(5,5))
-
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(bg, pch=21, bg=check2$bg.grp)
-points(occs, pch=21, bg=check2$occ.grp, col='white', cex=1.5)
+cb2 <- get.checkerboard2(occs, envs.bg, bg, aggregation.factor=c(5,5))
+plot.grps(pts = occs, pts.grp = cb2$occ.grp, envs = envs.bg)
+# Plotting the background points shows the checkerboard pattern very clearly
+plot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 ```
 
-#### 4. k-1 Jackknife {#jack}
-The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between testing and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of k-fold cross-validation where the number of bins (k) is equal to the number of occurrence localities (n) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as the k-1 jackknife.  This method will take prohibitively long times for computation when the number of presence localities is medium to large.
+#### 4. Jackknife (leave-one-out) {#jack}
+The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between testing and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning.  As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets.
 
 ``` {r part.jk, fig.width = 5, fig.height = 5}
 jack <- get.jackknife(occs, bg)
-
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(occs, pch=21, bg=jack$occ.grp)  # note that colors are repeated here
+# If the number of input points is larger than 10, the legend for the groups is suppressed
+plot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
 ```
 
 #### 5. Random k-fold {#rand}
-The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (k) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI.  
+The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (*k*) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI. Especially with larger occurrence datasets, this partitioning method could randomly result in some spatial clustering of groups, which is why spatial partitioning methods are preferable for addressing spatial autocorrelation. Below, we partition the data into five random groups.
 
-For instance, let's partition the data into five evaluation bins:
 ``` {r part.rand, fig.width = 5, fig.height = 5}
-random <- get.randomkfold(occs, bg, k=5)
-
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(occs, pch=21, bg=random$occ.grp)
+rand <- get.randomkfold(occs, bg, k = 5)
+plot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
 ```
 
 #### 6. Independent {#ind}: 
-The 'independent' method evaluates the model on an independent dataset that is not used to create the full model, and thus cross validation statistics are not calculated. 
+The 'independent' method evaluates the model on an independent dataset that is not used to create the full model, and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and independent testing data and plot the partitions in the same way as above. However, unlike before, the independent testing data (group 2) will not become training data for a new model. Instead, only the training data (group 1) is used to make the model, and the independent testing data (group 2) is used only to evaluate it.
+
 ```{r part.ind, fig.width = 5, fig.height = 5}
-occs.ind <- read.csv("independent_testing_data_xy.csv")
+pts <- rbind(occs, occs.ind)
+pts.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.ind)))
+plot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
 ```
 
 #### 7. User-defined {#user}
-For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, perhaps we would like to partition points based on a k-means clustering routine.
+For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, we demonstrate partitioning the occurrence data based on *k*-means groups. The user-defined partition option can also be used to input partition groups derived from other sources, such as the [`blockCV`](https://github.com/rvalavi/blockCV) package available on Github.
 
 ``` {r part.user1, fig.width = 5, fig.height = 5}
-ngrps <- 10
-kmeans <- kmeans(occs, ngrps)
+grp.n <- 5
+kmeans <- kmeans(occs, grp.n)
 occ.grp <- kmeans$cluster
-
-plot(envs.backg[[1]], col='gray', legend=FALSE)
-points(occs, pch=21, bg=occ.grp)
+plot.grps(pts = occs, pts.grp = occ.grp, envs = envs.bg)
 ```
 
 When using the user-defined partitioning method, we need to supply ENMevaluate with group identifiers for both occurrence points AND background points. If we want to use all background points for each group, we can set the background to zero.
@@ -368,7 +364,7 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 
 - `algorithm` A character vector showing which algorithm was used
 - `tune.settings` A data.frame of settings that were tuned
-- `partition.method` A character of partition method used
+- `partition.method` A character of partitioning method used
 - `results` A data.frame of evaluation summary statistics
 - `results.grp` A data.frame of evaluation k-fold statistics
 - `models` A list of model objects
