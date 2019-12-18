@@ -5,15 +5,32 @@
 #' @param pts.type character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
 #' @export
 
-plot.grps <- function(e, envs, pts.type = "occs") {
-  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occ.pts, grp = e@occ.grp),
-                bg = dplyr::bind_cols(e@bg.pts, grp = e@bg.grp))
+plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs") {
+  if(!is.null(e)) {
+    pts.plot <- switch(pts.type, occs = cbind(e@occ.pts, grp = e@occ.grp),
+                  bg = cbind(e@bg.pts, grp = e@bg.grp))  
+  }else{
+    if(!is.null(pts) & !is.null(pts.grp)) {
+      # make sure pts is a data frame with the right column names
+      pts <- as.data.frame(pts)
+      names(pts) <- c("longitude", "latitude")
+      pts.plot <- cbind(pts, grp = factor(pts.grp))
+    }else{
+      stop("If inputting point data and not an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
+    }
+  }
+  
+  if(length(unique(pts.plot$grp)) > 10) {
+    theme.custom <- ggplot2::guides(color = FALSE)
+  }else{
+    theme.custom <- NULL
+  }
   
   envs.df <- raster::as.data.frame(envs, xy = TRUE)
   names(envs.df)[3] <- "value"
   ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
-    ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
-    ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic()
+    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
+    ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + theme.custom
 }
 
 #' @title MESS plots for partition groups
