@@ -6,9 +6,9 @@ occs <- readRDS("data/bvariegatus.rds")
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
                                  pattern='grd', full.names=TRUE))
 occs.vals <- cbind(occs, raster::extract(envs, occs))
-bg.vals <- cbind(bg, raster::extract(envs, bg))
 bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
+bg.vals <- cbind(bg, raster::extract(envs, bg))
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args.ls <- list("maxnet" = list(fc = "L", rm = 2:3),
                   "brt" = list(tree.complexity = 1:2, learning.rate = 0.1, bag.fraction = 0.5))
@@ -69,9 +69,9 @@ test_that("ENMevaluation object and slots exist", {
     expect_true(!is.null(e@results.grp))
     expect_true(!is.null(e@models))
     expect_true(!is.null(e@predictions))
-    expect_true(!is.null(e@occ.pts))
+    expect_true(!is.null(e@occs))
     expect_true(!is.null(e@occ.grp))
-    expect_true(!is.null(e@bg.pts))
+    expect_true(!is.null(e@bg))
     expect_true(!is.null(e@bg.grp))
     expect_true(!is.null(e@overlap))
   }
@@ -96,10 +96,10 @@ test_that("Data in ENMevaluation object slots have correct form", {
       # number of models
       expect_true(length(e@models) == nrow(tune.args.tbl.ls[[m]]))
     }
-    # number of rows for occs.pts matches occ.grp
-    expect_true(nrow(e@occ.pts) == length(e@occ.grp))
-    # number of rows for bg.pts matches bg.grp
-    expect_true(nrow(e@bg.pts) == length(e@bg.grp))
+    # number of rows for occs matches occ.grp
+    expect_true(nrow(e@occs) == length(e@occ.grp))
+    # number of rows for bg matches bg.grp
+    expect_true(nrow(e@bg) == length(e@bg.grp))
     # no overlap is calculated for no tuning or BIOCLIM
     if(!(x %in% c(9,11))) {
       # both indicies exist for overlap
@@ -118,10 +118,8 @@ test_that("Data in ENMevaluation object slots have correct form", {
 # check NA env records
 
 test_that("Records with missing environmental values were removed", {
-  x.occs <- raster::extract(envs, e.ls$block@occ.pts)
-  x.bg <- raster::extract(envs, e.ls$block@bg.pts)
-  expect_true(sum(is.na(x.occs)) == 0)
-  expect_true(sum(is.na(x.bg)) == 0)
+  expect_true(sum(is.na(e.ls$block@occs)) == 0)
+  expect_true(sum(is.na(e.ls$block@bg)) == 0)
 })
 
 # check partition numbers

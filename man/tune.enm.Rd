@@ -10,7 +10,6 @@
 tune.parallel(
   d,
   envs,
-  envs.names,
   enm,
   partitions,
   tune.tbl,
@@ -19,25 +18,14 @@ tune.parallel(
   parallelType
 )
 
-tune.regular(
-  d,
-  envs,
-  envs.names,
-  enm,
-  partitions,
-  tune.tbl,
-  settings,
-  updateProgress
-)
+tune.regular(d, envs, enm, partitions, tune.tbl, settings, updateProgress)
 
-cv.enm(d, envs, envs.names, enm, partitions, tune.i, settings)
+cv.enm(d, envs, enm, partitions, tune.i, settings)
 }
 \arguments{
 \item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 
 \item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
-
-\item{envs.names}{vector of names of the environmental predictor variables (necessary to keep track of if \code{envs} is NULL)}
 
 \item{enm}{Object of class \link{ENMdetails}.}
 

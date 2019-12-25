@@ -11,9 +11,9 @@ NULL
 #' @slot results.grp data.frame of evaluation k-fold statistics
 #' @slot models list of model objects
 #' @slot predictions RasterStack of model predictions
-#' @slot occ.pts data.frame of occurrence coordinates used for model training
+#' @slot occs data.frame of occurrence coordinates and predictor variable values used for model training
 #' @slot occ.grp vector of partition groups for occurrence points
-#' @slot bg.pts data.frame of background coordinates used for model training
+#' @slot bg data.frame of background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector of partition groups for background points
 #' @slot overlap list of matrices of pairwise niche overlap statistics
 #' @export
@@ -27,9 +27,9 @@ ENMevaluation <- setClass("ENMevaluation",
                                   results.grp = 'data.frame',
                                   models = 'list',
                                   predictions = 'RasterStack',
-                                  occ.pts = 'data.frame',
+                                  occs = 'data.frame',
                                   occ.grp = 'factor',
-                                  bg.pts = 'data.frame',
+                                  bg = 'data.frame',
                                   bg.grp = 'factor',
                                   overlap = 'list'))
 
@@ -61,17 +61,17 @@ setGeneric("partition.method", function(x) standardGeneric("partition.method"))
 #' @export
 setMethod("partition.method", "ENMevaluation", function(x) x@partition.method)
 
-setGeneric("occ.pts", function(x) standardGeneric("occ.pts"))
+setGeneric("occs", function(x) standardGeneric("occs"))
 #' @export
-setMethod("occ.pts", "ENMevaluation", function(x) x@occ.pts)
+setMethod("occs", "ENMevaluation", function(x) x@occs)
 
 setGeneric("occ.grp", function(x) standardGeneric("occ.grp"))
 #' @export
 setMethod("occ.grp", "ENMevaluation", function(x) x@occ.grp)
 
-setGeneric("bg.pts", function(x) standardGeneric("bg.pts"))
+setGeneric("bg", function(x) standardGeneric("bg"))
 #' @export
-setMethod("bg.pts", "ENMevaluation", function(x) x@bg.pts)
+setMethod("bg", "ENMevaluation", function(x) x@bg)
 
 setGeneric("bg.grp", function(x) standardGeneric("bg.grp"))
 #' @export
@@ -86,7 +86,7 @@ setMethod("show",
 		  signature = "ENMevaluation",
 		  definition = function(object) {
 		  	cat("An object of class: ", class(object), "\n")
-		  	cat(" occurrence/background points: ", nrow(object@occ.pts), '/', nrow(object@bg.pts), "\n")
+		  	cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
 		  	cat(" partition method: ", object@partition.method, "\n")
 		  	cat(" algorithm: ", object@algorithm, "\n")
 		  	cat(" tune settings: \n")

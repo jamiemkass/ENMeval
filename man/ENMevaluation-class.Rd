@@ -25,11 +25,11 @@ An S4 class that contains the ENMevaluate results. The slots in this object are 
 
 \item{\code{predictions}}{RasterStack of model predictions}
 
-\item{\code{occ.pts}}{data.frame of occurrence coordinates used for model training}
+\item{\code{occs}}{data.frame of occurrence coordinates and predictor variable values used for model training}
 
 \item{\code{occ.grp}}{vector of partition groups for occurrence points}
 
-\item{\code{bg.pts}}{data.frame of background coordinates used for model training}
+\item{\code{bg}}{data.frame of background coordinates and predictor variable values used for model training}
 
 \item{\code{bg.grp}}{vector of partition groups for background points}
 

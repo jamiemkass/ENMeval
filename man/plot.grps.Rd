@@ -4,7 +4,7 @@
 \alias{plot.grps}
 \title{Partition group plots}
 \usage{
-plot.grps(e, envs, pts.type = "occs")
+plot.grps(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs")
 }
 \arguments{
 \item{e}{ENMevaluation object}
