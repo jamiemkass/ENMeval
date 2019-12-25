@@ -91,7 +91,7 @@ setMethod("show",
 		  	cat(" algorithm: ", object@algorithm, "\n")
 		  	cat(" tune settings: \n")
 		  	print(object@tune.settings[,-ncol(object@tune.settings)], row.names = FALSE)
-		  	cat(" overlap ", is.null(object@overlap), "\n")
+		  	cat(" overlap ", !is.null(object@overlap), "\n")
 		  	cat("Refer to ?ENMevaluation for information on slots.", sep = "")
 		  	invisible(NULL)
 		  })
