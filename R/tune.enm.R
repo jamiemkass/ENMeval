@@ -4,7 +4,6 @@
 #' @aliases tune.parallel tune.regular cv.enm
 #' @param d data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
 #' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
-#' @param envs.names vector of names of the environmental predictor variables (necessary to keep track of if \code{envs} is NULL)
 #' @param enm Object of class \link{ENMdetails}.
 #' @param partitions character of name of partitioning technique (see \code{?partitions})
 #' @param tune.tbl Data frame of tuning parameter combinations.
@@ -16,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, envs.names, enm, partitions, tune.tbl, settings, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, settings, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -40,7 +39,7 @@ tune.parallel <- function(d, envs, envs.names, enm, partitions, tune.tbl, settin
   message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, envs.names, enm, partitions, tune.tbl[i,], settings)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], settings)
   }
   close(pb)
   parallel::stopCluster(cl)
@@ -48,7 +47,7 @@ tune.parallel <- function(d, envs, envs.names, enm, partitions, tune.tbl, settin
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, envs.names, enm, partitions, tune.tbl, settings, updateProgress) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, settings, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -66,7 +65,7 @@ tune.regular <- function(d, envs, envs.names, enm, partitions, tune.tbl, setting
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, envs.names, enm, partitions, tune.i, settings)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, settings)
   }
   close(pb)
   return(results)
@@ -75,7 +74,8 @@ tune.regular <- function(d, envs, envs.names, enm, partitions, tune.tbl, setting
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, envs.names, enm, partitions, tune.i, settings) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, settings) {
+  envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   d.vals <- d %>% dplyr::select(pb, envs.names)
   occs.vals <- d.vals %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)

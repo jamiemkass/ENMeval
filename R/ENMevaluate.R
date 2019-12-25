@@ -157,8 +157,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     vals <- rbind(occs.vals, bg.vals)
     # make main df with coordinates and predictor variable values and remove records with NA values
     d <- cbind(xy, vals)
-    # get envs variable names from the raster stack 
-    envs.names <- names(envs)
   }else{
     # if no bg included, stop
     if(is.null(bg)) {
@@ -170,8 +168,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.\n")
     # make main df with coordinates and predictor variable values
     d <- rbind(occs, bg)
-    # get envs variable names from the table
-    envs.names <- names(d[,3:ncol(d)])
   }
   
   # add presence-background identifier for occs and bg
@@ -201,7 +197,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       if(mod.name == "bioclim") {
         message("* As specified model is BIOCLIM, removing categorical variables.\n")
         d[, categoricals[i]] <- NULL
-        envs.names <- envs.names[-which(envs.names == categoricals[i])]
       }else{
         message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
         d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
@@ -304,9 +299,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                    abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
-    results <- tune.parallel(d, envs, envs.names, enm, partitions, tune.tbl, settings, numCores, parallelType)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, settings, numCores, parallelType)  
   }else{
-    results <- tune.regular(d, envs, envs.names, enm, partitions, tune.tbl, settings, updateProgress)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, settings, updateProgress)
   }
   
   ##################### #
@@ -416,8 +411,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                      results = eval.stats, results.grp = cv.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions,
-                     occ.pts = d[d$pb == 1, 1:2], occ.grp = factor(d[d$pb == 1, "grp"]),
-                     bg.pts = d[d$pb == 0, 1:2], bg.grp = factor(d[d$pb == 0, "grp"]))
+                     occs = d[d$pb == 1, 1:(ncol(d)-2)], occ.grp = factor(d[d$pb == 1, "grp"]),
+                     bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]))
     
   # if niche overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
