@@ -149,6 +149,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       bg <- as.data.frame(dismo::randomPoints(envs, n = n.bg))
       names(bg) <- names(occs)
     }
+    
+    # # remove duplicates
+    occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
+    occs.dups <- duplicated(occs.cellNo[,1])
+    message(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"))
+    occs <- occs[!occs.dups,]
     # extract predictor variable values at coordinates for occs and bg
     occs.vals <- raster::extract(envs, occs)
     bg.vals <- raster::extract(envs, bg)
@@ -240,6 +246,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                       independent = "* Model evaluations with independent testing data...\n",
                       none = "* Skipping model evaluations (only calculating full model statistics)...\n")
   message(parts.msg)
+  
+  # record partition settings
+  parts.settings <- switch(partitions,
+                           randomkfold = paste("kfolds", kfolds, sep = "="),
+                           checkerboard1 = paste("aggregation.factor", aggregation.factor, sep = "="),
+                           checkerboard2 = paste("aggregation.factor", aggregation.factor, sep = "="),
+                           user = paste("kfolds", length(unique(user.grp$occ.grp)), sep = "="))
+  if(is.null(parts.settings)) parts.settings <- ""
   
   # if not user-defined or 'none', add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
@@ -410,7 +424,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
                      results = eval.stats, results.grp = cv.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
-                     partition.method = partitions,
+                     partition.method = partitions, partition.settings = parts.settings,
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occ.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]))
     

@@ -2,7 +2,7 @@
 #'
 
 # for split evaluation, label training occs "1" and independent evaluation occs "2" in partitions
-nullENMs <- function(e, no.iter, envs = NULL,
+nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
                      eval.type = c("split", "kfold", "kspatial"),
                      categoricals = NULL, envs.grp = NULL, abs.auc.diff = TRUE,
                      other.args = NULL, rasterBrick = TRUE, removeMxTemp = TRUE) {
@@ -31,52 +31,35 @@ nullENMs <- function(e, no.iter, envs = NULL,
 
   # get environmental values for occs and bg
   t2 <- proc.time()
-
-  if(ncol(e@occ.pts > 2) & ncol(bg) > 2 & is.null(envs)) {
-    message("Environmental values provided for occurrence and background records. Skipping extraction...")
-    occs.vals <- occs
-    bg.vals <- bg
-    envs.vals <- bg
-    if(!is.null(occs.indTest)) {
-      if(ncol(occs.indTest) < 3) stop("Please insert fields for environmental values of occurrence test points.")
-      occs.test.vals <- occs.indTest
-    }
-  }else{
-    message("Extracting environmental values...")
-    colnames(bg) <- colnames(occs)
-    if(!is.null(occs.indTest)) {
-      pt.vals <- as.data.frame(raster::extract(envs, rbind(occs, bg, occs.indTest)))
-      occs.test.vals <- pt.vals[seq(nrow(occs) + nrow(bg) + 1, nrow(pt.vals)), ]
-    }else{
-      pt.vals <- as.data.frame(raster::extract(envs, rbind(occs, bg)))
-    }
-    occs.vals <- pt.vals[seq(1, nrow(occs)), ]
-    bg.vals <- pt.vals[seq(nrow(occs)+1, nrow(occs) + nrow(bg)), ]
-    envs.vals <- as.data.frame(raster::getValues(envs))
-    # now remove NAs from envs.vals
-    envs.vals <- na.omit(envs.vals)
-    message(paste0("Environmental values extracted in ", timeCheck(t2), "."))
+  
+  
+  if(!is.null(envs)) {
+    envs.pts <- as.data.frame(na.omit(raster::rasterToPoints(envs)))
+    # partition occs based on selected partition method
+    envs.grp <- switch(e@partition.method, 
+                       block = get.block(e@occs, envs.pts),
+                       checkerboard1 = get.checkerboard1(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]),
+                       checkerboard2 = get.checkerboard2(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]))$bg.grp
+    envs.pts$grp <- envs.grp
   }
 
-  # convert fields for categorical data to factor class
-  if(!is.null(categoricals)) {
-    for(j in 1:length(categoricals)) {
-      occs.vals[, categoricals[j]] <- as.factor(occs.vals[, categoricals[j]])
-      bg.vals[, categoricals[j]] <- as.factor(bg.vals[, categoricals[j]])
+  # # convert fields for categorical data to factor class
+  # if(!is.null(categoricals)) {
+  #   for(j in 1:length(categoricals)) {
+  #     occs.vals[, categoricals[j]] <- as.factor(occs.vals[, categoricals[j]])
+  #     bg.vals[, categoricals[j]] <- as.factor(bg.vals[, categoricals[j]])
+  #   }
+  # }
+  
+  if(is.null(user.enm)) {
+    enm <- lookup.enm(e@algorithm)
+    if(e@algorithm == "maxent.jar") {
+      # create temp directory to store maxent.jar output, for potential removal later
+      tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
+      dir.create(tmpdir, showWarnings = TRUE, recursive = FALSE)
     }
-  }
-
-  # get model function name (only Maxent functions available now)
-  if(mod.name == "maxent.jar") {
-    mod.fun <- dismo::maxent
-    # create temp directory to store maxent.jar output, for potential removal later
-    tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
-    dir.create(tmpdir, showWarnings = TRUE, recursive = FALSE)
-  }else if(mod.name == "maxnet") {
-    mod.fun <- maxnet::maxnet
   }else{
-    message('Only Maxent functions available now. Please choose either "maxent.jar" or "maxnet".')
-    return()
+    enm <- user.enm
   }
 
   # initialize data frames to collect evaluation stats for each partition
@@ -98,36 +81,39 @@ nullENMs <- function(e, no.iter, envs = NULL,
   # build real model ####
   ############################## #
 
-  t3 <- proc.time()
-  message("Building and evaluating real model...")
-  mod.args.real <- model.args(mod.name, mod.args, occs.vals, bg.vals, other.args)
-  mod.real <- do.call(mod.fun, mod.args.real)
-  # calculate training auc
-  all.stats["real.mean", "auc.train"] <- dismo::evaluate(occs.vals, bg.vals, mod.real)@auc
-  # real.stats$nparam <- no.params(mod.real, mod.name)
-  kstats <- data.frame(matrix(nrow = nk, ncol = length(k.cnames),
-                              dimnames = list(NULL, k.cnames)))
+  real.mod <- e@models[[mod.settings]]
+  real.mod.res <- e@results %>% dplyr::filter(tune.args == mod.settings)
+  
+  # t3 <- proc.time()
+  # message("Building and evaluating real model...")
+  # mod.args.real <- model.args(mod.name, mod.args, occs.vals, bg.vals, other.args)
+  # mod.real <- do.call(mod.fun, mod.args.real)
+  # # calculate training auc
+  # all.stats["real.mean", "auc.train"] <- dismo::evaluate(occs.vals, bg.vals, mod.real)@auc
+  # # real.stats$nparam <- no.params(mod.real, mod.name)
+  # kstats <- data.frame(matrix(nrow = nk, ncol = length(k.cnames),
+  #                             dimnames = list(NULL, k.cnames)))
+  # 
+  # if(eval.type == "split") {
+  #   kstats[1,] <- evalStats(occs.vals, bg.vals, occs.test.vals, mod.real, abs.auc.diff)
+  # }else{
+  #   for(k in 1:nk) {
+  #     occs.train.real.k <- occs.vals[occs.grp != k, ]
+  #     occs.test.real.k <- occs.vals[occs.grp == k, ]
+  #     bg.train.k <- bg.vals[bg.grp != k, ]
+  #     mod.args.real.k <- model.args(mod.name, mod.args, occs.train.real.k, bg.train.k, other.args)
+  #     mod.real.k <- do.call(mod.fun, mod.args.real.k)
+  #     kstats[k,] <- evalStats(occs.train.real.k, bg.train.k, occs.test.real.k,
+  #                             mod.real.k, abs.auc.diff)
+  #     message(sprintf("Completed real model evaluation for partition %i.", k))
+  #   }
+  # }
+  # 
+  # message(paste0("Real model built and evaluated in ", timeCheck(t3), "."))
 
-  if(eval.type == "split") {
-    kstats[1,] <- evalStats(occs.vals, bg.vals, occs.test.vals, mod.real, abs.auc.diff)
-  }else{
-    for(k in 1:nk) {
-      occs.train.real.k <- occs.vals[occs.grp != k, ]
-      occs.test.real.k <- occs.vals[occs.grp == k, ]
-      bg.train.k <- bg.vals[bg.grp != k, ]
-      mod.args.real.k <- model.args(mod.name, mod.args, occs.train.real.k, bg.train.k, other.args)
-      mod.real.k <- do.call(mod.fun, mod.args.real.k)
-      kstats[k,] <- evalStats(occs.train.real.k, bg.train.k, occs.test.real.k,
-                              mod.real.k, abs.auc.diff)
-      message(sprintf("Completed real model evaluation for partition %i.", k))
-    }
-  }
-
-  message(paste0("Real model built and evaluated in ", timeCheck(t3), "."))
-
-  # fill in rest of real model statistics
-  all.stats[1, 2:5] <- apply(kstats, 2, mean)
-  all.stats[2, 2:5] <- apply(kstats, 2, sd)
+  # # fill in rest of real model statistics
+  # all.stats[1, 2:5] <- apply(kstats, 2, mean)
+  # all.stats[2, 2:5] <- apply(kstats, 2, sd)
 
   ############################## #
   # build null models ####
@@ -153,12 +139,12 @@ nullENMs <- function(e, no.iter, envs = NULL,
     # partition of envs.vals
     for(k in 1:nk) {
       if(eval.type == "kspatial") {
-        envs.vals.k <- envs.vals[envs.grp == k,]
+        envs.pts.k <- envs.pts %>% dplyr::filter(grp == k)
       }else{
-        envs.vals.k <- envs.vals
+        envs.pts.k <- envs.pts
       }
-      samp <- sample(1:nrow(envs.vals.k), occs.grp.tbl[k])
-      occs.null[[k]] <- envs.vals.k[samp, ]
+      samp <- sample(1:nrow(envs.pts.k), occs.grp.tbl[k])
+      occs.null[[k]] <- envs.pts.k[samp, ]
     }
 
     # convert fields for categorical data to factor class
