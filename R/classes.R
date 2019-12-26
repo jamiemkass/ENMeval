@@ -7,6 +7,7 @@ NULL
 #' @slot algorithm character of algorithm used
 #' @slot tune.settings data.frame of settings that were tuned
 #' @slot partition.method character of partition method used
+#' @slot partition.settings character of partition settings used (i.e., value of *k* or aggregation factor)
 #' @slot results data.frame of evaluation summary statistics
 #' @slot results.grp data.frame of evaluation k-fold statistics
 #' @slot models list of model objects
@@ -23,6 +24,7 @@ ENMevaluation <- setClass("ENMevaluation",
                           slots = c(algorithm = 'character',
                                   tune.settings = 'data.frame',
                                   partition.method = 'character',
+                                  partition.settings = 'character',
                                   results = 'data.frame',
                                   results.grp = 'data.frame',
                                   models = 'list',
@@ -61,6 +63,10 @@ setGeneric("partition.method", function(x) standardGeneric("partition.method"))
 #' @export
 setMethod("partition.method", "ENMevaluation", function(x) x@partition.method)
 
+setGeneric("partition.settings", function(x) standardGeneric("partition.settings"))
+#' @export
+setMethod("partition.settings", "ENMevaluation", function(x) x@partition.settings)
+
 setGeneric("occs", function(x) standardGeneric("occs"))
 #' @export
 setMethod("occs", "ENMevaluation", function(x) x@occs)
@@ -88,6 +94,7 @@ setMethod("show",
 		  	cat("An object of class: ", class(object), "\n")
 		  	cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
 		  	cat(" partition method: ", object@partition.method, "\n")
+		  	cat(" partition settings: ", object@partition.settings, "\n")
 		  	cat(" algorithm: ", object@algorithm, "\n")
 		  	cat(" tune settings: \n")
 		  	print(object@tune.settings[,-ncol(object@tune.settings)], row.names = FALSE)
