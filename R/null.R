@@ -43,6 +43,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   # if envs were input, get partition groups for envs if using spatial cross validation
   if(!is.null(envs)) {
     envs.pts <- as.data.frame(na.omit(raster::rasterToPoints(envs)))
+    names(envs.pts)[1:2] <- names(e@occs)[1:2]
     # convert any factor columns to factor in envs pts dataset
     envs.fact <- which(sapply(e@occs, is.factor))
     envs.pts[,envs.fact] <- factor(envs.pts[,envs.fact])
@@ -77,20 +78,25 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
     enm <- user.enm
   }
 
-  # initialize data frames to collect evaluation stats for each partition
-  # per iteration and their averages
-  all.cnames <- c("auc.train", "auc.test", "auc.diff", "or.min", "or.10")
-  k.cnames <- c("auc.test", "auc.diff", "or.min", "or.10")
-  null.cnames <- c("auc.train", "mean.auc.test", "sd.auc.test",
-                   "mean.auc.diff", "sd.auc.diff", "mean.or.min", "sd.or.min",
-                   "mean.or.10", "sd.or.10", "nparam")
-  all.rnames <- c("real.mean", "real.sd", "null.mean", "null.sd", "zscore", "pvalue")
-  all.stats <- data.frame(matrix(nrow = 6, ncol = length(all.cnames),
-                                 dimnames = list(all.rnames, all.cnames)))
-  # real.stats <- data.frame(matrix(nrow = 1, ncol = 2,
-  # dimnames = list(NULL, c("auc.train", "nparam"))))
-  null.stats <- data.frame(matrix(nrow = no.iter, ncol = length(null.cnames),
-                                  dimnames = list(NULL, null.cnames)))
+  # # initialize data frames to collect evaluation stats for each partition
+  # # per iteration and their averages
+  train.stats.names <- e@results %>% dplyr::select(auc.train:ncol(e@results), -AICc, -delta.AICc, -w.AIC, -nparam) %>% names()
+  train.stats <- as.data.frame(matrix(nrow = no.iter, ncol = length(train.stats.names)))
+  names(train.stats) <- train.stats.names
+  k.stats <- e@results.grp %>% dplyr::select(auc.test:ncol(e@results.grp)) %>% names()
+  
+  # all.cnames <- c("auc.train", "auc.test", "auc.diff", "or.min", "or.10")
+  # k.cnames <- c("auc.test", "auc.diff", "or.min", "or.10")
+  # null.cnames <- c("auc.train", "mean.auc.test", "sd.auc.test",
+  #                  "mean.auc.diff", "sd.auc.diff", "mean.or.min", "sd.or.min",
+  #                  "mean.or.10", "sd.or.10", "nparam")
+  # all.rnames <- c("real.mean", "real.sd", "null.mean", "null.sd", "zscore", "pvalue")
+  # all.stats <- data.frame(matrix(nrow = 6, ncol = length(all.cnames),
+  #                                dimnames = list(all.rnames, all.cnames)))
+  # # real.stats <- data.frame(matrix(nrow = 1, ncol = 2,
+  # # dimnames = list(NULL, c("auc.train", "nparam"))))
+  # null.stats <- data.frame(matrix(nrow = no.iter, ncol = length(null.cnames),
+  #                                 dimnames = list(NULL, null.cnames)))
 
   ############################## #
   # build real model ####
@@ -141,9 +147,6 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   t4 <- proc.time()
   message(sprintf("Building and evaluating %i null SDMs...", no.iter))
   
-  # all null models will use the same background used to train the real model
-  bg.vals <- e@bg %>% dplyr::select(envs.names)
-
   for(i in 1:no.iter) {
     
     null.occs.ik <- list()
@@ -168,19 +171,22 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
     #                                            dimnames = dn))
 
 
-    null.occs.i <- dplyr::bind_rows(null.occs.ik)
+    null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
+    null.occs.i.vals <- null.occs.i.df %>% dplyr::select(-grp)
+    user.grp <- list(occ.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
+    user.test.grps <- cbind(e@occs, grp = e@occ.grp)
+    e.s <- e@other.settings
+    e.p <- e@partition.settings
+    
+    null.e.i <- ENMevaluate(null.occs.i.vals, bg = e@bg, tune.args = mod.settings, mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user", 
+                            user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, aggregation.factor = e.p$aggregation.factor, 
+                            doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval)
 
     
     # unpack predictor variable values for occs and bg
     null.occs.i.vals <- null.occs.i %>% dplyr::select(envs.names)
-    # build the full model from all the data
-    mod.full.args <- enm@args(null.occs.i.vals, bg.vals, mod.settings, other.settings$other.args)
-    mod.full <- do.call(enm@fun, mod.full.args)
-    # calculate training auc
-    e.train <- enm@eval(null.occs.i.vals, bg.vals, mod.full, other.settings$other.args, other.settings$doClamp)
-    auc.train <- e.train@auc
-    tune.args.col <- paste(tune.i, collapse = "_")
-    train.stats.df <- data.frame(tune.args = tune.args.col, auc.train = auc.train, stringsAsFactors = FALSE)
+
+    
     
     mod.args.i <- model.args(mod.name, mod.args, occs.null.all, bg.vals, other.args)
     mod.i <- do.call(mod.fun, mod.args.i)

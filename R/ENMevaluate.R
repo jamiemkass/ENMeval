@@ -64,7 +64,8 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2), 
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "envs", 
-                        abs.auc.diff = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
+                        abs.auc.diff = TRUE, user.test.grps = NULL,
+                        parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
                         algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, clamp = NULL, progbar = NULL) {
@@ -117,8 +118,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     stop('* For checkerboard partitioning, predictor variable rasters "envs" are required.\n')
   }
   
-  if(partitions == "randomkfold" & (is.null(kfolds) | kfolds == 0)) {
-    stop('* For random k-fold partitioning, a value of "kfolds" greater than 0 is required.\n')
+  if(partitions == "randomkfold") {
+    if(is.null(kfolds)) {
+      stop('* For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.\n')  
+    }else{
+      if(kfolds == 0) {
+        stop('* For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.\n')  
+      }
+    }
   }
   
   if(is.null(tune.args) & overlap == TRUE) {
@@ -315,9 +322,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                    abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, numCores, parallelType)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, updateProgress)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress)
   }
   
   ##################### #
