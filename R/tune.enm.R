@@ -15,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -39,7 +39,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, nu
   message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps)
   }
   close(pb)
   parallel::stopCluster(cl)
@@ -47,7 +47,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, nu
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, updateProgress) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -65,7 +65,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, upd
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
   }
   close(pb)
   return(results)
@@ -74,12 +74,11 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, upd
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
-  d.vals <- d %>% dplyr::select(pb, envs.names)
-  occs.vals <- d.vals %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
-  bg.vals <- d.vals %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
+  occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
+  bg.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
   # build the full model from all the data
   mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, other.settings$other.args)
   mod.full <- do.call(enm@fun, mod.full.args)
@@ -98,9 +97,10 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings) {
     train.stats.df$cbi.train <- cbi.train$Spearman.cor
   }else{
     # if envs is NULL, calculate CBI.train with the occurrence + background points
-    d.full.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals %>% dplyr::select(envs.names), other.settings$other.args, other.settings$doClamp, other.settings$pred.type))
+    d.full.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d %>% dplyr::select(envs.names), other.settings$other.args, other.settings$doClamp, other.settings$pred.type))
     occs.full.pred <- d.full.pred %>% dplyr::filter(pb == 1)
     cbi.train <- ecospat::ecospat.boyce(d.full.pred$pred, occs.full.pred$pred, PEplot = FALSE)
+    train.stats.df$cbi.train <- cbi.train$Spearman.cor
     mod.full.pred <- d.full.pred$pred
   }
     
@@ -120,9 +120,15 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings) {
   for(k in 1:nk) {
     # assign partitions for training and testing occurrence data and for background data
     occs.train.vals <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(envs.names)
-    occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(envs.names)
     bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(envs.names)
-    bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
+    if(is.null(user.test.grps)) {
+      occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(envs.names)
+      # bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
+    }else{
+      # assign partitions for training and testing occurrence data and for background data based on user data
+      occs.test.vals <- user.test.grps %>% dplyr::filter(grp == k) %>% dplyr::select(envs.names)
+      # bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
+    }
     
     # define model arguments for current model k
     mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.settings$other.args)

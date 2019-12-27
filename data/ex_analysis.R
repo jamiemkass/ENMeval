@@ -48,9 +48,7 @@ occs <- occs[51:nrow(occs),]
 # occs[18,] <- c(0,0)
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 ## run with SWD
-# occs <- cbind(occs, raster::extract(envs, occs))
-# bg <- cbind(bg, raster::extract(envs, bg))
-# e <- ENMevaluate(occs, bg = bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ## run with independent testing data
 # e <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
 ## run with just AIC
