@@ -2,7 +2,7 @@ context("Check ENMevaluation objects")
 
 # read in data
 set.seed(48)
-occs <- readRDS("data/bvariegatus.rds")
+occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
                                  pattern='grd', full.names=TRUE))
 occs.vals <- cbind(occs, raster::extract(envs, occs))
@@ -11,7 +11,7 @@ names(bg) <- names(occs)
 bg.vals <- cbind(bg, raster::extract(envs, bg))
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args.ls <- list("maxnet" = list(fc = "L", rm = 2:3),
-                  "brt" = list(tree.complexity = 1:2, learning.rate = 0.1, bag.fraction = 0.5))
+                  "brt" = list(tree.complexity = 1:2, learning.rate = 0.01, bag.fraction = 0.5))
 tune.args.tbl.ls <- lapply(tune.args.ls, expand.grid, stringsAsFactors = FALSE)
 parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "independent", "none", "user", rep("randomkfold", 4))
 kfolds.n <- 4
@@ -37,8 +37,8 @@ e.ls$rand <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.a
 e.ls$jack <- ENMevaluate(occs[i[1:10],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "jackknife", overlap = TRUE)
 # independent partition
-e.ls$ind <- ENMevaluate(occs[i[1:450],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
-                      partitions = "independent", occs.ind = occs[i[451:nrow(occs)],], overlap = TRUE)
+e.ls$ind <- ENMevaluate(occs[i[1:100],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+                      partitions = "independent", occs.ind = occs[i[101:nrow(occs)],], overlap = TRUE)
 # no partitions
 e.ls$nopart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "none", overlap = TRUE)

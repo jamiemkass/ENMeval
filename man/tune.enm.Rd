@@ -13,14 +13,22 @@ tune.parallel(
   enm,
   partitions,
   tune.tbl,
-  settings,
+  other.settings,
   numCores,
   parallelType
 )
 
-tune.regular(d, envs, enm, partitions, tune.tbl, settings, updateProgress)
+tune.regular(
+  d,
+  envs,
+  enm,
+  partitions,
+  tune.tbl,
+  other.settings,
+  updateProgress
+)
 
-cv.enm(d, envs, enm, partitions, tune.i, settings)
+cv.enm(d, envs, enm, partitions, tune.i, other.settings)
 }
 \arguments{
 \item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
@@ -33,7 +41,7 @@ cv.enm(d, envs, enm, partitions, tune.i, settings)
 
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
 
-\item{settings}{list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval}
+\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval}
 
 \item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing}
 

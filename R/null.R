@@ -2,7 +2,7 @@
 #'
 
 # for split evaluation, label training occs "1" and independent evaluation occs "2" in partitions
-nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
+nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, user.envs.partition = NULL,
                      eval.type = c("split", "kfold", "kspatial"),
                      categoricals = NULL, envs.grp = NULL, abs.auc.diff = TRUE,
                      other.args = NULL, rasterBrick = TRUE, removeMxTemp = TRUE) {
@@ -24,23 +24,38 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
   #   nk <- length(unique(occs.grp))
   # }
 
-  nk <- max(as.numeric(e@occ.grp))
+  # assign the number of cross validation iterations
+  nk <- ifelse(e@partition.method == "independent", 1, max(as.numeric(e@occ.grp)))
+  # get names of environmental predictor variables
+  envs.names <- names(e@occs)[3:ncol(e@occs)]
 
   # get number of occurrence points by partition
   occs.grp.tbl <- table(e@occ.grp)
 
-  # get environmental values for occs and bg
-  t2 <- proc.time()
+  eval.type <- switch(e@partition.method,
+                      random = "kfold",
+                      jackknife = "kfold",
+                      block = "kspatial",
+                      checkerboard1 = "kspatial",
+                      checkerboard2 = "kspatial",
+                      independent = "kfold")
   
-  
+  # if envs were input, get partition groups for envs if using spatial cross validation
   if(!is.null(envs)) {
     envs.pts <- as.data.frame(na.omit(raster::rasterToPoints(envs)))
-    # partition occs based on selected partition method
-    envs.grp <- switch(e@partition.method, 
-                       block = get.block(e@occs, envs.pts),
-                       checkerboard1 = get.checkerboard1(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]),
-                       checkerboard2 = get.checkerboard2(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]))$bg.grp
-    envs.pts$grp <- envs.grp
+    # convert any factor columns to factor in envs pts dataset
+    envs.fact <- which(sapply(e@occs, is.factor))
+    envs.pts[,envs.fact] <- factor(envs.pts[,envs.fact])
+    # if using a native ENMeval spatial cross validation partitioning method, use it to assign partition groups to envs
+    if(e@partition.method != "user") {
+      envs.pts$grp <- switch(e@partition.method, 
+                         block = get.block(e@occs, envs.pts),
+                         checkerboard1 = get.checkerboard1(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]),
+                         checkerboard2 = get.checkerboard2(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]))$bg.grp  
+    }else{
+      # if user partitions, assign envs partition groups based on user input
+      envs.pts$grp <- user.envs.partition
+    }
   }
 
   # # convert fields for categorical data to factor class
@@ -81,8 +96,9 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
   # build real model ####
   ############################## #
 
-  real.mod <- e@models[[mod.settings]]
-  real.mod.res <- e@results %>% dplyr::filter(tune.args == mod.settings)
+  mod.tune.args  <- paste(mod.settings, collapse = "_")
+  real.mod <- e@models[[mod.tune.args]]
+  real.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
   
   # t3 <- proc.time()
   # message("Building and evaluating real model...")
@@ -120,20 +136,18 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
   ############################## #
 
   # initialize list to record stats for null iteration i
-  null.stats.iters <- list()
+  nulls.i <- list()
 
   t4 <- proc.time()
   message(sprintf("Building and evaluating %i null SDMs...", no.iter))
+  
+  # all null models will use the same background used to train the real model
+  bg.vals <- e@bg %>% dplyr::select(envs.names)
 
   for(i in 1:no.iter) {
-    # initialize data frame for partition statistics for current iteration
-    dn <- list(NULL, c("iter", "grp", k.cnames))
-    null.stats.iters[[i]] <- data.frame(matrix(nrow = nk,
-                                               ncol = length(k.cnames) + 2,
-                                               dimnames = dn))
-    # make list to hold different null occurrence datasets
-    occs.null <- list()
-
+    
+    null.occs.ik <- list()
+    
     # randomly sample the same number of training occs over each k partition
     # of envs; if kspatial evaluation, only sample over the current spatial
     # partition of envs.vals
@@ -143,21 +157,31 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
       }else{
         envs.pts.k <- envs.pts
       }
-      samp <- sample(1:nrow(envs.pts.k), occs.grp.tbl[k])
-      occs.null[[k]] <- envs.pts.k[samp, ]
+      s.k <- sample(1:nrow(envs.pts.k), occs.grp.tbl[k])
+      null.occs.ik[[k]] <- envs.pts.k[s.k, ]
     }
+    
+    # # initialize data frame for partition statistics for current iteration
+    # dn <- list(NULL, c("iter", "grp", k.cnames))
+    # nulls.i[[i]] <- data.frame(matrix(nrow = nk,
+    #                                            ncol = length(k.cnames) + 2,
+    #                                            dimnames = dn))
 
-    # convert fields for categorical data to factor class
-    if(!is.null(categoricals)) {
-      for(k in 1:nk) {
-        for(j in 1:length(categoricals)) {
-          occs.null[[k]][, categoricals[j]] <- as.factor(occs.null[[k]][, categoricals[j]])
-        }
-      }
-    }
 
-    occs.null.all <- do.call(rbind, occs.null)
+    null.occs.i <- dplyr::bind_rows(null.occs.ik)
 
+    
+    # unpack predictor variable values for occs and bg
+    null.occs.i.vals <- null.occs.i %>% dplyr::select(envs.names)
+    # build the full model from all the data
+    mod.full.args <- enm@args(null.occs.i.vals, bg.vals, mod.settings, other.settings$other.args)
+    mod.full <- do.call(enm@fun, mod.full.args)
+    # calculate training auc
+    e.train <- enm@eval(null.occs.i.vals, bg.vals, mod.full, other.settings$other.args, other.settings$doClamp)
+    auc.train <- e.train@auc
+    tune.args.col <- paste(tune.i, collapse = "_")
+    train.stats.df <- data.frame(tune.args = tune.args.col, auc.train = auc.train, stringsAsFactors = FALSE)
+    
     mod.args.i <- model.args(mod.name, mod.args, occs.null.all, bg.vals, other.args)
     mod.i <- do.call(mod.fun, mod.args.i)
     null.stats[i,]$auc.train <- dismo::evaluate(occs.null.all, bg.vals, mod.i)@auc
@@ -182,23 +206,23 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
       mod.args.k <- model.args(mod.name, mod.args, occs.null.train, bg.train, other.args)
       # build the model
       mod.k <- do.call(mod.fun, mod.args.k)
-      # calculate evaluation statistics and put the results in null.stats.iters
+      # calculate evaluation statistics and put the results in nulls.i
       e <- evalStats(occs.null.train, bg.train, occs.test, mod.k, abs.auc.diff)
-      null.stats.iters[[i]][k,] <- c(i, k, e)
+      nulls.i[[i]][k,] <- c(i, k, e)
 
       message(sprintf("Completed partition %i for null model %i.", k, i))
     }
     # average partition statistics
     # for split partition, sd will be NA because input is single fold statistic
-    null.stats.means <- apply(null.stats.iters[[i]][, -c(1, 2)], 2, mean)
-    null.stats.sds <- apply(null.stats.iters[[i]][, -c(1, 2)], 2, sd)
+    null.stats.means <- apply(nulls.i[[i]][, -c(1, 2)], 2, mean)
+    null.stats.sds <- apply(nulls.i[[i]][, -c(1, 2)], 2, sd)
     # alternate the above values for data frame and assign to table
     null.stats[i,2:9] <- c(rbind(null.stats.means, null.stats.sds))
   }
   message(paste0("Null models built and evaluated in ", timeCheck(t4), "."))
 
-  # condense null.stats.iters into data frame
-  null.stats.iters <- do.call("rbind", null.stats.iters)
+  # condense nulls.i into data frame
+  nulls.i <- do.call("rbind", nulls.i)
   # calculate means and standard deviations of mean k-fold values for null stats
   all.stats["null.mean",] <- apply(null.stats[c(1,2,4,6,8)], 2, mean)
   all.stats["null.sd",] <- apply(null.stats[c(1,2,4,6,8)], 2, sd)
@@ -213,7 +237,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL,
                         occs.grp = occs.grp, bg = bg, bg.grp = bg.grp,
                         no.iter = no.iter, all.stats = all.stats,
                         null.stats = null.stats,
-                        null.stats.iters = null.stats.iters)
+                        nulls.i = nulls.i)
 
   # optionally remove temp directory for maxent.jar
   if(mod.name == "maxent.jar" & removeMxTemp == TRUE) unlink(tmpdir, recursive = T, force = T)

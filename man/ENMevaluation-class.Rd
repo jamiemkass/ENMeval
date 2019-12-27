@@ -17,6 +17,10 @@ An S4 class that contains the ENMevaluate results. The slots in this object are 
 
 \item{\code{partition.method}}{character of partition method used}
 
+\item{\code{partition.settings}}{list of partition settings used (i.e., value of *k* or aggregation factor)}
+
+\item{\code{other.settings}}{list of other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
+
 \item{\code{results}}{data.frame of evaluation summary statistics}
 
 \item{\code{results.grp}}{data.frame of evaluation k-fold statistics}

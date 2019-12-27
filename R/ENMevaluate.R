@@ -150,11 +150,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       names(bg) <- names(occs)
     }
     
-    # # remove duplicates
+    # remove cell duplicates
     occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
     occs.dups <- duplicated(occs.cellNo[,1])
-    message(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"))
+    if(sum(occs.dups) > 0) message(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"))
     occs <- occs[!occs.dups,]
+    if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[!occs.dups]
+    
     # extract predictor variable values at coordinates for occs and bg
     occs.vals <- raster::extract(envs, occs)
     bg.vals <- raster::extract(envs, bg)
@@ -249,11 +251,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   
   # record partition settings
   parts.settings <- switch(partitions,
-                           randomkfold = paste("kfolds", kfolds, sep = "="),
-                           checkerboard1 = paste("aggregation.factor", aggregation.factor, sep = "="),
-                           checkerboard2 = paste("aggregation.factor", aggregation.factor, sep = "="),
-                           user = paste("kfolds", length(unique(user.grp$occ.grp)), sep = "="))
-  if(is.null(parts.settings)) parts.settings <- ""
+                           randomkfold = list(kfolds = kfolds),
+                           checkerboard1 = list(aggregation.factor = aggregation.factor),
+                           checkerboard2 = list(aggregation.factor = aggregation.factor),
+                           user = list(kfolds = length(unique(user.grp$occ.grp))))
+  if(is.null(parts.settings)) parts.settings <- list()
   
   # if not user-defined or 'none', add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
@@ -309,13 +311,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   # put all settings into list
-  settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, 
+  other.settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, 
                    abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, settings, numCores, parallelType)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, numCores, parallelType)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, settings, updateProgress)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, updateProgress)
   }
   
   ##################### #
@@ -425,6 +427,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                      results = eval.stats, results.grp = cv.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions, partition.settings = parts.settings,
+                     other.settings = other.settings,
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occ.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]))
     
