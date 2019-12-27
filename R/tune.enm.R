@@ -7,7 +7,7 @@
 #' @param enm Object of class \link{ENMdetails}.
 #' @param partitions character of name of partitioning technique (see \code{?partitions})
 #' @param tune.tbl Data frame of tuning parameter combinations.
-#' @param settings list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval
+#' @param other.settings list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval
 #' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing
 #' @param parallelType character of either "doParallel" or "doSNOW" to conduct parallelization
 
@@ -15,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, settings, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -39,7 +39,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, settings, numCores
   message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], settings)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings)
   }
   close(pb)
   parallel::stopCluster(cl)
@@ -47,7 +47,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, settings, numCores
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, settings, updateProgress) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -65,7 +65,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, settings, updatePro
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, settings)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings)
   }
   close(pb)
   return(results)
@@ -74,30 +74,31 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, settings, updatePro
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, settings) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   d.vals <- d %>% dplyr::select(pb, envs.names)
   occs.vals <- d.vals %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
   bg.vals <- d.vals %>% dplyr::filter(pb == 0) %>% dplyr::select(envs.names)
   # build the full model from all the data
-  mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, settings$other.args)
+  mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, other.settings$other.args)
   mod.full <- do.call(enm@fun, mod.full.args)
+  if(is.null(mod.full)) stop("Training model is NULL. Consider changing the tuning parameters.")
   # calculate training auc
-  e.train <- enm@eval(occs.vals, bg.vals, mod.full, settings$other.args, settings$doClamp)
+  e.train <- enm@eval(occs.vals, bg.vals, mod.full, other.settings$other.args, other.settings$doClamp)
   auc.train <- e.train@auc
   tune.args.col <- paste(tune.i, collapse = "_")
   train.stats.df <- data.frame(tune.args = tune.args.col, auc.train = auc.train, stringsAsFactors = FALSE)
   # if envs is not NULL, predict raster for the full model and calculate CBI.train on this raster
   if(!is.null(envs)) {
-    mod.full.pred <- enm@pred(mod.full, envs, settings$other.args, settings$doClamp, settings$pred.type)
+    mod.full.pred <- enm@pred(mod.full, envs, other.settings$other.args, other.settings$doClamp, other.settings$pred.type)
     # training CBI
     d.occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
     cbi.train <- ecospat::ecospat.boyce(mod.full.pred, d.occs.xy, PEplot = FALSE)
     train.stats.df$cbi.train <- cbi.train$Spearman.cor
   }else{
     # if envs is NULL, calculate CBI.train with the occurrence + background points
-    d.full.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals %>% dplyr::select(envs.names), settings$other.args, settings$doClamp, settings$pred.type))
+    d.full.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.full, d.vals %>% dplyr::select(envs.names), other.settings$other.args, other.settings$doClamp, other.settings$pred.type))
     occs.full.pred <- d.full.pred %>% dplyr::filter(pb == 1)
     cbi.train <- ecospat::ecospat.boyce(d.full.pred$pred, occs.full.pred$pred, PEplot = FALSE)
     mod.full.pred <- d.full.pred$pred
@@ -124,7 +125,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, settings) {
     bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     
     # define model arguments for current model k
-    mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, settings$other.args)
+    mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.settings$other.args)
     # run the current model k
     mod.k <- do.call(enm@fun, mod.k.args)
     
@@ -138,17 +139,17 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, settings) {
     
     # calculate auc on testing data: test occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
     # NOTE: switch to bg.test??
-    e.test <- enm@eval(occs.test.vals, bg.vals, mod.k, settings$other.args, settings$doClamp)
+    e.test <- enm@eval(occs.test.vals, bg.vals, mod.k, other.settings$other.args, other.settings$doClamp)
     auc.test <- e.test@auc
     # calculate auc diff
     auc.diff <- auc.train - auc.test
-    if(settings$abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
+    if(other.settings$abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
     
     # get model predictions for training and testing data
     # these predictions are used only for calculating omission rate, and
     # thus should not need any specific parameter changes for maxent/maxnet
     d.vals <- d %>% dplyr::select(envs.names)
-    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.k, d.vals, settings$other.args, settings$doClamp, settings$pred.type))
+    d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.k, d.vals, other.settings$other.args, other.settings$doClamp, other.settings$pred.type))
     occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred) %>% as.numeric()
     occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred) %>% as.numeric()
     # get minimum training presence threshold (expected no omission)
@@ -159,10 +160,10 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, settings) {
     or.10p <- mean(occs.test.pred < pct10.train.thr)
     
     # calculate continuous Boyce Index
-    if(settings$cbi.cv == TRUE) {
-      if(!is.null(envs) & settings$cbi.eval == "envs") {
+    if(other.settings$cbi.cv == TRUE) {
+      if(!is.null(envs) & other.settings$cbi.eval == "envs") {
         # use full model prediction over envs
-        mod.k.pred <- enm@pred(mod.k, envs, settings$other.args, settings$doClamp, settings$pred.type)
+        mod.k.pred <- enm@pred(mod.k, envs, other.settings$other.args, other.settings$doClamp, other.settings$pred.type)
         # input test occs are coordinates
         occs.test.in <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       }else{
@@ -187,7 +188,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, settings) {
     kstats <- c(fold = k, auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, 
                 or.10p = or.10p, cbi.test = cbi.test$Spearman.cor,
                 # add any additional cross-validation statistics chosen by the user
-                enm@kstats(e.test, mod.k, settings$other.args))
+                enm@kstats(e.test, mod.k, other.settings$other.args))
     
     # put into list as one-row data frame for easy binding
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, rbind(kstats), row.names=NULL, stringsAsFactors = FALSE)
