@@ -65,7 +65,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2), 
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "envs", 
                         abs.auc.diff = TRUE, user.test.grps = NULL,
-                        parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE,
+                        parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE,
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
                         algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, clamp = NULL, progbar = NULL) {
@@ -73,7 +73,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # legacy parameter handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
-    message("* Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n")
+    msg("* Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n", quiet)
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
@@ -129,7 +129,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   }
   
   if(is.null(tune.args) & overlap == TRUE) {
-    message('* As no tuning arguments were specified, turning off niche overlap.\n')
+    msg('* As no tuning arguments were specified, turning off niche overlap.\n', quiet)
     overlap <- FALSE
   }
   
@@ -152,7 +152,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     envs <- raster::stack(envs)
     # if no background points specified, generate random ones
     if(is.null(bg)) {
-      message(paste0('* Randomly sampling ", n.bg, " background points from "envs" rasters...\n'))
+      msg(paste0('* Randomly sampling ", n.bg, " background points from "envs" rasters...\n'), quiet)
       bg <- as.data.frame(dismo::randomPoints(envs, n = n.bg))
       names(bg) <- names(occs)
     }
@@ -160,7 +160,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # remove cell duplicates
     occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
     occs.dups <- duplicated(occs.cellNo[,1])
-    if(sum(occs.dups) > 0) message(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"))
+    if(sum(occs.dups) > 0) msg(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"), quiet)
     occs <- occs[!occs.dups,]
     if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[!occs.dups]
     
@@ -178,7 +178,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       stop("* If inputting variable values without rasters, please make sure to input background coordinates with values as well as occurrences.\n")
     }
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc cannot be calculated for Maxent models.\n", immediate. = TRUE)
+    msg("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc cannot be calculated for Maxent models.\n", quiet)
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.\n")
     # make main df with coordinates and predictor variable values
@@ -200,7 +200,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   ####################################### #
   
   # remove records with NA for any predictor variable
-  d <- remove.env.na(d)
+  d <- remove.env.na(d, quiet)
   
   ################################# #
   # ASSIGN CATEGORICAL VARIABLES ####
@@ -210,10 +210,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
       if(mod.name == "bioclim") {
-        message("* As specified model is BIOCLIM, removing categorical variables.\n")
+        msg("* As specified model is BIOCLIM, removing categorical variables.\n", quiet)
         d[, categoricals[i]] <- NULL
       }else{
-        message(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"))
+        msg(paste0("* Assigning variable ", categoricals[i], " to categorical ...\n"), quiet)
         d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
       }
     }
@@ -254,7 +254,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                       user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occ.grp)), "-fold cross validation...\n"),
                       independent = "* Model evaluations with independent testing data...\n",
                       none = "* Skipping model evaluations (only calculating full model statistics)...\n")
-  message(parts.msg)
+  msg(parts.msg, quiet)
   
   # record partition settings
   parts.settings <- switch(partitions,
@@ -279,10 +279,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the independent data
     # and the second iteration is not performed
     occs.ind.vals$grp <- 1
+    user.test.grps <- occs.ind.vals
     # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
-    d$grp <- factor(d$grp, levels = 0:2)
+    # d$grp <- factor(d$grp, levels = 0:2)
     # and then add the independent testing data with grp value 1
-    d <- rbind(d, occs.ind.vals)
+    # d <- rbind(d, occs.ind.vals)
   }
   
   ##################################### #
@@ -293,7 +294,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # 1) the full study area must be considered, and 2) too few test records are considered, so currently we turn it off
   bg.grp.vals <- unique(d[d$pb==0,"grp"]) == 0
   if(!all(bg.grp.vals) == TRUE | partitions == "jackknife") {
-    message("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).\n")
+    msg("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).\n", quiet)
     cbi.cv <- FALSE
   }else{
     cbi.cv <- TRUE
@@ -311,8 +312,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     enm <- user.enm
   }
   # print model-specific message
-  msg <- enm@msgs(tune.args)
-  message(paste("*** Running ENMeval v1.0.0 using", msg, "***\n"))
+  msg(paste("*** Running ENMeval v1.0.0 using", enm@msgs(tune.args), "***\n"), quiet)
   
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
@@ -322,9 +322,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                    abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress, quiet)
   }
   
   ##################### #
@@ -447,7 +447,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
       warning("Only 1 model prediction raster found. Need at least 2 rasters to calculate niche overlap. Increase number of tuning arguments and run again.\n") 
     }else{
       for(ovStat in overlapStat) {
-        message(paste0("Calculating niche overlap for statistic ", ovStat, "...\n"))
+        msg(paste0("Calculating niche overlap for statistic ", ovStat, "...\n"), quiet)
         overlap.mat <- calc.niche.overlap(e@predictions, ovStat)
         e@overlap[[ovStat]] <- overlap.mat
       }
@@ -458,7 +458,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  message(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  msg(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."), quiet)
   
   return(e)
 }

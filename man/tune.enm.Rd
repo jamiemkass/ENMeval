@@ -14,6 +14,7 @@ tune.parallel(
   partitions,
   tune.tbl,
   other.settings,
+  user.test.grps,
   numCores,
   parallelType
 )
@@ -25,10 +26,11 @@ tune.regular(
   partitions,
   tune.tbl,
   other.settings,
+  user.test.grps,
   updateProgress
 )
 
-cv.enm(d, envs, enm, partitions, tune.i, other.settings)
+cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
 }
 \arguments{
 \item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}

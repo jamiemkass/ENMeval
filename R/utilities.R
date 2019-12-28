@@ -8,8 +8,10 @@
 #' @usage lhs \%>\% rhs
 NULL
 
+msg <- function(x, quiet) if(quiet == FALSE) message(x)
+
 #' @export
-remove.env.na <- function(d) {
+remove.env.na <- function(d, quiet = FALSE) {
   d.envs <- d[,3:ncol(d)]
   ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
   names(ind.NA) <- NULL
@@ -19,10 +21,10 @@ remove.env.na <- function(d) {
   occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
   bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
   if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
-    msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
+    envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
                             length(ind.NA.occs) > 0 ~ occs.msg,
                             length(ind.NA.bg) > 0 ~ bg.msg)
-    message(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", msg, "). Removing from analysis...\n"))
+    msg(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis...\n"), quiet)
     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
     return(d.naRem)    
   }

@@ -18,7 +18,9 @@ doClamp <- TRUE
 abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
-occs.ind = NULL
+# occs.ind = NULL
+cbi.eval = NULL
+quiet = FALSE
 
 # user groups
 user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))

@@ -15,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -23,36 +23,41 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   }
   cl <- parallel::makeCluster(numCores)
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
-  pb <- txtProgressBar(0, n, style = 3)
-  progress <- function(n) setTxtProgressBar(pb, n)
+  if(quiet == FALSE) {
+    pb <- txtProgressBar(0, n, style = 3)
+    progress <- function(n) setTxtProgressBar(pb, n)  
+  }
   
   if(parallelType == "doParallel") {
     doParallel::registerDoParallel(cl)
     opts <- NULL
   } else if(parallelType == "doSNOW") {
     doSNOW::registerDoSNOW(cl)
-    opts <- list(progress=progress)
+    if(quiet == FALSE) {
+      opts <- list(progress=progress)  
+    }else{
+      opts <- NULL
+    }
   }
   numCoresUsed <- foreach::getDoParWorkers()
-  message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
-  
-  message(paste0("Running in parallel using ", parallelType, "..."))
+  msg(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."), quiet)
+  msg(paste0("Running in parallel using ", parallelType, "..."), quiet)
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
     cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps)
   }
-  close(pb)
+  if(quiet == FALSE) close(pb)
   parallel::stopCluster(cl)
   return(results)
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress, quiet) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
   # set up the console progress bar
-  pb <- txtProgressBar(0, n, style = 3)
+  if(quiet == FALSE) pb <- txtProgressBar(0, n, style = 3)
   
   for(i in 1:n) {
     # and (optionally) the shiny progress bar (updateProgress)
@@ -61,13 +66,13 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
         text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
         updateProgress(detail = text)
       }
-      setTxtProgressBar(pb, i)
+      if(quiet == FALSE) setTxtProgressBar(pb, i)
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
     results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
   }
-  close(pb)
+  if(quiet == FALSE) close(pb)
   return(results)
 }
 
@@ -106,7 +111,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
     
   # define number of grp (the value of "k") for occurrences
   # k is only one for independent testing data
-  nk <- ifelse(partitions == "independent", 1, length(unique(d[d$pb == 1, "grp"])))
+  nk <- length(unique(d[d$pb == 1, "grp"]))
   
   # if no partitions, return results without cv.stats
   if(nk == 0) {
@@ -130,14 +135,20 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
       # bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
     }
     
-    # define model arguments for current model k
-    mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.settings$other.args)
-    # run the current model k
-    mod.k <- do.call(enm@fun, mod.k.args)
+    # if no cross validation (nk = 1), define the model used for evaluation (mod.k) 
+    # as the full model (mod.full) to avoid having to refit the same model
+    if(nk != 1) {
+      # define model arguments for current model k
+      mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.settings$other.args)
+      # run the current model k
+      mod.k <- do.call(enm@fun, mod.k.args)  
+    }else{
+      mod.k <- mod.full
+    }
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {
-      message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model.\n"))
+      msg(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model.\n"), quiet)
       next
     }
     
@@ -157,7 +168,13 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
     d.vals <- d %>% dplyr::select(envs.names)
     d.pred <- d %>% dplyr::mutate(pred = enm@pred(mod.k, d.vals, other.settings$other.args, other.settings$doClamp, other.settings$pred.type))
     occs.train.pred <- d.pred %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::pull(pred) %>% as.numeric()
-    occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred) %>% as.numeric()
+    if(nk != 1) {
+      occs.test.pred <- d.pred %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::pull(pred) %>% as.numeric()
+    }else{
+      ind.pred <- occs.test.vals %>% dplyr::mutate(pred = enm@pred(mod.k, occs.test.vals, other.settings$other.args, other.settings$doClamp, other.settings$pred.type))
+      occs.test.pred <- ind.pred %>% dplyr::pull(pred) %>% as.numeric()
+    }
+    
     # get minimum training presence threshold (expected no omission)
     min.train.thr <- min(occs.train.pred)
     or.mtp <- mean(occs.test.pred < min.train.thr)
@@ -171,7 +188,12 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
         # use full model prediction over envs
         mod.k.pred <- enm@pred(mod.k, envs, other.settings$other.args, other.settings$doClamp, other.settings$pred.type)
         # input test occs are coordinates
-        occs.test.in <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
+        if(nk != 1) {
+          occs.test.in <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)  
+        }else{
+          occs.test.in <- user.test.grps %>% dplyr::select(1:2)
+        }
+        
       }else{
         # use full background to approximate full model prediction
         mod.k.pred <- d.pred %>% dplyr::filter(pb == 0) %>% dplyr::pull(pred) %>% as.numeric()

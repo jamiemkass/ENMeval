@@ -197,15 +197,14 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
   noccgrp <- length(unique(occ.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 2 ){
-    message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
+    msg(paste("Warning: occurrence points fall in only", noccgrp, "bin"), quiet)
     bg.grp[ ! bg.grp %in% occ.grp] <- NA
     occ.grp <- as.numeric(as.factor(occ.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
   if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
-    message("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
-    stop()
+    stop("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
   }
   
   out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
@@ -257,15 +256,14 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   noccgrp <- length(unique(occ.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 4 ){
-    message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
+    msg(paste("Warning: occurrence points fall in only", noccgrp, "bins"), quiet)
     bg.grp[ ! bg.grp %in% occ.grp] <- NA
     occ.grp <- as.numeric(as.factor(occ.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
   if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
-    message("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
-    stop()
+    stop("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
   }
   
   out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
