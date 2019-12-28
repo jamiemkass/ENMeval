@@ -150,7 +150,7 @@ test_that("Jackknife has correct number of partitions", {
 })
 
 test_that("Independent has correct number of partitions", {
-  expect_true(length(unique(e.ls$ind@occ.grp)) == 2)
+  expect_true(length(unique(e.ls$ind@occ.grp)) == 1)
   expect_true(length(unique(e.ls$ind@bg.grp)) == 1)
 })
 

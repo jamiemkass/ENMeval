@@ -39,7 +39,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
                       checkerboard1 = "kspatial",
                       checkerboard2 = "kspatial",
                       independent = "kfold")
-  
+
   # if envs were input, get partition groups for envs if using spatial cross validation
   if(!is.null(envs)) {
     envs.pts <- as.data.frame(na.omit(raster::rasterToPoints(envs)))
@@ -49,10 +49,13 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
     envs.pts[,envs.fact] <- factor(envs.pts[,envs.fact])
     # if using a native ENMeval spatial cross validation partitioning method, use it to assign partition groups to envs
     if(e@partition.method != "user") {
-      envs.pts$grp <- switch(e@partition.method, 
-                         block = get.block(e@occs, envs.pts),
-                         checkerboard1 = get.checkerboard1(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]),
-                         checkerboard2 = get.checkerboard2(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]))$bg.grp  
+      envs.pts$grp <- switch(e@partition.method,
+                         block = get.block(e@occs, envs.pts)$bg.grp,
+                         checkerboard1 = get.checkerboard1(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]$bg.grp),
+                         checkerboard2 = get.checkerboard2(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]$bg.grp),
+                         independent = 1,
+                         randomkfold = 1,
+                         jackknife = 1)
     }else{
       # if user partitions, assign envs partition groups based on user input
       envs.pts$grp <- user.envs.partition
@@ -66,7 +69,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   #     bg.vals[, categoricals[j]] <- as.factor(bg.vals[, categoricals[j]])
   #   }
   # }
-  
+
   if(is.null(user.enm)) {
     enm <- lookup.enm(e@algorithm)
     if(e@algorithm == "maxent.jar") {
@@ -84,7 +87,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   train.stats <- as.data.frame(matrix(nrow = no.iter, ncol = length(train.stats.names)))
   names(train.stats) <- train.stats.names
   k.stats <- e@results.grp %>% dplyr::select(auc.test:ncol(e@results.grp)) %>% names()
-  
+
   # all.cnames <- c("auc.train", "auc.test", "auc.diff", "or.min", "or.10")
   # k.cnames <- c("auc.test", "auc.diff", "or.min", "or.10")
   # null.cnames <- c("auc.train", "mean.auc.test", "sd.auc.test",
@@ -105,7 +108,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   mod.tune.args  <- paste(mod.settings, collapse = "_")
   real.mod <- e@models[[mod.tune.args]]
   real.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
-  
+
   # t3 <- proc.time()
   # message("Building and evaluating real model...")
   # mod.args.real <- model.args(mod.name, mod.args, occs.vals, bg.vals, other.args)
@@ -115,7 +118,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   # # real.stats$nparam <- no.params(mod.real, mod.name)
   # kstats <- data.frame(matrix(nrow = nk, ncol = length(k.cnames),
   #                             dimnames = list(NULL, k.cnames)))
-  # 
+  #
   # if(eval.type == "split") {
   #   kstats[1,] <- evalStats(occs.vals, bg.vals, occs.test.vals, mod.real, abs.auc.diff)
   # }else{
@@ -130,7 +133,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   #     message(sprintf("Completed real model evaluation for partition %i.", k))
   #   }
   # }
-  # 
+  #
   # message(paste0("Real model built and evaluated in ", timeCheck(t3), "."))
 
   # # fill in rest of real model statistics
@@ -142,52 +145,58 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   ############################## #
 
   # initialize list to record stats for null iteration i
-  nulls.i <- list()
+  nulls <- list()
 
   t4 <- proc.time()
   message(sprintf("Building and evaluating %i null SDMs...", no.iter))
-  
+  pb <- txtProgressBar(0, no.iter, style = 3)
+
   for(i in 1:no.iter) {
-    
+
     null.occs.ik <- list()
-    
+
     # randomly sample the same number of training occs over each k partition
     # of envs; if kspatial evaluation, only sample over the current spatial
     # partition of envs.vals
     for(k in 1:nk) {
       if(eval.type == "kspatial") {
+        # if spatial cross-validation, sample null occurrences only from
+        # the environment variable grid cells in partition group k
         envs.pts.k <- envs.pts %>% dplyr::filter(grp == k)
       }else{
+        # if nonspatial cross-validation, sample null occurrences from
+        # the entire environment variable grid for each partition group k
         envs.pts.k <- envs.pts
       }
+      # randomly sample n null occurrences, where n equals the number
+      # of real occurrence in partition group k
       s.k <- sample(1:nrow(envs.pts.k), occs.grp.tbl[k])
       null.occs.ik[[k]] <- envs.pts.k[s.k, ]
     }
-    
-    # # initialize data frame for partition statistics for current iteration
-    # dn <- list(NULL, c("iter", "grp", k.cnames))
-    # nulls.i[[i]] <- data.frame(matrix(nrow = nk,
-    #                                            ncol = length(k.cnames) + 2,
-    #                                            dimnames = dn))
 
-
+    # bind rows together to make full null occurrence dataset
     null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
     null.occs.i.vals <- null.occs.i.df %>% dplyr::select(-grp)
+    # assign the null occurrence partitions as user partition settings, but
+    # keep the real model background partitions
     user.grp <- list(occ.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
+    # assign user test partitions to those used in the real model
     user.test.grps <- cbind(e@occs, grp = e@occ.grp)
+    # shortcuts for settings
     e.s <- e@other.settings
     e.p <- e@partition.settings
-    
-    null.e.i <- ENMevaluate(null.occs.i.vals, bg = e@bg, tune.args = mod.settings, mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user", 
-                            user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, aggregation.factor = e.p$aggregation.factor, 
-                            doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval)
 
-    
-    # unpack predictor variable values for occs and bg
-    null.occs.i.vals <- null.occs.i %>% dplyr::select(envs.names)
+    null.e.i <- ENMevaluate(null.occs.i.vals, bg = e@bg, tune.args = mod.settings, mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
+                            user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, aggregation.factor = e.p$aggregation.factor,
+                            doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval, quiet = TRUE)
+    setTxtProgressBar(pb, i)
 
-    
-    
+    nulls[[i]] <- null.e.i@results
+
+
+
+
+
     mod.args.i <- model.args(mod.name, mod.args, occs.null.all, bg.vals, other.args)
     mod.i <- do.call(mod.fun, mod.args.i)
     null.stats[i,]$auc.train <- dismo::evaluate(occs.null.all, bg.vals, mod.i)@auc
