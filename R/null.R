@@ -145,7 +145,7 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
   ############################## #
 
   # initialize list to record stats for null iteration i
-  nulls <- list()
+  nulls.ls <- list()
 
   t4 <- proc.time()
   message(sprintf("Building and evaluating %i null SDMs...", no.iter))
@@ -191,10 +191,16 @@ nullENMs <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, use
                             doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval, quiet = TRUE)
     setTxtProgressBar(pb, i)
 
-    nulls[[i]] <- null.e.i@results
+    nulls.ls[[i]] <- null.e.i@results
+  }
 
-
-
+  nulls <- dplyr::bind_rows(nulls.ls)
+  kstats <- nulls %>% dplyr::select(dplyr::ends_with("avg")) %>% names()
+  for(k.avg in kstats) {
+    k.sd <- gsub("avg", "sd", k.avg)
+    z.name <- gsub("avg", "zscore", k.avg)
+    nulls <- nulls %>% dplyr::mutate(!!z.name := !!dplyr::sym(k.avg)/!!dplyr::sym(k.sd))
+  }
 
 
     mod.args.i <- model.args(mod.name, mod.args, occs.null.all, bg.vals, other.args)
