@@ -18,7 +18,7 @@ doClamp <- TRUE
 abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
-# occs.ind = NULL
+occs.ind = NULL
 cbi.eval = NULL
 quiet = FALSE
 
