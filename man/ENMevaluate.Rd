@@ -2,7 +2,7 @@
 % Please edit documentation in R/ENMevaluate.R
 \name{ENMevaluate}
 \alias{ENMevaluate}
-\title{Tuning and evaluation of ecological niche models}
+\title{Tune ecological niche model (ENM) settings and calculate evaluation statistics}
 \usage{
 ENMevaluate(
   occs,
@@ -123,9 +123,9 @@ predictions at all localities (training and testing occurrences and backgrounds)
 \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
 user-specified tuning settings. Users can choose to tune with cross validation or an independent 
 occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
-evaluation statistics (for each combination of settings and for each cross validation fold therein) 
-and raster predictions for each model. The evaluation statistics are meant to aid users in identifying 
-settings that balance model fit and predictive ability.
+evaluation statistics for each combination of settings and for each cross validation fold therein, as
+well as raster predictions for each model when raster data is input. The evaluation statistics in the 
+results table should aid users in identifying model settings that balance fit and predictive ability.
 }
 \examples{
 

@@ -1,10 +1,10 @@
-#' @title Tuning and evaluation of ecological niche models
+#' @title Tune ecological niche model (ENM) settings and calculate evaluation statistics
 #' @description \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
 #' user-specified tuning settings. Users can choose to tune with cross validation or an independent 
 #' occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
-#' evaluation statistics (for each combination of settings and for each cross validation fold therein) 
-#' and raster predictions for each model. The evaluation statistics are meant to aid users in identifying 
-#' settings that balance model fit and predictive ability.
+#' evaluation statistics for each combination of settings and for each cross validation fold therein, as
+#' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
+#' results table should aid users in identifying model settings that balance fit and predictive ability.
 #' 
 #' @param occs matrix or data frame with two columns for longitude and latitude 
 #' of occurrence localities, in that order; if specifying predictor variable values
@@ -241,7 +241,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = NULL,
                  independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
-                 none = NULL)
+                 none = list(occ.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
   
   
   # choose a user message reporting on partition choice
@@ -264,7 +264,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                            user = list(kfolds = length(unique(user.grp$occ.grp))))
   if(is.null(parts.settings)) parts.settings <- list()
   
-  # if not user-defined or 'none', add these values as the 'grp' column
+  # add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
   
   ############################################ #
@@ -358,7 +358,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
   
   # define number of grp (the value of "k") for occurrences
-  nk <- length(unique(d[d$pb == 1, "grp"]))
+  # k is 1 for partition "independent"
+  # k is 0 for partitions "none" and "user"
+  occGrps <- unique(d[d$pb == 1, "grp"])
+  if(length(occGrps) == 1 & 0 %in% occGrps) {
+    nk <- 0
+  }else{
+    nk <- length(occGrps)
+  }
   
   # if partitions were specified
   if(nk > 0) {
