@@ -2,7 +2,7 @@
 NULL
 
 #' @title ENMevaluation class
-#' @description An S4 class that contains the ENMevaluate results. The slots in this object are filled in by \code{ENMevaluate()} internally.
+#' @description An S4 class that contains the ENMevaluate results.
 #' @author Jamie M. Kass, \email{jamie.m.kass@@gmail.com}, Bob Muscarella, \email{bob.muscarella@@gmail.com}
 #' @slot algorithm character of algorithm used
 #' @slot tune.settings data.frame of settings that were tuned
@@ -266,3 +266,109 @@ setMethod("show",
             cat("Refer to ?ENMdetails for information on slots, and to the vignette for how to construct a custom object.", sep = "")
             invisible(NULL)
           })
+
+
+#' @title ENMnull class
+#' @description An S4 class that contains the ENMnullSims results. 
+#' @author Jamie M. Kass, \email{jamie.m.kass@@gmail.com}, Corentin Bohl, \email{corentinbohl@@gmail.com}
+#' @slot null.algorithm character of algorithm used
+#' @slot null.mod.settings data.frame of model settings used
+#' @slot null.partition.method character of partition method used
+#' @slot null.partition.settings list of partition settings used (i.e., value of *k* or aggregation factor)
+#' @slot null.other.settings list of other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
+#' @slot no.iter numeric of number of null model iterations
+#' @slot null.results data.frame of evaluation summary statistics for null models
+#' @slot null.results.grp data.frame of evaluation k-fold statistics for null models
+#' @slot real.vs.null.results data.frame of evaluation summary statistics for the real model, means for all null models, z-scores, and p-values
+#' @slot real.occs data.frame of occurrence coordinates and predictor variable values used for model training (real model)
+#' @slot real.occ.grp vector of partition groups for occurrence points
+#' @slot real.bg data.frame of background coordinates and predictor variable values used for model training
+#' @slot real.bg.grp vector of partition groups for background points
+#' @export
+
+# class slots match older ENMeval versions
+ENMnull <- setClass("ENMnull",
+                          slots = c(null.algorithm = 'character',
+                                    null.mod.settings = 'data.frame',
+                                    null.partition.method = 'character',
+                                    null.partition.settings = 'list',
+                                    null.other.settings = 'list',
+                                    no.iter = 'numeric',
+                                    null.results = 'data.frame',
+                                    null.results.grp = 'data.frame',
+                                    real.vs.null.results = 'data.frame',
+                                    real.occs = 'data.frame',
+                                    real.occ.grp = 'factor',
+                                    real.bg = 'data.frame',
+                                    real.bg.grp = 'factor'))
+
+setGeneric("null.algorithm", function(x) standardGeneric("null.algorithm"))
+#' @export
+setMethod("null.algorithm", "ENMnull", function(x) x@null.algorithm)
+
+setGeneric("null.mod.settings", function(x) standardGeneric("null.mod.settings"))
+#' @export
+setMethod("null.mod.settings", "ENMnull", function(x) x@null.mod.settings)
+
+setGeneric("null.partition.method", function(x) standardGeneric("null.partition.method"))
+#' @export
+setMethod("null.partition.method", "ENMnull", function(x) x@null.partition.method)
+
+setGeneric("null.partition.settings", function(x) standardGeneric("null.partition.settings"))
+#' @export
+setMethod("null.partition.settings", "ENMnull", function(x) x@null.partition.settings)
+
+setGeneric("null.other.settings", function(x) standardGeneric("null.other.settings"))
+#' @export
+setMethod("null.other.settings", "ENMnull", function(x) x@null.other.settings)
+
+setGeneric("no.iter", function(x) standardGeneric("no.iter"))
+#' @export
+setMethod("no.iter", "ENMnull", function(x) x@no.iter)
+
+setGeneric("null.results", function(x) standardGeneric("null.results"))
+#' @export
+setMethod("null.results", "ENMnull", function(x) x@null.results)
+
+setGeneric("null.results.grp", function(x) standardGeneric("null.results.grp"))
+#' @export
+setMethod("null.results.grp", "ENMnull", function(x) x@null.results.grp)
+
+setGeneric("real.vs.null.results", function(x) standardGeneric("real.vs.null.results"))
+#' @export
+setMethod("real.vs.null.results", "ENMnull", function(x) x@real.vs.null.results)
+
+setGeneric("real.occs", function(x) standardGeneric("real.occs"))
+#' @export
+setMethod("real.occs", "ENMnull", function(x) x@real.occs)
+
+setGeneric("real.occ.grp", function(x) standardGeneric("real.occ.grp"))
+#' @export
+setMethod("real.occ.grp", "ENMnull", function(x) x@real.occ.grp)
+
+setGeneric("real.bg", function(x) standardGeneric("real.bg"))
+#' @export
+setMethod("real.bg", "ENMnull", function(x) x@real.bg)
+
+setGeneric("real.bg.grp", function(x) standardGeneric("real.bg.grp"))
+#' @export
+setMethod("real.bg.grp", "ENMnull", function(x) x@real.bg.grp)
+
+
+#' @export
+setMethod("show",
+          signature = "ENMnull",
+          definition = function(object) {
+            cat("An object of class: ", class(object), "\n")
+            cat(" no. iterations: ", object@no.iter, "\n")
+            cat(" real occurrence/background points: ", nrow(object@real.occs), '/', nrow(object@real.bg), "\n")
+            cat(" partition method: ", object@null.partition.method, "\n")
+            cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")
+            cat(" other settings: ", paste(names(object@null.other.settings), unlist(object@null.other.settings), sep = " = ", collapse = ", "), "\n")
+            cat(" algorithm: ", object@null.algorithm, "\n")
+            cat(" model settings: \n")
+            print(object@null.mod.settings[,-ncol(object@null.mod.settings)], row.names = FALSE)
+            cat("Refer to ?ENMnull for information on slots.", sep = "")
+            invisible(NULL)
+          })
+

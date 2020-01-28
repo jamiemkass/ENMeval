@@ -110,8 +110,14 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
   }
     
   # define number of grp (the value of "k") for occurrences
-  # k is only one for independent testing data
-  nk <- length(unique(d[d$pb == 1, "grp"]))
+  # k is 1 for partition "independent"
+  # k is 0 for partitions "none" and "user"
+  occGrps <- unique(d[d$pb == 1, "grp"])
+  if(length(occGrps) == 1 & 0 %in% occGrps) {
+    nk <- 0
+  }else{
+    nk <- length(occGrps)
+  }
   
   # if no partitions, return results without cv.stats
   if(nk == 0) {
