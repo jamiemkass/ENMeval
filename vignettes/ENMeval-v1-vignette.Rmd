@@ -144,6 +144,7 @@ library(dismo)
 # Randomly sample 10,000 background points from one background extent raster (only one per cell without replacement). Note: Since the raster has <10,000 pixels, you'll get a warning and all pixels will be used for background. We will be sampling from the biome variable because it is missing some grid cells, and we are trying to avoid getting background points with NA.
 bg <- randomPoints(envs.bg[[9]], n=10000)
 bg <- as.data.frame(bg)
+colnames(bg) <- colnames(occs)
 
 # Notice how we have pretty good coverage (every cell).
 plot(envs.bg[[1]], legend=FALSE)
@@ -176,7 +177,7 @@ The next two partitioning methods are variants of a 'checkerboard' approach to p
 
 The Checkerboard1 method partitions the points into *k* = 2 spatial groups using a simple checkerboard pattern.
 
-``` {r part.ck1, fig.width = 5, fig.height = 5}
+```{r part.ck1, fig.width = 5, fig.height = 5}
 cb1 <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=5)
 plot.grps(pts = occs, pts.grp = cb1$occ.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
@@ -191,7 +192,7 @@ plot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
 #### 3. Checkerboard2 {#cb2}
 The Checkerboard2 method partitions the data into *k* = 4 spatial groups. This is done by hierarchically aggregating the input raster at two scales. Presence and background groups are assigned based on which box they fall on the hierarchical checkerboard.
 
-``` {r part.ck2, fig.width = 5, fig.height = 5}
+```{r part.ck2, fig.width = 5, fig.height = 5}
 cb2 <- get.checkerboard2(occs, envs.bg, bg, aggregation.factor=c(5,5))
 plot.grps(pts = occs, pts.grp = cb2$occ.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
@@ -201,7 +202,7 @@ plot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 #### 4. Jackknife (leave-one-out) {#jack}
 The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between testing and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning.  As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets.
 
-``` {r part.jk, fig.width = 5, fig.height = 5}
+```{r part.jk, fig.width = 5, fig.height = 5}
 jack <- get.jackknife(occs, bg)
 # If the number of input points is larger than 10, the legend for the groups is suppressed
 plot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
@@ -210,7 +211,7 @@ plot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
 #### 5. Random k-fold {#rand}
 The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (*k*) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI. Especially with larger occurrence datasets, this partitioning method could randomly result in some spatial clustering of groups, which is why spatial partitioning methods are preferable for addressing spatial autocorrelation. Below, we partition the data into five random groups.
 
-``` {r part.rand, fig.width = 5, fig.height = 5}
+```{r part.rand, fig.width = 5, fig.height = 5}
 rand <- get.randomkfold(occs, bg, k = 5)
 plot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
 ```
@@ -227,7 +228,7 @@ plot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
 #### 7. User-defined {#user}
 For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, we demonstrate partitioning the occurrence data based on *k*-means groups. The user-defined partition option can also be used to input partition groups derived from other sources, such as the [`blockCV`](https://github.com/rvalavi/blockCV) package available on Github.
 
-``` {r part.user1, fig.width = 5, fig.height = 5}
+```{r part.user1, fig.width = 5, fig.height = 5}
 grp.n <- 5
 kmeans <- kmeans(occs, grp.n)
 occ.grp <- kmeans$cluster
@@ -236,16 +237,16 @@ plot.grps(pts = occs, pts.grp = occ.grp, envs = envs.bg)
 
 When using the user-defined partitioning method, we need to supply ENMevaluate with group identifiers for both occurrence points AND background points. If we want to use all background points for each group, we can set the background to zero.
 
-``` {r part.user2, fig.width = 5, fig.height = 5}
+```{r part.user2, fig.width = 5, fig.height = 5}
 bg.grp <- rep(0, nrow(bg))
 
-plot(envs.backg[[1]], col='gray', legend=FALSE)
+plot(envs.bg[[1]], col='gray', legend=FALSE)
 points(bg, pch=16, bg=bg.grp)
 ```
 
 Alternatively, we may think of various ways to partition background data. This depends on the goals of the study but we might, for example, find it reasonable to partition background by clustering around the centroids of the occurrence clusters.
 
-``` {r part.user3, fig.width = 5, fig.height = 5}
+```{r part.user3, fig.width = 5, fig.height = 5}
 centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x==min(x)))
@@ -278,8 +279,7 @@ tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
-occs.ind <- read.csv("independent_testing_data_xy.csv")
-e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs.ind)
+e <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
 
 # 3. User partitions
 user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
@@ -314,7 +314,7 @@ ENMevaluate builds a separate model for each unique combination of RM values and
 <!-- data(eval2) -->
 <!-- ``` -->
 
-``` {r enmeval1a, eval=FALSE}
+```{r enmeval1a, eval=FALSE}
 eval1 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
                      partitions='checkerboard2', 
                      tune.args=list(fc="L", rm=1:2), 
@@ -323,7 +323,7 @@ eval1 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg,
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
 
-``` {r enmeval1b, eval=TRUE}
+```{r enmeval1b, eval=TRUE}
 eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
                      partitions='checkerboard2', 
                      tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), 
@@ -332,28 +332,28 @@ eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg,
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
 
-``` {r enmeval2par, eval=FALSE}
+```{r enmeval2par, eval=FALSE}
 eval2.par <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
                          partitions='checkerboard2', 
                          tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), 
-                         mod.name='maxnet', parallel=T)
+                         mod.name='maxent.jar', parallel=T)
 ```
 
-Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to FALSE.
+Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
 
-``` {r enmeval3, eval=FALSE}
+```{r enmeval3, eval=FALSE}
 eval3 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
                          partitions='checkerboard2', 
                          tune.args=list(fc=c("L","LQ","LQP"), rm=1:2),
-                         mod.name='maxnet', rasterPreds=F)
+                         mod.name='maxnet', rasterPreds=NULL)
 ```
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
-``` {r enmeval4, results='hide'}
+```{r enmeval4, results='hide'}
 overlap <- calc.niche.overlap(eval2@predictions, overlapStat="D")
 ```
-``` {r enmeval5}
+```{r enmeval5}
 overlap
 ```
 
@@ -376,34 +376,34 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 - `overlap` A list of matrices of pairwise niche overlap statistics
 
 Let's first examine the structure of the object:
-``` {r stuff}
+```{r results1}
 eval2
 
 str(eval2, max.level=3)
 ```
 
 The first slot tells which algorithm was used (maxent.jar or maxnet) and which version of the software.
-``` {r stuff1}
+```{r algorithm}
 eval2@algorithm
 ```
 
 The next two slots hold information on which tuning settings and partitioning method were used.  The details of the tuning settings will depend on the algorithm used.
-``` {r stuff1b}
+```{r settings}
 eval2@tune.settings
 
 eval2@partition.method
 ```
 
 The original data (occurrence and background points), as well as which of the k-fold groups they belong to, are all held in `ENMevaluation` object.
-``` {r stuff1c}
-eval2@occ.pts
+```{r groups}
+eval2@occs
 eval2@occ.grp
-eval2@bg.pts
+eval2@bg
 eval2@bg.grp
 ```
 
 The next two slots hold the overall table of evaluation metrics and then the results for each k-fold group.  We can use these to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
-``` {r stuff2}
+```{r evaluations}
 # Overall results
 eval2@results
 
@@ -430,12 +430,12 @@ aic.opt@results
 ```
 
 Now let's access the RasterStack of the model predictions.  Note that these predictions are in the 'raw' output format.
-``` {r stuff3}
+```{r preds}
 eval2@predictions
 ```
 
 Now plot the model with the lowest AICc:
-``` {r stuff4, fig.width = 5, fig.height = 5}
+```{r plotMod, fig.width = 5, fig.height = 5}
 plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occurrence rate")
 ```
 
@@ -446,7 +446,7 @@ plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occ
 
 The "lambdas" slot shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model.  You will likely find the syntax to be cryptic and the information is not stored in a very user-friendly way.  Fortunately, John Baumgartner has developed a useful function to parse this file into a more user-friendly data.frame.  See the `parse_lambdas.R` function in his [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R) package for more details.
 
-```{r mod.obj2}
+```{r mod.lambdas}
 aic.opt@lambdas
 ```
 
@@ -457,15 +457,15 @@ Plotting options in R are extremely flexible and here we demonstrate some key to
 - [Plotting model predictions](#plot.preds)
 - [Plotting response curves](#plot.resp)
 
-ENMeval has a built-in plotting function (`eval.plot`) to visualize the results of different models.  It requires the results table of the ENMevaluation object.  By default, it plots delta.AICc values.
+ENMeval has a built-in plotting function (`eval.plot`) to visualize the results of different models.  It requires the ENMevaluation object.  By default, it always plots delta.AICc values. Here, we will plot AICc and delta.AICc values for each feature class for both regularization multipliers.
 
-``` {r plot.res, fig.width = 5, fig.height = 5}
-eval.plot(eval2@results)
+```{r plot.res, fig.width = 5, fig.height = 5}
+plot.eval(e = eval2, stats = c("AICc"), col = "fc", x = "rm")
 ```
 
 You can choose which evaluation metric to plot, and you can also include error bars, if relevant.
-``` {r plot.res2, fig.width = 5, fig.height = 5}
-eval.plot(eval2@results, 'avg.test.AUC', var='var.test.AUC')
+```{r plot.res2, fig.width = 5, fig.height = 5}
+plot.eval(eval2, stats = 'auc.train', col='fc', x = "rm")
 ```
 
 <!-- You can also plot the permutation importance or percent contribution. -->
@@ -477,17 +477,17 @@ eval.plot(eval2@results, 'avg.test.AUC', var='var.test.AUC')
 #### Plotting model predictions {#plot.preds}
 If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis - remember that the output values are in Maxent's 'raw' units.  
 
-``` {r plot.pred1, fig.width = 5, fig.height = 5, mar=c(2,2,1,0)}
+```{r plot.pred1, fig.width = 5, fig.height = 5, mar=c(2,2,1,0)}
 plot(eval2@predictions[[1]], legend=F)
 
 # Now add the occurrence and background points, colored by evaluation bins:
-points(eval2@bg.pts, pch=3, col=eval2@bg.grp, cex=0.5)
-points(eval2@occ.pts, pch=21, bg=eval2@occ.grp)
+points(eval2@bg, pch=3, col=eval2@bg.grp, cex=0.5)
+points(eval2@occs, pch=21, bg=eval2@occ.grp)
 ```
 
 Let's see how model complexity changes the predictions in our example.  We'll compare the model predictions of the model with only linear feature classes and with the highest regularization multiplier value we used (i.e., fc='L', RM=2) versus the model with all feature class combination and the lowest regularization multiplier value we used (i.e., fc='LQP',  RM=1).
 
-``` {r plot.pred2, fig.width = 5, fig.height = 2.5}
+```{r plot.pred2, fig.width = 5, fig.height = 2.5}
 # bisect the plotting area to make two columns
 par(mfrow=c(1,2), mar=c(2,2,1,0))
 
@@ -499,7 +499,7 @@ plot(eval2@predictions[['LQP_1']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, ma
 #### Plotting response curves {#plot.resp}
 We can also plot the response curves of our model to see how different input variables influence our model predictions.  (Note that, as with the `dismo::maxent` function, using this function requires that the maxent.jar file be installed in the `dismo` package java folder).
 
-``` {r response_curves, eval=FALSE}
+```{r response_curves, eval=FALSE}
 response(eval2@models[[1]])
 ```
 
