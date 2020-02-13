@@ -8,7 +8,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r setup, echo = FALSE, include=FALSE}
@@ -251,7 +251,7 @@ centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x==min(x)))
 
-plot(envs.backg[[1]], col='gray', legend=FALSE)
+plot(envs.bg[[1]], col='gray', legend=FALSE)
 points(bg, pch=21, bg=bg.grp)
 ```
 
@@ -271,7 +271,7 @@ full.mod.pred: raster model prediction based on `envs`
 cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test cannot only be calculated for partitions "randomkfold", "independent", or "user"
 
 
-```{r}
+```{r evalExamples, eval= F}
 # This example is for Maxent models, and so we will specify the tune.tbl with ranges of feature classes and regularization multipliers
 tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 
@@ -421,7 +421,7 @@ Let's look at the model object for our "AICc optimal" model:
 ```{r mod.obj1}
 aic.opt <- eval2@models[[which(eval2@results$delta.AICc==0)]]
 
-aic.opt
+#aic.opt
 ```
 
 The "results" slot shows the Maxent model statistics:
