@@ -110,7 +110,7 @@ plot.eval <- function(e, stats, x, col) {
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
     dplyr::filter(grepl(exp, metric))
   avgs <- res %>% 
-    dplyr::filter(grepl("avg", metric)) %>% 
+    #dplyr::filter(grepl("avg", metric)) %>% 
     dplyr::rename(avg = value) %>%
     dplyr::mutate(metric = gsub(".avg", "", metric))
   sds <- res %>% 
