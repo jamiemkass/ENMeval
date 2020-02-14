@@ -8,7 +8,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ```{r setup, echo = FALSE, include=FALSE}
@@ -103,7 +103,8 @@ occs.sf <- st_as_sf(occs, coords = c("longitude","latitude"), crs = 4326)
 # * this will give a warning because we are not buffering in a projected coordinate system
 # * for simplicity, this vignette does not involve coordinate reference system (CRS) transformations,
 # * but for a real analysis, transforming to a projected CRS before buffering is best practice
-occs.buf <- st_buffer(occs.sf, dist = 10)
+occs.buf <- st_buffer(occs.sf, dist = 5)
+plot(occs.buf, add = TRUE)
 
 # Crop environmental rasters to match the study extent
 envs.bg <- crop(envs, occs.buf)
@@ -170,6 +171,9 @@ First, the 'block' method partitions data according to the latitude and longitud
 ```{r part.block, fig.width = 5, fig.height = 5}
 block <- get.block(occs, bg)
 plot.grps(pts = occs, pts.grp = block$occ.grp, envs = envs.bg)
+# PLotting the background shows that the background extent is partitioned in a way that maximizes evenness
+# of points across the four bins, not to maximize evenness of area
+plot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg)
 ```
 
 #### 2. Checkerboard1 {#cb1}
@@ -200,7 +204,7 @@ plot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
-The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between testing and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning.  As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets.
+The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between testing and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning.  As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets. The background is not partitioned with jackknife.
 
 ```{r part.jk, fig.width = 5, fig.height = 5}
 jack <- get.jackknife(occs, bg)
@@ -209,7 +213,7 @@ plot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
 ```
 
 #### 5. Random k-fold {#rand}
-The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (*k*) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI. Especially with larger occurrence datasets, this partitioning method could randomly result in some spatial clustering of groups, which is why spatial partitioning methods are preferable for addressing spatial autocorrelation. Below, we partition the data into five random groups.
+The 'random k-fold' method partitions occurrence localities randomly into a user specified number of (*k*) bins. This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI. Especially with larger occurrence datasets, this partitioning method could randomly result in some spatial clustering of groups, which is why spatial partitioning methods are preferable for addressing spatial autocorrelation. Below, we partition the data into five random groups. The background is not partitioned with random k-fold.
 
 ```{r part.rand, fig.width = 5, fig.height = 5}
 rand <- get.randomkfold(occs, bg, k = 5)
@@ -217,7 +221,7 @@ plot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
 ```
 
 #### 6. Independent {#ind}: 
-The 'independent' method evaluates the model on an independent dataset that is not used to create the full model, and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and independent testing data and plot the partitions in the same way as above. However, unlike before, the independent testing data (group 2) will not become training data for a new model. Instead, only the training data (group 1) is used to make the model, and the independent testing data (group 2) is used only to evaluate it.
+The 'independent' method evaluates the model on an independent dataset that is not used to create the full model, and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and independent testing data and plot the partitions in the same way as above. However, unlike before, the independent testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the independent testing data (group 2) is used only to evaluate it. Thus, the background extent does not include the independent testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
 
 ```{r part.ind, fig.width = 5, fig.height = 5}
 pts <- rbind(occs, occs.ind)
@@ -229,7 +233,7 @@ plot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
 For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, we demonstrate partitioning the occurrence data based on *k*-means groups. The user-defined partition option can also be used to input partition groups derived from other sources, such as the [`blockCV`](https://github.com/rvalavi/blockCV) package available on Github.
 
 ```{r part.user1, fig.width = 5, fig.height = 5}
-grp.n <- 5
+grp.n <- 6
 kmeans <- kmeans(occs, grp.n)
 occ.grp <- kmeans$cluster
 plot.grps(pts = occs, pts.grp = occ.grp, envs = envs.bg)
@@ -239,9 +243,7 @@ When using the user-defined partitioning method, we need to supply ENMevaluate w
 
 ```{r part.user2, fig.width = 5, fig.height = 5}
 bg.grp <- rep(0, nrow(bg))
-
-plot(envs.bg[[1]], col='gray', legend=FALSE)
-points(bg, pch=16, bg=bg.grp)
+plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
 Alternatively, we may think of various ways to partition background data. This depends on the goals of the study but we might, for example, find it reasonable to partition background by clustering around the centroids of the occurrence clusters.
@@ -250,9 +252,7 @@ Alternatively, we may think of various ways to partition background data. This d
 centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x==min(x)))
-
-plot(envs.bg[[1]], col='gray', legend=FALSE)
-points(bg, pch=21, bg=bg.grp)
+plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
 Choosing among these data partitioning methods depends on the research objectives and the characteristics of the study system. Refer to the [Resources](Resources) section for additional considerations on appropriate partitioning for evaluation.
@@ -260,9 +260,53 @@ Choosing among these data partitioning methods depends on the research objective
 ## Running ENMeval {#eval}
 Once you decide which method of data partitioning you would like to use, you are ready to start building models. We now move on to the main function in ENMeval: `ENMevaluate`.
 
-- [Different parameterizations](#eval.parameterizations)
 - [Initial considerations](#eval.consid)
+- [Different parameterizations](#eval.parameterizations)
 - [Exploring the results (the ENMevaluate object)](#eval.explore)
+
+#### Initial considerations {#eval.consid}
+The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for adding parameters to the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. Much more description of these parameters is available in the [Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
+
+Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will need to define which layer(s) these are using the 'categoricals' argument.
+
+ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
+
+<!-- ```{r load_vignette_data, echo = FALSE} -->
+<!-- data(eval2) -->
+<!-- ``` -->
+
+```{r enmeval1a, eval=FALSE}
+eval1 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
+                     tune.args=list(fc="L", rm=1:2), mod.name='maxnet')
+```
+
+We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
+
+```{r enmeval1b, eval=TRUE}
+eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
+                     tune.args=list(fc=c("L","LQ","LQP"), rm=1:3), mod.name='maxnet')
+```
+
+When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
+
+```{r enmeval2par, eval=FALSE}
+eval2.par <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
+                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), mod.name='maxnet', parallel=TRUE)
+```
+
+Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
+
+```{r enmeval3, eval=FALSE}
+eval3 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
+                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), mod.name='maxnet', rasterPreds=NULL)
+```
+
+We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
+
+```{r enmeval4, results='hide'}
+overlap <- calc.niche.overlap(eval2@predictions, overlapStat="D")
+overlap
+```
 
 #### Different parameterizations {#eval.parameterizations}
 There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
@@ -302,61 +346,6 @@ e <- ENMevaluate(occs, envs, bg, user.enm = mod1, tune.args = tune.args, categor
 ```
 
 
-
-#### Initial considerations {#eval.consid}
-The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for adding parameters to the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. Much more description of these parameters is available in the [Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
-
-Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will need to define which layer(s) these are using the 'categoricals' argument.
-
-ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
-
-<!-- ```{r load_vignette_data, echo = FALSE} -->
-<!-- data(eval2) -->
-<!-- ``` -->
-
-```{r enmeval1a, eval=FALSE}
-eval1 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
-                     partitions='checkerboard2', 
-                     tune.args=list(fc="L", rm=1:2), 
-                     mod.name='maxent.jar')
-```
-
-We may, however, want to compare a wider range of models that can use a wider variety of feature classes:
-
-```{r enmeval1b, eval=TRUE}
-eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
-                     partitions='checkerboard2', 
-                     tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), 
-                     mod.name='maxent.jar')
-```
-
-When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
-
-```{r enmeval2par, eval=FALSE}
-eval2.par <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
-                         partitions='checkerboard2', 
-                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), 
-                         mod.name='maxent.jar', parallel=T)
-```
-
-Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
-
-```{r enmeval3, eval=FALSE}
-eval3 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, 
-                         partitions='checkerboard2', 
-                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2),
-                         mod.name='maxnet', rasterPreds=NULL)
-```
-
-We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
-
-```{r enmeval4, results='hide'}
-overlap <- calc.niche.overlap(eval2@predictions, overlapStat="D")
-```
-```{r enmeval5}
-overlap
-```
-
 <!-- The `bin.output` argument determines if separate evaluation statistics for each testing bin are included in the results file.  If `bin.output=FALSE`, only the mean and variance of evaluation statistics across k bins is returned. -->
 
 #### Exploring the results {#eval.explore}
@@ -390,7 +379,6 @@ eval2@algorithm
 The next two slots hold information on which tuning settings and partitioning method were used.  The details of the tuning settings will depend on the algorithm used.
 ```{r settings}
 eval2@tune.settings
-
 eval2@partition.method
 ```
 
@@ -406,50 +394,49 @@ The next two slots hold the overall table of evaluation metrics and then the res
 ```{r evaluations}
 # Overall results
 eval2@results
-
 eval2@results[which(eval2@results$delta.AICc==0),]
-
 # Results for individual k-fold groups
 eval2@results.grp
 ```
 
 If we used the 'maxent.jar' algorithm, we can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not** kept.
 
-*(Stay tuned for an update on the vignette focusing on the output from the 'maxnet' algorithm)*
+The "lambdas" slot for maxent.jar models shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model. Information regarding the kind of variable (e.g., quadratic, product) is included using symbolic notation, but you will likely find the syntax to be cryptic and the information is not stored in a very user-friendly way. The `parse_lambdas()` function in the [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package parses this file into a more easily understandable data.frame.
+
+The "betas" slot in a maxnet model is a named vector of the variable coefficients and what kind they are (in R formula notation).
 
 Let's look at the model object for our "AICc optimal" model:
 ```{r mod.obj1}
-aic.opt <- eval2@models[[which(eval2@results$delta.AICc==0)]]
-
+aic.mod.name <- eval2@results %>% filter(delta.AICc == 0) %>% pull(tune.args)
+aic.opt <- eval2@models[[aic.mod.name]]
 #aic.opt
 ```
 
 The "results" slot shows the Maxent model statistics:
 ```{r mod.obj3}
+# For maxent.jar: model statistics
 aic.opt@results
+# For maxent.jar: lambdas file (shows which model parameters were used for training)
+aic.opt@lambdas
+rmaxent::parse_lambdas(aic.opt)
+# For maxnet: betas (shows which model parameters were used for training)
+aic.opt$betas
 ```
 
-Now let's access the RasterStack of the model predictions.  Note that these predictions are in the 'raw' output format.
+Now let's access the RasterStack of the model predictions. Note that by default for maxent.jar or maxnet models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1. This can be changed with the pred.type parameter in `ENMevaluate()`.
 ```{r preds}
 eval2@predictions
 ```
 
-Now plot the model with the lowest AICc:
+Now plot the model with the lowest AICc. These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
 ```{r plotMod, fig.width = 5, fig.height = 5}
-plot(eval2@predictions[[which(eval2@results$delta.AICc==0)]], main="Relative occurrence rate")
+plot(eval2@predictions[[aic.mod.name]])
 ```
 
 <!-- You can use the `var.importance` function to get a data.frame of two variable importance metrics: percent contribution and permutation importance.  See the function help file for more information on these metrics. -->
 <!-- ```{r mod.obj4} -->
 <!-- var.importance(aic.opt) -->
 <!-- ``` -->
-
-The "lambdas" slot shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model.  You will likely find the syntax to be cryptic and the information is not stored in a very user-friendly way.  Fortunately, John Baumgartner has developed a useful function to parse this file into a more user-friendly data.frame.  See the `parse_lambdas.R` function in his [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/R/parse_lambdas.R) package for more details.
-
-```{r mod.lambdas}
-aic.opt@lambdas
-```
-
 
 ## Plotting results {#plot}
 Plotting options in R are extremely flexible and here we demonstrate some key tools to explore the results of an ENMevaluate object graphically.
@@ -460,12 +447,15 @@ Plotting options in R are extremely flexible and here we demonstrate some key to
 ENMeval has a built-in plotting function (`eval.plot`) to visualize the results of different models.  It requires the ENMevaluation object.  By default, it always plots delta.AICc values. Here, we will plot AICc and delta.AICc values for each feature class for both regularization multipliers.
 
 ```{r plot.res, fig.width = 5, fig.height = 5}
-plot.eval(e = eval2, stats = c("AICc"), col = "fc", x = "rm")
+plot.eval(e = eval2, stats = "delta.AICc", col = "fc", x = "rm")
 ```
 
-You can choose which evaluation metric to plot, and you can also include error bars, if relevant.
+You can choose which evaluation metric to plot. Cross-validation metrics are plotted as averages with standard deviation error bars, and the points are jittered by default for ease of interpretation (this value can be changed with the parameter "dodge"). Error bars can be turned off by setting the parameter "error.bars" to FALSE.
+
 ```{r plot.res2, fig.width = 5, fig.height = 5}
-plot.eval(eval2, stats = 'auc.train', col='fc', x = "rm")
+plot.eval(eval2, stats = 'auc.train', col = 'fc', x = "rm")
+plot.eval(eval2, stats = 'auc.test', col = 'fc', x = "rm")
+plot.eval(eval2, stats = 'auc.test', col = 'fc', x = "rm", error.bars = FALSE)
 ```
 
 <!-- You can also plot the permutation importance or percent contribution. -->

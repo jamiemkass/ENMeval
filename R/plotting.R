@@ -30,7 +30,8 @@ plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "oc
   names(envs.df)[3] <- "value"
   ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
-    ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + theme.custom
+    ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
+    ggplot2::coord_equal() + theme.custom
 }
 
 #' @title MESS plots for partition groups
@@ -104,24 +105,44 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
 #' mean. Currently, this function only can handle two tuning parameters at a time.
 #' @export
 
-plot.eval <- function(e, stats, x, col) {
+plot.eval <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
     dplyr::filter(grepl(exp, metric))
   avgs <- res %>% 
-    #dplyr::filter(grepl("avg", metric)) %>% 
+    dplyr::filter(grepl("avg", metric)) %>%
     dplyr::rename(avg = value) %>%
     dplyr::mutate(metric = gsub(".avg", "", metric))
   sds <- res %>% 
     dplyr::filter(grepl("sd", metric)) %>%
     dplyr::rename(sd = value) %>%
     dplyr::mutate(metric = gsub(".sd", "", metric))
-  res2 <- dplyr::left_join(avgs, sds) %>%
+  join.names <- names(avgs)
+  join.names <- join.names[join.names != "avg"]
+  res.avgs <- dplyr::left_join(avgs, sds, by = join.names) %>%
     dplyr::mutate(lower = avg - sd, upper = avg + sd)
   
-  ggplot2::ggplot(res2, ggplot2::aes_string(x = x, y = "avg", color = col, group = col)) + 
-    ggplot2::geom_point() + ggplot2::geom_line() + 
-    ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.1) +
-    ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats)) + ggplot2::theme_bw()
+  if(nrow(res.avgs) > 0) {
+    if(is.null(dodge)) dodge <- 0.2
+    p <- ggplot2::ggplot(res.avgs, ggplot2::aes_string(x = x, y = "avg", color = col, group = col)) + 
+      ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
+      ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
+      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats)) + 
+      ggplot2::theme_bw()  
+    if(error.bars == TRUE) {
+      p + ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.5, 
+                                                      position=ggplot2::position_dodge(width=dodge))
+    }else{
+      p
+    }
+    
+  }else{
+    if(is.null(dodge)) dodge <- 0
+    ggplot2::ggplot(res, ggplot2::aes_string(x = x, y = "value", color = col, group = col)) + 
+      ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
+      ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
+      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats)) + 
+      ggplot2::theme_bw()
+  }
 }
