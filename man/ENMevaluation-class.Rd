@@ -6,7 +6,7 @@
 \alias{ENMevaluation}
 \title{ENMevaluation class}
 \description{
-An S4 class that contains the ENMevaluate results. The slots in this object are filled in by \code{ENMevaluate()} internally.
+An S4 class that contains the ENMevaluate results.
 }
 \section{Slots}{
 

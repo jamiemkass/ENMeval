@@ -18,7 +18,7 @@ doClamp <- TRUE
 abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
-# occs.ind = NULL
+occs.ind = NULL
 cbi.eval = NULL
 quiet = FALSE
 
@@ -28,6 +28,10 @@ user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
 # independent partitions
 occs.ind <- occs[1:50,]
 occs <- occs[51:nrow(occs),]
+
+# null models
+mod.settings=list(fc="L",rm=2)
+userStats.exp.sign=list(maxKappa = 1, maxTSS = 1)
 
 # SWD
 
