@@ -134,7 +134,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   }
   
   # make sure occs and bg are data frames with identical column names
-  if(all(names(occs) != names(bg)) & !is.null(bg)) {
+  if(all(colnames(occs) != colnames(bg)) & !is.null(bg)) {
     stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.\n')
   }
   
