@@ -4,7 +4,7 @@
 \alias{plot.eval}
 \title{ENMevaluation statistics plot}
 \usage{
-plot.eval(e, stats, x, col)
+plot.eval(e, stats, x, col, dodge = NULL, error.bars = TRUE)
 }
 \arguments{
 \item{e}{ENMevaluation object}
