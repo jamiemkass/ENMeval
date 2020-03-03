@@ -91,7 +91,7 @@ points(occs.ind, col="blue")
 
 Next, we will specify the background extent by cropping (or "clipping" in ArcGIS terms) our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
 
-```{r backgExt, message=FALSE}
+```{r backgExt, message=FALSE, warning=FALSE}
 library(sf)
 library(sp)
 
@@ -104,6 +104,7 @@ occs.sf <- st_as_sf(occs, coords = c("longitude","latitude"), crs = 4326)
 # * for simplicity, this vignette does not involve coordinate reference system (CRS) transformations,
 # * but for a real analysis, transforming to a projected CRS before buffering is best practice
 occs.buf <- st_buffer(occs.sf, dist = 5)
+plot(envs[[1]], main = names(envs)[1])
 plot(occs.buf, add = TRUE)
 
 # Crop environmental rasters to match the study extent
@@ -114,7 +115,7 @@ envs.bg <- mask(envs.bg, occs.buf)
 
 We may want to restrict the study extent to the continental areas (for example). We can use the simplified world map from the [`maptools`](https://cran.r-project.org/package=maptools) package, which is not automatically loaded with `ENMeval`, and tools from `sf` to exclude the Caribbean from our study extent.
 
-```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5}
+```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5, warning = FALSE}
 library(maptools)
 
 # Get a simple world countries polygon
@@ -275,36 +276,38 @@ ENMevaluate builds a separate model for each unique combination of RM values and
 <!-- data(eval2) -->
 <!-- ``` -->
 
-```{r enmeval1a, eval=FALSE}
-eval1 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
-                     tune.args=list(fc="L", rm=1:2), mod.name='maxnet')
+```{r enmeval1, eval=FALSE}
+maxnet1 <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = "L", rm = 1:2))
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
 
-```{r enmeval1b, eval=TRUE}
-eval2 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
-                     tune.args=list(fc=c("L","LQ","LQP"), rm=1:3), mod.name='maxnet')
+```{r maxnet2, eval=TRUE}
+maxnet2 <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQP"), rm = 1:3))
 ```
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
 
-```{r enmeval2par, eval=FALSE}
-eval2.par <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
-                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), mod.name='maxnet', parallel=TRUE)
+```{r maxnet2par, eval=FALSE}
+maxnet2.par <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQP"), rm = 1:3),
+                             parallel = TRUE)
 ```
 
 Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
 
-```{r enmeval3, eval=FALSE}
-eval3 <- ENMevaluate(occ=occs, env=envs, bg.coords=bg, partitions='checkerboard2', 
-                         tune.args=list(fc=c("L","LQ","LQP"), rm=1:2), mod.name='maxnet', rasterPreds=NULL)
+```{r maxnet2.noRas, eval=FALSE}
+maxnet2.noRas <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQP"), rm = 1:3),
+                             rasterPreds = NULL)
 ```
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
-```{r enmeval4, results='hide'}
-overlap <- calc.niche.overlap(eval2@predictions, overlapStat="D")
+```{r maxnet2.overlap, results='hide'}
+overlap <- calc.niche.overlap(maxnet2@predictions, overlapStat="D")
 overlap
 ```
 
@@ -319,34 +322,45 @@ cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test canno
 # This example is for Maxent models, and so we will specify the tune.tbl with ranges of feature classes and regularization multipliers
 tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 
-# 1. Standard
-e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
+eval <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+                    tune.args = tune.args, categoricals = "biome", partitions = "block")
+# If maxent.jar is installed and rJava loads properly, you can also run Maxent with the original Java software
+eval.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", 
+                    tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
-e <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
+eval.indPart <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", 
+                        tune.args = tune.args, categoricals = "biome", partitions = "independent", 
+                        occs.ind = occs[251:nrow(occs),])
 
 # 3. User partitions
-user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
-e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp)
+user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), 
+                 bg.grp = round(runif(nrow(bg), 1, 2)))
+eval.userPart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+                         tune.args = tune.args, categoricals = "biome", partitions = "user", 
+                         user.grp = user.grp)
 
 # 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
-e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
+eval.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+                         tune.args = tune.args, categoricals = "biome", partitions = "none")
 
 # 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.test will be calculated on the point data (training and testing background) instead of on the "envs" rasters (default)
 occs.vals <- cbind(occs, raster::extract(envs, occs))
 bg.vals <- cbind(bg, raster::extract(envs, bg))
-e <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+eval.swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", 
+                        tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 6. Background test CBI: this will calculate cbi.test on the point data (training and testing background) instead of on the "envs" rasters (default)
-e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", cbi.eval = "bg")
+eval.bgCBI <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+                          tune.args = tune.args, categoricals = "biome", partitions = "block", 
+                          cbi.eval = "bg")
 
 # 7. User model: models will be fit and evaluated with the user-specified model and associated settings 
 mod1 <- ENMdetails(...)
-e <- ENMevaluate(occs, envs, bg, user.enm = mod1, tune.args = tune.args, categoricals = "biome", partitions = "block")
+eval.userENM <- ENMevaluate(occs, envs, bg, user.enm = mod1, 
+                             tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
-
-
-<!-- The `bin.output` argument determines if separate evaluation statistics for each testing bin are included in the results file.  If `bin.output=FALSE`, only the mean and variance of evaluation statistics across k bins is returned. -->
 
 #### Exploring the results {#eval.explore}
 Now let's take a look at the output from `ENMevaluate` (which is an object of class `ENMevaluation`) in more detail (also see `?ENMevaluation`).  It contains the following slots:
@@ -366,71 +380,103 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 
 Let's first examine the structure of the object:
 ```{r results1}
-eval2
+eval
 
-str(eval2, max.level=3)
+str(eval, max.level=3)
 ```
 
-The first slot tells which algorithm was used (maxent.jar or maxnet) and which version of the software.
+We will use helper functions to access the slots in the ENMevaluate object.
 ```{r algorithm}
-eval2@algorithm
+# Access algorithm, tuning settings, and partition method information
+algorithm(eval)
+tune.settings(eval)
+partition.method(eval)
+# Results table with summary statistics for cross validation on test data
+results(eval)
+# Results table with cross validation statistics for each test partition
+results.grp(eval)
+# List of models with names corresponding to tune.args column label
+models(eval)
+# The "betas" slot in a maxnet model is a named vector of the variable coefficients 
+# and what kind they are (in R formula notation)
+# Note that the html file that is created when maxent.jar is run is **not** kept
+m1 <- models(eval)[["LQH_1"]]
+m1$betas
+# For maxent.jar models, we can access this information in the lambdas slot
+# The notation used here is difficult to decipher, so check out the [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package
+# available on Github for the `parse_lambdas()` function that makes it easier to read
+m1.mxjar <- models(eval.mxjar)[["LQH_1"]]
+m1.mxjar@lambdas
+# We can also get a long list of results statistics from the results slot
+m1.mxjar@results
+# RasterStack of model predictions (for extent of "envs") with names corresponding 
+# to tune.args column label
+predictions(eval)
+# Original occurrence data coordinates with associated predictor variable values
+occs(eval)
+# Background data coordinates with associated predictor variable values
+bg(eval)
+# Partition group assignments for occurrence data
+occ.grp(eval)
+# Partition group assignments for background data
+bg.grp(eval)
 ```
 
-The next two slots hold information on which tuning settings and partitioning method were used.  The details of the tuning settings will depend on the algorithm used.
-```{r settings}
-eval2@tune.settings
-eval2@partition.method
+## Plotting tuning results {#plot}
+Plotting options in R are extremely flexible and here we demonstrate some key tools to explore the results of an ENMevaluate object graphically.
+
+- [Plotting model predictions](#plot.preds)
+- [Plotting response curves](#plot.resp)
+
+ENMeval has a built-in ggplot-based plotting function (`eval.plot`) to visualize the results of the different models you tuned. Here, we will plot AICc and delta.AICc values for each feature class for both regularization multipliers.
+
+```{r plot.res, fig.width = 5, fig.height = 5}
+plot.eval(e = eval, stats = "or.mtp", col = "fc", x = "rm")
+# We can plot more than one statistic at one with ggplot facetting
+plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "fc", x = "rm")
+# Sometimes the error bars make it hard to visualize the plot, so we can try turning them off
+plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "fc", x = "rm", error.bars = FALSE)
+# We can also fiddle with the dodge parameter to jitter the positions of overlapping points
+plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "fc", x = "rm", dodge = 0.5)
+# Finally, we can switch which parameters are on the x-axis and which symbolized by color
+# ENMeval currently only accepts two parameters for plotting at a time
+plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "rm", x = "fc", error.bars = FALSE)
 ```
 
-The original data (occurrence and background points), as well as which of the k-fold groups they belong to, are all held in `ENMevaluation` object.
-```{r groups}
-eval2@occs
-eval2@occ.grp
-eval2@bg
-eval2@bg.grp
-```
+#### Model selection {#eval.select}
 
-The next two slots hold the overall table of evaluation metrics and then the results for each k-fold group.  We can use these to, for example, select the 'best' model based on one or more of our evaluation criteria.  Let's find the model settings that resulted in the lowest AICc.
+Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models using AICc (which does not consider cross-validation results) and a sequential method that selects models with the lowest average test omission rate, and to break ties, next with the highest average test AUC (this method uses cross-validation results).
+
 ```{r evaluations}
 # Overall results
-eval2@results
-eval2@results[which(eval2@results$delta.AICc==0),]
-# Results for individual k-fold groups
-eval2@results.grp
+res <- results(eval)
+opt.aicc <- res %>% filter(delta.AICc == 0)
+opt.aicc
+opt.seq <- res %>% 
+  filter(or.mtp.avg == min(or.mtp.avg)) %>% 
+  filter(auc.test.avg == max(auc.test.avg))
+opt.seq
 ```
 
-If we used the 'maxent.jar' algorithm, we can also access a list of Maxent model objects, which (as all lists) can be subset with double brackets (e.g. `results@eval2[[1]]`). The Maxent model objects provide access to various elements of the model (including the lambda file). The model objects can also be used for predicting models into other time periods or geographic areas. Note that the html file that is created when Maxent is run is **not** kept.
-
-The "lambdas" slot for maxent.jar models shows which variables were included in the model. After the variable name, the next number is the variable coefficient, then the min and max of that variable for the inut data. If the coefficient is 0, that variable was not included in the model. Information regarding the kind of variable (e.g., quadratic, product) is included using symbolic notation, but you will likely find the syntax to be cryptic and the information is not stored in a very user-friendly way. The `parse_lambdas()` function in the [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package parses this file into a more easily understandable data.frame.
-
-The "betas" slot in a maxnet model is a named vector of the variable coefficients and what kind they are (in R formula notation).
-
-Let's look at the model object for our "AICc optimal" model:
+Let's now pull the optimal model (using the sequential criteria) from the model list and examine it.
 ```{r mod.obj1}
-aic.mod.name <- eval2@results %>% filter(delta.AICc == 0) %>% pull(tune.args)
-aic.opt <- eval2@models[[aic.mod.name]]
-#aic.opt
+mod.seq <- models(eval)[[opt.seq$tune.args]]
+# The non-zero coefficients in our model
+mod.seq$betas
+# The response curves for our model
+# maxent.jar models use the dismo::response() funtion for this
+plot(mod.seq)
+dev.off()
 ```
 
-The "results" slot shows the Maxent model statistics:
-```{r mod.obj3}
-# For maxent.jar: model statistics
-aic.opt@results
-# For maxent.jar: lambdas file (shows which model parameters were used for training)
-aic.opt@lambdas
-rmaxent::parse_lambdas(aic.opt)
-# For maxnet: betas (shows which model parameters were used for training)
-aic.opt$betas
-```
-
-Now let's access the RasterStack of the model predictions. Note that by default for maxent.jar or maxnet models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1. This can be changed with the pred.type parameter in `ENMevaluate()`.
-```{r preds}
-eval2@predictions
-```
-
-Now plot the model with the lowest AICc. These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
-```{r plotMod, fig.width = 5, fig.height = 5}
-plot(eval2@predictions[[aic.mod.name]])
+Now let's pull out and plot the prediction raster for our optimal model. Note that by default for maxent.jar or maxnet models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (see Phillips et al. 2017 for more details). This can be changed with the pred.type parameter in `ENMevaluate()`.
+These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
+```{r plotPred, fig.width = 5, fig.height = 5}
+pred.seq <- predictions(eval)[[opt.seq$tune.args]]
+plot(pred.seq)
+# Let's also plot the binned background points with the occurrence points on top
+points(bg(eval), pch = 3, col = bg.grp(eval), cex = 0.5)
+points(occs(eval), pch = 21, bg = occ.grp(eval))
 ```
 
 <!-- You can use the `var.importance` function to get a data.frame of two variable importance metrics: percent contribution and permutation importance.  See the function help file for more information on these metrics. -->
@@ -438,59 +484,31 @@ plot(eval2@predictions[[aic.mod.name]])
 <!-- var.importance(aic.opt) -->
 <!-- ``` -->
 
-## Plotting results {#plot}
-Plotting options in R are extremely flexible and here we demonstrate some key tools to explore the results of an ENMevaluate object graphically.
-
-- [Plotting model predictions](#plot.preds)
-- [Plotting response curves](#plot.resp)
-
-ENMeval has a built-in plotting function (`eval.plot`) to visualize the results of different models.  It requires the ENMevaluation object.  By default, it always plots delta.AICc values. Here, we will plot AICc and delta.AICc values for each feature class for both regularization multipliers.
-
-```{r plot.res, fig.width = 5, fig.height = 5}
-plot.eval(e = eval2, stats = "delta.AICc", col = "fc", x = "rm")
-```
-
-You can choose which evaluation metric to plot. Cross-validation metrics are plotted as averages with standard deviation error bars, and the points are jittered by default for ease of interpretation (this value can be changed with the parameter "dodge"). Error bars can be turned off by setting the parameter "error.bars" to FALSE.
-
-```{r plot.res2, fig.width = 5, fig.height = 5}
-plot.eval(eval2, stats = 'auc.train', col = 'fc', x = "rm")
-plot.eval(eval2, stats = 'auc.test', col = 'fc', x = "rm")
-plot.eval(eval2, stats = 'auc.test', col = 'fc', x = "rm", error.bars = FALSE)
-```
-
 <!-- You can also plot the permutation importance or percent contribution. -->
 <!-- ``` {r plot.res3, fig.width = 5, fig.height = 5} -->
 <!-- df <- var.importance(aic.opt) -->
 <!-- barplot(df$permutation.importance, names.arg=df$variable, las=2, ylab="Permutation Importance") -->
 <!-- ``` -->
 
-#### Plotting model predictions {#plot.preds}
-If you generated raster predictions of the models (i.e., `rasterpreds=T`), you can easily plot them. For example, let's look at the first two models included in our analysis - remember that the output values are in Maxent's 'raw' units.  
-
-```{r plot.pred1, fig.width = 5, fig.height = 5, mar=c(2,2,1,0)}
-plot(eval2@predictions[[1]], legend=F)
-
-# Now add the occurrence and background points, colored by evaluation bins:
-points(eval2@bg, pch=3, col=eval2@bg.grp, cex=0.5)
-points(eval2@occs, pch=21, bg=eval2@occ.grp)
-```
-
-Let's see how model complexity changes the predictions in our example.  We'll compare the model predictions of the model with only linear feature classes and with the highest regularization multiplier value we used (i.e., fc='L', RM=2) versus the model with all feature class combination and the lowest regularization multiplier value we used (i.e., fc='LQP',  RM=1).
+Let's see how model complexity changes the predictions in our example.  We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.00845).
 
 ```{r plot.pred2, fig.width = 5, fig.height = 2.5}
-# bisect the plotting area to make two columns
-par(mfrow=c(1,2), mar=c(2,2,1,0))
-
-plot(eval2@predictions[['L_2']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, main='L_2 prediction')
-
-plot(eval2@predictions[['LQP_1']], ylim=c(-30,20), xlim=c(-90,-40), legend=F, main='LQP_1 prediction')
-```
-
-#### Plotting response curves {#plot.resp}
-We can also plot the response curves of our model to see how different input variables influence our model predictions.  (Note that, as with the `dismo::maxent` function, using this function requires that the maxent.jar file be installed in the `dismo` package java folder).
-
-```{r response_curves, eval=FALSE}
-response(eval2@models[[1]])
+# First, let's examine the non-zero model coefficients in the betas slot
+# The simpler model has fewer model coefficients
+models(eval)[['L_5']]$betas
+length(models(eval)[['L_5']]$betas)
+models(eval)[['LQH_1']]$betas
+length(models(eval)[['LQH_1']]$betas)
+# Next, let's take a look at the response curves
+# The complex model has responses with more curves (quadratic terms) and spikes (hinge terms)
+plot(models(eval)[['L_5']])
+plot(models(eval)[['LQH_1']])
+# Finally, let's cut the plotting area into two rows to visualize the predictions side-by-side
+par(mfrow=c(2,1), mar=c(2,1,2,0))
+# The simplest model: linear features only and high regularization
+plot(predictions(eval)[['L_5']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='L_5 prediction')
+# The most complex model: linear, quadratic, and hinge features with low regularization
+plot(predictions(eval)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='LQH_1 prediction')
 ```
 
 ## Downstream Analyses (*under construction*) {#downstream}
