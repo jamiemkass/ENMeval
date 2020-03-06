@@ -79,9 +79,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(env)) envs <- env
   if(!is.null(bg.coords)) bg <- bg.coords
   if(!is.null(method)) partitions <- method
-  # as the skip rasters option was deprecated, turning off rasterPreds in the older version
-  # will render envs NULL, whereupon the user will be told to use SWD format
-  if(!is.null(rasterPreds)) envs <- NULL
+  if(!is.null(rasterPreds)) {
+    stop("This parameter was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
+  }
   if(!is.null(algorithm)) {
     mod.name <- algorithm
     tune.args <- list(fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
@@ -336,8 +336,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     tune.names <- mod.name
   }else{
     # define tuned settings names and bind them to the tune table
-    tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
     tune.tbl <- dplyr::mutate_all(tune.tbl, as.factor)
+    tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
   # gather all full models into list and name them
