@@ -4,6 +4,7 @@ occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 occs <- occs[!duplicated(occs),]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 which(rowSums(is.na(raster::extract(envs, occs))) > 0)
+bg.coords <- as.data.frame(dismo::randomPoints(envs, 1000))
 bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
 tune.args <- list(fc = c("L", "LQ"), rm = seq(2,3,0.5))
@@ -43,8 +44,35 @@ userStats.exp.sign=list(maxKappa = 1, maxTSS = 1)
 # 
 # 
 # ## old ENMeval
-# e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block")
-
+# e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block", occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
+### WALLACE
+# v1
+# e <- ENMevaluate(occs, 
+#                  envs, 
+#                  bg.coords = bg.coords, 
+#                  alg = "maxnet", 
+#                  fc = c("L", "LQ"), 
+#                  RMvalues = 1:4, 
+#                  categoricals = "biome", 
+#                  method = "user", 
+#                  occ.grp = rep(1,nrow(occs)), 
+#                  bg.grp = rep(0, nrow(bg.coords)),
+#                  clamp = TRUE)
+# 
+# v2
+# e <- ENMevaluate(occs = occs, 
+#                  env = envs, 
+#                  bg.coords = bg.coords, 
+#                  RMvalues = 1:4, 
+#                  fc = c("L", "LQ"),
+#                  method = 'user', 
+#                  occ.grp = rep(1,nrow(occs)),
+#                  bg.grp = rep(0, nrow(bg.coords)),
+#                  bin.output = TRUE, 
+#                  clamp = TRUE, 
+#                  progbar = FALSE, 
+#                  updateProgress = FALSE,
+#                  algorithm = "maxnet")
 ## regular run
 # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
 ## regular run with user partitions

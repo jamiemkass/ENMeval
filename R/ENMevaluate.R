@@ -67,17 +67,22 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                         abs.auc.diff = TRUE, user.test.grps = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE,
                         # legacy parameters
-                        occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
-                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, clamp = NULL, progbar = NULL) {
+                        occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL,
+                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL,
+                        clamp = NULL, progbar = NULL, occ.grp = NULL, bg.grp = NULL) {
   
   # legacy parameter handling so ENMevaluate doesn't break for older code
-  all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
+  all.legacy <- list(occ, env, bg.coords, RMvalues, fc, algorithm, method, bin.output, rasterPreds, occ.grp,
+                     bg.grp, clamp)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
     msg("* Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.\n", quiet)
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
-  if(!is.null(bg.coords)) bg <- bg.coords
+  if (!is.null(bg.coords)) {
+    bg <- bg.coords
+    names(bg) <- names(occs)
+  }
   if(!is.null(method)) partitions <- method
   if(!is.null(rasterPreds)) {
     stop("This parameter was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
@@ -90,6 +95,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
   if(!is.null(occ.grp) & !is.null(bg.grp)) user.grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
+  
+  if (!is.null(occ.grp) & !is.null(bg.grp)) {
+    user.grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
+  }
+  
+  if(!is.null(clamp)) doClamp <- clamp
   
   if(is.null(mod.name) & is.null(user.enm)) {
     stop("* Please select a model name (mod.name) or specify a user model (user.enm).\n")
