@@ -44,7 +44,7 @@ eval <- function(occs.vals, bg.vals, mod, other.args, doClamp) {
 }
 
 kstats <- function(e.test, mod, other.args) {
-  user.kstats <- c(maxTSS.test = max(e.test@TPR + e.test@TNR) - 1, maxKappa.test = max(e.test@kappa))
+  user.kstats <- NULL
   return(user.kstats)
 }
 

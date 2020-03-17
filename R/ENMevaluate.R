@@ -153,6 +153,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   occs <- as.data.frame(occs)
   if(!is.null(bg)) bg <- as.data.frame(bg)
   
+  # choose a built-in ENMdetails object matching the input model name
+  # unless the model is chosen by the user
+  if(is.null(user.enm)) {
+    enm <- lookup.enm(mod.name)
+  }else{
+    enm <- user.enm
+  }
+  
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
   ########################################################### #
@@ -220,7 +228,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # convert fields for categorical data to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      if(mod.name == "bioclim") {
+      if(enm@name == "bioclim") {
         msg("* As specified model is BIOCLIM, removing categorical variables.\n", quiet)
         d[, categoricals[i]] <- NULL
       }else{
@@ -315,13 +323,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # MODEL TUNING #### 
   ################# #
   
-  # choose a built-in ENMdetails object matching the input model name
-  # unless the model is chosen by the user
-  if(is.null(user.enm)) {
-    enm <- lookup.enm(mod.name)
-  }else{
-    enm <- user.enm
-  }
   # print model-specific message
   msg(paste("*** Running ENMeval v1.0.0 using", enm@msgs(tune.args), "***\n"), quiet)
   
@@ -330,7 +331,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   
   # put all settings into list
   other.settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, 
-                   abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
+                         abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv, cbi.eval = cbi.eval)
   
   if(parallel) {
     results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet)  
@@ -344,7 +345,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   
   if(nrow(tune.tbl) == 0) {
     # if not tuned settings, the "tune name" is the model name
-    tune.names <- mod.name
+    tune.names <- enm@name
   }else{
     # define tuned settings names and bind them to the tune table
     tune.tbl <- dplyr::mutate_all(tune.tbl, as.factor)
@@ -408,7 +409,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     names(cv.stats.sum) <- gsub("(.*)_(.*)", "\\1.\\2", names(cv.stats.sum))
     # order columns alphabetically
     cv.stats.sum <- cv.stats.sum[, order(colnames(cv.stats.sum))]
-
+    
     # if tune.tbl exists
     if(nrow(tune.tbl) > 0) {
       # make tune.args column in training stats factor too for smooth join
@@ -428,13 +429,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # if no partitions assigned, eval.stats is the join of tune.tbl to training stats
     eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args")
   }
-    
+  
   # calculate number of non-zero parameters in model
   nparams <- sapply(mod.full.all, enm@nparams)
   
   # calculate AICc
-  if((mod.name == "maxnet" | mod.name == "maxent.jar") & !is.null(envs)) {
-    pred.type.raw <- switch(mod.name, maxnet = "exponential", maxent.jar = "raw")
+  if((enm@name == "maxnet" | enm@name == "maxent.jar") & !is.null(envs)) {
+    pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
     pred.all.raw <- raster::stack(lapply(mod.full.all, function(x) enm@pred(x, envs, other.args, doClamp, pred.type = pred.type.raw)))
     occs.pred.raw <- raster::extract(pred.all.raw, occs)
     aic <- enm@aic(occs.pred.raw, nparams, pred.all.raw)
@@ -455,7 +456,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                      other.settings = other.settings,
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occ.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]))
-    
+  
   # if niche overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
     nr <- raster::nlayers(e@predictions)
