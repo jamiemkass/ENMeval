@@ -158,9 +158,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(envs)) {
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
     envs <- raster::stack(envs)
+    envs.z <- raster::values(envs)
+    envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
+    if(envs.naMismatch > 0) {
+      msg(paste0("* Found ", envs.naMismatch, " grid cells that were NA for some but not all raster variables. Making these cells NA for all variables.\n"), quiet)
+      envs <- calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
+    }
     # if no background points specified, generate random ones
     if(is.null(bg)) {
-      msg(paste0('* Randomly sampling ", n.bg, " background points from "envs" rasters...\n'), quiet)
+      msg(paste0("* Randomly sampling ", n.bg, " background points ...\n"), quiet)
       bg <- as.data.frame(dismo::randomPoints(envs, n = n.bg))
       names(bg) <- names(occs)
     }
@@ -168,13 +174,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # remove cell duplicates
     occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
     occs.dups <- duplicated(occs.cellNo[,1])
-    if(sum(occs.dups) > 0) msg(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"), quiet)
+    if(sum(occs.dups) > 0) msg(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"), quiet)
     occs <- occs[!occs.dups,]
     if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[!occs.dups]
     
     # extract predictor variable values at coordinates for occs and bg
     occs.vals <- raster::extract(envs, occs)
+    occs.vals.na <- which(rowSums(is.na(occs.vals)) > 0)
+    if(length(occs.vals.na) > 0) {
+      msg(paste0("* ", length(occs.vals.na), "occurrence points had NA predictor variable values. Removing these points from analysis.\n"), quiet)
+      occs <- occs[-occs.vals.na,]
+      occs.vals <- occs.vals[-occs.vals.na,]
+    }
     bg.vals <- raster::extract(envs, bg)
+    bg.vals.na <- which(rowSums(is.na(bg.vals)) > 0)
+    if(length(bg.vals.na) > 0) {
+      msg(paste0("* ", length(bg.vals.na), "background points had NA predictor variable values. Removing these points from analysis.\n"), quiet)
+      bg <- bg[-bg.vals.na,]
+      bg.vals <- bg.vals[-bg.vals.na,]
+    }
     # bind coordinates to predictor variable values for occs and bg
     xy <- rbind(occs, bg)
     vals <- rbind(occs.vals, bg.vals)
@@ -202,13 +220,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     d[d$pb == 1, "grp"] <- user.grp$occ.grp
     d[d$pb == 0, "grp"] <- user.grp$bg.grp
   }
-  
-  ####################################### #
-  # REMOVE RECORDS WITH NA ENVIRONMENT ####
-  ####################################### #
-  
-  # remove records with NA for any predictor variable
-  d <- remove.env.na(d, quiet)
   
   ################################# #
   # ASSIGN CATEGORICAL VARIABLES ####
