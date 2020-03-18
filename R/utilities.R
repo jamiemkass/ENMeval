@@ -11,40 +11,25 @@ NULL
 msg <- function(x, quiet) if(quiet == FALSE) message(x)
 
 #' @export
-remove.env.na <- function(d, quiet = FALSE) {
-  d.envs <- d[,3:ncol(d)]
-  ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
-  names(ind.NA) <- NULL
-  d.envs.NA <- d.envs[ind.NA,]
-  ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]
-  ind.NA.bg <- ind.NA[which(d.envs.NA$pb == 0)]
-  occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
-  bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
-  if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
-    envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
-                            length(ind.NA.occs) > 0 ~ occs.msg,
-                            length(ind.NA.bg) > 0 ~ bg.msg)
-    msg(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis...\n"), quiet)
-    d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
-    return(d.naRem)    
-  }
-  return(d)
-}
-
-#' @export
-maxnet.predictRaster <- function(mod, envs, doClamp, type, other.args) {
-  if(inherits(envs, "BasicRaster") == TRUE) {
-    envs.n <- raster::nlayers(envs)
-    envs.pts <- na.omit(raster::rasterToPoints(envs))
-    mxnet.p <- predict(mod, envs.pts, type = type, clamp = doClamp, na.rm = TRUE, other.args)
-    p.vals <- cbind(envs.pts[,1:2], as.numeric(mxnet.p))
-    p.ras <- raster::rasterFromXYZ(p.vals, res=raster::res(envs))
-  }else{
-    # otherwise, envs is data frame, so return data frame of predicted values
-    p.ras <- dismo::predict(mod, envs, type = type, clamp = doClamp, na.rm = TRUE, other.args)
-  }
-  return(p.ras)
-}
+# remove.env.na <- function(d, quiet = FALSE) {
+#   d.envs <- d[,3:ncol(d)]
+#   ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
+#   names(ind.NA) <- NULL
+#   d.envs.NA <- d.envs[ind.NA,]
+#   ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]
+#   ind.NA.bg <- ind.NA[which(d.envs.NA$pb == 0)]
+#   occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
+#   bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
+#   if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
+#     envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
+#                             length(ind.NA.occs) > 0 ~ occs.msg,
+#                             length(ind.NA.bg) > 0 ~ bg.msg)
+#     msg(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis...\n"), quiet)
+#     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
+#     return(d.naRem)    
+#   }
+#   return(d)
+# }
 
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
@@ -168,6 +153,7 @@ corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
 }
 
+# function to calculate the 10 percentile threshold from training predictions
 #' @export
 calc.10p.trainThresh <- function(pred.train) {
   n <- length(pred.train)
@@ -194,56 +180,41 @@ calc.10p.trainThresh <- function(pred.train) {
 #' Based on \pkg{dismo}::\code{mess}
 #' Jean-Pierre Rossi <jean-pierre.rossi@supagro.inra.fr>, Robert Hijmans, Paulo van Breugel
 
-mess.vec <- function(p, v) {
-  calc.mess <- function(p, v) {
-    v <- stats::na.omit(v)
-    f <- 100*findInterval(p, sort(v)) / length(v)
-    minv <- min(v)
-    maxv <- max(v)
-    res <- 2*f 
-    f[is.na(f)] <- -99
-    i <- f>50 & f<100
-    res[i] <- 200-res[i]
-    
-    i <- f==0 
-    res[i] <- 100*(p[i]-minv)/(maxv-minv)
-    i <- f==100
-    res[i] <- 100*(maxv-p[i])/(maxv-minv)
-    return(res)
-  }
-  
-  x <- sapply(1:ncol(p), function(i) calc.mess(p[,i], v[,i]))
-  rmess <- apply(x, 1, min, na.rm=TRUE)
-  return(rmess)
-}
-
-calc.mess.kstats <- function(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals) {
-  p <- rbind(occs.train.vals, bg.train.vals)
-  v <- rbind(occs.test.vals, bg.test.vals)
-  cat.j <- which(sapply(occs.train.vals, is.factor) == 1)
-  if(length(cat.j) > 0) {
-    p <- p[,-cat.j]
-    v <- v[,-cat.j]
-  }
-  mss <- mess.vec(p, v)
-  mess.quant <- quantile(mss)
-  names(mess.quant) <- paste0("mess.", gsub("%", "p", names(mess.quant)))
-  return(mess.quant)
-}
-
-# #' @export
-
-# var.importance <- function(mod) {
-#   if(!'MaxEnt' %in% class(mod)){
-#     stop('Sorry, variable importance cannot currently be calculated with maxnet models (only maxent.jar)')
-#   } else {
-#     res <- mod@results
-#     pc <- res[grepl('contribution', rownames(res)),]
-#     pi <- res[grepl('permutation', rownames(res)),]
-#     varnames <- sapply(strsplit(names(pc), '.contribution'), function(x) x[1])
-#     df <- data.frame(variable=varnames, percent.contribution=pc, permutation.importance=pi, row.names=NULL)
-#     return(df)
+# mess.vec <- function(p, v) {
+#   calc.mess <- function(p, v) {
+#     v <- stats::na.omit(v)
+#     f <- 100*findInterval(p, sort(v)) / length(v)
+#     minv <- min(v)
+#     maxv <- max(v)
+#     res <- 2*f 
+#     f[is.na(f)] <- -99
+#     i <- f>50 & f<100
+#     res[i] <- 200-res[i]
+#     
+#     i <- f==0 
+#     res[i] <- 100*(p[i]-minv)/(maxv-minv)
+#     i <- f==100
+#     res[i] <- 100*(maxv-p[i])/(maxv-minv)
+#     return(res)
 #   }
+#   
+#   x <- sapply(1:ncol(p), function(i) calc.mess(p[,i], v[,i]))
+#   rmess <- apply(x, 1, min, na.rm=TRUE)
+#   return(rmess)
+# }
+# 
+# calc.mess.kstats <- function(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals) {
+#   p <- rbind(occs.train.vals, bg.train.vals)
+#   v <- rbind(occs.test.vals, bg.test.vals)
+#   cat.j <- which(sapply(occs.train.vals, is.factor) == 1)
+#   if(length(cat.j) > 0) {
+#     p <- p[,-cat.j]
+#     v <- v[,-cat.j]
+#   }
+#   mss <- mess.vec(p, v)
+#   mess.quant <- quantile(mss)
+#   names(mess.quant) <- paste0("mess.", gsub("%", "p", names(mess.quant)))
+#   return(mess.quant)
 # }
 
 
@@ -285,7 +256,7 @@ calc.niche.overlap <- function(preds, overlapStat){
   return(ov)
 }
 
-
+# function to look up the corresponding ENMdetails abject
 #' @export
 lookup.enm <- function(mod.name) {
   x <- switch(mod.name, 
@@ -296,49 +267,107 @@ lookup.enm <- function(mod.name) {
   return(x)
 }
 
+# Modified version of dismo::mess
+# This version ignores raster cells with NA for every variable, thus avoiding
+# the generation of -Inf values and the corresponding warnings
+.messi3 <- function(p,v) {
+  # seems 2-3 times faster than messi2
+  v <- stats::na.omit(v)
+  f <- 100*findInterval(p, sort(v)) / length(v)
+  minv <- min(v)
+  maxv <- max(v)
+  res <- 2*f 
+  f[is.na(f)] <- -99
+  i <- f>50 & f<100
+  res[i] <- 200-res[i]
+  
+  i <- f==0 
+  res[i] <- 100*(p[i]-minv)/(maxv-minv)
+  i <- f==100
+  res[i] <- 100*(maxv-p[i])/(maxv-minv)
+  res
+}
 
-#' @title An object of class `ENMevaluation`.
-#' @description An example results file based on a call of `ENMevaluate` (see example).
-#' @details The dataset is based on the simulated dataset and call of \code{\link{ENMevaluate}} shown in the example section below.
-#' @format An object of class `ENMevaluation`.
-#' @source Simulated data from `ENMevaluate`.
-#' @examples
-#' require(raster)
-#' ### Simulated data environmental covariates
-#' set.seed(1)
-#' r1 <- raster(matrix(nrow=50, ncol=50, data=runif(10000, 0, 25)))
-#' r2 <- raster(matrix(nrow=50, ncol=50, data=rep(1:100, each=100), byrow=TRUE))
-#' r3 <- raster(matrix(nrow=50, ncol=50, data=rep(1:100, each=100)))
-#' r4 <- raster(matrix(nrow=50, ncol=50, data=c(rep(1,1000),rep(2,500)),byrow=TRUE))
-#' values(r4) <- as.factor(values(r4))
-#' env <- stack(r1,r2,r3,r4)
-#' 
-#' ### Simulate occurrence localities
-#' nocc <- 50
-#' x <- (rpois(nocc, 2) + abs(rnorm(nocc)))/11
-#' y <- runif(nocc, 0, .99)
-#' occ <- cbind(x,y)
-#' \dontrun{
-#' enmeval_results <- ENMevaluate(occ, env, n.bg=500, 
-#'                                partitions="block", 
-#'                                categoricals="layer.4",
-#'                                mod.name='maxnet', 
-#'                                tune.args=list(fc = c("L","LQ","LQH","LQHP","LQHPT"), 
-#'                                               rm = 1:4),
-#'                                overlap=T, overlapStat="D")
-#' }
-#' 
-#' data(enmeval_results)
-#' enmeval_results
-#' 
-#' ### See table of evaluation metrics
-#' enmeval_results@results
-#' 
-#' ### Plot prediction with lowest AICc
-#' plot(enmeval_results@predictions[[which (enmeval_results@results$delta.AICc == 0) ]])
-#' points(enmeval_results@occ.pts, pch=21, bg= enmeval_results@occ.grp)
-#' 
-#' ### Niche overlap statistics between model predictions
-#' enmeval_results@overlap
-"enmeval_results"
-
+#' @export
+mess <- function(x, v, full=FALSE, filename='', ...) {
+  
+  stopifnot(NCOL(v) == nlayers(x))
+  out <- raster(x)
+  nl <- nlayers(x)
+  filename <- trim(filename)
+  nms <- paste(names(x), '_mess', sep='')
+  
+  if (canProcessInMemory(x)) {
+    x <- getValues(x)
+    if (nl == 1) {
+      rmess <- .messi3(x, v)
+      names(out) <- 'mess'
+      out <- setValues(out, rmess)
+    } else {
+      x <- sapply(1:ncol(x), function(i) .messi3(x[,i], v[,i]))
+      rmess <- apply(x, 1, function(x) ifelse(!all(is.na(x)), min(x, na.rm=TRUE), NA))
+      if (full) {
+        out <- brick(out, nl=nl+1)
+        names(out) <- c(nms, "mess")
+        out <- setValues(out, cbind(x, rmess))
+      } else {
+        names(out) <- 'mess'
+        out <- setValues(out, rmess)
+      }
+    }	
+    if (filename != '') {
+      out <- writeRaster(out, filename, ...)
+    }
+    return(out)
+    
+  } else {
+    
+    if (nl == 1) {
+      
+      names(out) <- "mess"
+      tr <- blockSize(out)
+      pb <- pbCreate(tr$n, ...)	
+      out <- writeStart(out, filename, ...)
+      for (i in 1:tr$n) {
+        vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
+        vv <- .messi3(vv, v)
+        out <- writeValues(out, vv, tr$row[i])
+        pbStep(pb) 
+      }
+      
+    } else {
+      
+      if (full) {
+        out <- brick(out, nl=nl+1)
+        names(out) <- c(nms, "mess")
+        tr <- blockSize(out)
+        pb <- pbCreate(tr$n, ...)	
+        out <- writeStart(out, filename, ...)
+        for (i in 1:tr$n) {
+          vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
+          vv <- sapply(1:ncol(v), function(i) .messi3(vv[,i], v[,i]))
+          m <- apply(vv, 1, min, na.rm=TRUE)
+          out <- writeValues(out, cbind(vv, m), tr$row[i])
+          pbStep(pb) 
+        }
+        
+      } else {
+        
+        names(out) <- "mess"
+        tr <- blockSize(out)
+        pb <- pbCreate(tr$n, ...)	
+        out <- writeStart(out, filename, ...)
+        for (i in 1:tr$n) {
+          vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
+          vv <- sapply(1:ncol(v), function(i) .messi3(vv[,i], v[,i]))
+          m <- apply(vv, 1, min, na.rm=TRUE)
+          out <- writeValues(out, m, tr$row[i])
+          pbStep(pb) 
+        }
+      }
+    }
+    out <- writeStop(out)
+    pbClose(pb) 
+  }	
+  out
+}

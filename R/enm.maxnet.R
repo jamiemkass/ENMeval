@@ -49,7 +49,18 @@ kstats <- function(e.test, mod, other.args) {
 }
 
 pred <- function(mod, envs, other.args, doClamp, pred.type) {
-  pred <- maxnet.predictRaster(mod, envs, doClamp, type = pred.type, other.args)
+  # function to generate a prediction raster when raster data is specified as envs,
+  # and a prediction data frame when a data frame is specified as envs
+  if(inherits(envs, "BasicRaster") == TRUE) {
+    envs.n <- raster::nlayers(envs)
+    envs.pts <- na.omit(raster::rasterToPoints(envs))
+    mxnet.p <- predict(mod, envs.pts, type = pred.type, clamp = doClamp, na.rm = TRUE, other.args)
+    p.vals <- cbind(envs.pts[,1:2], as.numeric(mxnet.p))
+    pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs))
+  }else{
+    # otherwise, envs is data frame, so return data frame of predicted values
+    pred <- dismo::predict(mod, envs, type = pred.type, clamp = doClamp, na.rm = TRUE, other.args)
+  }
   return(pred)
 }
 

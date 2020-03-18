@@ -53,10 +53,10 @@ plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "oc
 #' @export
 
 plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
-  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occ.pts, grp = e@occ.grp),
-                bg = dplyr::bind_cols(e@bg.pts, grp = e@bg.grp))
-  pts.x <- raster::extract(envs, pts[,1:2])
-  vals <- data.frame(pts.x, grp = pts[,3]) 
+  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occ.grp),
+                bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
+  pts.x <- raster::extract(envs, pts[,c("longitude","latitude")])
+  vals <- data.frame(pts.x, grp = pts$grp) 
   test.mss <- list()
   ras.mss <- list()
   nk <- length(unique(e@occ.grp))
@@ -65,7 +65,7 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
     train.xy <- pts %>% dplyr::filter(grp != k) %>% dplyr::select(-grp)
     # test.ext <- as(raster::extent(sp::bbox(sp::SpatialPoints(test.xy))), "SpatialPolygons")
     # envs.mess.train <- raster::mask(envs.mess, test.ext, inverse = TRUE)
-    mss <- dismo::mess(envs, test.vals)
+    mss <- ENMeval::mess(envs, test.vals)
     ras.mss[[k]] <- mss
     mss.x <- raster::extract(mss, train.xy)
     test.mss[[k]] <- data.frame(mess.value = mss.x, grp = k)
@@ -76,9 +76,10 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
       tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = "mess.value")
     rs.mss.df$ras <- unique(gsub("mess", "grp", rs.mss.df$ras))
     ggplot2::ggplot() + ggplot2::geom_raster(data = rs.mss.df, ggplot2::aes(x = x, y = y, fill = mess.value)) +
-      ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
+      ggplot2::scale_fill_viridis_c(na.value = "white") +
+      ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = grp)) +
       ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
-      ggplot2::scale_fill_viridis_c(na.value = "white") + ggplot2::theme_classic()
+      ggplot2::theme_classic()
   }else{
     test.mss.df <- dplyr::bind_rows(test.mss)
     test.mss.df$grp <- factor(test.mss.df$grp)
