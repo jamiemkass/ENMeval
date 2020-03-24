@@ -10,7 +10,7 @@ bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
 bg.vals <- cbind(bg, raster::extract(envs, bg))
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
-tune.args.ls <- list("maxnet" = list(fc = "L", rm = 2:3),
+tune.args.ls <- list("maxnet" = list(fc = c("L","LQ"), rm = 2:3),
                   "brt" = list(tree.complexity = 1:2, learning.rate = 0.01, bag.fraction = 0.5))
 tune.args.tbl.ls <- lapply(tune.args.ls, expand.grid, stringsAsFactors = FALSE)
 parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "independent", "none", "user", rep("randomkfold", 4))
@@ -69,6 +69,11 @@ test_that("ENMevaluation object and slots exist", {
     expect_true(!is.null(e@results.grp))
     expect_true(!is.null(e@models))
     expect_true(!is.null(e@predictions))
+    if(names(e.ls)[x] != "swd") {
+      expect_true(raster::nlayers(e@predictions) > 0)  
+    }else{
+      expect_true(raster::nlayers(e@predictions) == 0)  
+    }
     expect_true(!is.null(e@occs))
     expect_true(!is.null(e@occ.grp))
     expect_true(!is.null(e@bg))
@@ -80,7 +85,7 @@ test_that("ENMevaluation object and slots exist", {
 test_that("Data in ENMevaluation object slots have correct form", {
   for(x in 1:length(e.ls)) {
     e <- e.ls[[x]]
-    m <- ifelse(x == 12, "brt", "maxnet")
+    m <- ifelse(names(e.ls)[x] == "brt", "brt", "maxnet")
     # algorithm
     expect_true(e@algorithm == e.ls.alg[x])
     # partition method 
@@ -200,8 +205,9 @@ test_that("Random test results table has correct form", {
 
 test_that("Jackknife test results table has correct form", {
   jack.res <- e.ls$jack@results.grp
-  expect_true(nrow(jack.res) == 10 * nrow(tune.args.tbl.ls$maxnet))
-  expect_true(max(jack.res$fold) == 10)
+  noccs <- nrow(e.ls$jack@occs)
+  expect_true(nrow(jack.res) == noccs * nrow(tune.args.tbl.ls$maxnet))
+  expect_true(max(jack.res$fold) == noccs)
   expect_false("cbi.test" %in% names(jack.res))
   expect_true(sum(is.na(jack.res)) == 0)
 })
@@ -218,3 +224,4 @@ test_that("No partition has no test results table", {
   no.res <- e.ls$nopart@results.grp
   expect_true(nrow(no.res) == 0)
 })
+
