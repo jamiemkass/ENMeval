@@ -108,6 +108,9 @@ predictions at all localities (training and testing occurrences and backgrounds)
 
 \item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
 
+\item{user.test.grps}{matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
+internally by ENMnullSims() to force each null model to evaluate with real test data}
+
 \item{parallel}{boolean (TRUE or FALSE) which if TRUE, run with parallel processing}
 
 \item{numCores}{numeric for number of cores to use for parallel processing}
