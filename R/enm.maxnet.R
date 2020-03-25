@@ -30,6 +30,9 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.args) {
   out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
   out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
   out$regmult <- tune.tbl.i$rm
+  # some models fail to converge if this parameter is not set to TRUE
+  # usually the case with sparse datasets
+  out$addsamplestobackground <- TRUE
   out <- c(out, other.args)
   return(out)
 }

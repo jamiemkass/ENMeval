@@ -205,7 +205,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, 
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  message(paste("ENMnullSims completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  message(paste("\nENMnullSims completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
   return(e.n)
 }
