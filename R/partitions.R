@@ -170,7 +170,7 @@ get.block <- function(occs, bg){
 #' 
 #' @export
 
-get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
+get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, quiet){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
@@ -215,7 +215,7 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
 #' 
 #' @export
 
-get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
+get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000, quiet){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)

@@ -147,7 +147,13 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
       # define model arguments for current model k
       mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.settings$other.args)
       # run the current model k
-      mod.k <- do.call(enm@fun, mod.k.args)  
+      mod.k <- tryCatch({
+        do.call(enm@fun, mod.k.args)  
+      }, error = function(cond) {
+        message(paste0("\n", cond, "\n"))
+        # Choose a return value in case of error
+        return(NULL)
+      })
     }else{
       mod.k <- mod.full
     }
