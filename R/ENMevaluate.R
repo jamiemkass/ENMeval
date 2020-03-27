@@ -259,8 +259,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                  jackknife = get.jackknife(d.occs, d.bg),
                  randomkfold = get.randomkfold(d.occs, d.bg, kfolds),
                  block = get.block(d.occs, d.bg),
-                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
-                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
+                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor, quiet = quiet),
+                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor, quiet = quiet),
                  user = NULL,
                  independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occ.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))

@@ -7,8 +7,8 @@
 
 plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs") {
   if(!is.null(e)) {
-    pts.plot <- switch(pts.type, occs = cbind(e@occ.pts, grp = e@occ.grp),
-                  bg = cbind(e@bg.pts, grp = e@bg.grp))  
+    pts.plot <- switch(pts.type, occs = cbind(e@occs, grp = e@occ.grp),
+                  bg = cbind(e@bg, grp = e@bg.grp))  
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
       # make sure pts is a data frame with the right column names
@@ -30,6 +30,7 @@ plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "oc
   names(envs.df)[3] <- "value"
   ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
+    # ggplot2::scale_color_brewer(palette = brewer.pal) +
     ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
     ggplot2::coord_equal() + theme.custom
 }

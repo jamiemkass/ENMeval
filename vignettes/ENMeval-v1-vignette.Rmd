@@ -330,9 +330,9 @@ eval.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar",
                     tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
-eval.indPart <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", 
+eval.indPart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "independent", 
-                        occs.ind = occs[251:nrow(occs),])
+                        occs.ind = occs.ind)
 
 # 3. User partitions
 user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), 
