@@ -44,7 +44,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   msg(paste0("Running in parallel using ", parallelType, "..."), quiet)
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps, quiet)
   }
   if(quiet == FALSE) close(pb)
   parallel::stopCluster(cl)
@@ -70,7 +70,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet)
   }
   if(quiet == FALSE) close(pb)
   return(results)
@@ -79,7 +79,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
