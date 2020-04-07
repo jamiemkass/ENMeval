@@ -144,6 +144,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   occs <- as.data.frame(occs)
   if(!is.null(bg)) bg <- as.data.frame(bg)
   
+  # if a set of tuning arguments is numeric, make sure it is sorted (for results table and plotting)
+  tune.args.num <- which(sapply(tune.args, class) == "numeric")
+  if(length(tune.args.num) > 0) {
+    tune.args[[tune.args.num]] <- sort(tune.args[[tune.args.num]])
+  }
+  
   # choose a built-in ENMdetails object matching the input model name
   # unless the model is chosen by the user
   if(is.null(user.enm)) {
@@ -199,14 +205,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # if NA predictor variable values exist for occs or bg, remove these records and modify user.grp accordingly
   occs.vals.na <- which(rowSums(is.na(occs)) > 0)
   if(length(occs.vals.na) > 0) {
-    msg(paste0("* Removed ", length(occs.vals.na), " occurrence points had NA predictor variable values.\n"), quiet)
+    msg(paste0("* Removed ", length(occs.vals.na), " occurrence points with NA predictor variable values.\n"), quiet)
     occs <- occs[-occs.vals.na,]
     if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[-occs.vals.na]
   }
   
   bg.vals.na <- which(rowSums(is.na(bg)) > 0)
   if(length(bg.vals.na) > 0) {
-    msg(paste0("* Removed ", length(bg.vals.na), " background points had NA predictor variable values.\n"), quiet)
+    msg(paste0("* Removed ", length(bg.vals.na), " background points with NA predictor variable values.\n"), quiet)
     bg <- bg[-bg.vals.na,]
     if(!is.null(user.grp)) user.grp$bg.grp <- user.grp$bg.grp[-bg.vals.na]
   }
