@@ -330,9 +330,9 @@ eval.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar",
                     tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
-eval.indPart <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", 
+eval.indPart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "independent", 
-                        occs.ind = occs[251:nrow(occs),])
+                        occs.ind = occs.ind)
 
 # 3. User partitions
 user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), 
@@ -510,17 +510,6 @@ points(bg(eval), pch = 3, col = bg.grp(eval), cex = 0.5)
 points(occs(eval), pch = 21, bg = occ.grp(eval))
 ```
 
-<!-- You can use the `var.importance` function to get a data.frame of two variable importance metrics: percent contribution and permutation importance.  See the function help file for more information on these metrics. -->
-<!-- ```{r mod.obj4} -->
-<!-- var.importance(aic.opt) -->
-<!-- ``` -->
-
-<!-- You can also plot the permutation importance or percent contribution. -->
-<!-- ``` {r plot.res3, fig.width = 5, fig.height = 5} -->
-<!-- df <- var.importance(aic.opt) -->
-<!-- barplot(df$permutation.importance, names.arg=df$variable, las=2, ylab="Permutation Importance") -->
-<!-- ``` -->
-
 Let's see how model complexity changes the predictions in our example. We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.00845).
 
 ```{r plot.pred2, fig.width = 5, fig.height = 2.5}
@@ -541,7 +530,6 @@ plot(predictions(eval)[['L_5']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main
 # The most complex model: linear, quadratic, and hinge features with low regularization
 plot(predictions(eval)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='LQH_1 prediction')
 ```
-
 
 ## Null models
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/utilities.R
 \name{calc.niche.overlap}
 \alias{calc.niche.overlap}
-\title{Calculate Similarity of ENMs in Geographic Space}
+\title{Compute multivariate environmental similarity surfaces (MESS)}
 \usage{
 calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
 }
@@ -10,14 +10,27 @@ calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
 \item{preds}{A rasterStack of at least 2 Maxent predictive raster layers.}
 
 \item{overlapStat}{The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).}
+
+\item{p}{Raster object}
+
+\item{v}{Matrix with reference values}
 }
 \value{
+A RasterBrick with layers corresponding to the input layers and an additional layer with the mess values (if full=TRUE and nlayers(x) > 1) or a RasterLayer with the MESS values (if full=FALSE).
+
 A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
 }
 \description{
+Compute multivariate environmental similarity surfaces (MESS) (i.e., Elith \emph{et al.} 2010).
+
 Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
 }
+\details{
+Repurposed from dismo::mess(), based on .messi3()
+}
 \references{
+Elith J., M. Kearney M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342.
+
 Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726.
 Warren, D. L., Glor, R. E., Turelli, M. and Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883.
@@ -26,6 +39,9 @@ Warren, D. L., Glor, R. E., Turelli, M. and Funk, D. (2008) Environmental niche 
 `nicheOverlap` in the \pkg{dismo} package
 }
 \author{
+Based on \pkg{dismo}::\code{mess}
+Jean-Pierre Rossi <jean-pierre.rossi@supagro.inra.fr>, Robert Hijmans, Paulo van Breugel
+
 Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}
 Robert Muscarella <bob.muscarella@gmail.com>
 }

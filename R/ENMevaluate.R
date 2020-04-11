@@ -47,6 +47,8 @@
 #' (which necessitates creating a new prediction raster over the full extent for every partition), and "bg" for the 
 #' predictions at all localities (training and testing occurrences and backgrounds)
 #' @param abs.auc.diff boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE
+#' @param user.test.grps matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
+#' internally by ENMnullSims() to force each null model to evaluate with real test data
 #' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
 #' @param parallelType character (default: "doSNOW") specifying either "doParallel" or "doSNOW"
@@ -153,6 +155,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   occs <- as.data.frame(occs)
   if(!is.null(bg)) bg <- as.data.frame(bg)
   
+  # if a set of tuning arguments is numeric, make sure it is sorted (for results table and plotting)
+  tune.args.num <- which(sapply(tune.args, class) == "numeric")
+  if(length(tune.args.num) > 0) {
+    tune.args[[tune.args.num]] <- sort(tune.args[[tune.args.num]])
+  }
+  
   # choose a built-in ENMdetails object matching the input model name
   # unless the model is chosen by the user
   if(is.null(user.enm)) {
@@ -169,9 +177,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if(!is.null(envs)) {
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
     envs <- raster::stack(envs)
+    envs.z <- raster::values(envs)
+    envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
+    if(envs.naMismatch > 0) {
+      msg(paste0("* Found ", envs.naMismatch, " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables.\n"), quiet)
+      envs <- calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
+    }
     # if no background points specified, generate random ones
     if(is.null(bg)) {
-      msg(paste0('* Randomly sampling ", n.bg, " background points from "envs" rasters...\n'), quiet)
+      msg(paste0("* Randomly sampling ", n.bg, " background points ...\n"), quiet)
       bg <- as.data.frame(dismo::randomPoints(envs, n = n.bg))
       names(bg) <- names(occs)
     }
@@ -179,18 +193,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     # remove cell duplicates
     occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
     occs.dups <- duplicated(occs.cellNo[,1])
-    if(sum(occs.dups) > 0) msg(paste0("Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"), quiet)
+    if(sum(occs.dups) > 0) msg(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another.\n"), quiet)
     occs <- occs[!occs.dups,]
     if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[!occs.dups]
     
-    # extract predictor variable values at coordinates for occs and bg
+    # bind coordinates to predictor variable values for occs and bg
     occs.vals <- raster::extract(envs, occs)
     bg.vals <- raster::extract(envs, bg)
-    # bind coordinates to predictor variable values for occs and bg
-    xy <- rbind(occs, bg)
-    vals <- rbind(occs.vals, bg.vals)
-    # make main df with coordinates and predictor variable values and remove records with NA values
-    d <- cbind(xy, vals)
+    occs <- cbind(occs, occs.vals)
+    bg <- cbind(bg, bg.vals)
   }else{
     # if no bg included, stop
     if(is.null(bg)) {
@@ -200,9 +211,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     msg("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc cannot be calculated for Maxent models.\n", quiet)
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.\n")
-    # make main df with coordinates and predictor variable values
-    d <- rbind(occs, bg)
   }
+  
+  # if NA predictor variable values exist for occs or bg, remove these records and modify user.grp accordingly
+  occs.vals.na <- which(rowSums(is.na(occs)) > 0)
+  if(length(occs.vals.na) > 0) {
+    msg(paste0("* Removed ", length(occs.vals.na), " occurrence points with NA predictor variable values.\n"), quiet)
+    occs <- occs[-occs.vals.na,]
+    if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[-occs.vals.na]
+  }
+  
+  bg.vals.na <- which(rowSums(is.na(bg)) > 0)
+  if(length(bg.vals.na) > 0) {
+    msg(paste0("* Removed ", length(bg.vals.na), " background points with NA predictor variable values.\n"), quiet)
+    bg <- bg[-bg.vals.na,]
+    if(!is.null(user.grp)) user.grp$bg.grp <- user.grp$bg.grp[-bg.vals.na]
+  }
+  
+  # make main df with coordinates and predictor variable values
+  d <- rbind(occs, bg)
   
   # add presence-background identifier for occs and bg
   d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
@@ -213,13 +240,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
     d[d$pb == 1, "grp"] <- user.grp$occ.grp
     d[d$pb == 0, "grp"] <- user.grp$bg.grp
   }
-  
-  ####################################### #
-  # REMOVE RECORDS WITH NA ENVIRONMENT ####
-  ####################################### #
-  
-  # remove records with NA for any predictor variable
-  d <- remove.env.na(d, quiet)
   
   ################################# #
   # ASSIGN CATEGORICAL VARIABLES ####
@@ -256,8 +276,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
                  jackknife = get.jackknife(d.occs, d.bg),
                  randomkfold = get.randomkfold(d.occs, d.bg, kfolds),
                  block = get.block(d.occs, d.bg),
-                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
-                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
+                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor, quiet = quiet),
+                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor, quiet = quiet),
                  user = NULL,
                  independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occ.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
@@ -437,7 +457,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   if((enm@name == "maxnet" | enm@name == "maxent.jar") & !is.null(envs)) {
     pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
     pred.all.raw <- raster::stack(lapply(mod.full.all, function(x) enm@pred(x, envs, other.args, doClamp, pred.type = pred.type.raw)))
-    occs.pred.raw <- raster::extract(pred.all.raw, occs)
+    occs.pred.raw <- raster::extract(pred.all.raw, occs[,1:2])
     aic <- enm@aic(occs.pred.raw, nparams, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
