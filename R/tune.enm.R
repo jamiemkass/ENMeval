@@ -15,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -23,41 +23,35 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   }
   cl <- parallel::makeCluster(numCores)
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
-  if(quiet == FALSE) {
-    pb <- txtProgressBar(0, n, style = 3)
-    progress <- function(n) setTxtProgressBar(pb, n)  
-  }
+  pb <- txtProgressBar(0, n, style = 3)
+  progress <- function(n) setTxtProgressBar(pb, n)  
   
   if(parallelType == "doParallel") {
     doParallel::registerDoParallel(cl)
     opts <- NULL
   } else if(parallelType == "doSNOW") {
     doSNOW::registerDoSNOW(cl)
-    if(quiet == FALSE) {
-      opts <- list(progress=progress)  
-    }else{
-      opts <- NULL
-    }
+    opts <- list(progress=progress)  
   }
   numCoresUsed <- foreach::getDoParWorkers()
-  msg(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."), quiet)
-  msg(paste0("Running in parallel using ", parallelType, "..."), quiet)
+  message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
+  message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps, quiet)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps)
   }
-  if(quiet == FALSE) close(pb)
+  close(pb)
   parallel::stopCluster(cl)
   return(results)
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress, quiet) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
   # set up the console progress bar
-  if(quiet == FALSE) pb <- txtProgressBar(0, n, style = 3)
+  pb <- txtProgressBar(0, n, style = 3)
   
   for(i in 1:n) {
     # and (optionally) the shiny progress bar (updateProgress)
@@ -66,20 +60,20 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
         text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
         updateProgress(detail = text)
       }
-      if(quiet == FALSE) setTxtProgressBar(pb, i)
+      setTxtProgressBar(pb, i)
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
   }
-  if(quiet == FALSE) close(pb)
+  close(pb)
   return(results)
 }
 
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(envs.names)
@@ -108,7 +102,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
     train.stats.df$cbi.train <- cbi.train$Spearman.cor
     mod.full.pred <- d.full.pred$pred
   }
-    
+  
   # define number of grp (the value of "k") for occurrences
   # k is 1 for partition "independent"
   # k is 0 for partitions "none" and "user"
@@ -160,7 +154,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {
-      msg(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model.\n"), quiet)
+      message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model."))
       next
     }
     

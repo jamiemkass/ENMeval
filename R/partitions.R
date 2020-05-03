@@ -170,7 +170,7 @@ get.block <- function(occs, bg){
 #' 
 #' @export
 
-get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, quiet){
+get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
@@ -197,7 +197,7 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, quiet){
   noccgrp <- length(unique(occ.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 2 ){
-    msg(paste("Warning: occurrence points fall in only", noccgrp, "bin"), quiet)
+    message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
     bg.grp[ ! bg.grp %in% occ.grp] <- NA
     occ.grp <- as.numeric(as.factor(occ.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
@@ -215,7 +215,7 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, quiet){
 #' 
 #' @export
 
-get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000, quiet){
+get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
@@ -256,7 +256,7 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   noccgrp <- length(unique(occ.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 4 ){
-    msg(paste("Warning: occurrence points fall in only", noccgrp, "bins"), quiet)
+    message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
     bg.grp[ ! bg.grp %in% occ.grp] <- NA
     occ.grp <- as.numeric(as.factor(occ.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
