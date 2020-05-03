@@ -418,38 +418,38 @@ str(eval, max.level=3)
 We can use helper functions to access the slots in the ENMevaluate object.
 ```{r algorithm}
 # Access algorithm, tuning settings, and partition method information
-algorithm(eval)
-tune.settings(eval)
-partition.method(eval)
+eval.algorithm(eval)
+eval.tune.settings(eval)
+eval.partition.method(eval)
 # Results table with summary statistics for cross validation on test data
-results(eval)
+eval.results(eval)
 # Results table with cross validation statistics for each test partition
-results.grp(eval)
+eval.results.grp(eval)
 # List of models with names corresponding to tune.args column label
-models(eval)
+eval.models(eval)
 # The "betas" slot in a maxnet model is a named vector of the variable coefficients 
 # and what kind they are (in R formula notation)
 # Note that the html file that is created when maxent.jar is run is **not** kept
-m1 <- models(eval)[["LQH_1"]]
+m1 <- eval.models(eval)[["LQH_1"]]
 m1$betas
 # For maxent.jar models, we can access this information in the lambdas slot
 # The notation used here is difficult to decipher, so check out the [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package
 # available on Github for the `parse_lambdas()` function that makes it easier to read
-m1.mxjar <- models(eval.mxjar)[["LQH_1"]]
+m1.mxjar <- eval.models(eval.mxjar)[["LQH_1"]]
 m1.mxjar@lambdas
 # We can also get a long list of results statistics from the results slot
 m1.mxjar@results
 # RasterStack of model predictions (for extent of "envs") with names corresponding 
 # to tune.args column label
-predictions(eval)
+eval.predictions(eval)
 # Original occurrence data coordinates with associated predictor variable values
-occs(eval)
+eval.occs(eval)
 # Background data coordinates with associated predictor variable values
-bg(eval)
+eval.bg(eval)
 # Partition group assignments for occurrence data
-occ.grp(eval)
+eval.occ.grp(eval)
 # Partition group assignments for background data
-bg.grp(eval)
+eval.bg.grp(eval)
 ```
 
 ## Plotting tuning results {#plot}
@@ -510,7 +510,7 @@ points(bg(eval), pch = 3, col = bg.grp(eval), cex = 0.5)
 points(occs(eval), pch = 21, bg = occ.grp(eval))
 ```
 
-Let's see how model complexity changes the predictions in our example. We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.00845).
+Let's see how model complexity changes the predictions in our example. We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://doi.org/10.1111/ecog.00845).
 
 ```{r plot.pred2, fig.width = 5, fig.height = 2.5}
 # First, let's examine the non-zero model coefficients in the betas slot
@@ -540,6 +540,13 @@ mod.null <- ENMnullSims(eval, mod.settings = list(fc = "L", rm = 2), no.iter = 1
 null.results(mod.null)
 null.results.grp(mod.null)
 real.vs.null.results(mod.null)
+```
+
+#### Metadata {#metadata}
+ENMeval now catalogs details of the analysis essential for reproducibility in a rangeModelMetadata list, accessible from the ENMevaluation object output. The framework and philosophy behind rangeModelMetadata is described in [Merow et al. 2019](https://doi.org/10.1111/geb.12993). 
+
+```{r}
+eval.rmm(eval)
 ```
 
 ## Downstream Analyses (*under construction*) {#downstream}

@@ -141,7 +141,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, 
 
     null.e.i <- ENMevaluate(null.occs.i.vals, bg = e@bg, tune.args = mod.settings, mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
                             user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, aggregation.factor = e.p$aggregation.factor,
-                            doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval, quiet = TRUE)
+                            doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval)
     setTxtProgressBar(pb, i)
 
     nulls.ls[[i]] <- null.e.i@results

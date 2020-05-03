@@ -13,7 +13,7 @@ msgs <- function(tune.args) {
     stop("BRT settings must include 'tree.complexity', 'learning.rate', and 'bag.fraction'.")
   }
   # construct user message with version info
-  msg <- paste0("Boosted regression trees (BRTs) using the gbm.step() function from gbm package v", 
+  msg <- paste0("boosted regression trees (BRTs) using the gbm.step() function from gbm package v", 
                packageVersion('gbm'), " and dismo package v", packageVersion('dismo')) 
   return(msg)
 }
