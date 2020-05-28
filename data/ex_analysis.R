@@ -1,16 +1,16 @@
-# set.seed(48)
-# bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
-# occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,1:3])
-# occs <- occs[!duplicated(occs),]
-# envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
-# # which(rowSums(is.na(raster::extract(envs, occs))) > 0)
-# bg <- as.data.frame(dismo::randomPoints(envs, 10000))
-# names(bg) <- names(occs)[2:3]
-# tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
-# # tune.args <- list(fc = "L", rm = 1)
-# partitions <- "randomkfold"
-# kfolds <- 4
-# categoricals <- "biome"
+set.seed(48)
+bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
+occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+occs <- occs[!duplicated(occs),]
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
+# which(rowSums(is.na(raster::extract(envs, occs))) > 0)
+bg <- as.data.frame(dismo::randomPoints(envs, 10000))
+names(bg) <- names(occs)
+tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
+# tune.args <- list(fc = "L", rm = 1)
+partitions <- "randomkfold"
+kfolds <- 4
+categoricals <- "biome"
 # skipRasters <- FALSE
 # other.args <- NULL
 # updateProgress <- NULL
