@@ -63,7 +63,7 @@
 #' @export 
 #' 
 
-ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
+ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2), 
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", cbi.eval = "envs", 
                         abs.auc.diff = TRUE, user.test.grps = NULL,
@@ -108,10 +108,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   occs <- as.data.frame(occs)
   if(!is.null(bg)) bg <- as.data.frame(bg)
   # extract species name and coordinates
-  taxon.name  <- unique(occs[,1])
-  occs <- occs[,2:3]
   
-  message(paste0("*** Running initial checks for ", taxon.name, " ... ***\n"))
+  if(is.null(taxon.name)) {
+    message(paste0("*** Running initial checks... ***\n"))
+  }else{
+    message(paste0("*** Running initial checks for ", taxon.name, " ... ***\n"))
+  }
   
   ## general parameter checks
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
@@ -340,7 +342,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   ################# #
   
   # print model-specific message
-  message(paste("\n*** Running ENMeval v1.0.0 for", taxon.name, "with", enm@msgs(tune.args), "***\n"))
+  if(is.null(taxon.name)) {
+    message(paste("\n*** Running ENMeval v1.0.0 with", enm@msgs(tune.args), "***\n"))
+  }else{
+    message(paste("\n*** Running ENMeval v1.0.0 for", taxon.name, "with", enm@msgs(tune.args), "***\n"))
+  }
+  
   
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
@@ -464,6 +471,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, other.ar
   # assign all groups to 1 if no partitions were selected
   # this avoids putting a NULL in the object slot
   if(nk == 0) d$grp <- 1
+  if(is.null(taxon.name)) taxon.name <- ""
   
   e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
                      results = eval.stats, results.grp = cv.stats.all,
