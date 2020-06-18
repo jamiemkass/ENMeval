@@ -4,7 +4,18 @@
 \alias{ENMdetails}
 \title{ENMdetails class}
 \usage{
-ENMdetails(name, fun, pkgs, msgs, args, aic, eval, kstats, pred, nparams)
+ENMdetails(
+  name,
+  fun,
+  pkgs,
+  msgs,
+  args,
+  aic,
+  eval.train,
+  eval.test,
+  pred,
+  nparams
+)
 }
 \description{
 An S4 class that details packages, functions, messages associated with a specific species distribution model (SDM) or ecological niche model (ENM). 
@@ -26,9 +37,9 @@ pre-made ENMdetails object specifications that work with ENMeval out of the box.
 
 \item{\code{aic}}{function specifying how AIC should be calculated (if at all)}
 
-\item{\code{eval}}{function specifying how to calculate evaluation statistics (currently a specific parameterization of \code{dismo::evaluate()})}
+\item{\code{eval.train}}{function specifying how to calculate training evaluation statistics}
 
-\item{\code{kstats}}{function specifying any additional cross-validation statistics to calculate on testing groups}
+\item{\code{eval.test}}{function specifying how to calculate testing evaluation statistics}
 
 \item{\code{pred}}{function specifying how to calculate a model prediction for a Raster* or a data frame}
 
