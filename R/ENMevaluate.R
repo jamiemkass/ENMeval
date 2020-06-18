@@ -151,6 +151,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.')
   }
   
+  if(is.null(envs) & cbi.eval == "envs") {
+    warning('* Setting "cbi.eval = envs" requires input of "envs" (predictor variables in raster form).')
+    cbi.eval <- "bg"
+  }
+  
   # if a vector of tuning arguments is numeric, make sure it is sorted (for results table and plotting)
   tune.args.num <- which((sapply(tune.args, class) %in% c("numeric", "integer")) & sapply(tune.args, length) > 1)
   for(i in tune.args.num) {
@@ -459,7 +464,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # calculate AICc
   if((enm@name == "maxnet" | enm@name == "maxent.jar") & !is.null(envs)) {
     pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
-    pred.all.raw <- raster::stack(lapply(mod.full.all, function(x) enm@pred(x, envs, other.args, doClamp, pred.type = pred.type.raw)))
+    aic.settings <- other.settings
+    aic.settings$pred.type <- pred.type.raw
+    pred.all.raw <- raster::stack(lapply(mod.full.all, function(x) enm@pred(x, envs, aic.settings)))
     occs.pred.raw <- raster::extract(pred.all.raw, occs[,1:2])
     aic <- enm@aic(occs.pred.raw, nparams, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)

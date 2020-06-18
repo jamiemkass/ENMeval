@@ -11,15 +11,15 @@ tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
 partitions <- "randomkfold"
 kfolds <- 4
 categoricals <- "biome"
-# skipRasters <- FALSE
-# other.args <- NULL
-# updateProgress <- NULL
-# doClamp <- TRUE
-# abs.auc.diff <- TRUE
-# pred.type <- "cloglog"
-# user.grp = NULL
-# occs.ind = NULL
-# cbi.eval = NULL
+skipRasters <- FALSE
+other.args <- NULL
+updateProgress <- NULL
+doClamp <- TRUE
+abs.auc.diff <- TRUE
+pred.type <- "cloglog"
+user.grp = NULL
+occs.ind = NULL
+cbi.eval = "envs"
 # quiet = FALSE
 # 
 # # user groups
@@ -54,9 +54,9 @@ categoricals <- "biome"
 # # occs[18,] <- c(0,0)
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # ## run with SWD
-# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", cbi.eval="bg")
 # ## run with independent testing data
-# # e <- ENMevaluate(occs[1:250,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[251:nrow(occs),])
+# # e <- ENMevaluate(occs[1:50,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[51:nrow(occs),])
 # ## run with just AIC
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 # ## run with maxent.jar

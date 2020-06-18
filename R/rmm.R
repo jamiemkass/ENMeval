@@ -100,8 +100,8 @@ buildRMM <- function(e, envs) {
   rmm$assessment$testingDataStats$AUC <- paste(e@tune.settings$tune.args, e@results$auc.test, sep = ": ")
   rmm$assessment$testingDataStats$AUCDiff <- paste(e@tune.settings$tune.args, e@results$auc.diff.avg, sep = ": ")
   rmm$assessment$testingDataStats$boyce <- ifelse(!is.null(e@results$cbi.test), paste(e@tune.settings$tune.args, e@results$cbi.test, sep = ": "), "none")
-  rmm$assessment$testingDataStats$omissionRate <- list(or.mtp = paste(e@tune.settings$tune.args, round(e@results$or.mtp.avg, 3), sep = ": "),
-                                                       or.10p = paste(e@tune.settings$tune.args, round(e@results$or.10p.avg, 3), sep = ": "))
+  rmm$assessment$testingDataStats$omissionRate <- list(or.mtp = paste(e@tune.settings$tune.args, round(e@results[grepl("or.mtp",names(e@results))], 3), sep = ": "),
+                                                       or.10p = paste(e@tune.settings$tune.args, round(e@results[grepl("or.10p",names(e@results))], 3), sep = ": "))
   
   return(rmm)
 }

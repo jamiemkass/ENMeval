@@ -9,6 +9,7 @@ ENMevaluate(
   envs = NULL,
   bg = NULL,
   tune.args = NULL,
+  taxon.name = NULL,
   other.args = NULL,
   categoricals = NULL,
   mod.name = NULL,

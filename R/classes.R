@@ -130,8 +130,8 @@ setMethod("show",
 #' @slot msgs function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}
 #' @slot args function specifying the parameters needed to run the model function
 #' @slot aic function specifying how AIC should be calculated (if at all)
-#' @slot eval function specifying how to calculate evaluation statistics (currently a specific parameterization of \code{dismo::evaluate()})
-#' @slot kstats function specifying any additional cross-validation statistics to calculate on testing groups
+#' @slot eval.train function specifying how to calculate training evaluation statistics
+#' @slot eval.test function specifying how to calculate testing evaluation statistics
 #' @slot pred function specifying how to calculate a model prediction for a Raster* or a data frame
 #' @slot nparams function specifying how to measure the number of model coefficients
 #' @export
@@ -144,14 +144,14 @@ ENMdetails <- setClass("ENMdetails",
                                  msgs = 'function',
                                  args = 'function',
                                  aic = 'function',
-                                 eval = 'function',
-                                 kstats = 'function',
+                                 eval.train = 'function',
+                                 eval.test = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval, kstats, pred, nparams) {
+ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval.train, eval.test, pred, nparams) {
   new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      aic = aic, eval = eval, kstats = kstats, pred = pred, nparams = nparams)
+      aic = aic, eval.train = eval.train, eval.test = eval.test, pred = pred, nparams = nparams)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -164,7 +164,6 @@ setMethod("enm.name<-", "ENMdetails", function(x, value) {
   validObject(x)
   x
 })
-
 
 setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
 setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
@@ -221,24 +220,24 @@ setMethod("enm.aic<-", "ENMdetails", function(x, value) {
   x
 })
 
-setGeneric("enm.eval", function(x) standardGeneric("enm.eval"))
-setGeneric("enm.eval<-", function(x, value) standardGeneric("enm.eval<-"))
+setGeneric("enm.eval.train", function(x) standardGeneric("enm.eval.train"))
+setGeneric("enm.eval.train<-", function(x, value) standardGeneric("enm.eval.train<-"))
 #' @export
-setMethod("enm.eval", "ENMdetails", function(x) x@eval)
+setMethod("enm.eval.train", "ENMdetails", function(x) x@eval.train)
 #' @export
-setMethod("enm.eval<-", "ENMdetails", function(x, value) {
-  x@eval <- value
+setMethod("enm.eval.train<-", "ENMdetails", function(x, value) {
+  x@eval.train <- value
   validObject(x)
   x
 })
 
-setGeneric("enm.kstats", function(x) standardGeneric("enm.kstats"))
-setGeneric("enm.kstats<-", function(x, value) standardGeneric("enm.kstats<-"))
+setGeneric("enm.eval.test", function(x) standardGeneric("enm.eval.test"))
+setGeneric("enm.eval.test<-", function(x, value) standardGeneric("enm.eval.test<-"))
 #' @export
-setMethod("enm.kstats", "ENMdetails", function(x) x@kstats)
+setMethod("enm.eval.test", "ENMdetails", function(x) x@eval.test)
 #' @export
-setMethod("enm.kstats<-", "ENMdetails", function(x, value) {
-  x@kstats <- value
+setMethod("enm.eval.test<-", "ENMdetails", function(x, value) {
+  x@eval.test <- value
   validObject(x)
   x
 })
