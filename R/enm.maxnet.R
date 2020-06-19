@@ -84,6 +84,10 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
   pct10.train.thr <- calc.10p.trainThresh(occs.train.pred)
   or.10p <- mean(occs.test.pred < pct10.train.thr)
   
+  # custom stats
+  # maxTSS.test <- max(e.test@TPR + e.test@TNR) - 1 
+  # maxKappa.test <- max(e.test@kappa)
+  
   ## testing CBI
   if(other.settings$cbi.cv == TRUE) {
     if(other.settings$cbi.eval == "envs") {
@@ -101,6 +105,7 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
   
   # gather all evaluation statistics for k
   out.df <- data.frame(auc.test = auc.test, auc.diff = auc.diff, or.mtp = or.mtp, or.10p = or.10p)
+                       # maxTSS.test = maxTSS.test, maxKappa.test = maxKappa.test)
   if(!is.null(cbi.test)) out.df <- cbind(out.df, cbi.test = cbi.test$Spearman.cor)
   
   return(out.df)
