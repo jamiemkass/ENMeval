@@ -124,9 +124,9 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
   return(out.df)
 }
 
-pred <- function(mod, envs, other.args, doClamp, pred.type) {
-  type.arg <- paste("outputformat", pred.type, sep = "=")
-  clamp.arg <- ifelse(doClamp == TRUE, "doclamp=true", "doclamp=false")
+pred <- function(mod, envs, other.settings) {
+  type.arg <- paste("outputformat", other.settings$pred.type, sep = "=")
+  clamp.arg <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
   pred <- dismo::predict(mod, envs, args = c(type.arg, clamp.arg), na.rm = TRUE)
   return(pred)
 }
