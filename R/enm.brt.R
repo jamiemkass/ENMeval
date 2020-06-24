@@ -18,14 +18,14 @@ msgs <- function(tune.args) {
   return(msg)
 }
 
-args <- function(occs.vals, bg.vals, tune.tbl.i, other.settings) {
+args <- function(occs.vals, bg.vals, tune.i, other.settings) {
   out <- list()
   d <- rbind(occs.vals, bg.vals)
   p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
   out$data <- cbind(p, d)
-  out$tree.complexity <- tune.tbl.i$tree.complexity
-  out$learning.rate <- tune.tbl.i$learning.rate
-  out$bag.fraction <- tune.tbl.i$bag.fraction
+  out$tree.complexity <- tune.i$tree.complexity
+  out$learning.rate <- tune.i$learning.rate
+  out$bag.fraction <- tune.i$bag.fraction
   out$gbm.x <- 2:ncol(out$data)
   out$gbm.y <- 1
   out$silent <- TRUE
