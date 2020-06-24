@@ -7,6 +7,7 @@ envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex',
 bg <- as.data.frame(dismo::randomPoints(envs, 10000))
 names(bg) <- names(occs)
 tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
+tune.args <- list(tails = c("low", "high", "both"))
 # tune.args <- list(fc = "L", rm = 1)
 partitions <- "randomkfold"
 kfolds <- 4

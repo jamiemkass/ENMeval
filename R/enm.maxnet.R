@@ -24,12 +24,12 @@ msgs <- function(tune.args) {
   }
 }
 
-args <- function(occs.vals, bg.vals, tune.tbl.i, other.settings) {
+args <- function(occs.vals, bg.vals, tune.i, other.settings) {
   out <- list()
   out$data <- rbind(occs.vals, bg.vals)
   out$p <- c(rep(1, nrow(occs.vals)), rep(0, nrow(bg.vals)))
-  out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
-  out$regmult <- tune.tbl.i$rm
+  out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.i$fc))
+  out$regmult <- tune.i$rm
   # some models fail to converge if this parameter is not set to TRUE
   # usually the case with sparse datasets
   out$addsamplestobackground <- TRUE

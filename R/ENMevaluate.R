@@ -240,8 +240,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # if user-defined partitions, assign grp variable before filtering out records with NA predictor variable values
   # for all other partitioning methods, grp assignments occur after filtering
   if(!is.null(user.grp)) {
-    d[d$pb == 1, "grp"] <- user.grp$occ.grp
-    d[d$pb == 0, "grp"] <- user.grp$bg.grp
+    d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occ.grp))
+    d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
   }
   
   ################################# #
