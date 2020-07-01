@@ -338,6 +338,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(!all(bg.grp.vals) == TRUE | partitions == "jackknife") {
     message("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).")
     cbi.cv <- FALSE
+    cbi.eval <- NULL
   }else{
     cbi.cv <- TRUE
   }
