@@ -7,7 +7,7 @@
 #' @param enm Object of class \link{ENMdetails}.
 #' @param partitions character of name of partitioning technique (see \code{?partitions})
 #' @param tune.tbl Data frame of tuning parameter combinations.
-#' @param other.settings list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval
+#' @param other.settings list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv
 #' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing
 #' @param parallelType character of either "doParallel" or "doSNOW" to conduct parallelization
 
@@ -15,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -23,35 +23,35 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   }
   cl <- parallel::makeCluster(numCores)
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
-  pb <- txtProgressBar(0, n, style = 3)
-  progress <- function(n) setTxtProgressBar(pb, n)  
+  if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
+  if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
   
   if(parallelType == "doParallel") {
     doParallel::registerDoParallel(cl)
     opts <- NULL
   } else if(parallelType == "doSNOW") {
     doSNOW::registerDoSNOW(cl)
-    opts <- list(progress=progress)  
+    if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
   }
   numCoresUsed <- foreach::getDoParWorkers()
-  message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
-  message(paste0("Running in parallel using ", parallelType, "..."))
+  if(quiet != TRUE) message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
+  if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps, quiet)
   }
-  close(pb)
+  if(quiet != TRUE) close(pb)
   parallel::stopCluster(cl)
   return(results)
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress, quiet) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
   # set up the console progress bar
-  pb <- txtProgressBar(0, n, style = 3)
+  if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
   
   for(i in 1:n) {
     # and (optionally) the shiny progress bar (updateProgress)
@@ -60,20 +60,20 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
         text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
         updateProgress(detail = text)
       }
-      setTxtProgressBar(pb, i)
+      if(quiet != TRUE) setTxtProgressBar(pb, i)
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet)
   }
-  close(pb)
+  if(quiet != TRUE) close(pb)
   return(results)
 }
 
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
@@ -142,7 +142,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
       mod.k <- tryCatch({
         do.call(enm@fun, mod.k.args)  
       }, error = function(cond) {
-        message(paste0("\n", cond, "\n"))
+        if(quiet != TRUE) message(paste0("\n", cond, "\n"))
         # Choose a return value in case of error
         return(NULL)
       })
@@ -152,13 +152,13 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {
-      message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", 
+      if(quiet != TRUE) message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", 
                      k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model."))
       next
     }
     
     eval.test <- enm@eval.test(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.test.vals, 
-                               bg.vals, mod.k, nk, envs, other.settings)
+                               bg.vals, mod.k, nk, other.settings)
     
     # put into list as one-row data frame for easy binding
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(eval.test)

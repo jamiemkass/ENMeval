@@ -14,7 +14,7 @@ msgs <- function(tune.args) {
   }
   # construct user message with version info
   msg <- paste0("boosted regression trees (BRTs) using the gbm.step() function from gbm package v", 
-               packageVersion('gbm'), " and dismo package v", packageVersion('dismo')) 
+                packageVersion('gbm'), " and dismo package v", packageVersion('dismo')) 
   return(msg)
 }
 
@@ -55,7 +55,7 @@ eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pr
   return(out.df)
 }
 
-eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.test.vals, bg.vals, mod.k, nk, envs, other.settings) {
+eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.test.vals, bg.vals, mod.k, nk, other.settings) {
   ## testing AUC
   # calculate auc on testing data: test occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, do perform the subtraction, it is essential that both stats are calculated over the same background
@@ -80,15 +80,9 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
   
   ## testing CBI
   if(other.settings$cbi.cv == TRUE) {
-    if(other.settings$cbi.eval == "envs") {
-      # use full model prediction over envs
-      mod.k.pred <- enm.brt@pred(mod.k, envs, other.settings)
-      cbi.test <- ecospat::ecospat.boyce(mod.k.pred, occs.test.xy, PEplot = FALSE)
-    }else{
-      # use full background to approximate full model prediction
-      mod.k.pred <- enm.brt@pred(mod.k, bg.vals, other.settings)
-      cbi.test <- ecospat::ecospat.boyce(mod.k.pred, occs.test.pred, PEplot = FALSE)
-    }
+    # use full background to approximate full model prediction
+    mod.k.pred <- enm.brt@pred(mod.k, bg.vals, other.settings)
+    cbi.test <- ecospat::ecospat.boyce(mod.k.pred, occs.test.pred, PEplot = FALSE)
   }else{
     cbi.test <- NULL
   }

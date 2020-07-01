@@ -43,7 +43,7 @@ cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
 
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
 
-\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv, cbi.eval}
+\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv}
 
 \item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing}
 
