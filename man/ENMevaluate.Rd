@@ -24,7 +24,6 @@ ENMevaluate(
   overlapStat = c("D", "I"),
   doClamp = TRUE,
   pred.type = "cloglog",
-  cbi.eval = "envs",
   abs.auc.diff = TRUE,
   user.test.grps = NULL,
   parallel = FALSE,
@@ -100,11 +99,6 @@ applicable for maxent.jar/maxnet models}
 
 \item{pred.type}{character (default: "cloglog") that specifies which prediction type should be used to
 generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models}
-
-\item{cbi.eval}{character (default: "envs") specifying which should be used to calculate the expected frequency
-of occurrences for the Continuous Boyce Index: "envs" for the predictions over the entire predictor variable rasters
-(which necessitates creating a new prediction raster over the full extent for every partition), and "bg" for the 
-predictions at all localities (training and testing occurrences and backgrounds)}
 
 \item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
 

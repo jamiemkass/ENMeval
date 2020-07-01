@@ -20,7 +20,6 @@ abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
 occs.ind = NULL
-cbi.eval = "envs"
 # quiet = FALSE
 # 
 # # user groups
@@ -55,7 +54,7 @@ cbi.eval = "envs"
 # # occs[18,] <- c(0,0)
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # ## run with SWD
-# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", cbi.eval="bg")
+# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # ## run with independent testing data
 # # e <- ENMevaluate(occs[1:50,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[51:nrow(occs),])
 # ## run with just AIC
@@ -70,4 +69,4 @@ cbi.eval = "envs"
 # # run parallel
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # # null models
-ns <- ENMnullSims(e, mod.settings = list(fc = "L", rm = 2), envs = envs, no.iter = 10)
+# ns <- ENMnullSims(e, mod.settings = list(fc = "L", rm = 2), no.iter = 10)

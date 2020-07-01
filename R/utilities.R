@@ -238,19 +238,19 @@ calc.10p.trainThresh <- function(pred.train) {
 #' `nicheOverlap` in the \pkg{dismo} package
 
 #' @export
-calc.niche.overlap <- function(preds, overlapStat){
+calc.niche.overlap <- function(preds, overlapStat, quiet=FALSE){
   n <- raster::nlayers(preds)
   ov <- matrix(nrow = n, ncol = n)
-  pb <- txtProgressBar(0, n - 1, style = 3)
+  if(quiet != TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
-    setTxtProgressBar(pb, i)
+    if(quiet != TRUE) setTxtProgressBar(pb, i)
     for(j in (i + 1):n){
       ov[j, i] <- dismo::nicheOverlap(preds[[i]], preds[[j]], stat = overlapStat)
     }
   }
   colnames(ov) <- names(preds)
   rownames(ov) <- names(preds)
-  close(pb)
+  if(quiet != TRUE) close(pb)
   return(ov)
 }
 

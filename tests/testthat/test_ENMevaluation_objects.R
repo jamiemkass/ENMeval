@@ -47,7 +47,7 @@ e.ls$user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.a
                       user.grp = user.grp, partitions = "user", overlap = TRUE)
 # no envs (SWD)
 e.ls$swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
-                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
+                         partitions = "randomkfold", kfolds = kfolds.n)
 # no bg
 e.ls$nobg <- ENMevaluate(occs, envs, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
@@ -150,7 +150,7 @@ test_that("Random k-fold has correct number of partitions", {
 })
 
 test_that("Jackknife has correct number of partitions", {
-  expect_true(length(unique(e.ls$jack@occ.grp)) == 10)
+  expect_true(length(unique(e.ls$jack@occ.grp)) == nrow(e.ls$jack@occs))
   expect_true(length(unique(e.ls$jack@bg.grp)) == 1)
 })
 
