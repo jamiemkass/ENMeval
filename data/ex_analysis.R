@@ -7,7 +7,7 @@ envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex',
 bg <- as.data.frame(dismo::randomPoints(envs, 10000))
 names(bg) <- names(occs)
 tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
-tune.args <- list(tails = c("low", "high", "both"))
+# tune.args <- list(tails = c("low", "high", "both"))
 # tune.args <- list(fc = "L", rm = 1)
 partitions <- "randomkfold"
 kfolds <- 4
@@ -69,5 +69,5 @@ cbi.eval = "envs"
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
 # # run parallel
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
-# # run with legacy parameters
-# # e <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = "maxnet", fc = c("L", "LQ"), RMvalues = 1:3, categoricals = "biome", method = "block", overlap = TRUE)
+# # null models
+ns <- ENMnullSims(e, mod.settings = list(fc = "L", rm = 2), envs = envs, no.iter = 10)
