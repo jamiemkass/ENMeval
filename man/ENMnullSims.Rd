@@ -8,9 +8,8 @@ ENMnullSims(
   e,
   mod.settings,
   no.iter,
-  envs = NULL,
   user.enm = NULL,
-  user.envs.partition = NULL,
+  user.bg.partition = NULL,
   userStats.signs = NULL,
   removeMxTemp = TRUE
 )
@@ -22,13 +21,10 @@ ENMnullSims(
 
 \item{no.iter}{numeric of number of null model iterations}
 
-\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data);
-necessary when evaluating using spatial cross-validation (see details)}
-
 \item{user.enm}{ENMdetails object specified by the user}
 
-\item{user.envs.partition}{numeric vector designating user-defined partition groups (folds) for \code{envs}; 
-necessary when evaluating using spatial cross-validation (see details)}
+\item{user.bg.partition}{numeric vector designating user-defined partition groups (folds) for \code{bg};
+this is necessary for user-defined partitions so that background points can be sampled as null occurrences}
 
 \item{userStats.signs}{named list of user-defined evaluation statistics attributed with
 either 1 or -1 to designate whether the expected difference between real and null models is 
@@ -36,6 +32,9 @@ positive or negative; this is used to calculate the p-value of the z-score}
 
 \item{removeMxTemp}{boolean (TRUE or FALSE) which if TRUE delete all temporary data generated
 when using maxent.jar for modeling}
+
+\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data);
+necessary when evaluating using spatial cross-validation (see details)}
 }
 \description{
 \code{ENMnullSims()} builds null ecological niche models iteratively for a single set of 

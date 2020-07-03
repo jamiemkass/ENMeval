@@ -452,13 +452,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   nparams <- sapply(mod.full.all, enm@nparams)
   
   # calculate AICc
-  if((enm@name == "maxnet" | enm@name == "maxent.jar") & !is.null(envs)) {
+  if((enm@name == "maxnet" | enm@name == "maxent.jar")) {
     pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
-    pred.all.raw <- raster::stack(lapply(mod.full.all, function(x) enm@pred(x, envs, aic.settings)))
-    occs.pred.raw <- raster::extract(pred.all.raw, occs[,1:2])
-    aic <- enm@aic(occs.pred.raw, nparams, pred.all.raw)
+    if(!is.null(envs)) {
+      pred.all.raw <- enm@pred(mod.full.all, envs, aic.settings)
+    }else{
+      pred.all.raw <- NULL
+    }
+    occs.pred.raw <- enm@pred(mod.full.all, occs[,-c(1,2)], aic.settings)
+    aic <- aic.maxent(occs.pred.raw, nparams, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
   

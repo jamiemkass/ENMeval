@@ -51,10 +51,6 @@ args <- function(occs.vals, bg.vals, tune.i, other.settings) {
   return(out)
 }
 
-aic <- function(occs, nparam, mod.full.pred.all) {
-  calc.aicc(occs, nparam, mod.full.pred.all)
-}
-
 eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
   clamp <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
@@ -133,7 +129,6 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.maxent.jar <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
-                             args = args, aic = aic, 
+enm.maxent.jar <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
                              eval.train = eval.train, eval.test = eval.test, 
                              pred = pred, nparams = nparams)
