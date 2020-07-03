@@ -37,10 +37,6 @@ args <- function(occs.vals, bg.vals, tune.i, other.settings) {
   return(out)
 }
 
-aic <- function(occs, nparams, mod.full.pred.all) {
-  calc.aicc(occs, nparams, mod.full.pred.all)
-}
-
 eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
   e <- dismo::evaluate(occs.vals, bg.vals, mod.full, clamp = other.settings$doClamp, type = other.settings$pred.type)
@@ -106,17 +102,26 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
 }
 
 pred <- function(mod, envs, other.settings) {
-  # function to generate a prediction raster when raster data is specified as envs,
+  # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "BasicRaster") == TRUE) {
     envs.n <- raster::nlayers(envs)
     envs.pts <- na.omit(raster::rasterToPoints(envs))
-    mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
-    p.vals <- cbind(envs.pts[,1:2], as.numeric(mxnet.p))
-    pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs))
+    mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
+                       clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
+    if(is.list(mxnet.p)) mxnet.p <- dplyr::bind_cols(mxnet.p) %>% as.data.frame()
+    p.vals <- cbind(envs.pts[,1:2], mxnet.p)
+    # if a list of models is input, use lapply
+    if(ncol(mxnet.p) > 1) {
+      pred <- lapply(1:ncol(mxnet.p), function(x) raster::rasterFromXYZ(p.vals[,c(1,2,x+2)], res=raster::res(envs), crs = crs(envs))) %>% raster::stack()
+    }else{
+      pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = crs(envs)) 
+    }
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
-    pred <- dismo::predict(mod, envs, type = other.settings$pred.type, clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
+    pred <- predict(mod, envs, type = other.settings$pred.type, 
+                    clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
+    if(is.list(pred)) pred <- dplyr::bind_cols(pred) %>% as.data.frame()
   }
   return(pred)
 }
@@ -126,7 +131,6 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.maxnet <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
-                         args = args, aic = aic, 
+enm.maxnet <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
                          eval.train = eval.train, eval.test = eval.test,
                          pred = pred, nparams = nparams)

@@ -20,8 +20,6 @@ args <- function(occs.vals, bg.vals, tune.tbl.i, other.settings) {
   return(out)
 }
 
-aic <- function(occs, nparam, mod.full.pred.all) NULL
-
 eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
   e <- dismo::evaluate(occs.vals, bg.vals, mod.full, tails = other.settings$other.args$tails)
@@ -93,7 +91,6 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.bioclim <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
-                          args = args, aic = aic, 
+enm.bioclim <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
                           eval.train = eval.train, eval.test = eval.test, 
                           pred = pred, nparams = nparams)

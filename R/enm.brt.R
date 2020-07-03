@@ -33,8 +33,6 @@ args <- function(occs.vals, bg.vals, tune.i, other.settings) {
   return(out)
 }
 
-aic <- function(occs, nparam, mod.full.pred.all) NULL
-
 eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
   e <- dismo::evaluate(occs.vals, bg.vals, mod.full, n.trees = length(mod.full$trees))
@@ -109,7 +107,6 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.brt <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, 
-                      args = args, aic = aic, 
+enm.brt <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
                       eval.train = eval.train, eval.test = eval.test,
                       pred = pred, nparams = nparams)

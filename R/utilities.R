@@ -32,21 +32,23 @@ NULL
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
 #' and Seifert (2011).
-#' @param occs data frame; longitude (x) and latitude (y) of occurrence 
-#' localities
+#' @param p.occs data frame of raw (maxent.jar) or exponential (maxnet) predictions for
+#' the occurrence localities based on one or more models
 #' @param nparam integer; number of model parameters (non-zero coefficients)
-#' @param preds Raster*; Maxent model predictions from \code{dismo::predict()}
-#' @return data frame with four columns:
+#' @param p Raster* of raw (maxent.jar) or exponential (maxnet) model predictions;
+#' if NULL, AICc will be calculated based on the background points, which already
+#' have predictions that sum to 1 and thus need no correction -- this assumes that
+#' the background points represent a good sample of the study extent 
+#' @return data frame with three columns:
 #' \code{AICc} is the Akaike Information Criterion corrected for small sample
 #' sizes calculated as:
 #' \deqn{ (2 * K - 2 * logLikelihood) + (2 * K) * (K+1) / (n - K - 1)}
 #' where \emph{K} is the number of parameters in the model (i.e., number of
-#' non-zero parameters in Maxent lambda file) and \emph{n} is the number of
+#' non-zero parameters) and \emph{n} is the number of
 #' occurrence localities.  The \emph{logLikelihood} is calculated as:
-#' \deqn{ sum(log(vals / total))}
-#' where \emph{vals} is a vector of Maxent raw values at occurrence localities
-#' and \emph{total} is the sum of Maxent raw values across the entire study
-#' area.
+#' \deqn{ sum(log(vals))}
+#' where \emph{vals} is a vector of Maxent raw/expontential values at occurrence localities
+#' and the sum of these values across the study extent is equal to 1.
 #' \code{delta.AICc} is the difference between the AICc of a given model and
 #' the AICc of the model with the lowest AICc.
 #' \code{w.AICc} is the Akaike weight (calculated as the relative likelihood of
@@ -60,13 +62,13 @@ NULL
 #' We use AICc (instead of AIC) regardless of sample size based on the 
 #' recommendation of Burnham and Anderson (1998, 2004).  The number of 
 #' parameters is determined by counting the number of non-zero parameters in 
-#' the \code{maxent} lambda file.  See Warren \emph{et al.} (2014) for 
-#' limitations of this approach, namely that the number of parameters is an 
+#' the \code{maxent} lambda file (\code{m@lambdas} for maxent.jar and \code{m$betas} for maxnet.  
+#' See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of parameters is an 
 #' estimate of the true degrees of freedom.  For Maxent ENMs, AICc is 
 #' calculated by standardizing the raw output such that all cells in the study 
-#' extent sum to 1.  The likelihood of the data for a given model is then 
-#' calculated by taking the product of the raw output values for all grid cells 
-#' that contain an occurrence locality (Warren and Seifert 2011).
+#' extent sum to 1. The likelihood of the data for a given model is then 
+#' calculated by taking the product of the raw output values (or the sum of their logs, as is implemented here)
+#' for all grid cells that contain an occurrence locality (Warren and Seifert 2011).
 #' @seealso \code{maxent} in the \pkg{dismo} package.
 #' @note Returns all \code{NA}s if the number of parameters is larger than the
 #' number of observations (occurrence localities).
@@ -95,30 +97,25 @@ NULL
 #' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
 
 #' @export
-calc.aicc <- function(occs.preds, nparams, preds) {
-  # only functional for Maxent models currently
-  out <- as.data.frame(matrix(nrow = length(nparams), ncol = 3, 
-                              dimnames = list(NULL, c("AICc", "delta.AICc", "w.AIC"))))
-  AIC.valid <- nparams < nrow(occs.preds)
-  if(raster::nlayers(preds) == 0) {
-    warning("Cannot calculate AICc without prediction rasters... returning NAs.", immediate. = TRUE)
-  }else{
-    probsum <- raster::cellStats(preds, sum)
-    # The log-likelihood was incorrectly calculated (see next line) in ENMeval v.0.1.0 when working with >1 model at once.
-    #   LL <- colSums(log(vals/probsum), na.rm=T)
-    # The corrected calculation (since v.0.1.1) is:
-    LL <- colSums(log(t(t(occs.preds)/probsum)), na.rm=T)
-    AICc <- (2*nparams - 2*LL) + (2*(nparams)*(nparams+1)/(nrow(occs.preds)-nparams-1))
-    AICc[AIC.valid==FALSE] <- NA
-    AICc[is.infinite(AICc)] <- NA
-    if(sum(is.na(AICc))==length(AICc)){
-      warning("AICc not valid... returning NAs.")
-    }else{
-      out$AICc <- AICc
-      out$delta.AICc <- (AICc - min(AICc, na.rm=TRUE))
-      out$w.AIC <- (exp(-0.5*out$delta.AICc))/(sum(exp(-0.5*out$delta.AICc), na.rm=TRUE))
-    }    
+aic.maxent <- function(p.occs, nparams, p = NULL) {
+  # differential behavior for summing if p is Raster* or data frame
+  if(!is.null(p)) {
+    p.sum <- raster::cellStats(p, sum)  
+    # if total does not sum to 1, standardize so that the sum is 1
+    for(i in 1:nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
   }
+  # if more parameters than data points, determine AIC to be invalid:
+  # this avoids considering overly complex models at all
+  n.occs <- nrow(p.occs)
+  AIC.valid <- nparams < n.occs
+  # calculate log likelihood
+  LL <- colSums(log(p.occs), na.rm = TRUE)
+  AICc <- (2 * nparams - 2 * LL) + (2 * (nparams) * (nparams + 1) / (n.occs - nparams - 1))
+  # if determined invalid or if infinite, make AICc NA
+  AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
+  # make output table
+  out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE))
+  out$w.AIC <- exp(-0.5 * out$delta.AICc) / sum(exp(-0.5 * out$delta.AICc), na.rm=TRUE)
   return(out)
 }
 
@@ -223,7 +220,7 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @aliases calc.niche.overlap
 #' @usage 
 #' calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
-#' @param preds A rasterStack of at least 2 Maxent predictive raster layers.
+#' @param envs A rasterStack of at least 2 Maxent predictive raster layers.
 #' @param overlapStat The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
 #' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
@@ -238,18 +235,18 @@ calc.10p.trainThresh <- function(pred.train) {
 #' `nicheOverlap` in the \pkg{dismo} package
 
 #' @export
-calc.niche.overlap <- function(preds, overlapStat, quiet=FALSE){
-  n <- raster::nlayers(preds)
+calc.niche.overlap <- function(envs, overlapStat, quiet=FALSE){
+  n <- raster::nlayers(envs)
   ov <- matrix(nrow = n, ncol = n)
   if(quiet != TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
     if(quiet != TRUE) setTxtProgressBar(pb, i)
     for(j in (i + 1):n){
-      ov[j, i] <- dismo::nicheOverlap(preds[[i]], preds[[j]], stat = overlapStat)
+      ov[j, i] <- dismo::nicheOverlap(envs[[i]], envs[[j]], stat = overlapStat)
     }
   }
-  colnames(ov) <- names(preds)
-  rownames(ov) <- names(preds)
+  colnames(ov) <- names(envs)
+  rownames(ov) <- names(envs)
   if(quiet != TRUE) close(pb)
   return(ov)
 }

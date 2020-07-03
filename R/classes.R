@@ -129,7 +129,6 @@ setMethod("show",
 #' @slot pkgs vector of package names needed to run the model function
 #' @slot msgs function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}
 #' @slot args function specifying the parameters needed to run the model function
-#' @slot aic function specifying how AIC should be calculated (if at all)
 #' @slot eval.train function specifying how to calculate training evaluation statistics
 #' @slot eval.test function specifying how to calculate testing evaluation statistics
 #' @slot pred function specifying how to calculate a model prediction for a Raster* or a data frame
@@ -143,15 +142,14 @@ ENMdetails <- setClass("ENMdetails",
                                  pkgs = 'character',
                                  msgs = 'function',
                                  args = 'function',
-                                 aic = 'function',
                                  eval.train = 'function',
                                  eval.test = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval.train, eval.test, pred, nparams) {
+ENMdetails <- function(name, fun, pkgs, msgs, args, eval.train, eval.test, pred, nparams) {
   new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      aic = aic, eval.train = eval.train, eval.test = eval.test, pred = pred, nparams = nparams)
+      eval.train = eval.train, eval.test = eval.test, pred = pred, nparams = nparams)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -205,17 +203,6 @@ setMethod("enm.args", "ENMdetails", function(x) x@args)
 #' @export
 setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x@args <- value
-  validObject(x)
-  x
-})
-
-setGeneric("enm.aic", function(x) standardGeneric("enm.aic"))
-setGeneric("enm.aic<-", function(x, value) standardGeneric("enm.aic<-"))
-#' @export
-setMethod("enm.aic", "ENMdetails", function(x) x@aic)
-#' @export
-setMethod("enm.aic<-", "ENMdetails", function(x, value) {
-  x@aic <- value
   validObject(x)
   x
 })

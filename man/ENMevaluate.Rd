@@ -30,6 +30,7 @@ ENMevaluate(
   numCores = NULL,
   parallelType = "doSNOW",
   updateProgress = FALSE,
+  quiet = FALSE,
   occ = NULL,
   env = NULL,
   bg.coords = NULL,
