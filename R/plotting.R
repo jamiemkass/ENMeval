@@ -5,10 +5,11 @@
 #' @param pts.type character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
 #' @export
 
-plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs") {
+enmeval.plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs") {
   if(!is.null(e)) {
     pts.plot <- switch(pts.type, occs = cbind(e@occs, grp = e@occ.grp),
                   bg = cbind(e@bg, grp = e@bg.grp))  
+    names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
       # make sure pts is a data frame with the right column names
@@ -53,7 +54,8 @@ plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "oc
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
+enmeval.plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
+  names(e@occs)[1:2] <- c("longitude","latitude")
   pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occ.grp),
                 bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
   pts.x <- raster::extract(envs, pts[,c("longitude","latitude")])
@@ -75,7 +77,7 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
     rs.mss <- raster::stack(ras.mss)
     rs.mss.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
       tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = "mess.value")
-    rs.mss.df$ras <- unique(gsub("mess", "grp", rs.mss.df$ras))
+    rs.mss.df$ras <- gsub("mess", "grp", rs.mss.df$ras)
     ggplot2::ggplot() + ggplot2::geom_raster(data = rs.mss.df, ggplot2::aes(x = x, y = y, fill = mess.value)) +
       ggplot2::scale_fill_viridis_c(na.value = "white") +
       ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = grp)) +
@@ -107,7 +109,7 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
 #' mean. Currently, this function only can handle two tuning parameters at a time.
 #' @export
 
-plot.eval <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
+enmeval.plot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
@@ -157,7 +159,7 @@ plot.eval <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
 #' @param plot.type either "violin" or "histogram"
 #' @return A plot of evaluation statistics for null ENM simulations and display positions of quantiles and real value.
 #' @export
-plot.nullENMs <- function(e.null, stats, plot.type) {
+enmeval.plot.nulls <- function(e.null, stats, plot.type) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
