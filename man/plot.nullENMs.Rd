@@ -4,7 +4,7 @@
 \alias{plot.nullENMs}
 \title{ENMnullSims statistics plot}
 \usage{
-plot.nullENMs(e.null, stats, plot.type)
+\method{plot}{nullENMs}(e.null, stats, plot.type)
 }
 \arguments{
 \item{e.null}{ENMnull object}

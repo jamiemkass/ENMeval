@@ -60,7 +60,8 @@
 #' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
-                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, kfolds = NA, aggregation.factor = c(2, 2), 
+                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, 
+                        kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", 
                         abs.auc.diff = TRUE, user.test.grps = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
@@ -457,11 +458,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
     if(!is.null(envs)) {
-      pred.all.raw <- enm@pred(mod.full.all, envs, aic.settings)
+      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@pred, envs, aic.settings))
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- enm@pred(mod.full.all, occs[,-c(1,2)], aic.settings)
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@pred, occs[,-c(1,2)], aic.settings))
     aic <- aic.maxent(occs.pred.raw, nparams, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }

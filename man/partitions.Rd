@@ -9,7 +9,7 @@
 \alias{get.randomkfold}
 \title{Methods to partition data for evaluation}
 \usage{
-get.block(occs, bg)
+get.block(occs, bg, orientation = "lat_lon")
 
 get.checkerboard1(occs, envs, bg, aggregation.factor)
 
@@ -22,13 +22,15 @@ get.randomkfold(occs, bg, kfolds)
 \arguments{
 \item{occs}{Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.}
 
+\item{orientation}{Character describing the order of spatial partitioning for the \code{get.block} method. Options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat".}
+
+\item{envs}{RasterStack of environmental predictor variables.}
+
 \item{aggregation.factor}{A vector or list of 1 or 2 numbers giving the scale for aggregation used for the \code{get.checkerboard1} and \code{get.checkerboard2} methods.  If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.}
 
 \item{kfolds}{Number of random \emph{k}-folds for \code{get.randomkfold} method.}
 
 \item{bg.coords}{Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.}
-
-\item{env}{RasterStack of environmental predictor variables.}
 }
 \value{
 A named list of two items:
@@ -60,7 +62,7 @@ require(raster)
 set.seed(1)
 
 ### Create environmental extent (raster)
-env <- raster(matrix(nrow=25, ncol=25))
+envs <- raster(matrix(nrow=25, ncol=25))
 
 ### Create presence localities
 set.seed(1)
@@ -76,45 +78,45 @@ ybg <- runif(nbg, 0, 1)
 bg.pts <- as.data.frame(cbind(xbg, ybg))
 
 ### Show points
-plot(env)
+plot(envs)
 points(bg.pts)
 points(occ.pts, pch=21, bg=2)
 
 ### Block partitioning method
 blk.pts <- get.block(occ.pts, bg.pts)
-plot(env)
+plot(envs)
 points(occ.pts, pch=23, bg=blk.pts$occ.grp)
-plot(env)
+plot(envs)
 points(bg.pts, pch=21, bg=blk.pts$bg.grp)
 
 ### Checkerboard1 partitioning method
-chk1.pts <- get.checkerboard1(occ.pts, env, bg.pts, 4)
-plot(env)
+chk1.pts <- get.checkerboard1(occ.pts, envs, bg.pts, 4)
+plot(envs)
 points(occ.pts, pch=23, bg=chk1.pts$occ.grp)
-plot(env)
+plot(envs)
 points(bg.pts, pch=21, bg=chk1.pts$bg.grp)
 
 ### Checkerboard2 partitioning method
-chk2.pts <- get.checkerboard2(occ.pts, env, bg.pts, c(2,2))
-plot(env)
+chk2.pts <- get.checkerboard2(occ.pts, envs, bg.pts, c(2,2))
+plot(envs)
 points(occ.pts, pch=23, bg=chk2.pts$occ.grp)
-plot(env)
+plot(envs)
 points(bg.pts, pch=21, bg=chk2.pts$bg.grp)
 
 ### Random k-fold partitions
 # Note that k random does not partition the background
 krandom.pts <- get.randomkfold(occ.pts, bg.pts, 4)
-plot(env)
+plot(envs)
 points(occ.pts, pch=23, bg=krandom.pts$occ.grp)
-plot(env)
+plot(envs)
 points(bg.pts, pch=21, bg=krandom.pts$bg.grp)
 
 ### k-1 jackknife partitions
 # Note background is not partitioned
 jack.pts <- get.jackknife(occ.pts, bg.pts)
-plot(env)
+plot(envs)
 points(occ.pts, pch=23, bg=rainbow(length(jack.pts$occ.grp)))
-plot(env)
+plot(envs)
 points(bg.pts, pch=21, bg=jack.pts$bg.grp)
 
 }

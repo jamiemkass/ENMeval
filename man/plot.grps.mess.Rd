@@ -4,7 +4,7 @@
 \alias{plot.grps.mess}
 \title{MESS plots for partition groups}
 \usage{
-plot.grps.mess(e, envs, pts.type = "occs", plot.type = "density")
+\method{plot}{grps.mess}(e, envs, pts.type = "occs", plot.type = "density")
 }
 \arguments{
 \item{e}{ENMevaluation object}

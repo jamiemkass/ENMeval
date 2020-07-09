@@ -109,19 +109,12 @@ pred <- function(mod, envs, other.settings) {
     envs.pts <- na.omit(raster::rasterToPoints(envs))
     mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
                        clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
-    if(is.list(mxnet.p)) mxnet.p <- dplyr::bind_cols(mxnet.p) %>% as.data.frame()
     p.vals <- cbind(envs.pts[,1:2], mxnet.p)
-    # if a list of models is input, use lapply
-    if(ncol(mxnet.p) > 1) {
-      pred <- lapply(1:ncol(mxnet.p), function(x) raster::rasterFromXYZ(p.vals[,c(1,2,x+2)], res=raster::res(envs), crs = crs(envs))) %>% raster::stack()
-    }else{
-      pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = crs(envs)) 
-    }
+    pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = crs(envs)) 
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
     pred <- predict(mod, envs, type = other.settings$pred.type, 
                     clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
-    if(is.list(pred)) pred <- dplyr::bind_cols(pred) %>% as.data.frame()
   }
   return(pred)
 }
