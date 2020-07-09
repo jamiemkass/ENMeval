@@ -19,6 +19,7 @@ ENMevaluate(
   occs.ind = NULL,
   kfolds = NA,
   aggregation.factor = c(2, 2),
+  orientation = "lat_lon",
   n.bg = 10000,
   overlap = FALSE,
   overlapStat = c("D", "I"),
