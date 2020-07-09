@@ -16,7 +16,8 @@
 #' 
 #' @param occs Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.
 #' @param bg.coords Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.
-#' @param env RasterStack of environmental predictor variables.
+#' @param envs RasterStack of environmental predictor variables.
+#' @param orientation Character describing the order of spatial partitioning for the \code{get.block} method. Options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat".
 #' @param aggregation.factor A vector or list of 1 or 2 numbers giving the scale for aggregation used for the \code{get.checkerboard1} and \code{get.checkerboard2} methods.  If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.
 #' @param kfolds Number of random \emph{k}-folds for \code{get.randomkfold} method.
 # #' @param occ.grp Vector of user-defined bins for occurrence localities for \code{get.user} method.
@@ -46,7 +47,7 @@
 #' set.seed(1)
 #' 
 #' ### Create environmental extent (raster)
-#' env <- raster(matrix(nrow=25, ncol=25))
+#' envs <- raster(matrix(nrow=25, ncol=25))
 #' 
 #' ### Create presence localities
 #' set.seed(1)
@@ -62,45 +63,45 @@
 #' bg.pts <- as.data.frame(cbind(xbg, ybg))
 #' 
 #' ### Show points
-#' plot(env)
+#' plot(envs)
 #' points(bg.pts)
 #' points(occ.pts, pch=21, bg=2)
 #' 
 #' ### Block partitioning method
 #' blk.pts <- get.block(occ.pts, bg.pts)
-#' plot(env)
+#' plot(envs)
 #' points(occ.pts, pch=23, bg=blk.pts$occ.grp)
-#' plot(env)
+#' plot(envs)
 #' points(bg.pts, pch=21, bg=blk.pts$bg.grp)
 #' 
 #' ### Checkerboard1 partitioning method
-#' chk1.pts <- get.checkerboard1(occ.pts, env, bg.pts, 4)
-#' plot(env)
+#' chk1.pts <- get.checkerboard1(occ.pts, envs, bg.pts, 4)
+#' plot(envs)
 #' points(occ.pts, pch=23, bg=chk1.pts$occ.grp)
-#' plot(env)
+#' plot(envs)
 #' points(bg.pts, pch=21, bg=chk1.pts$bg.grp)
 #' 
 #' ### Checkerboard2 partitioning method
-#' chk2.pts <- get.checkerboard2(occ.pts, env, bg.pts, c(2,2))
-#' plot(env)
+#' chk2.pts <- get.checkerboard2(occ.pts, envs, bg.pts, c(2,2))
+#' plot(envs)
 #' points(occ.pts, pch=23, bg=chk2.pts$occ.grp)
-#' plot(env)
+#' plot(envs)
 #' points(bg.pts, pch=21, bg=chk2.pts$bg.grp)
 #' 
 #' ### Random k-fold partitions
 #' # Note that k random does not partition the background
 #' krandom.pts <- get.randomkfold(occ.pts, bg.pts, 4)
-#' plot(env)
+#' plot(envs)
 #' points(occ.pts, pch=23, bg=krandom.pts$occ.grp)
-#' plot(env)
+#' plot(envs)
 #' points(bg.pts, pch=21, bg=krandom.pts$bg.grp)
 #' 
 #' ### k-1 jackknife partitions
 #' # Note background is not partitioned
 #' jack.pts <- get.jackknife(occ.pts, bg.pts)
-#' plot(env)
+#' plot(envs)
 #' points(occ.pts, pch=23, bg=rainbow(length(jack.pts$occ.grp)))
-#' plot(env)
+#' plot(envs)
 #' points(bg.pts, pch=21, bg=jack.pts$bg.grp)
 #' 
 # ## User-defined partitions
@@ -108,9 +109,9 @@
 # #' occ.grp <- c(rep(1, 10), rep(2, 5), rep(3, 10))
 # #' bg.grp <- c(rep(1, 200), rep(2, 100), rep(3, 200))
 # #' user.pts <- get.user(occ.grp, bg.grp)
-# #' plot(env)
+# #' plot(envs)
 # #' points(occ.pts, pch=23, bg=user.pts$occ.grp)
-# #' plot(env)
+# #' plot(envs)
 # #' points(bg.pts, pch=21, bg=user.pts$bg.grp)
 
 #' @name partitions
@@ -120,7 +121,7 @@ NULL
 #' 
 #' @export
 
-get.block <- function(occs, bg){
+get.block <- function(occs, bg, orientation = "lat_lon"){
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
@@ -132,21 +133,52 @@ get.block <- function(occs, bg){
   n2 <- floor(nrow(occs)/2)
   n3 <- ceiling(n1/2)
   n4 <- ceiling(n2/2)
-  grpA <- occs[order(occs[, 2]),][1:n1,]
-  grpB <- occs[rev(order(occs[, 2])),][1:n2,]
-  grp1 <- grpA[order(grpA[, 1]),][1:(n3),]
-  grp2 <- grpA[!rownames(grpA)%in%rownames(grp1),]
-  grp3 <- grpB[order(grpB[, 1]),][1:(n4),]
-  grp4 <- grpB[!rownames(grpB)%in%rownames(grp3),]
+  
+  grpAB.d <- switch(orientation, lat_lon = 2, lon_lat = 1, lon_lon = 1, lat_lat = 2)
+  grpA <- occs[order(occs[, grpAB.d]),][1:n1,]
+  grpB <- occs[rev(order(occs[, grpAB.d])),][1:n2,]  
+  
+  grpNum.d <- switch(orientation, lat_lon = 1, lon_lat = 2, lon_lon = 1, lat_lat = 2)
+  grp1 <- grpA[order(grpA[, grpNum.d]),][1:(n3),]
+  grp2 <- grpA[!rownames(grpA ) %in% rownames(grp1),]
+  grp3 <- grpB[order(grpB[, grpNum.d]),][1:(n4),]
+  grp4 <- grpB[!rownames(grpB) %in% rownames(grp3),]
   
   # SPLIT BACKGROUND POINTS BASED ON SPATIAL GROUPS
-  bvert <- mean(c(max(grp1[, 1]), min(grp2[, 1])))
-  tvert <- mean(c(max(grp3[, 1]), min(grp4[, 1])))
-  horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))
-  bggrp1 <- bg[bg[, 2] <= horz & bg[, 1] < bvert,]
-  bggrp2 <- bg[bg[, 2] <= horz & bg[, 1] >= bvert,]
-  bggrp3 <- bg[bg[, 2] > horz & bg[, 1] <= tvert,]
-  bggrp4 <- bg[bg[, 2] > horz & bg[, 1] > tvert,]
+  
+  if(orientation == "lat_lon") {
+    bvert <- mean(c(max(grp1[, 1]), min(grp2[, 1])))
+    tvert <- mean(c(max(grp3[, 1]), min(grp4[, 1])))
+    horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))  
+    bggrp1 <- bg[bg[, 2] <= horz & bg[, 1] < bvert,]
+    bggrp2 <- bg[bg[, 2] <= horz & bg[, 1] >= bvert,]
+    bggrp3 <- bg[bg[, 2] > horz & bg[, 1] <= tvert,]
+    bggrp4 <- bg[bg[, 2] > horz & bg[, 1] > tvert,]
+  }else if(orientation == "lon_lat") {
+    bhorz <- mean(c(max(grp1[, 2]), min(grp2[, 2])))
+    thorz <- mean(c(max(grp3[, 2]), min(grp4[, 2])))
+    vert <- mean(c(max(grpA[, 1]), min(grpB[, 1])))  
+    bggrp1 <- bg[bg[, 1] <= vert & bg[, 2] < bhorz,]
+    bggrp2 <- bg[bg[, 1] <= vert & bg[, 2] >= bhorz,]
+    bggrp3 <- bg[bg[, 1] > vert & bg[, 2] <= thorz,]
+    bggrp4 <- bg[bg[, 1] > vert & bg[, 2] > thorz,]
+  }else if(orientation == "lon_lon") {
+    bvert <- mean(c(max(grp1[, 1]), min(grp2[, 1])))
+    tvert <- mean(c(max(grp3[, 1]), min(grp4[, 1])))
+    vert <- mean(c(max(grpA[, 1]), min(grpB[, 1])))
+    bggrp1 <- bg[bg[, 1] <= bvert,]
+    bggrp2 <- bg[bg[, 1] > bvert & bg[, 1] <= vert,]
+    bggrp3 <- bg[bg[, 1] >= vert & bg[, 1] < tvert,]
+    bggrp4 <- bg[bg[, 1] >= tvert,]
+  }else if(orientation == "lat_lat"){
+    bhorz <- mean(c(max(grp1[, 2]), min(grp2[, 2])))
+    thorz <- mean(c(max(grp3[, 2]), min(grp4[, 2])))
+    horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))
+    bggrp1 <- bg[bg[, 2] <= bhorz,]
+    bggrp2 <- bg[bg[, 2] > bhorz & bg[, 2] <= horz,]
+    bggrp3 <- bg[bg[, 2] >= horz & bg[, 2] < thorz,]
+    bggrp4 <- bg[bg[, 2] >= thorz,]
+  }
   
   r <- data.frame()
   if (nrow(grp1) > 0) grp1$grp <- 1; r <- rbind(r, grp1)
