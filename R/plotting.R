@@ -1,13 +1,17 @@
 #' @title Partition group plots
-#' @description Plot partition groups over an environmental predictor raster
+#' @description Plot occurrence partition groups over an environmental predictor raster.
 #' @param e ENMevaluation object
 #' @param envs Raster of an environmental predictor variable used to build the models in "e"
+#' @param pts Matrix or data frame of coordinates for occurrence or background data
+#' @param pts.grp Numeric vector of partition groups corresponding to data in "pts"
 #' @param pts.type character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
+#' @details This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
+#' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-enmeval.plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs") {
+enmeval.plot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
-    pts.plot <- switch(pts.type, occs = cbind(e@occs, grp = e@occ.grp),
+    pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occ.grp),
                   bg = cbind(e@bg, grp = e@bg.grp))  
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
@@ -15,23 +19,26 @@ enmeval.plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.ty
       # make sure pts is a data frame with the right column names
       pts <- as.data.frame(pts)
       names(pts) <- c("longitude", "latitude")
-      pts.plot <- cbind(pts, grp = factor(pts.grp))
+      pts.plot <- cbind(pts, partition = factor(pts.grp))
     }else{
-      stop("If inputting point data and not an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
+      stop("If inputting point data instead of an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
     }
   }
   
-  if(length(unique(pts.plot$grp)) > 10) {
+  grp.n <- length(unique(pts.plot$grp))
+  if(grp.n > 9) {
     theme.custom <- ggplot2::guides(color = FALSE)
+    pt.cols <- rainbow(grp.n)
   }else{
     theme.custom <- NULL
+    pt.cols <- RColorBrewer::brewer.pal(9, "Set1")
   }
   
   envs.df <- raster::as.data.frame(envs, xy = TRUE)
   names(envs.df)[3] <- "value"
   ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
-    # ggplot2::scale_color_brewer(palette = brewer.pal) +
+    ggplot2::scale_color_manual(values = pt.cols) +
     ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
     ggplot2::coord_equal() + theme.custom
 }
@@ -99,14 +106,17 @@ enmeval.plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "dens
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
 #' @param e ENMevaluation object
-#' @param stats vector of names of statistics from results table to be plotted; if more than
+#' @param stats Character vector of names of statistics from results table to be plotted; if more than
 #' one statistic is specified, the plot will be faceted
-#' @param x character of variable to be plotted on x-axis
-#' @param col character of variable used to assign symbology colors 
-#' @return A plot of evaluation statistics, with x representing a tuning parameter range, y
-#' representing the average of a statistic over all partitions, and colors representing another
-#' tuning parameter's values. Error bars represent the standard deviation of a statistic around the 
-#' mean. Currently, this function only can handle two tuning parameters at a time.
+#' @param x Character of variable to be plotted on x-axis
+#' @param col Character of variable used to assign symbology colors 
+#' @param dodge (Optional) numeric value specifying the dodge width for points and lines (this improves visibility when there is high overlap) 
+#' @param error.bars (Optional) boolean specifying whether or not to plot error bars (defaults to TRUE)
+#' @details In this plot, the x-axis represents a tuning parameter range, while the y-axis represents the average of a statistic over all partitions.
+#' Different colors represent the categories or values of another tuning parameter. 
+#' Error bars represent the standard deviation of a statistic around the mean. 
+#' Currently, this function can only plot two tuning parameters at a time.
+#' @return A ggplot of evaluation statistics. 
 #' @export
 
 enmeval.plot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
@@ -154,10 +164,15 @@ enmeval.plot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE
 #' @title ENMnullSims statistics plot
 #' @description Plot histogram of evaluation statistics for null ENM simulations
 #' @param e.null ENMnull object
-#' @param stats vector of names of statistics from results table to be plotted; if more than
+#' @param stats Character vector of statistics from results table to be plotted; if more than
 #' one statistic is specified, the histogram plot will be faceted
-#' @param plot.type either "violin" or "histogram"
-#' @return A plot of evaluation statistics for null ENM simulations and display positions of quantiles and real value.
+#' @param plot.type Character specifying the plot type: either "violin" or "histogram"
+#' @details There are two variations for this plot, but both show null quantiles (0.01, 0.05, 0.5, 0.95, 0.99). 
+#' For violin plots, the null distribution is displayed as a vertical shape (i.e., the violin) with horizontal lines showing 
+#' the quantiles and the real value is plotted as a red point along the vertical axis. 
+#' For histogram plots, the null distribution is displayed as a histogram with vertical lines showing the quantiles 
+#' and the real value as a vertical red line on the distribution.
+#' @return A ggplot of null model statistics. 
 #' @export
 enmeval.plot.nulls <- function(e.null, stats, plot.type) {
   exp <- paste(paste0("*", stats), collapse = "|")

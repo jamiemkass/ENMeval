@@ -1,8 +1,14 @@
-# function to build a rangeModelMetadata object from the ENMevaluate() results
+#' @title Build metadata object from ENMeval results
+
+#' @description Builds a \code{rangeModelMetadata} object from the output of \code{ENMevaluate}.
+#' See Merow et al. (2019) for more details on the nature of the metadata and the \code{rangeModelMetadata} package.
+#' To improve reproducibility of the study, this metadata object can be used as supplemental information for a manuscript, shared with collaborators, etc.
+#' @param e ENMevaluation object
+#' @param envs RasterStack of environmental predictor variables used in analysis
 
 buildRMM <- function(e, envs) {
   rmm <- rangeModelMetadata::rmmTemplate()
-  rmm$code$software$packages <- "ENMeval 1.0.0"
+  rmm$code$software$packages <- "ENMeval 2.0.0"
   
   # occurrence/background metadata ####
   rmm$data$occurrence$taxon <- e@taxon.name

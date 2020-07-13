@@ -270,7 +270,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   grps <- switch(partitions, 
                  jackknife = get.jackknife(d.occs, d.bg),
                  randomkfold = get.randomkfold(d.occs, d.bg, kfolds),
-                 block = get.block(d.occs, d.bg),
+                 block = get.block(d.occs, d.bg, orientation),
                  checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = NULL,
