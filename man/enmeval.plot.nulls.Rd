@@ -9,14 +9,21 @@ enmeval.plot.nulls(e.null, stats, plot.type)
 \arguments{
 \item{e.null}{ENMnull object}
 
-\item{stats}{vector of names of statistics from results table to be plotted; if more than
+\item{stats}{Character vector of statistics from results table to be plotted; if more than
 one statistic is specified, the histogram plot will be faceted}
 
-\item{plot.type}{either "violin" or "histogram"}
+\item{plot.type}{Character specifying the plot type: either "violin" or "histogram"}
 }
 \value{
-A plot of evaluation statistics for null ENM simulations and display positions of quantiles and real value.
+A ggplot of null model statistics.
 }
 \description{
 Plot histogram of evaluation statistics for null ENM simulations
+}
+\details{
+There are two variations for this plot, but both show null quantiles (0.01, 0.05, 0.5, 0.95, 0.99). 
+For violin plots, the null distribution is displayed as a vertical shape (i.e., the violin) with horizontal lines showing 
+the quantiles and the real value is plotted as a red point along the vertical axis. 
+For histogram plots, the null distribution is displayed as a histogram with vertical lines showing the quantiles 
+and the real value as a vertical red line on the distribution.
 }

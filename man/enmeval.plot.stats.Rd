@@ -9,19 +9,26 @@ enmeval.plot.stats(e, stats, x, col, dodge = NULL, error.bars = TRUE)
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{stats}{vector of names of statistics from results table to be plotted; if more than
+\item{stats}{Character vector of names of statistics from results table to be plotted; if more than
 one statistic is specified, the plot will be faceted}
 
-\item{x}{character of variable to be plotted on x-axis}
+\item{x}{Character of variable to be plotted on x-axis}
 
-\item{col}{character of variable used to assign symbology colors}
+\item{col}{Character of variable used to assign symbology colors}
+
+\item{dodge}{(Optional) numeric value specifying the dodge width for points and lines (this improves visibility when there is high overlap)}
+
+\item{error.bars}{(Optional) boolean specifying whether or not to plot error bars (defaults to TRUE)}
 }
 \value{
-A plot of evaluation statistics, with x representing a tuning parameter range, y
-representing the average of a statistic over all partitions, and colors representing another
-tuning parameter's values. Error bars represent the standard deviation of a statistic around the 
-mean. Currently, this function only can handle two tuning parameters at a time.
+A ggplot of evaluation statistics.
 }
 \description{
 Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
+}
+\details{
+In this plot, the x-axis represents a tuning parameter range, while the y-axis represents the average of a statistic over all partitions.
+Different colors represent the categories or values of another tuning parameter. 
+Error bars represent the standard deviation of a statistic around the mean. 
+Currently, this function can only plot two tuning parameters at a time.
 }
