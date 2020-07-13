@@ -43,8 +43,7 @@ A named list of two items:
 \description{
 \code{ENMeval} provides several ways to partition occurrence and background localities into bins for training and testing (or, evaluation and calibration). 
 Users should carefully consider the objectives of their study and the influence of spatial bias when deciding on a method of data partitioning.
-}
-\details{
+
 These functions are used internally to partition data during a call of \code{\link{ENMevaluate}} but can also be used independently to generate data partitions. 
 For user-specified partitions, users can simply define groups of occurrence records and background points directly with \code{ENMevaluate}.
 
@@ -63,13 +62,12 @@ In contrast to the \code{get.block} method, both the \code{get.checkerboard1} an
 The two \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
 
 The \code{get.jackknife} method is a special case of \emph{k}-fold cross validation where the number of bins (\emph{k}) is equal to the number of occurrence localities (\emph{n}) in the dataset. 
-It is suggested for datasets of relatively small sample size (generally < 25 localities) (Pearson \emph{et al.} 2007; Shcheglovitova and Anderson 2013).
+It is suggested for occurrence datasets of relatively small sample size (generally < 25 localities) (Pearson \emph{et al.} 2007; Shcheglovitova and Anderson 2013).
 
 The \code{get.randomkfold} method partitions occurrence localities randomly into a user-specified number of (\emph{k}) bins. 
-This is equivalent to the method of \emph{k}-fold cross valiation currently provided by Maxent. 
+This is equivalent to the method of \emph{k}-fold cross validation currently provided by Maxent. 
 
-Users can also define evaluation bins \emph{a priori} directly in the call to `ENMevaluate`. 
-With this method, occurrence and background localities, as well as evaluation bin designation for each locality, are supplied by the user.
+Users can also define custom partitions for occurrence and background data in the call to `ENMevaluate` with the "user.grp" parameter.
 }
 \note{
 The \code{checkerboard1} and \code{checkerboard2} methods are designed to partition occurrence localities into two and four evaluation bins, respectively. 
@@ -143,7 +141,7 @@ plot(envs)
 points(bg, pch=21, bg=chk2.ag4_6$bg.grp)
 
 ### Random partitions with 4 folds
-# Note that \code{get.randomkkfold} does not partition the background
+# Note that get.randomkkfold does not partition the background
 krandom <- get.randomkfold(occs, bg, 4)
 plot(envs)
 points(occs, pch=23, bg=krandom$occ.grp)
@@ -151,7 +149,7 @@ plot(envs)
 points(bg, pch=21, bg=krandom$bg.grp)
 
 ### k-1 jackknife partitions
-# Note that \code{get.jackknife} does not partition the background
+# Note that get.jackknife does not partition the background
 jack <- get.jackknife(occs, bg)
 plot(envs)
 points(occs, pch=23, bg=rainbow(length(jack$occ.grp)))
@@ -160,11 +158,10 @@ points(bg, pch=21, bg=jack$bg.grp)
 
 }
 \references{
-Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. 2011. dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
-
-Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117.
-
-Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17.
+Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011). dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
+Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117.
+Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}: 629-643.
+Shcheglovitova, M. and Anderson, R. P. (2013). Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17.
 }
 \author{
 Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jkass@gc.cuny.edu>

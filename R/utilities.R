@@ -263,8 +263,9 @@ lookup.enm <- function(mod.name) {
 }
 
 # Modified version of dismo::mess
-# This version ignores raster cells with NA for every variable, thus avoiding
-# the generation of -Inf values and the corresponding warnings
+# This version ignores raster cells with NA for every variable, and it also
+# removes variables that result in all Inf values (probably because the values for
+# that variable for "v" are all 0), thus avoiding the generation of -Inf values and the corresponding warnings
 .messi3 <- function(p,v) {
   # seems 2-3 times faster than messi2
   v <- stats::na.omit(v)
@@ -284,7 +285,7 @@ lookup.enm <- function(mod.name) {
 }
 
 #' @export
-mess <- function(x, v, full=FALSE, filename='', ...) {
+enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
   
   stopifnot(NCOL(v) == nlayers(x))
   out <- raster(x)
@@ -300,6 +301,9 @@ mess <- function(x, v, full=FALSE, filename='', ...) {
       out <- setValues(out, rmess)
     } else {
       x <- sapply(1:ncol(x), function(i) .messi3(x[,i], v[,i]))
+      colRemove <- numeric(ncol(x)) + 1
+      for(i in 1:ncol(x)) if(sum(is.infinite(x[,i])) == length(na.omit(x[,i]))) colRemove[i] <- 0
+      x <- x[,colRemove]
       rmess <- apply(x, 1, function(x) ifelse(!all(is.na(x)), min(x, na.rm=TRUE), NA))
       if (full) {
         out <- brick(out, nl=nl+1)

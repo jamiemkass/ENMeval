@@ -6,9 +6,9 @@
 \usage{
 enmeval.plot.grps(
   e = NULL,
+  envs,
   pts = NULL,
   pts.grp = NULL,
-  envs,
   pts.type = "occs"
 )
 }
@@ -17,8 +17,16 @@ enmeval.plot.grps(
 
 \item{envs}{Raster of an environmental predictor variable used to build the models in "e"}
 
-\item{pts.type}{character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{pts}{Matrix or data frame of coordinates for occurrence or background data}
+
+\item{pts.grp}{Numeric vector of partition groups corresponding to data in "pts"}
+
+\item{pts.type}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
 }
 \description{
-Plot partition groups over an environmental predictor raster
+Plot occurrence partition groups over an environmental predictor raster.
+}
+\details{
+This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
+It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 }

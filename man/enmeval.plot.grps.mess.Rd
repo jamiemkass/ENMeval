@@ -12,19 +12,20 @@ enmeval.plot.grps.mess(e, envs, pts.type = "occs", plot.type = "density")
 \item{envs}{RasterStack of environmental predictor variables used to build the models in "e"; categorical variables should be 
 removed before input, as they cannot be used to calculate MESS}
 
-\item{pts.type}{character specifying which to calculate MESS on: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{pts.type}{Character specifying which to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"}
 
-\item{plot.type}{character specifying which to plot: MESS density curves ("density") or MESS rasters ("raster")}
+\item{plot.type}{Character specifying which to plot: MESS density curves ("density") or MESS rasters ("raster")}
 }
 \value{
-If "density", density curves showing the MESS estimates for each partition group. If "raster", rasters 
-showing the geographical MESS estimates for each partition group.
+A ggplot of MESS calculations for data partitions.
 }
 \description{
 Plot multivariate environmental similarity surface (MESS) estimates of test occurrences on the study extent 
 by partition group with density curves or rasters
 }
 \details{
+There are two variations for this plot. If "density", density curves are plotted showing the MESS estimates for each partition group. 
+If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 As implemented here, MESS calculates the similarity between environmental values associated with the 
 test occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
 of the input RasterStack "envs"). Higher negative values indicate greater environmental difference between the test occurrences
