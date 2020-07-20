@@ -8,10 +8,8 @@
 #' @usage lhs \%>\% rhs
 NULL
 
-msg <- function(x, quiet) if(quiet == FALSE) message(x)
-
 #' @export
-# remove.env.na <- function(d, quiet = FALSE) {
+# remove.env.na <- function(d) {
 #   d.envs <- d[,3:ncol(d)]
 #   ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
 #   names(ind.NA) <- NULL
@@ -24,7 +22,7 @@ msg <- function(x, quiet) if(quiet == FALSE) message(x)
 #     envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
 #                             length(ind.NA.occs) > 0 ~ occs.msg,
 #                             length(ind.NA.bg) > 0 ~ bg.msg)
-#     msg(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis...\n"), quiet)
+#     message(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis..."))
 #     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
 #     return(d.naRem)    
 #   }
@@ -370,4 +368,22 @@ mess <- function(x, v, full=FALSE, filename='', ...) {
     pbClose(pb) 
   }	
   out
+}
+
+# function to look up the version of maxent.jar
+#' @export
+maxentJARversion <- function() {
+  if (is.null(getOption('dismo_rJavaLoaded'))) {
+    # to avoid trouble on macs
+    Sys.setenv(NOAWT=TRUE)
+    if ( requireNamespace('rJava') ) {
+      rJava::.jpackage('dismo')
+      options(dismo_rJavaLoaded=TRUE)
+    } else {
+      stop('rJava cannot be loaded')
+    }
+  }
+  mxe <- rJava::.jnew("meversion")
+  v <- try(rJava::.jcall(mxe, "S", "meversion"))
+  return(v)
 }

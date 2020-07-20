@@ -1,12 +1,13 @@
 set.seed(48)
-bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=5000, has_coords=TRUE)
+bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
 occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 occs <- occs[!duplicated(occs),]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
-which(rowSums(is.na(raster::extract(envs, occs))) > 0)
+# which(rowSums(is.na(raster::extract(envs, occs))) > 0)
 bg <- as.data.frame(dismo::randomPoints(envs, 10000))
 names(bg) <- names(occs)
-tune.args <- list(fc = c("L", "LQ", "LQH", "H", "LQHP"), rm = seq(1,5,0.5))
+tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
+tune.args <- list(tails = c("low", "high", "both"))
 # tune.args <- list(fc = "L", rm = 1)
 partitions <- "randomkfold"
 kfolds <- 4
@@ -19,28 +20,15 @@ abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
 occs.ind = NULL
-cbi.eval = NULL
-quiet = FALSE
-
-# user groups
-user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
-
-# independent partitions
-occs.ind <- occs[1:50,]
-occs <- occs[51:nrow(occs),]
-
-# null models
-mod.settings=list(fc="L",rm=2)
-userStats.exp.sign=list(maxKappa = 1, maxTSS = 1)
-
-# SWD
-
+cbi.eval = "envs"
+# quiet = FALSE
 # 
-# # divide all grid cells in study extent into same partition groups
-# # as the real occurrence data
-# # envs.xy <- rasterToPoints(envs[[1]], spatial = TRUE)
-# # envs.grp <- ENMeval::get.block(occ=occs, bg.coords=envs.xy@coords)$bg.grp
+# # user groups
+# user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
 # 
+# # independent partitions
+# occs.ind <- occs[1:50,]
+# occs <- occs[51:nrow(occs),]
 # 
 # ## old ENMeval
 # e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block", occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))

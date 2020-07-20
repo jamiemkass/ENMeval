@@ -31,81 +31,90 @@ ENMevaluation <- setClass("ENMevaluation",
                                   results.grp = 'data.frame',
                                   models = 'list',
                                   predictions = 'RasterStack',
+                                  taxon.name = 'character',
                                   occs = 'data.frame',
                                   occ.grp = 'factor',
                                   bg = 'data.frame',
                                   bg.grp = 'factor',
-                                  overlap = 'list'))
+                                  overlap = 'list',
+                                  rmm = 'list'))
 
-setGeneric("algorithm", function(x) standardGeneric("algorithm"))
+setGeneric("eval.algorithm", function(x) standardGeneric("eval.algorithm"))
 #' @export
-setMethod("algorithm", "ENMevaluation", function(x) x@algorithm)
+setMethod("eval.algorithm", "ENMevaluation", function(x) x@algorithm)
 
-setGeneric("tune.settings", function(x) standardGeneric("tune.settings"))
+setGeneric("eval.tune.settings", function(x) standardGeneric("eval.tune.settings"))
 #' @export
-setMethod("tune.settings", "ENMevaluation", function(x) x@tune.settings)
+setMethod("eval.tune.settings", "ENMevaluation", function(x) x@tune.settings)
 
-setGeneric("results", function(x) standardGeneric("results"))
+setGeneric("eval.results", function(x) standardGeneric("eval.results"))
 #' @export
-setMethod("results", "ENMevaluation", function(x) x@results)
+setMethod("eval.results", "ENMevaluation", function(x) x@results)
 
-setGeneric("results.grp", function(x) standardGeneric("results.grp"))
+setGeneric("eval.results.grp", function(x) standardGeneric("eval.results.grp"))
 #' @export
-setMethod("results.grp", "ENMevaluation", function(x) x@results.grp)
+setMethod("eval.results.grp", "ENMevaluation", function(x) x@results.grp)
 
-setGeneric("predictions", function(x) standardGeneric("predictions"))
+setGeneric("eval.predictions", function(x) standardGeneric("eval.predictions"))
 #' @export
-setMethod("predictions", "ENMevaluation", function(x) x@predictions)
+setMethod("eval.predictions", "ENMevaluation", function(x) x@predictions)
 
-setGeneric("models", function(x) standardGeneric("models"))
+setGeneric("eval.models", function(x) standardGeneric("eval.models"))
 #' @export
-setMethod("models", "ENMevaluation", function(x) x@models)
+setMethod("eval.models", "ENMevaluation", function(x) x@models)
 
-setGeneric("partition.method", function(x) standardGeneric("partition.method"))
+setGeneric("eval.partition.method", function(x) standardGeneric("eval.partition.method"))
 #' @export
-setMethod("partition.method", "ENMevaluation", function(x) x@partition.method)
+setMethod("eval.partition.method", "ENMevaluation", function(x) x@partition.method)
 
-setGeneric("partition.settings", function(x) standardGeneric("partition.settings"))
+setGeneric("eval.partition.settings", function(x) standardGeneric("eval.partition.settings"))
 #' @export
-setMethod("partition.settings", "ENMevaluation", function(x) x@partition.settings)
+setMethod("eval.partition.settings", "ENMevaluation", function(x) x@partition.settings)
 
-setGeneric("other.settings", function(x) standardGeneric("other.settings"))
+setGeneric("eval.other.settings", function(x) standardGeneric("eval.other.settings"))
 #' @export
-setMethod("other.settings", "ENMevaluation", function(x) x@other.settings)
+setMethod("eval.other.settings", "ENMevaluation", function(x) x@other.settings)
 
-setGeneric("occs", function(x) standardGeneric("occs"))
+setGeneric("eval.taxon.name", function(x) standardGeneric("eval.taxon.name"))
 #' @export
-setMethod("occs", "ENMevaluation", function(x) x@occs)
+setMethod("eval.taxon.name", "ENMevaluation", function(x) x@taxon.name)
 
-setGeneric("occ.grp", function(x) standardGeneric("occ.grp"))
+setGeneric("eval.occs", function(x) standardGeneric("eval.occs"))
 #' @export
-setMethod("occ.grp", "ENMevaluation", function(x) x@occ.grp)
+setMethod("eval.occs", "ENMevaluation", function(x) x@occs)
 
-setGeneric("bg", function(x) standardGeneric("bg"))
+setGeneric("eval.occ.grp", function(x) standardGeneric("eval.occ.grp"))
 #' @export
-setMethod("bg", "ENMevaluation", function(x) x@bg)
+setMethod("eval.occ.grp", "ENMevaluation", function(x) x@occ.grp)
 
-setGeneric("bg.grp", function(x) standardGeneric("bg.grp"))
+setGeneric("eval.bg", function(x) standardGeneric("eval.bg"))
 #' @export
-setMethod("bg.grp", "ENMevaluation", function(x) x@bg.grp)
+setMethod("eval.bg", "ENMevaluation", function(x) x@bg)
 
-setGeneric("overlap", function(x) standardGeneric("overlap"))
+setGeneric("eval.bg.grp", function(x) standardGeneric("eval.bg.grp"))
 #' @export
-setMethod("overlap", "ENMevaluation", function(x) x@overlap)
+setMethod("eval.bg.grp", "ENMevaluation", function(x) x@bg.grp)
+
+setGeneric("eval.overlap", function(x) standardGeneric("eval.overlap"))
+#' @export
+setMethod("eval.overlap", "ENMevaluation", function(x) x@overlap)
+
+setGeneric("eval.rmm", function(x) standardGeneric("eval.rmm"))
+#' @export
+setMethod("eval.rmm", "ENMevaluation", function(x) x@rmm)
 
 #' @export
 setMethod("show",
 		  signature = "ENMevaluation",
 		  definition = function(object) {
 		  	cat("An object of class: ", class(object), "\n")
+		    cat(" taxon name: ", object@taxon.name, "\n")
 		  	cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
 		  	cat(" partition method: ", object@partition.method, "\n")
-		  	cat(" partition settings: ", paste(names(object@partition.settings), unlist(object@partition.settings), sep = " = ", collapse = ", "), "\n")
-		  	cat(" other settings: ", paste(names(object@other.settings), unlist(object@other.settings), sep = " = ", collapse = ", "), "\n")
+		  	cat(" partition settings: ", ifelse(length(object@partition.settings) > 0, paste(names(object@partition.settings), unlist(object@partition.settings), sep = " = ", collapse = ", "), "none"), "\n")
 		  	cat(" algorithm: ", object@algorithm, "\n")
-		  	cat(" tune settings: \n")
-		  	print(object@tune.settings[,-ncol(object@tune.settings)], row.names = FALSE)
-		  	cat(" overlap ", !is.null(object@overlap), "\n")
+		  	cat(" tune settings (", paste0(names(object@tune.settings)[-ncol(object@tune.settings)], collapse = "_"), "): ", paste0(object@tune.settings[,ncol(object@tune.settings)], collapse = ", "), "\n")
+		  	cat(" overlap: ", !is.null(object@overlap), "\n")
 		  	cat("Refer to ?ENMevaluation for information on slots.", sep = "")
 		  	invisible(NULL)
 		  })
@@ -121,8 +130,8 @@ setMethod("show",
 #' @slot msgs function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}
 #' @slot args function specifying the parameters needed to run the model function
 #' @slot aic function specifying how AIC should be calculated (if at all)
-#' @slot eval function specifying how to calculate evaluation statistics (currently a specific parameterization of \code{dismo::evaluate()})
-#' @slot kstats function specifying any additional cross-validation statistics to calculate on testing groups
+#' @slot eval.train function specifying how to calculate training evaluation statistics
+#' @slot eval.test function specifying how to calculate testing evaluation statistics
 #' @slot pred function specifying how to calculate a model prediction for a Raster* or a data frame
 #' @slot nparams function specifying how to measure the number of model coefficients
 #' @export
@@ -135,14 +144,14 @@ ENMdetails <- setClass("ENMdetails",
                                  msgs = 'function',
                                  args = 'function',
                                  aic = 'function',
-                                 eval = 'function',
-                                 kstats = 'function',
+                                 eval.train = 'function',
+                                 eval.test = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval, kstats, pred, nparams) {
+ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval.train, eval.test, pred, nparams) {
   new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      aic = aic, eval = eval, kstats = kstats, pred = pred, nparams = nparams)
+      aic = aic, eval.train = eval.train, eval.test = eval.test, pred = pred, nparams = nparams)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -155,7 +164,6 @@ setMethod("enm.name<-", "ENMdetails", function(x, value) {
   validObject(x)
   x
 })
-
 
 setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
 setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
@@ -212,24 +220,24 @@ setMethod("enm.aic<-", "ENMdetails", function(x, value) {
   x
 })
 
-setGeneric("enm.eval", function(x) standardGeneric("enm.eval"))
-setGeneric("enm.eval<-", function(x, value) standardGeneric("enm.eval<-"))
+setGeneric("enm.eval.train", function(x) standardGeneric("enm.eval.train"))
+setGeneric("enm.eval.train<-", function(x, value) standardGeneric("enm.eval.train<-"))
 #' @export
-setMethod("enm.eval", "ENMdetails", function(x) x@eval)
+setMethod("enm.eval.train", "ENMdetails", function(x) x@eval.train)
 #' @export
-setMethod("enm.eval<-", "ENMdetails", function(x, value) {
-  x@eval <- value
+setMethod("enm.eval.train<-", "ENMdetails", function(x, value) {
+  x@eval.train <- value
   validObject(x)
   x
 })
 
-setGeneric("enm.kstats", function(x) standardGeneric("enm.kstats"))
-setGeneric("enm.kstats<-", function(x, value) standardGeneric("enm.kstats<-"))
+setGeneric("enm.eval.test", function(x) standardGeneric("enm.eval.test"))
+setGeneric("enm.eval.test<-", function(x, value) standardGeneric("enm.eval.test<-"))
 #' @export
-setMethod("enm.kstats", "ENMdetails", function(x) x@kstats)
+setMethod("enm.eval.test", "ENMdetails", function(x) x@eval.test)
 #' @export
-setMethod("enm.kstats<-", "ENMdetails", function(x, value) {
-  x@kstats <- value
+setMethod("enm.eval.test<-", "ENMdetails", function(x, value) {
+  x@eval.test <- value
   validObject(x)
   x
 })

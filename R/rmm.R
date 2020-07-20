@@ -1,0 +1,107 @@
+# function to build a rangeModelMetadata object from the ENMevaluate() results
+
+buildRMM <- function(e, envs) {
+  rmm <- rangeModelMetadata::rmmTemplate()
+  rmm$code$software$packages <- "ENMeval 1.0.0"
+  
+  # occurrence/background metadata ####
+  rmm$data$occurrence$taxon <- e@taxon.name
+  rmm$data$occurrence$dataType <- "presence only"
+  rmm$data$occurrence$presenceSampleSize <- nrow(e@occs)
+  rmm$data$occurrence$backgroundSampleSize <- nrow(e@bg)
+  
+  # predictor variable metadata ####
+  if(!is.null(envs)) {
+    rmm$data$environment$variableNames <- names(envs)
+    rmm$data$environment$resolution <- raster::res(envs)[1]
+    rmm$data$environment$extent <- as.character(raster::extent(envs))
+    rmm$data$environment$projection <- as.character(raster::crs(envs)) 
+  }
+  
+  # partition metadata ####
+  rmm$model$partition$numberFolds <- length(unique(e@occ.grp))
+
+  if(e@partition.method == "randonkfold") {
+    rmm$model$partition$partitionSet <- "random k-fold"
+    rmm$model$partition$partitionRule <- "random partition assignment with user-specified number of partitions"
+    rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
+  }
+  if(e@partition.method == "jackknife") {
+    rmm$model$partition$partitionSet <- "jackknife (leave-one-out)"
+    rmm$model$partition$partitionRule <- "leave-one-out partitions (each occurrence locality receives its own partition)"
+    rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
+  }
+  if(e@partition.method == "block") {
+    rmm$model$partition$partitionSet <- "spatial block"
+    rmm$model$partition$partitionRule <- "four spatial partitions defined by latitude/longitude lines that ensure a balanced number of occurrence localities across partitions"
+    rmm$model$partition$notes <- "background points also partitioned"
+    rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
+  }
+  if(e@partition.method == "checkerboard1") {
+    rmm$model$partition$partitionSet <- "binary checkerboard"
+    rmm$model$partition$partitionRule <- "two spatial partitions in a checkerboard formation that subdivide geographic space equally but do not ensure a balanced number of occurrence localities across partitions"
+    rmm$model$partition$notes <- "background points also partitioned"
+    rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
+  }
+  if(e@partition.method == "checkerboard2") {
+    rmm$model$partition$partitionSet <- "hierarchical checkerboard"
+    rmm$model$partition$partitionRule <- "four spatial partitions with two levels of spatial aggregation in a checkerboard formation that subdivide geographic space equally but do not ensure a balanced number of occurrence localities across partitions"
+    rmm$model$partition$notes <- "background points also partitioned"
+    rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
+  }
+  if(e@partition.method == "checkerboard1" | e@partition.method == "checkerboard2") {
+    rmm$model$partition$notes <- paste('aggregation factor =', e@partition.settings$aggregation.factor)
+  }
+  if(e@partition.method == "independent") {
+    rmm$model$partition$partitionSet <- "independent"
+    rmm$model$partition$partitionRule <- "evaluation on an independent dataset"
+    rmm$model$partition$occurrenceSubsampling <- "none"
+  }
+  if(e@partition.method == "user") {
+    rmm$model$partition$partitionSet <- "user-specified"
+    rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
+  }
+  if(e@partition.method == "none") {
+    rmm$model$partition$partitionSet <- "none"
+    rmm$model$partition$occurrenceSubsampling <- "none"
+  }
+  
+  # model metadata ####
+  if(e@algorithm == "maxent.jar") {
+    rmm$model$algorithms <- paste(e@algorithm, maxentJARversion())
+  }
+  if(e@algorithm == "maxnet") {
+    rmm$model$algorithms <- paste(e@algorithm, packageVersion("maxnet"))
+  }
+  if(e@algorithm == "brt") {
+    rmm$model$algorithms <- paste(e@algorithm, "using gbm", packageVersion('gbm'), "and dismo", packageVersion("dismo"))
+    rmm$model$algorithm$brt$interactionDepth <- unique(e@tune.settings$tree.complexity)
+    rmm$model$algorithm$brt$bagFraction <- unique(e@tune.settings$bag.fraction)
+    rmm$model$algorithm$brt$learningRate <- unique(e@tune.settings$learning.rate)
+    rmm$model$algorithm$brt$distribution <- "binomial"
+    rmm$model$algorithm$brt$nTrees <- sapply(e@models, function(x) x$n.trees)
+    rmm$model$algorithm$brt$shrinkage <- sapply(e@models, function(x) x$shrinkage)
+    rmm$model$algorithm$brt$notes <- "nTrees estimated with gbm.step() in dismo R package"
+  }
+  if(e@algorithm == "bioclim") {
+    rmm$model$algorithms <- paste(e@algorithm, "using dismo", packageVersion("dismo"))
+  }
+  if(e@algorithm == "maxnet" | e@algorithm == "maxent.jar") {
+    rmm$model$algorithm$maxent$featureSet <- unique(e@tune.settings$fc)
+    rmm$model$algorithm$maxent$regularizationMultiplierSet <- unique(e@tune.settings$rm)
+    rmm$model$algorithm$maxent$clamping <- e@other.settings$doClamp
+    rmm$model$algorithm$maxent$samplingBiasRule <- 'ignored'
+  }
+  
+  
+  # evaluation metadata ####
+  rmm$assessment$trainingDataStats$AUC <- paste(e@tune.settings$tune.args, round(e@results$auc.train, 3), sep = ": ")
+  rmm$assessment$trainingDataStats$boyce <- paste(e@tune.settings$tune.args, round(e@results$cbi.train, 3), sep = ": ")
+  rmm$assessment$testingDataStats$AUC <- paste(e@tune.settings$tune.args, e@results$auc.test, sep = ": ")
+  rmm$assessment$testingDataStats$AUCDiff <- paste(e@tune.settings$tune.args, e@results$auc.diff.avg, sep = ": ")
+  rmm$assessment$testingDataStats$boyce <- ifelse(!is.null(e@results$cbi.test), paste(e@tune.settings$tune.args, e@results$cbi.test, sep = ": "), "none")
+  rmm$assessment$testingDataStats$omissionRate <- list(or.mtp = paste(e@tune.settings$tune.args, round(e@results[grepl("or.mtp",names(e@results))], 3), sep = ": "),
+                                                       or.10p = paste(e@tune.settings$tune.args, round(e@results[grepl("or.10p",names(e@results))], 3), sep = ": "))
+  
+  return(rmm)
+}

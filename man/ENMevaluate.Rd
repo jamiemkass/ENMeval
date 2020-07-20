@@ -9,6 +9,7 @@ ENMevaluate(
   envs = NULL,
   bg = NULL,
   tune.args = NULL,
+  taxon.name = NULL,
   other.args = NULL,
   categoricals = NULL,
   mod.name = NULL,
@@ -30,7 +31,6 @@ ENMevaluate(
   numCores = NULL,
   parallelType = "doSNOW",
   updateProgress = FALSE,
-  quiet = FALSE,
   occ = NULL,
   env = NULL,
   bg.coords = NULL,
@@ -47,7 +47,7 @@ ENMevaluate(
 )
 }
 \arguments{
-\item{occs}{matrix or data frame with two columns for longitude and latitude 
+\item{occs}{matrix or data frame with three columns for taxon name, longitude, and latitude 
 of occurrence localities, in that order; if specifying predictor variable values
 assigned to presence/background localities (species with data "SWD" form), this table will also have 
 one column for each predictor variable}

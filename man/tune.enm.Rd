@@ -16,8 +16,7 @@ tune.parallel(
   other.settings,
   user.test.grps,
   numCores,
-  parallelType,
-  quiet
+  parallelType
 )
 
 tune.regular(
@@ -28,8 +27,7 @@ tune.regular(
   tune.tbl,
   other.settings,
   user.test.grps,
-  updateProgress,
-  quiet
+  updateProgress
 )
 
 cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps)
