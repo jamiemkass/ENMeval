@@ -31,7 +31,7 @@ An S4 class that contains the ENMevaluate results.
 
 \item{\code{occs}}{data.frame of occurrence coordinates and predictor variable values used for model training}
 
-\item{\code{occ.grp}}{vector of partition groups for occurrence points}
+\item{\code{occs.grp}}{vector of partition groups for occurrence points}
 
 \item{\code{bg}}{data.frame of background coordinates and predictor variable values used for model training}
 

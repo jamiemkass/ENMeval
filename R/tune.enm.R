@@ -7,7 +7,7 @@
 #' @param enm Object of class \link{ENMdetails}.
 #' @param partitions character of name of partitioning technique (see \code{?partitions})
 #' @param tune.tbl Data frame of tuning parameter combinations.
-#' @param other.settings list of settings from \code{ENMevaluate()} containing other.args, doClamp, pred.type, abs.auc.diff, cbi.cv
+#' @param other.settings list of settings from \code{ENMevaluate()} containing other.args, clamp, pred.type, abs.auc.diff, cbi.cv
 #' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing
 #' @param parallelType character of either "doParallel" or "doSNOW" to conduct parallelization
 

@@ -25,7 +25,7 @@ buildRMM <- function(e, envs) {
   }
   
   # partition metadata ####
-  rmm$model$partition$numberFolds <- length(unique(e@occ.grp))
+  rmm$model$partition$numberFolds <- length(unique(e@occs.grp))
 
   if(e@partition.method == "randonkfold") {
     rmm$model$partition$partitionSet <- "random k-fold"
@@ -95,7 +95,7 @@ buildRMM <- function(e, envs) {
   if(e@algorithm == "maxnet" | e@algorithm == "maxent.jar") {
     rmm$model$algorithm$maxent$featureSet <- unique(e@tune.settings$fc)
     rmm$model$algorithm$maxent$regularizationMultiplierSet <- unique(e@tune.settings$rm)
-    rmm$model$algorithm$maxent$clamping <- e@other.settings$doClamp
+    rmm$model$algorithm$maxent$clamping <- e@other.settings$clamp
     rmm$model$algorithm$maxent$samplingBiasRule <- 'ignored'
   }
   

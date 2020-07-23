@@ -39,7 +39,7 @@ args <- function(occs.vals, bg.vals, tune.i, other.settings) {
 
 eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
-  e <- dismo::evaluate(occs.vals, bg.vals, mod.full, clamp = other.settings$doClamp, type = other.settings$pred.type)
+  e <- dismo::evaluate(occs.vals, bg.vals, mod.full, clamp = other.settings$clamp, type = other.settings$pred.type)
   auc.train <- e@auc
   # training CBI
   if(!is.null(envs)) {
@@ -61,8 +61,8 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
   ## testing AUC
   # calculate auc on testing data: test occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, do perform the subtraction, it is essential that both stats are calculated over the same background
-  e.train <- dismo::evaluate(occs.train.vals, bg.vals, mod.k, clamp = other.settings$doClamp, type = other.settings$pred.type)
-  e.test <- dismo::evaluate(occs.test.vals, bg.vals, mod.k, clamp = other.settings$doClamp, type = other.settings$pred.type)
+  e.train <- dismo::evaluate(occs.train.vals, bg.vals, mod.k, clamp = other.settings$clamp, type = other.settings$pred.type)
+  e.test <- dismo::evaluate(occs.test.vals, bg.vals, mod.k, clamp = other.settings$clamp, type = other.settings$pred.type)
   auc.train <- e.train@auc
   auc.test <- e.test@auc
   # calculate auc diff as auc train (partition not k) minus auc test (partition k)
@@ -108,13 +108,13 @@ pred <- function(mod, envs, other.settings) {
     envs.n <- raster::nlayers(envs)
     envs.pts <- na.omit(raster::rasterToPoints(envs))
     mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
-                       clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
+                       clamp = other.settings$clamp, na.rm = TRUE, other.settings$other.args)
     p.vals <- cbind(envs.pts[,1:2], mxnet.p)
     pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = crs(envs)) 
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
     pred <- predict(mod, envs, type = other.settings$pred.type, 
-                    clamp = other.settings$doClamp, na.rm = TRUE, other.settings$other.args)
+                    clamp = other.settings$clamp, na.rm = TRUE, other.settings$other.args)
   }
   return(pred)
 }

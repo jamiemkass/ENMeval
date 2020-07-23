@@ -40,7 +40,7 @@
 #' 
 #' @return
 #' A named list of two items:
-#' \item{$occ.grp}{ A vector of bin designation for occurrence localities in the same order they were provided.}
+#' \item{$occs.grp}{ A vector of bin designation for occurrence localities in the same order they were provided.}
 #' \item{$bg.grp}{ A vector of bin designation for background localities in the same order they were provided.}
 #' 
 #' @note 
@@ -86,40 +86,40 @@
 #' ### Block partitioning method (default orientation is c("lat, lon"))
 #' blk.latLon <- get.block(occs, bg)
 #' plot(envs)
-#' points(occs, pch=23, bg=blk.latLon$occ.grp)
+#' points(occs, pch=23, bg=blk.latLon$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=blk.latLon$bg.grp)
 #' # Can partition with other orientations
 #' blk.latLat <- get.block(occs, bg, orientation = c("lat","lat"))
 #' plot(envs)
-#' points(occs, pch=23, bg=blk.latLat$occ.grp)
+#' points(occs, pch=23, bg=blk.latLat$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=blk.latLat$bg.grp)
 #' 
 #' ### Checkerboard1 partitioning method with aggregation factor of 4
 #' chk1.ag4 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 4)
 #' plot(envs)
-#' points(occs, pch=23, bg=chk1.ag4$occ.grp)
+#' points(occs, pch=23, bg=chk1.ag4$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=chk1.ag4$bg.grp)
 #' # Higher aggregation factors result in bigger checkerboard blocks
 #' chk1.ag8 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 8)
 #' plot(envs)
-#' points(occs, pch=23, bg=chk1.ag8$occ.grp)
+#' points(occs, pch=23, bg=chk1.ag8$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=chk1.ag8$bg.grp)
 #' 
 #' ### Checkerboard2 partitioning method with aggregation factors of 2, 2
 #' chk2.ag2_2 <- get.checkerboard2(occs, envs, bg, c(2,2))
 #' plot(envs)
-#' points(occs, pch=23, bg=chk2.ag2_2$occ.grp)
+#' points(occs, pch=23, bg=chk2.ag2_2$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=chk2.ag2_2$bg.grp)
 #' # Higher aggregation factors result in bigger checkerboard blocks,
 #' # and can vary between hierarchical levels
 #' chk2.ag4_6 <- get.checkerboard2(occs, envs, bg, c(4,6))
 #' plot(envs)
-#' points(occs, pch=23, bg=chk2.ag4_6$occ.grp)
+#' points(occs, pch=23, bg=chk2.ag4_6$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=chk2.ag4_6$bg.grp)
 #' 
@@ -127,7 +127,7 @@
 #' # Note that get.randomkkfold does not partition the background
 #' krandom <- get.randomkfold(occs, bg, 4)
 #' plot(envs)
-#' points(occs, pch=23, bg=krandom$occ.grp)
+#' points(occs, pch=23, bg=krandom$occs.grp)
 #' plot(envs)
 #' points(bg, pch=21, bg=krandom$bg.grp)
 #' 
@@ -135,7 +135,7 @@
 #' # Note that get.jackknife does not partition the background
 #' jack <- get.jackknife(occs, bg)
 #' plot(envs)
-#' points(occs, pch=23, bg=rainbow(length(jack$occ.grp)))
+#' points(occs, pch=23, bg=rainbow(length(jack$occs.grp)))
 #' plot(envs)
 #' points(bg, pch=21, bg=jack$bg.grp)
 #' 
@@ -212,7 +212,7 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
   if (nrow(grp2) > 0) grp2$grp <- 2; r <- rbind(r, grp2)
   if (nrow(grp3) > 0) grp3$grp <- 3; r <- rbind(r, grp3)
   if (nrow(grp4) > 0) grp4$grp <- 4; r <- rbind(r, grp4)
-  occ.grp <- r[order(as.numeric(rownames(r))),]$grp
+  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   bgr <- data.frame()
   if (nrow(bggrp1) > 0) bggrp1$grp <- 1; bgr <- rbind(bgr, bggrp1)
@@ -221,7 +221,7 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
   if (nrow(bggrp4) > 0) bggrp4$grp <- 4; bgr <- rbind(bgr, bggrp4)
   bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
-  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -245,7 +245,7 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
   if(nrow(w) > 0) { w$grp <- 1 }
   if(nrow(b) > 0) { b$grp <- 2 }
   r <- rbind(w, b)
-  occ.grp <- r[order(as.numeric(rownames(r))),]$grp
+  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   if(nrow(bgw) > 0) { bgw$grp <- 1 }
   if(nrow(bgb) > 0) { bgb$grp <- 2 }
@@ -253,12 +253,12 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
   bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
   # PATCH IF occs OR BG POINTS FALL INTO A SINGLE BIN
-  noccgrp <- length(unique(occ.grp))
+  noccgrp <- length(unique(occs.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 2 ){
     message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
-    bg.grp[ ! bg.grp %in% occ.grp] <- NA
-    occ.grp <- as.numeric(as.factor(occ.grp))
+    bg.grp[ ! bg.grp %in% occs.grp] <- NA
+    occs.grp <- as.numeric(as.factor(occs.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
@@ -266,7 +266,7 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
     stop("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
   }
   
-  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -302,7 +302,7 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   if (nrow(wb) > 0) wb$grp <- 2; r <- rbind(r, wb)
   if (nrow(bw) > 0) bw$grp <- 3; r <- rbind(r, bw)
   if (nrow(bb) > 0) bb$grp <- 4; r <- rbind(r, bb)
-  occ.grp <- r[order(as.numeric(rownames(r))),]$grp
+  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
   
   bgr <- data.frame()
   if (nrow(bgww) > 0) bgww$grp <- 1; bgr <- rbind(bgr, bgww)
@@ -312,12 +312,12 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
   
   # PATCH IF occs OR BG POINTS FALL INTO FEWER THAN FOUR BINS
-  noccgrp <- length(unique(occ.grp))
+  noccgrp <- length(unique(occs.grp))
   nbggrp <- length(unique(bg.grp))
   if(noccgrp < 4 ){
     message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
-    bg.grp[ ! bg.grp %in% occ.grp] <- NA
-    occ.grp <- as.numeric(as.factor(occ.grp))
+    bg.grp[ ! bg.grp %in% occs.grp] <- NA
+    occs.grp <- as.numeric(as.factor(occs.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
@@ -325,7 +325,7 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
     stop("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
   }
   
-  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -338,9 +338,9 @@ get.jackknife <- function(occs, bg) {
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occ.grp <- 1:nrow(occs)
+  occs.grp <- 1:nrow(occs)
   bg.grp <- rep(0, nrow(bg))
-  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)
 }
 
@@ -353,8 +353,8 @@ get.randomkfold <- function(occs, bg, kfolds){
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occ.grp <- dismo::kfold(occs, kfolds)
+  occs.grp <- dismo::kfold(occs, kfolds)
   bg.grp <- rep(0, nrow(bg))
-  out <- list(occ.grp=occ.grp, bg.grp=bg.grp)
+  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)	
 }

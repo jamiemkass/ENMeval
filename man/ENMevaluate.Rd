@@ -23,7 +23,7 @@ ENMevaluate(
   n.bg = 10000,
   overlap = FALSE,
   overlapStat = c("D", "I"),
-  doClamp = TRUE,
+  clamp = TRUE,
   pred.type = "cloglog",
   abs.auc.diff = TRUE,
   user.test.grps = NULL,
@@ -43,7 +43,6 @@ ENMevaluate(
   method = NULL,
   bin.output = NULL,
   rasterPreds = NULL,
-  clamp = NULL,
   progbar = NULL
 )
 }
@@ -74,7 +73,7 @@ used for the analysis, and is an alternative to specifying mod.name}
 
 \item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 
-\item{user.grp}{named list with occ.grp = vector of partition group (fold) for each
+\item{user.grp}{named list with occs.grp = vector of partition group (fold) for each
 occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
 background (or pseudo-absence) localities}
 
@@ -96,7 +95,7 @@ sample; necessary if \code{bg} is NULL}
 \item{overlapStat}{character for one or two (vector) niche overlap statistics:
 choices are "D" and "I" -- see ?calc.niche.overlap for more details}
 
-\item{doClamp}{boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
+\item{clamp}{boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
 applicable for maxent.jar/maxnet models}
 
 \item{pred.type}{character (default: "cloglog") that specifies which prediction type should be used to
