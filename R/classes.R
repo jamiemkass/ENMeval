@@ -14,7 +14,7 @@ NULL
 #' @slot models list of model objects
 #' @slot predictions RasterStack of model predictions
 #' @slot occs data.frame of occurrence coordinates and predictor variable values used for model training
-#' @slot occ.grp vector of partition groups for occurrence points
+#' @slot occs.grp vector of partition groups for occurrence points
 #' @slot bg data.frame of background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector of partition groups for background points
 #' @slot overlap list of matrices of pairwise niche overlap statistics
@@ -33,7 +33,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                   predictions = 'RasterStack',
                                   taxon.name = 'character',
                                   occs = 'data.frame',
-                                  occ.grp = 'factor',
+                                  occs.grp = 'factor',
                                   bg = 'data.frame',
                                   bg.grp = 'factor',
                                   overlap = 'list',
@@ -83,9 +83,9 @@ setGeneric("eval.occs", function(x) standardGeneric("eval.occs"))
 #' @export
 setMethod("eval.occs", "ENMevaluation", function(x) x@occs)
 
-setGeneric("eval.occ.grp", function(x) standardGeneric("eval.occ.grp"))
+setGeneric("eval.occs.grp", function(x) standardGeneric("eval.occs.grp"))
 #' @export
-setMethod("eval.occ.grp", "ENMevaluation", function(x) x@occ.grp)
+setMethod("eval.occs.grp", "ENMevaluation", function(x) x@occs.grp)
 
 setGeneric("eval.bg", function(x) standardGeneric("eval.bg"))
 #' @export
@@ -276,7 +276,7 @@ setMethod("show",
 #' @slot null.results.grp data.frame of evaluation k-fold statistics for null models
 #' @slot real.vs.null.results data.frame of evaluation summary statistics for the real model, means for all null models, z-scores, and p-values
 #' @slot real.occs data.frame of occurrence coordinates and predictor variable values used for model training (real model)
-#' @slot real.occ.grp vector of partition groups for occurrence points
+#' @slot real.occs.grp vector of partition groups for occurrence points
 #' @slot real.bg data.frame of background coordinates and predictor variable values used for model training
 #' @slot real.bg.grp vector of partition groups for background points
 #' @export
@@ -293,7 +293,7 @@ ENMnull <- setClass("ENMnull",
                                     null.results.grp = 'data.frame',
                                     real.vs.null.results = 'data.frame',
                                     real.occs = 'data.frame',
-                                    real.occ.grp = 'factor',
+                                    real.occs.grp = 'factor',
                                     real.bg = 'data.frame',
                                     real.bg.grp = 'factor'))
 
@@ -337,9 +337,9 @@ setGeneric("real.occs", function(x) standardGeneric("real.occs"))
 #' @export
 setMethod("real.occs", "ENMnull", function(x) x@real.occs)
 
-setGeneric("real.occ.grp", function(x) standardGeneric("real.occ.grp"))
+setGeneric("real.occs.grp", function(x) standardGeneric("real.occs.grp"))
 #' @export
-setMethod("real.occ.grp", "ENMnull", function(x) x@real.occ.grp)
+setMethod("real.occs.grp", "ENMnull", function(x) x@real.occs.grp)
 
 setGeneric("real.bg", function(x) standardGeneric("real.bg"))
 #' @export

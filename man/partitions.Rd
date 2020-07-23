@@ -37,7 +37,7 @@ If a single number is given and \code{get.checkerboard2} partitioning method is 
 }
 \value{
 A named list of two items:
-\item{$occ.grp}{ A vector of bin designation for occurrence localities in the same order they were provided.}
+\item{$occs.grp}{ A vector of bin designation for occurrence localities in the same order they were provided.}
 \item{$bg.grp}{ A vector of bin designation for background localities in the same order they were provided.}
 }
 \description{
@@ -103,40 +103,40 @@ points(occs, pch=21, bg=2)
 ### Block partitioning method (default orientation is c("lat, lon"))
 blk.latLon <- get.block(occs, bg)
 plot(envs)
-points(occs, pch=23, bg=blk.latLon$occ.grp)
+points(occs, pch=23, bg=blk.latLon$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=blk.latLon$bg.grp)
 # Can partition with other orientations
 blk.latLat <- get.block(occs, bg, orientation = c("lat","lat"))
 plot(envs)
-points(occs, pch=23, bg=blk.latLat$occ.grp)
+points(occs, pch=23, bg=blk.latLat$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=blk.latLat$bg.grp)
 
 ### Checkerboard1 partitioning method with aggregation factor of 4
 chk1.ag4 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 4)
 plot(envs)
-points(occs, pch=23, bg=chk1.ag4$occ.grp)
+points(occs, pch=23, bg=chk1.ag4$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=chk1.ag4$bg.grp)
 # Higher aggregation factors result in bigger checkerboard blocks
 chk1.ag8 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 8)
 plot(envs)
-points(occs, pch=23, bg=chk1.ag8$occ.grp)
+points(occs, pch=23, bg=chk1.ag8$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=chk1.ag8$bg.grp)
 
 ### Checkerboard2 partitioning method with aggregation factors of 2, 2
 chk2.ag2_2 <- get.checkerboard2(occs, envs, bg, c(2,2))
 plot(envs)
-points(occs, pch=23, bg=chk2.ag2_2$occ.grp)
+points(occs, pch=23, bg=chk2.ag2_2$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=chk2.ag2_2$bg.grp)
 # Higher aggregation factors result in bigger checkerboard blocks,
 # and can vary between hierarchical levels
 chk2.ag4_6 <- get.checkerboard2(occs, envs, bg, c(4,6))
 plot(envs)
-points(occs, pch=23, bg=chk2.ag4_6$occ.grp)
+points(occs, pch=23, bg=chk2.ag4_6$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=chk2.ag4_6$bg.grp)
 
@@ -144,7 +144,7 @@ points(bg, pch=21, bg=chk2.ag4_6$bg.grp)
 # Note that get.randomkkfold does not partition the background
 krandom <- get.randomkfold(occs, bg, 4)
 plot(envs)
-points(occs, pch=23, bg=krandom$occ.grp)
+points(occs, pch=23, bg=krandom$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=krandom$bg.grp)
 
@@ -152,7 +152,7 @@ points(bg, pch=21, bg=krandom$bg.grp)
 # Note that get.jackknife does not partition the background
 jack <- get.jackknife(occs, bg)
 plot(envs)
-points(occs, pch=23, bg=rainbow(length(jack$occ.grp)))
+points(occs, pch=23, bg=rainbow(length(jack$occs.grp)))
 plot(envs)
 points(bg, pch=21, bg=jack$bg.grp)
 

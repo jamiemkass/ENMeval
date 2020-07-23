@@ -11,7 +11,7 @@
 
 plot.eval.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
-    pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occ.grp),
+    pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
                   bg = cbind(e@bg, grp = e@bg.grp))  
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
@@ -64,13 +64,13 @@ plot.eval.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type 
 
 plot.eval.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
   names(e@occs)[1:2] <- c("longitude","latitude")
-  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occ.grp),
+  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occs.grp),
                 bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
   pts.x <- raster::extract(envs, pts[,c("longitude","latitude")])
   vals <- data.frame(pts.x, grp = pts$grp) 
   test.mss <- list()
   ras.mss <- list()
-  nk <- length(unique(e@occ.grp))
+  nk <- length(unique(e@occs.grp))
   for(k in 1:nk) {
     test.vals <- vals %>% dplyr::filter(grp == k) %>% dplyr::select(-grp)
     train.xy <- pts %>% dplyr::filter(grp != k) %>% dplyr::select(-grp)

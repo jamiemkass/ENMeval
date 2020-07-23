@@ -47,14 +47,14 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
   start.time <- proc.time()
 
   # assign the number of cross validation iterations
-  nk <- ifelse(e@partition.method == "independent", 1, max(as.numeric(e@occ.grp)))
+  nk <- ifelse(e@partition.method == "independent", 1, max(as.numeric(e@occs.grp)))
 
   # get number of occurrence points by partition
-  occs.grp.tbl <- table(e@occ.grp)
+  occs.grp.tbl <- table(e@occs.grp)
   
   # if more than one background partition exists, assume spatial CV and
   # keep existing partitions
-  null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occ.grp, e@bg.grp))
+  null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
   
   # assign algorithm
   if(is.null(user.enm)) {
@@ -116,24 +116,24 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
     # bind rows together to make full null occurrence dataset
     null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
     if(eval.type == "knonspatial") {
-      if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occ.grp
-      if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occ.grp
+      if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occs.grp
+      if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
     }
     null.occs.i.vals <- null.occs.i.df %>% dplyr::select(-grp)
     # assign the null occurrence partitions as user partition settings, but
     # keep the real model background partitions
-    user.grp <- list(occ.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
+    user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
     # shortcuts for settings
     e.s <- e@other.settings
     # assign user test partitions to those used in the real model
-    user.test.grps <- cbind(e@occs, grp = e@occ.grp)
+    user.test.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
 
     null.e.i <- ENMevaluate(occs = null.occs.i.vals, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
                             mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
                             user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
-                            aggregation.factor = e.p$aggregation.factor, doClamp = e.s$doClamp, 
+                            aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
                             pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
     setTxtProgressBar(pb, i)
 
@@ -187,7 +187,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
                  null.results.grp = nulls.grp,
                  real.vs.null.results = realNull.stats,
                  real.occs = e@occs,
-                 real.occ.grp = e@occ.grp,
+                 real.occs.grp = e@occs.grp,
                  real.bg = e@bg,
                  real.bg.grp = e@bg.grp)
 

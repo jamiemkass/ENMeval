@@ -23,7 +23,7 @@
 #' @param user.enm ENMdetails object specified by the user; this model will be
 #' used for the analysis, and is an alternative to specifying mod.name
 #' @param partitions character of name of partitioning technique (see \code{?partitions})
-#' @param user.grp named list with occ.grp = vector of partition group (fold) for each
+#' @param user.grp named list with occs.grp = vector of partition group (fold) for each
 #' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
 #' background (or pseudo-absence) localities
 #' @param occs.ind matrix or data frame with two columns for longitude and latitude 
@@ -38,7 +38,7 @@
 #' @param overlap boolean (TRUE or FALSE) which if TRUE, calculate niche overlap statistics
 #' @param overlapStat character for one or two (vector) niche overlap statistics:
 #' choices are "D" and "I" -- see ?calc.niche.overlap for more details
-#' @param doClamp boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
+#' @param clamp boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
 #' applicable for maxent.jar/maxnet models
 #' @param pred.type character (default: "cloglog") that specifies which prediction type should be used to
 #' generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models
@@ -62,12 +62,12 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
-                        n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), doClamp = TRUE, pred.type = "cloglog", 
+                        n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
                         abs.auc.diff = TRUE, user.test.grps = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
-                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, clamp = NULL, progbar = NULL) {
+                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, progbar = NULL) {
   
   # legacy parameter handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
@@ -77,6 +77,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
   if(!is.null(bg.coords)) bg <- bg.coords
+  if(!is.null(occ.grp)) occs.grp <- occ.grp
   if(!is.null(method)) partitions <- method
   if(!is.null(rasterPreds)) {
     stop("This parameter was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
@@ -88,7 +89,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
-  if(!is.null(occ.grp) & !is.null(bg.grp)) user.grp <- list(occ.grp = occ.grp, bg.grp = bg.grp)
+  if(!is.null(occs.grp) & !is.null(bg.grp)) user.grp <- list(occs.grp = occs.grp, bg.grp = bg.grp)
   
   if(is.null(mod.name) & is.null(user.enm)) {
     stop("* Please select a model name (mod.name) or specify a user model (user.enm).")
@@ -190,7 +191,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     occs.dups <- duplicated(occs.cellNo[,1])
     if(sum(occs.dups) > 0) if(quiet != TRUE) message(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another."))
     occs <- occs[!occs.dups,]
-    if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[!occs.dups]
+    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
     
     # bind coordinates to predictor variable values for occs and bg
     occs.vals <- raster::extract(envs, occs)
@@ -213,7 +214,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(length(occs.vals.na) > 0) {
     if(quiet != TRUE) message(paste0("* Removed ", length(occs.vals.na), " occurrence points with NA predictor variable values."))
     occs <- occs[-occs.vals.na,]
-    if(!is.null(user.grp)) user.grp$occ.grp <- user.grp$occ.grp[-occs.vals.na]
+    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[-occs.vals.na]
   }
   
   bg.vals.na <- which(rowSums(is.na(bg)) > 0)
@@ -232,7 +233,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # if user-defined partitions, assign grp variable before filtering out records with NA predictor variable values
   # for all other partitioning methods, grp assignments occur after filtering
   if(!is.null(user.grp)) {
-    d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occ.grp))
+    d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occs.grp))
     d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
   }
   
@@ -274,8 +275,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                  checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = NULL,
-                 independent = list(occ.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
-                 none = list(occ.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
+                 independent = list(occs.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
+                 none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
   
   
   # choose a user message reporting on partition choice
@@ -285,7 +286,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                       block = "* Model evaluations with spatial block (4-fold) cross validation...",
                       checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
                       checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
-                      user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occ.grp)), "-fold cross validation..."),
+                      user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
                       independent = "* Model evaluations with independent testing data...",
                       none = "* Skipping model evaluations (only calculating full model statistics)...")
   if(quiet != TRUE) message(parts.message)
@@ -295,11 +296,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                            randomkfold = list(kfolds = kfolds),
                            checkerboard1 = list(aggregation.factor = aggregation.factor),
                            checkerboard2 = list(aggregation.factor = aggregation.factor),
-                           user = list(kfolds = length(unique(user.grp$occ.grp))))
+                           user = list(kfolds = length(unique(user.grp$occs.grp))))
   if(is.null(parts.settings)) parts.settings <- list()
   
   # add these values as the 'grp' column
-  if(!is.null(grps)) d$grp <- factor(c(grps$occ.grp, grps$bg.grp))
+  if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
   
   ############################################ #
   # ADD INDEPENDENT TESTING DATA (IF INPUT) ####
@@ -349,7 +350,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   
   # put all settings into list
-  other.settings <- list(other.args = other.args, doClamp = doClamp, pred.type = pred.type, 
+  other.settings <- list(other.args = other.args, clamp = clamp, pred.type = pred.type, 
                          abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv)
   
   if(parallel) {
@@ -480,7 +481,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions, partition.settings = parts.settings,
                      other.settings = other.settings, taxon.name = taxon.name,
-                     occs = d[d$pb == 1, 1:(ncol(d)-2)], occ.grp = factor(d[d$pb == 1, "grp"]),
+                     occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
                      rmm = list())
   # add the rangeModelMetadata object to the ENMevaluation object

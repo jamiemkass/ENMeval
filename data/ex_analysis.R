@@ -15,7 +15,7 @@ categoricals <- "biome"
 skipRasters <- FALSE
 other.args <- NULL
 updateProgress <- NULL
-doClamp <- TRUE
+clamp <- TRUE
 abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
@@ -23,7 +23,7 @@ occs.ind = NULL
 # quiet = FALSE
 # 
 # # user groups
-# user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
+# user.grp <- list(occs.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
 # 
 # # independent partitions
 # occs.ind <- occs[1:50,]
@@ -48,7 +48,7 @@ occs.ind = NULL
 # ## regular run
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
 # ## regular run with user partitions
-# # user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
+# # user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp, overlap = TRUE)
 # ## regular run with NA in occurrences
 # # occs[18,] <- c(0,0)

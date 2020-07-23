@@ -53,7 +53,7 @@ args <- function(occs.vals, bg.vals, tune.i, other.settings) {
 
 eval.train <- function(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
-  clamp <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
+  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   output.format <- paste0("outputformat=", other.settings$pred.type)
   e <- dismo::evaluate(occs.vals, bg.vals, mod.full, args = c(output.format, clamp))
   auc.train <- e@auc
@@ -77,7 +77,7 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
   ## testing AUC
   # calculate auc on testing data: test occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, do perform the subtraction, it is essential that both stats are calculated over the same background
-  clamp <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
+  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   output.format <- paste0("outputformat=", other.settings$pred.type)
   e.train <- dismo::evaluate(occs.train.vals, bg.vals, mod.k, args = c(output.format, clamp))
   e.test <- dismo::evaluate(occs.test.vals, bg.vals, mod.k, args = c(output.format, clamp))
@@ -116,7 +116,7 @@ eval.test <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.
 
 pred <- function(mod, envs, other.settings) {
   type.arg <- paste("outputformat", other.settings$pred.type, sep = "=")
-  clamp.arg <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
+  clamp.arg <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   pred <- dismo::predict(mod, envs, args = c(type.arg, clamp.arg), na.rm = TRUE)
   return(pred)
 }

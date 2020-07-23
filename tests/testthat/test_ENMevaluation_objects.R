@@ -15,7 +15,7 @@ tune.args.ls <- list("maxnet" = list(fc = c("L","LQ"), rm = 2:3),
 tune.args.tbl.ls <- lapply(tune.args.ls, expand.grid, stringsAsFactors = FALSE)
 parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "independent", "none", "user", rep("randomkfold", 4))
 kfolds.n <- 4
-user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
+user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
 # random sample of occs for runs that use subsets
 i <- sample(1:nrow(occs))
 
@@ -75,7 +75,7 @@ test_that("ENMevaluation object and slots exist", {
       expect_true(raster::nlayers(e@predictions) == 0)  
     }
     expect_true(!is.null(e@occs))
-    expect_true(!is.null(e@occ.grp))
+    expect_true(!is.null(e@occs.grp))
     expect_true(!is.null(e@bg))
     expect_true(!is.null(e@bg.grp))
     expect_true(!is.null(e@overlap))
@@ -101,8 +101,8 @@ test_that("Data in ENMevaluation object slots have correct form", {
       # number of models
       expect_true(length(e@models) == nrow(tune.args.tbl.ls[[m]]))
     }
-    # number of rows for occs matches occ.grp
-    expect_true(nrow(e@occs) == length(e@occ.grp))
+    # number of rows for occs matches occs.grp
+    expect_true(nrow(e@occs) == length(e@occs.grp))
     # number of rows for bg matches bg.grp
     expect_true(nrow(e@bg) == length(e@bg.grp))
     # no overlap is calculated for no tuning or BIOCLIM
@@ -130,42 +130,42 @@ test_that("Records with missing environmental values were removed", {
 # check partition numbers
 
 test_that("Spatial block has correct number of partitions", {
-  expect_true(length(unique(e.ls$block@occ.grp)) == 4)
+  expect_true(length(unique(e.ls$block@occs.grp)) == 4)
   expect_true(length(unique(e.ls$block@bg.grp)) == 4)
 })
 
 test_that("Checkerboard 1 has correct number of partitions", {
-  expect_true(length(unique(e.ls$cb1@occ.grp)) == 2)
+  expect_true(length(unique(e.ls$cb1@occs.grp)) == 2)
   expect_true(length(unique(e.ls$cb1@bg.grp)) == 2)
 })
 
 test_that("Checkerboard 2 has correct number of partitions", {
-  expect_true(length(unique(e.ls$cb2@occ.grp)) == 4)
+  expect_true(length(unique(e.ls$cb2@occs.grp)) == 4)
   expect_true(length(unique(e.ls$cb2@bg.grp)) == 4)
 })
 
 test_that("Random k-fold has correct number of partitions", {
-  expect_true(length(unique(e.ls$rand@occ.grp)) == kfolds.n)
+  expect_true(length(unique(e.ls$rand@occs.grp)) == kfolds.n)
   expect_true(length(unique(e.ls$rand@bg.grp)) == 1)
 })
 
 test_that("Jackknife has correct number of partitions", {
-  expect_true(length(unique(e.ls$jack@occ.grp)) == nrow(e.ls$jack@occs))
+  expect_true(length(unique(e.ls$jack@occs.grp)) == nrow(e.ls$jack@occs))
   expect_true(length(unique(e.ls$jack@bg.grp)) == 1)
 })
 
 test_that("Independent has correct number of partitions", {
-  expect_true(length(unique(e.ls$ind@occ.grp)) == 1)
+  expect_true(length(unique(e.ls$ind@occs.grp)) == 1)
   expect_true(length(unique(e.ls$ind@bg.grp)) == 1)
 })
 
 test_that("No partitions has no partitions", {
-  expect_true(length(unique(e.ls$nopart@occ.grp)) == 1)
+  expect_true(length(unique(e.ls$nopart@occs.grp)) == 1)
   expect_true(length(unique(e.ls$nopart@bg.grp)) == 1)
 })
 
 test_that("User has correct number of partitions", {
-  expect_true(length(unique(e.ls$user@occ.grp)) == length(unique(user.grp$occ.grp)))
+  expect_true(length(unique(e.ls$user@occs.grp)) == length(unique(user.grp$occs.grp)))
   expect_true(length(unique(e.ls$user@bg.grp)) == length(unique(user.grp$bg.grp)))
 })
 
