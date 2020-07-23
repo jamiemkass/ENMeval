@@ -9,7 +9,7 @@
 #' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-enmeval.plot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
+plot.eval.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
     pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occ.grp),
                   bg = cbind(e@bg, grp = e@bg.grp))  
@@ -62,7 +62,7 @@ enmeval.plot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.ty
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-enmeval.plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
+plot.eval.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
   names(e@occs)[1:2] <- c("longitude","latitude")
   pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occ.grp),
                 bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
@@ -120,7 +120,7 @@ enmeval.plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "dens
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-enmeval.plot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
+plot.eval.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
@@ -136,7 +136,8 @@ enmeval.plot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE
   join.names <- names(avgs)
   join.names <- join.names[join.names != "avg"]
   res.avgs <- dplyr::left_join(avgs, sds, by = join.names) %>%
-    dplyr::mutate(lower = avg - sd, upper = avg + sd)
+    dplyr::mutate(lower = avg - sd, upper = avg + sd,
+                  metric = factor(metric, levels = stats))
   
   if(nrow(res.avgs) > 0) {
     if(is.null(dodge)) dodge <- 0.2
@@ -176,7 +177,7 @@ enmeval.plot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE
 #' @return A ggplot of null model statistics. 
 #' @export
 
-enmeval.plot.nulls <- function(e.null, stats, plot.type) {
+plot.eval.nulls <- function(e.null, stats, plot.type) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
