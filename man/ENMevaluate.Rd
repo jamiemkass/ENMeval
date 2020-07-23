@@ -19,18 +19,19 @@ ENMevaluate(
   occs.ind = NULL,
   kfolds = NA,
   aggregation.factor = c(2, 2),
+  orientation = "lat_lon",
   n.bg = 10000,
   overlap = FALSE,
   overlapStat = c("D", "I"),
-  doClamp = TRUE,
+  clamp = TRUE,
   pred.type = "cloglog",
-  cbi.eval = "envs",
   abs.auc.diff = TRUE,
   user.test.grps = NULL,
   parallel = FALSE,
   numCores = NULL,
   parallelType = "doSNOW",
   updateProgress = FALSE,
+  quiet = FALSE,
   occ = NULL,
   env = NULL,
   bg.coords = NULL,
@@ -42,7 +43,6 @@ ENMevaluate(
   method = NULL,
   bin.output = NULL,
   rasterPreds = NULL,
-  clamp = NULL,
   progbar = NULL
 )
 }
@@ -73,7 +73,7 @@ used for the analysis, and is an alternative to specifying mod.name}
 
 \item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 
-\item{user.grp}{named list with occ.grp = vector of partition group (fold) for each
+\item{user.grp}{named list with occs.grp = vector of partition group (fold) for each
 occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
 background (or pseudo-absence) localities}
 
@@ -95,16 +95,11 @@ sample; necessary if \code{bg} is NULL}
 \item{overlapStat}{character for one or two (vector) niche overlap statistics:
 choices are "D" and "I" -- see ?calc.niche.overlap for more details}
 
-\item{doClamp}{boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
+\item{clamp}{boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
 applicable for maxent.jar/maxnet models}
 
 \item{pred.type}{character (default: "cloglog") that specifies which prediction type should be used to
 generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models}
-
-\item{cbi.eval}{character (default: "envs") specifying which should be used to calculate the expected frequency
-of occurrences for the Continuous Boyce Index: "envs" for the predictions over the entire predictor variable rasters
-(which necessitates creating a new prediction raster over the full extent for every partition), and "bg" for the 
-predictions at all localities (training and testing occurrences and backgrounds)}
 
 \item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
 

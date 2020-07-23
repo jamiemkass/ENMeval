@@ -13,8 +13,8 @@
 #' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data);
 #' necessary when evaluating using spatial cross-validation (see details)
 #' @param user.enm ENMdetails object specified by the user
-#' @param user.envs.partition numeric vector designating user-defined partition groups (folds) for \code{envs}; 
-#' necessary when evaluating using spatial cross-validation (see details)
+#' @param user.bg.partition numeric vector designating user-defined partition groups (folds) for \code{bg};
+#' this is necessary for user-defined partitions so that background points can be sampled as null occurrences
 #' @param userStats.signs named list of user-defined evaluation statistics attributed with
 #' either 1 or -1 to designate whether the expected difference between real and null models is 
 #' positive or negative; this is used to calculate the p-value of the z-score
@@ -24,12 +24,22 @@
 #'
 
 # for split evaluation, label training occs "1" and independent evaluation occs "2" in partitions
-ENMnullSims <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, user.envs.partition = NULL,
+ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.partition = NULL,
                      userStats.signs = NULL, removeMxTemp = TRUE) {
 
+  # assign evaluation type based on partition method
+  eval.type <- switch(e@partition.method,
+                      randomkfold = "knonspatial",
+                      jackknife = "knonspatial",
+                      block = "kspatial",
+                      checkerboard1 = "kspatial",
+                      checkerboard2 = "kspatial",
+                      independent = "knonspatial")
+  
   # checks
   if(!all(sapply(mod.settings, length) == 1)) stop("Please input a single set of model settings.")
   
+  # assign directionality of sign for evaluation stats
   signs <- c(list("auc.test" = 1, "auc.train" = 1, "cbi.test" = 1, "cbi.train" = 1,
                    "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
   
@@ -37,43 +47,16 @@ ENMnullSims <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, 
   start.time <- proc.time()
 
   # assign the number of cross validation iterations
-  nk <- ifelse(e@partition.method == "independent", 1, max(as.numeric(e@occ.grp)))
-  # get names of environmental predictor variables
-  envs.names <- names(e@occs)[3:ncol(e@occs)]
+  nk <- ifelse(e@partition.method == "independent", 1, max(as.numeric(e@occs.grp)))
 
   # get number of occurrence points by partition
-  occs.grp.tbl <- table(e@occ.grp)
-
-  eval.type <- switch(e@partition.method,
-                      random = "kfold",
-                      jackknife = "kfold",
-                      block = "kspatial",
-                      checkerboard1 = "kspatial",
-                      checkerboard2 = "kspatial",
-                      independent = "kfold")
-
-  # if envs were input, get partition groups for envs if using spatial cross validation
-  if(!is.null(envs)) {
-    envs.pts <- as.data.frame(na.omit(raster::rasterToPoints(envs)))
-    names(envs.pts)[1:2] <- names(e@occs)[1:2]
-    # convert any factor columns to factor in envs pts dataset
-    envs.fact <- which(sapply(e@occs, is.factor))
-    envs.pts[,envs.fact] <- factor(envs.pts[,envs.fact])
-    # if using a native ENMeval spatial cross validation partitioning method, use it to assign partition groups to envs
-    if(e@partition.method != "user") {
-      envs.pts$grp <- switch(e@partition.method,
-                         block = get.block(e@occs, envs.pts)$bg.grp,
-                         checkerboard1 = get.checkerboard1(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]$bg.grp),
-                         checkerboard2 = get.checkerboard2(e@occs, envs.pts, aggregation.factor = strsplit(e@partition.settings, split = "=")[[1]][2]$bg.grp),
-                         independent = 1,
-                         randomkfold = 1,
-                         jackknife = 1)
-    }else{
-      # if user partitions, assign envs partition groups based on user input
-      envs.pts$grp <- user.envs.partition
-    }
-  }
-
+  occs.grp.tbl <- table(e@occs.grp)
+  
+  # if more than one background partition exists, assume spatial CV and
+  # keep existing partitions
+  null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
+  
+  # assign algorithm
   if(is.null(user.enm)) {
     enm <- lookup.enm(e@algorithm)
     if(e@algorithm == "maxent.jar") {
@@ -101,47 +84,57 @@ ENMnullSims <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, 
   nulls.ls <- list()
   nulls.grp.ls <- list()
 
-  message(sprintf("Building and evaluating %i null ENMs...", no.iter))
+  message(paste("Building and evaluating null ENMs with", no.iter, "iterations..."))
+  message("Sampling null occurrences from background values...")
   pb <- txtProgressBar(0, no.iter, style = 3)
 
   for(i in 1:no.iter) {
 
     null.occs.ik <- list()
-
-    # randomly sample the same number of training occs over each k partition
-    # of envs; if kspatial evaluation, only sample over the current spatial
-    # partition of envs.vals
-    for(k in 1:nk) {
-      if(eval.type == "kspatial") {
-        # if spatial cross-validation, sample null occurrences only from
+    if(eval.type == "kspatial") {
+      # randomly sample the same number of training occs over each k partition
+      # of envs; if kspatial evaluation, only sample over the current spatial
+      # partition of envs.vals
+      for(k in 1:nk) {
+        # sample null occurrences only from
         # the environment variable grid cells in partition group k
-        envs.pts.k <- envs.pts %>% dplyr::filter(grp == k)
-      }else{
-        # if nonspatial cross-validation, sample null occurrences from
-        # the entire environment variable grid for each partition group k
-        envs.pts.k <- envs.pts
+        null.samps.k <- null.samps %>% dplyr::filter(grp == k)
+        # randomly sample n null occurrences, where n equals the number
+        # of real occurrence in partition group k
+        samp.k <- sample(1:nrow(null.samps.k), occs.grp.tbl[k])
+        null.occs.ik[[k]] <- null.samps.k[samp.k, ]
       }
-      # randomly sample n null occurrences, where n equals the number
-      # of real occurrence in partition group k
-      s.k <- sample(1:nrow(envs.pts.k), occs.grp.tbl[k])
-      null.occs.ik[[k]] <- envs.pts.k[s.k, ]
+    }else if(eval.type == "knonspatial") {
+      for(k in 1:nk) {
+        # randomly sample n null occurrences, where n equals the number
+        # of real occurrence in partition group k
+        samp.k <- sample(1:nrow(null.samps), occs.grp.tbl[k])
+        null.occs.ik[[k]] <- null.samps[samp.k, ]
+      }
     }
 
     # bind rows together to make full null occurrence dataset
     null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
+    if(eval.type == "knonspatial") {
+      if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occs.grp
+      if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
+    }
     null.occs.i.vals <- null.occs.i.df %>% dplyr::select(-grp)
     # assign the null occurrence partitions as user partition settings, but
     # keep the real model background partitions
-    user.grp <- list(occ.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
-    # assign user test partitions to those used in the real model
-    user.test.grps <- cbind(e@occs, grp = e@occ.grp)
+    user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
     # shortcuts for settings
     e.s <- e@other.settings
+    # assign user test partitions to those used in the real model
+    user.test.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
+    categoricals <- names(which(sapply(e@occs, is.factor)))
 
-    null.e.i <- ENMevaluate(null.occs.i.vals, bg = e@bg, tune.args = mod.settings, mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
-                            user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, aggregation.factor = e.p$aggregation.factor,
-                            doClamp = e.s$doClamp, pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, cbi.eval = e.s$cbi.eval)
+    null.e.i <- ENMevaluate(occs = null.occs.i.vals, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
+                            mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
+                            user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
+                            aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
+                            pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
     setTxtProgressBar(pb, i)
 
     nulls.ls[[i]] <- null.e.i@results
@@ -194,7 +187,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, envs = NULL, user.enm = NULL, 
                  null.results.grp = nulls.grp,
                  real.vs.null.results = realNull.stats,
                  real.occs = e@occs,
-                 real.occ.grp = e@occ.grp,
+                 real.occs.grp = e@occs.grp,
                  real.bg = e@bg,
                  real.bg.grp = e@bg.grp)
 

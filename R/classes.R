@@ -14,7 +14,7 @@ NULL
 #' @slot models list of model objects
 #' @slot predictions RasterStack of model predictions
 #' @slot occs data.frame of occurrence coordinates and predictor variable values used for model training
-#' @slot occ.grp vector of partition groups for occurrence points
+#' @slot occs.grp vector of partition groups for occurrence points
 #' @slot bg data.frame of background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector of partition groups for background points
 #' @slot overlap list of matrices of pairwise niche overlap statistics
@@ -33,7 +33,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                   predictions = 'RasterStack',
                                   taxon.name = 'character',
                                   occs = 'data.frame',
-                                  occ.grp = 'factor',
+                                  occs.grp = 'factor',
                                   bg = 'data.frame',
                                   bg.grp = 'factor',
                                   overlap = 'list',
@@ -83,9 +83,9 @@ setGeneric("eval.occs", function(x) standardGeneric("eval.occs"))
 #' @export
 setMethod("eval.occs", "ENMevaluation", function(x) x@occs)
 
-setGeneric("eval.occ.grp", function(x) standardGeneric("eval.occ.grp"))
+setGeneric("eval.occs.grp", function(x) standardGeneric("eval.occs.grp"))
 #' @export
-setMethod("eval.occ.grp", "ENMevaluation", function(x) x@occ.grp)
+setMethod("eval.occs.grp", "ENMevaluation", function(x) x@occs.grp)
 
 setGeneric("eval.bg", function(x) standardGeneric("eval.bg"))
 #' @export
@@ -129,7 +129,6 @@ setMethod("show",
 #' @slot pkgs vector of package names needed to run the model function
 #' @slot msgs function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}
 #' @slot args function specifying the parameters needed to run the model function
-#' @slot aic function specifying how AIC should be calculated (if at all)
 #' @slot eval.train function specifying how to calculate training evaluation statistics
 #' @slot eval.test function specifying how to calculate testing evaluation statistics
 #' @slot pred function specifying how to calculate a model prediction for a Raster* or a data frame
@@ -143,15 +142,14 @@ ENMdetails <- setClass("ENMdetails",
                                  pkgs = 'character',
                                  msgs = 'function',
                                  args = 'function',
-                                 aic = 'function',
                                  eval.train = 'function',
                                  eval.test = 'function',
                                  pred = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, aic, eval.train, eval.test, pred, nparams) {
+ENMdetails <- function(name, fun, pkgs, msgs, args, eval.train, eval.test, pred, nparams) {
   new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      aic = aic, eval.train = eval.train, eval.test = eval.test, pred = pred, nparams = nparams)
+      eval.train = eval.train, eval.test = eval.test, pred = pred, nparams = nparams)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -205,17 +203,6 @@ setMethod("enm.args", "ENMdetails", function(x) x@args)
 #' @export
 setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x@args <- value
-  validObject(x)
-  x
-})
-
-setGeneric("enm.aic", function(x) standardGeneric("enm.aic"))
-setGeneric("enm.aic<-", function(x, value) standardGeneric("enm.aic<-"))
-#' @export
-setMethod("enm.aic", "ENMdetails", function(x) x@aic)
-#' @export
-setMethod("enm.aic<-", "ENMdetails", function(x, value) {
-  x@aic <- value
   validObject(x)
   x
 })
@@ -289,7 +276,7 @@ setMethod("show",
 #' @slot null.results.grp data.frame of evaluation k-fold statistics for null models
 #' @slot real.vs.null.results data.frame of evaluation summary statistics for the real model, means for all null models, z-scores, and p-values
 #' @slot real.occs data.frame of occurrence coordinates and predictor variable values used for model training (real model)
-#' @slot real.occ.grp vector of partition groups for occurrence points
+#' @slot real.occs.grp vector of partition groups for occurrence points
 #' @slot real.bg data.frame of background coordinates and predictor variable values used for model training
 #' @slot real.bg.grp vector of partition groups for background points
 #' @export
@@ -306,7 +293,7 @@ ENMnull <- setClass("ENMnull",
                                     null.results.grp = 'data.frame',
                                     real.vs.null.results = 'data.frame',
                                     real.occs = 'data.frame',
-                                    real.occ.grp = 'factor',
+                                    real.occs.grp = 'factor',
                                     real.bg = 'data.frame',
                                     real.bg.grp = 'factor'))
 
@@ -350,9 +337,9 @@ setGeneric("real.occs", function(x) standardGeneric("real.occs"))
 #' @export
 setMethod("real.occs", "ENMnull", function(x) x@real.occs)
 
-setGeneric("real.occ.grp", function(x) standardGeneric("real.occ.grp"))
+setGeneric("real.occs.grp", function(x) standardGeneric("real.occs.grp"))
 #' @export
-setMethod("real.occ.grp", "ENMnull", function(x) x@real.occ.grp)
+setMethod("real.occs.grp", "ENMnull", function(x) x@real.occs.grp)
 
 setGeneric("real.bg", function(x) standardGeneric("real.bg"))
 #' @export
