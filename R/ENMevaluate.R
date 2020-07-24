@@ -89,7 +89,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
-  if(!is.null(occs.grp) & !is.null(bg.grp)) user.grp <- list(occs.grp = occs.grp, bg.grp = bg.grp)
+  if(!is.null(occ.grp) & !is.null(bg.grp)) user.grp <- list(occs.grp = occ.grp, bg.grp = bg.grp)
   
   if(is.null(mod.name) & is.null(user.enm)) {
     stop("* Please select a model name (mod.name) or specify a user model (user.enm).")
