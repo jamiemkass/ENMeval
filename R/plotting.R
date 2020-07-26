@@ -120,7 +120,7 @@ plot.eval.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-plot.eval.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
+plot_eval.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
