@@ -77,19 +77,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
   if(!is.null(bg.coords)) bg <- bg.coords
-  if(!is.null(occ.grp)) occs.grp <- occ.grp
   if(!is.null(method)) partitions <- method
   if(!is.null(rasterPreds)) {
-    stop("This parameter was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
+    stop("Warning: This parameter was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
   }
   if(!is.null(algorithm)) {
+    if(quiet != TRUE) message("Warning: This parameter was deprecated and replaced with the parameter mod.name.")
     mod.name <- algorithm
     tune.args <- list(fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
                       rm = seq(0.5, 4, 0.5))
   }
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
-  if(!is.null(occs.grp) & !is.null(bg.grp)) user.grp <- list(occs.grp = occs.grp, bg.grp = bg.grp)
+  if(!is.null(occ.grp) & !is.null(bg.grp)) {
+    user.grp <- list(occs.grp = occ.grp, bg.grp = bg.grp)
+    if(quiet != TRUE) message("Warning: These parameters were deprecated and replaced with the parameter user.grp.")
+  }
+  if((!is.null(occ.grp) & is.null(bg.grp)) | (is.null(occ.grp) & !is.null(bg.grp))) {
+    stop("For user partitions, please input both occ.grp and bg.grp. Warning: These are legacy parameters that were replaced with the parameter user.grp.")
+  }
   
   if(is.null(mod.name) & is.null(user.enm)) {
     stop("* Please select a model name (mod.name) or specify a user model (user.enm).")

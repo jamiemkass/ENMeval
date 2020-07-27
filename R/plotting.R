@@ -9,7 +9,7 @@
 #' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-plot.eval.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
+evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
     pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
                   bg = cbind(e@bg, grp = e@bg.grp))  
@@ -62,7 +62,7 @@ plot.eval.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type 
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-plot.eval.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
+evalplot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
   names(e@occs)[1:2] <- c("longitude","latitude")
   pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occs.grp),
                 bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
@@ -120,7 +120,7 @@ plot.eval.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-plot.eval.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
+evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
@@ -177,7 +177,7 @@ plot.eval.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
 #' @return A ggplot of null model statistics. 
 #' @export
 
-plot.eval.nulls <- function(e.null, stats, plot.type) {
+evalplot.nulls <- function(e.null, stats, plot.type) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%

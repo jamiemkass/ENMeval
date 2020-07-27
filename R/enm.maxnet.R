@@ -110,7 +110,7 @@ pred <- function(mod, envs, other.settings) {
     mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
                        clamp = other.settings$clamp, na.rm = TRUE, other.settings$other.args)
     p.vals <- cbind(envs.pts[,1:2], mxnet.p)
-    pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = crs(envs)) 
+    pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = raster::crs(envs)) 
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
     pred <- predict(mod, envs, type = other.settings$pred.type, 
