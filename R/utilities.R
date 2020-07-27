@@ -102,7 +102,7 @@ aic.maxent <- function(p.occs, nparams, p = NULL) {
   if(!is.null(p)) {
     p.sum <- raster::cellStats(p, sum)  
     # if total does not sum to 1, standardize so that the sum is 1
-    for(i in 1:nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
+    for(i in 1:raster::nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
   }
   # if more parameters than data points, determine AIC to be invalid:
   # this avoids considering overly complex models at all
