@@ -102,7 +102,7 @@ aic.maxent <- function(p.occs, nparams, p = NULL) {
   if(!is.null(p)) {
     p.sum <- raster::cellStats(p, sum)  
     # if total does not sum to 1, standardize so that the sum is 1
-    for(i in 1:nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
+    for(i in 1:raster::nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
   }
   # if more parameters than data points, determine AIC to be invalid:
   # this avoids considering overly complex models at all
@@ -287,9 +287,9 @@ lookup.enm <- function(mod.name) {
 #' @export
 enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
   
-  stopifnot(NCOL(v) == nlayers(x))
+  stopifnot(NCOL(v) == raster::nlayers(x))
   out <- raster(x)
-  nl <- nlayers(x)
+  nl <- raster::nlayers(x)
   filename <- trim(filename)
   nms <- paste(names(x), '_mess', sep='')
   
