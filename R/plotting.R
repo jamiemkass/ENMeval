@@ -12,7 +12,7 @@
 evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
     pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
-                  bg = cbind(e@bg, grp = e@bg.grp))  
+                  bg = cbind(e@bg, partition = e@bg.grp))  
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
@@ -25,7 +25,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
     }
   }
   
-  grp.n <- length(unique(pts.plot$grp))
+  grp.n <- length(unique(pts.plot$partition))
   if(grp.n > 9) {
     theme.custom <- ggplot2::guides(color = FALSE)
     pt.cols <- rainbow(grp.n)
@@ -37,7 +37,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
   envs.df <- raster::as.data.frame(envs, xy = TRUE)
   names(envs.df)[3] <- "value"
   ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
-    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
+    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = partition)) +
     ggplot2::scale_color_manual(values = pt.cols) +
     ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
     ggplot2::coord_equal() + theme.custom
