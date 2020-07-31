@@ -31,7 +31,7 @@ An S4 class that contains the ENMnullSims results.
 
 \item{\code{real.occs}}{data.frame of occurrence coordinates and predictor variable values used for model training (real model)}
 
-\item{\code{real.occ.grp}}{vector of partition groups for occurrence points}
+\item{\code{real.occs.grp}}{vector of partition groups for occurrence points}
 
 \item{\code{real.bg}}{data.frame of background coordinates and predictor variable values used for model training}
 

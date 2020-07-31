@@ -7,7 +7,7 @@ envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex',
 bg <- as.data.frame(dismo::randomPoints(envs, 10000))
 names(bg) <- names(occs)
 tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
-tune.args <- list(tails = c("low", "high", "both"))
+# tune.args <- list(tails = c("low", "high", "both"))
 # tune.args <- list(fc = "L", rm = 1)
 partitions <- "randomkfold"
 kfolds <- 4
@@ -15,16 +15,15 @@ categoricals <- "biome"
 skipRasters <- FALSE
 other.args <- NULL
 updateProgress <- NULL
-doClamp <- TRUE
+clamp <- TRUE
 abs.auc.diff <- TRUE
 pred.type <- "cloglog"
 user.grp = NULL
 occs.ind = NULL
-cbi.eval = "envs"
 # quiet = FALSE
 # 
 # # user groups
-# user.grp <- list(occ.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
+# user.grp <- list(occs.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
 # 
 # # independent partitions
 # occs.ind <- occs[1:50,]
@@ -49,13 +48,13 @@ cbi.eval = "envs"
 # ## regular run
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
 # ## regular run with user partitions
-# # user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
+# # user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp, overlap = TRUE)
 # ## regular run with NA in occurrences
 # # occs[18,] <- c(0,0)
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # ## run with SWD
-# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", cbi.eval="bg")
+# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # ## run with independent testing data
 # # e <- ENMevaluate(occs[1:50,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[51:nrow(occs),])
 # ## run with just AIC
@@ -69,5 +68,5 @@ cbi.eval = "envs"
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", partitions = "block")
 # # run parallel
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
-# # run with legacy parameters
-# # e <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = "maxnet", fc = c("L", "LQ"), RMvalues = 1:3, categoricals = "biome", method = "block", overlap = TRUE)
+# # null models
+# ns <- ENMnullSims(e, mod.settings = list(fc = "L", rm = 2), no.iter = 10)

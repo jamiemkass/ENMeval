@@ -1,36 +1,44 @@
 #' @title Partition group plots
-#' @description Plot partition groups over an environmental predictor raster
+#' @description Plot occurrence partition groups over an environmental predictor raster.
 #' @param e ENMevaluation object
 #' @param envs Raster of an environmental predictor variable used to build the models in "e"
-#' @param pts.type character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param pts Matrix or data frame of coordinates for occurrence or background data
+#' @param pts.grp Numeric vector of partition groups corresponding to data in "pts"
+#' @param pts.type Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
+#' @details This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
+#' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "occs") {
+evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
-    pts.plot <- switch(pts.type, occs = cbind(e@occs, grp = e@occ.grp),
+    pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
                   bg = cbind(e@bg, grp = e@bg.grp))  
+    names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
       # make sure pts is a data frame with the right column names
       pts <- as.data.frame(pts)
       names(pts) <- c("longitude", "latitude")
-      pts.plot <- cbind(pts, grp = factor(pts.grp))
+      pts.plot <- cbind(pts, partition = factor(pts.grp))
     }else{
-      stop("If inputting point data and not an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
+      stop("If inputting point data instead of an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
     }
   }
   
-  if(length(unique(pts.plot$grp)) > 10) {
+  grp.n <- length(unique(pts.plot$grp))
+  if(grp.n > 9) {
     theme.custom <- ggplot2::guides(color = FALSE)
+    pt.cols <- rainbow(grp.n)
   }else{
     theme.custom <- NULL
+    pt.cols <- RColorBrewer::brewer.pal(9, "Set1")
   }
   
   envs.df <- raster::as.data.frame(envs, xy = TRUE)
   names(envs.df)[3] <- "value"
   ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = grp)) +
-    # ggplot2::scale_color_brewer(palette = brewer.pal) +
+    ggplot2::scale_color_manual(values = pt.cols) +
     ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
     ggplot2::coord_equal() + theme.custom
 }
@@ -41,32 +49,34 @@ plot.grps <- function(e = NULL, pts = NULL, pts.grp = NULL, envs, pts.type = "oc
 #' @param e ENMevaluation object
 #' @param envs RasterStack of environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input, as they cannot be used to calculate MESS
-#' @param pts.type character specifying which to calculate MESS on: occurrences ("occs") or background ("bg"), with default "occs"
-#' @param plot.type character specifying which to plot: MESS density curves ("density") or MESS rasters ("raster")
-#' @details As implemented here, MESS calculates the similarity between environmental values associated with the 
+#' @param pts.type Character specifying which to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param plot.type Character specifying which to plot: MESS density curves ("density") or MESS rasters ("raster")
+#' @details There are two variations for this plot. If "density", density curves are plotted showing the MESS estimates for each partition group. 
+#' If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
+#' As implemented here, MESS calculates the similarity between environmental values associated with the 
 #' test occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
 #' of the input RasterStack "envs"). Higher negative values indicate greater environmental difference between the test occurrences
 #' and the study extent, and higher positive values indicate greater similarity. This function uses the `dismo::mess()` function 
-#' to calculate MESS. See the below reference for more details.
-#' @return If "density", density curves showing the MESS estimates for each partition group. If "raster", rasters 
-#' showing the geographical MESS estimates for each partition group.
+#' to calculate MESS. See the below reference for more details. 
+#' @return A ggplot of MESS calculations for data partitions.
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
-  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occ.grp),
+evalplot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
+  names(e@occs)[1:2] <- c("longitude","latitude")
+  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occs.grp),
                 bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
   pts.x <- raster::extract(envs, pts[,c("longitude","latitude")])
   vals <- data.frame(pts.x, grp = pts$grp) 
   test.mss <- list()
   ras.mss <- list()
-  nk <- length(unique(e@occ.grp))
+  nk <- length(unique(e@occs.grp))
   for(k in 1:nk) {
     test.vals <- vals %>% dplyr::filter(grp == k) %>% dplyr::select(-grp)
     train.xy <- pts %>% dplyr::filter(grp != k) %>% dplyr::select(-grp)
     # test.ext <- as(raster::extent(sp::bbox(sp::SpatialPoints(test.xy))), "SpatialPolygons")
     # envs.mess.train <- raster::mask(envs.mess, test.ext, inverse = TRUE)
-    mss <- ENMeval::mess(envs, test.vals)
+    mss <- enmeval.mess(envs, test.vals)
     ras.mss[[k]] <- mss
     mss.x <- raster::extract(mss, train.xy)
     test.mss[[k]] <- data.frame(mess.value = mss.x, grp = k)
@@ -75,7 +85,7 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
     rs.mss <- raster::stack(ras.mss)
     rs.mss.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
       tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = "mess.value")
-    rs.mss.df$ras <- unique(gsub("mess", "grp", rs.mss.df$ras))
+    rs.mss.df$ras <- gsub("mess", "grp", rs.mss.df$ras)
     ggplot2::ggplot() + ggplot2::geom_raster(data = rs.mss.df, ggplot2::aes(x = x, y = y, fill = mess.value)) +
       ggplot2::scale_fill_viridis_c(na.value = "white") +
       ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = grp)) +
@@ -97,17 +107,20 @@ plot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
 #' @param e ENMevaluation object
-#' @param stats vector of names of statistics from results table to be plotted; if more than
+#' @param stats Character vector of names of statistics from results table to be plotted; if more than
 #' one statistic is specified, the plot will be faceted
-#' @param x character of variable to be plotted on x-axis
-#' @param col character of variable used to assign symbology colors 
-#' @return A plot of evaluation statistics, with x representing a tuning parameter range, y
-#' representing the average of a statistic over all partitions, and colors representing another
-#' tuning parameter's values. Error bars represent the standard deviation of a statistic around the 
-#' mean. Currently, this function only can handle two tuning parameters at a time.
+#' @param x Character of variable to be plotted on x-axis
+#' @param col Character of variable used to assign symbology colors 
+#' @param dodge (Optional) numeric value specifying the dodge width for points and lines (this improves visibility when there is high overlap) 
+#' @param error.bars (Optional) boolean specifying whether or not to plot error bars (defaults to TRUE)
+#' @details In this plot, the x-axis represents a tuning parameter range, while the y-axis represents the average of a statistic over all partitions.
+#' Different colors represent the categories or values of another tuning parameter. 
+#' Error bars represent the standard deviation of a statistic around the mean. 
+#' Currently, this function can only plot two tuning parameters at a time.
+#' @return A ggplot of evaluation statistics. 
 #' @export
 
-plot.eval <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
+evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
@@ -123,7 +136,8 @@ plot.eval <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   join.names <- names(avgs)
   join.names <- join.names[join.names != "avg"]
   res.avgs <- dplyr::left_join(avgs, sds, by = join.names) %>%
-    dplyr::mutate(lower = avg - sd, upper = avg + sd)
+    dplyr::mutate(lower = avg - sd, upper = avg + sd,
+                  metric = factor(metric, levels = stats))
   
   if(nrow(res.avgs) > 0) {
     if(is.null(dodge)) dodge <- 0.2
@@ -152,12 +166,18 @@ plot.eval <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
 #' @title ENMnullSims statistics plot
 #' @description Plot histogram of evaluation statistics for null ENM simulations
 #' @param e.null ENMnull object
-#' @param stats vector of names of statistics from results table to be plotted; if more than
+#' @param stats Character vector of statistics from results table to be plotted; if more than
 #' one statistic is specified, the histogram plot will be faceted
-#' @param plot.type either "violin" or "histogram"
-#' @return A plot of evaluation statistics for null ENM simulations and display positions of quantiles and real value.
+#' @param plot.type Character specifying the plot type: either "violin" or "histogram"
+#' @details There are two variations for this plot, but both show null quantiles (0.01, 0.05, 0.5, 0.95, 0.99). 
+#' For violin plots, the null distribution is displayed as a vertical shape (i.e., the violin) with horizontal lines showing 
+#' the quantiles and the real value is plotted as a red point along the vertical axis. 
+#' For histogram plots, the null distribution is displayed as a histogram with vertical lines showing the quantiles 
+#' and the real value as a vertical red line on the distribution.
+#' @return A ggplot of null model statistics. 
 #' @export
-plot.nullENMs <- function(e.null, stats, plot.type) {
+
+evalplot.nulls <- function(e.null, stats, plot.type) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
