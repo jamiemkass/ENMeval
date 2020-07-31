@@ -31,11 +31,11 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 
 Some of the most frequently used ENMs are machine learning algorithms with settings that can be "tuned" to determine optimal levels of model complexity. In implementation, this means building models of varying settings, then evaluating them and comparing their performance to select the optimal settings. Such tuning exercises can result in models that balance goodness-of-fit (i.e., avoiding overfitting) and predictive ability. Model evaluation is often done with cross validation, which consists of partitioning the data into groups, building a model with all the groups but one, evaluating this model on the left-out group, then repeating the process until all groups have been left out once.
 
-The primary function, `ENMevaluate`, does all the heavy lifting and returns several items including a table of evaluation statistics and, for each setting combination (here, colloquially: *runs*), a model object and a raster layer showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication:
+The primary function, `ENMevaluate`, does all the heavy lifting and returns several items including a table of evaluation statistics and, for each setting combination (or *run*), a model object and a raster layer showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication:
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/package=maxnet), but v1.0.0 and onward can implement any ENM in theory provided its settings are specified in a ENMdetails object (see below for an example). This version comes out of the box with Maxent, maxnet, [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), and [BRT](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boosted regression trees), but users can provide their own custom model specifications. 
+Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/package=maxnet), but v2.0.0 and onward can implement any ENM in theory provided its settings are specified in a ENMdetails object (see below for an example). This version comes out of the box with Maxent, maxnet, [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), and [BRT](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boosted regression trees), but users can provide their own custom model specifications. 
 
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
@@ -89,14 +89,17 @@ occs.ind <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 0, 5
 points(occs.ind, col="blue")
 ```
 
-Next, we will specify the background extent by cropping (or "clipping" in ArcGIS terms) our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
+Next, we will specify the background extent by cropping our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
 
 ```{r backgExt, message=FALSE, warning=FALSE}
 library(sf)
-library(sp)
+# library(sp)
 
-# Make a SpatialPoints object
+# Make occs into a sf point object
 occs.sf <- st_as_sf(occs, coords = c("longitude","latitude"), crs = 4326)
+# Make sure the RasterStack has the same coordinate reference system (CRS) string
+# Both are the same CRS, but when the strings are different, some spatial functions error
+crs(envs) <- "+proj=longlat +datum=WGS84 +no_defs"
 # occs.sf <- st_transform(occs.sf, "+proj=cea +lat_ts=0 +lon_0=-65.302734375")
 
 # Buffer all occurrences by 5 degrees
@@ -113,7 +116,7 @@ envs.bg <- crop(envs, occs.buf)
 envs.bg <- mask(envs.bg, occs.buf)
 ```
 
-We may want to restrict the study extent to the continental areas (for example). We can use the simplified world map from the [`maptools`](https://cran.r-project.org/package=maptools) package, which is not automatically loaded with `ENMeval`, and tools from `sf` to exclude the Caribbean from our study extent.
+We may want to restrict the study extent to the continental areas (for example). We can use the simplified world map from the [`maptools`](https://cran.r-project.org/package=maptools) package and geoprocessing tools from the [`sf`](https://cran.r-project.org/package=sf) package to exclude the Caribbean from our study extent.
 
 ```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5, warning = FALSE}
 library(maptools)
@@ -150,7 +153,7 @@ colnames(bg) <- colnames(occs)
 
 # Notice how we have pretty good coverage (every cell).
 plot(envs.bg[[1]], legend=FALSE)
-points(bg, col='red')
+points(bg, col='red', pch=20, cex=0.2)
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
@@ -222,7 +225,7 @@ plot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
 ```
 
 #### 6. Independent {#ind}: 
-The 'independent' method evaluates the model on an independent dataset that is not used to create the full model, and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and independent testing data and plot the partitions in the same way as above. However, unlike before, the independent testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the independent testing data (group 2) is used only to evaluate it. Thus, the background extent does not include the independent testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
+The 'independent' method evaluates the model on an independent dataset that is not used to create the full model (i.e., not included in the training data, and thus fully withheld), and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and independent testing data and plot the partitions in the same way as above. However, unlike before, the independent testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the independent testing data (group 2) is used only to evaluate it. Thus, the background extent does not include the independent testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
 
 ```{r part.ind, fig.width = 5, fig.height = 5}
 pts <- rbind(occs, occs.ind)
@@ -231,7 +234,7 @@ plot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
 ```
 
 #### 7. User-defined {#user}
-For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, we demonstrate partitioning the occurrence data based on *k*-means groups. The user-defined partition option can also be used to input partition groups derived from other sources, such as the [`blockCV`](https://github.com/rvalavi/blockCV) package available on Github.
+For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, we demonstrate partitioning the occurrence data based on *k*-means groups. The user-defined partition option can also be used to input partition groups derived from other sources.
 
 ```{r part.user1, fig.width = 5, fig.height = 5}
 grp.n <- 6
@@ -253,6 +256,25 @@ Alternatively, we may think of various ways to partition background data. This d
 centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x==min(x)))
+plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
+```
+
+We can also use other packages to partition our data. As an example, we next show how to use the [`blockCV`](https://CRAN.R-project.org/package=blockCV) package to generate spatial partitions to input into ENMevaluate(). We use spatialBlock function in `blockCV` to generate blocks similar to the checkerboard partition in ENMeval, except that we choose here to select partitions randomly over these blocks. This package offers other kinds of block partitioning methods as well. Using other packages in this way expands the variety of partitions you can use to evaluate models in ENMeval, and we highly encourage experimenting with a plurality of methods.
+
+```{r}
+library(blockCV)
+crs(envs)
+occsBg.sf <- st_as_sf(rbind(occs, bg), coords = c("longitude","latitude"), crs = 4326)
+# Here, we implement the spatialBlock function from the blockCV package
+# The required inputs are similar to ENMeval partitioning functions, but here you assign
+# the size of blocks in meters with the parameter theRange (here set at 1000 km), and the 
+# partition selection method can be assigned as either "checkerboard" or "random"
+# In addition, the spatialBlock function returns a map showing the different spatial partitions
+sb <- spatialBlock(speciesData = occsBg.sf, rasterLayer = envs.bg, theRange = 1000000, k = 5, selection = "random")
+# Here, we can pull out the partition information from the SpatialBlock object to assemble
+# occs.grp and bg.grp, which can be used for plotting or as user.grp inputs for ENMevaluate
+occs.grp <- sb$foldID[1:nrow(occs)]
+bg.grp <- sb$foldID[(nrow(occs)+1):length(sb$foldID)]
 plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
