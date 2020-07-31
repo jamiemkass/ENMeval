@@ -174,10 +174,10 @@ First, the 'block' method partitions data according to the latitude and longitud
 
 ```{r part.block, fig.width = 5, fig.height = 5}
 block <- get.block(occs, bg)
-plot.grps(pts = occs, pts.grp = block$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = block$occ.grp, envs = envs.bg)
 # PLotting the background shows that the background extent is partitioned in a way that maximizes evenness
 # of points across the four bins, not to maximize evenness of area
-plot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg)
 ```
 
 #### 2. Checkerboard1 {#cb1}
@@ -187,14 +187,14 @@ The Checkerboard1 method partitions the points into *k* = 2 spatial groups using
 
 ```{r part.ck1, fig.width = 5, fig.height = 5}
 cb1 <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=5)
-plot.grps(pts = occs, pts.grp = cb1$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = cb1$occ.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
-plot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
 
 # We can increase the aggregation factor to give the groups bigger boxes
 cb1.large <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=30)
-plot.grps(pts = occs, pts.grp = cb1.large$occ.grp, envs = envs.bg)
-plot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = cb1.large$occ.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
 ```
 
 #### 3. Checkerboard2 {#cb2}
@@ -202,9 +202,9 @@ The Checkerboard2 method partitions the data into *k* = 4 spatial groups. This i
 
 ```{r part.ck2, fig.width = 5, fig.height = 5}
 cb2 <- get.checkerboard2(occs, envs.bg, bg, aggregation.factor=c(5,5))
-plot.grps(pts = occs, pts.grp = cb2$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = cb2$occ.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
-plot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
@@ -213,7 +213,7 @@ The next two methods differ from the first three in that (i) they do not partiti
 ```{r part.jk, fig.width = 5, fig.height = 5}
 jack <- get.jackknife(occs, bg)
 # If the number of input points is larger than 10, the legend for the groups is suppressed
-plot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
 ```
 
 #### 5. Random k-fold {#rand}
@@ -221,7 +221,7 @@ The 'random k-fold' method partitions occurrence localities randomly into a user
 
 ```{r part.rand, fig.width = 5, fig.height = 5}
 rand <- get.randomkfold(occs, bg, k = 5)
-plot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
 ```
 
 #### 6. Independent {#ind}: 
@@ -230,7 +230,7 @@ The 'independent' method evaluates the model on an independent dataset that is n
 ```{r part.ind, fig.width = 5, fig.height = 5}
 pts <- rbind(occs, occs.ind)
 pts.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.ind)))
-plot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
+evalplot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
 ```
 
 #### 7. User-defined {#user}
@@ -240,14 +240,14 @@ For maximum flexibility, the last partitioning method is designed so that users 
 grp.n <- 6
 kmeans <- kmeans(occs, grp.n)
 occ.grp <- kmeans$cluster
-plot.grps(pts = occs, pts.grp = occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = occ.grp, envs = envs.bg)
 ```
 
 When using the user-defined partitioning method, we need to supply ENMevaluate with group identifiers for both occurrence points AND background points. If we want to use all background points for each group, we can set the background to zero.
 
 ```{r part.user2, fig.width = 5, fig.height = 5}
 bg.grp <- rep(0, nrow(bg))
-plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
 Alternatively, we may think of various ways to partition background data. This depends on the goals of the study but we might, for example, find it reasonable to partition background by clustering around the centroids of the occurrence clusters.
@@ -256,7 +256,7 @@ Alternatively, we may think of various ways to partition background data. This d
 centers <- kmeans$center
 d <- pointDistance(bg, centers, lonlat=T)
 bg.grp <- apply(d, 1, function(x) which(x==min(x)))
-plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
 We can also use other packages to partition our data. As an example, we next show how to use the [`blockCV`](https://CRAN.R-project.org/package=blockCV) package to generate spatial partitions to input into ENMevaluate(). We use spatialBlock function in `blockCV` to generate blocks similar to the checkerboard partition in ENMeval, except that we choose here to select partitions randomly over these blocks. This package offers other kinds of block partitioning methods as well. Using other packages in this way expands the variety of partitions you can use to evaluate models in ENMeval, and we highly encourage experimenting with a plurality of methods.
@@ -275,7 +275,7 @@ sb <- spatialBlock(speciesData = occsBg.sf, rasterLayer = envs.bg, theRange = 10
 # occs.grp and bg.grp, which can be used for plotting or as user.grp inputs for ENMevaluate
 occs.grp <- sb$foldID[1:nrow(occs)]
 bg.grp <- sb$foldID[(nrow(occs)+1):length(sb$foldID)]
-plot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
 Choosing among these data partitioning methods depends on the research objectives and the characteristics of the study system. Refer to the [Resources](Resources) section for additional considerations on appropriate partitioning for evaluation.
