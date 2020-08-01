@@ -266,7 +266,7 @@ lookup.enm <- function(mod.name) {
 # This version ignores raster cells with NA for every variable, and it also
 # removes variables that result in all Inf values (probably because the values for
 # that variable for "v" are all 0), thus avoiding the generation of -Inf values and the corresponding warnings
-.messi3 <- function(p,v) {
+enmeval.messi3 <- function(p,v) {
   # seems 2-3 times faster than messi2
   v <- stats::na.omit(v)
   f <- 100*findInterval(p, sort(v)) / length(v)
@@ -296,11 +296,11 @@ enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
   if (canProcessInMemory(x)) {
     x <- getValues(x)
     if (nl == 1) {
-      rmess <- .messi3(x, v)
+      rmess <- enmeval.messi3(x, v)
       names(out) <- 'mess'
       out <- setValues(out, rmess)
     } else {
-      x <- sapply(1:ncol(x), function(i) .messi3(x[,i], v[,i]))
+      x <- sapply(1:ncol(x), function(i) enmeval.messi3(x[,i], v[,i]))
       colRemove <- numeric(ncol(x)) + 1
       for(i in 1:ncol(x)) if(sum(is.infinite(x[,i])) == length(na.omit(x[,i]))) colRemove[i] <- 0
       x <- x[,colRemove]
@@ -329,7 +329,7 @@ enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
       out <- writeStart(out, filename, ...)
       for (i in 1:tr$n) {
         vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-        vv <- .messi3(vv, v)
+        vv <- enmeval.messi3(vv, v)
         out <- writeValues(out, vv, tr$row[i])
         pbStep(pb) 
       }
@@ -344,7 +344,7 @@ enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
         out <- writeStart(out, filename, ...)
         for (i in 1:tr$n) {
           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-          vv <- sapply(1:ncol(v), function(i) .messi3(vv[,i], v[,i]))
+          vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
           m <- apply(vv, 1, min, na.rm=TRUE)
           out <- writeValues(out, cbind(vv, m), tr$row[i])
           pbStep(pb) 
@@ -358,7 +358,7 @@ enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
         out <- writeStart(out, filename, ...)
         for (i in 1:tr$n) {
           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-          vv <- sapply(1:ncol(v), function(i) .messi3(vv[,i], v[,i]))
+          vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
           m <- apply(vv, 1, min, na.rm=TRUE)
           out <- writeValues(out, m, tr$row[i])
           pbStep(pb) 
