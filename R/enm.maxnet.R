@@ -106,11 +106,11 @@ pred <- function(mod, envs, other.settings) {
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "BasicRaster") == TRUE) {
     envs.n <- raster::nlayers(envs)
-    envs.pts <- na.omit(raster::rasterToPoints(envs))
+    envs.pts <- raster::getValues(envs) %>% as.data.frame()
     mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
-                       clamp = other.settings$clamp, na.rm = TRUE, other.settings$other.args)
-    p.vals <- cbind(envs.pts[,1:2], mxnet.p)
-    pred <- raster::rasterFromXYZ(p.vals, res=raster::res(envs), crs = raster::crs(envs)) 
+                       clamp = other.settings$clamp,  other.settings$other.args)
+    envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
+    pred <- raster::rasterFromXYZ(cbind(raster::coordinates(envs), envs.pts$pred), res=raster::res(envs), crs = raster::crs(envs)) 
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
     pred <- predict(mod, envs, type = other.settings$pred.type, 

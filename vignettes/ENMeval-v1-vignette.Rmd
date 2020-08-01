@@ -299,37 +299,37 @@ ENMevaluate builds a separate model for each unique combination of RM values and
 <!-- ``` -->
 
 ```{r enmeval1, eval=FALSE}
-maxnet1 <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+e.mx.l <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
                              partitions = 'checkerboard2', tune.args = list(fc = "L", rm = 1:2))
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
 
 ```{r maxnet2, eval=TRUE}
-maxnet2 <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQP"), rm = 1:3))
+e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3))
 ```
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
 
 ```{r maxnet2par, eval=FALSE}
-maxnet2.par <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQP"), rm = 1:3),
+e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3),
                              parallel = TRUE)
 ```
 
 Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
 
 ```{r maxnet2.noRas, eval=FALSE}
-maxnet2.noRas <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQP"), rm = 1:3),
+e.mx.lqh.nr <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3),
                              rasterPreds = NULL)
 ```
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
 ```{r maxnet2.overlap, results='hide'}
-overlap <- calc.niche.overlap(maxnet2@predictions, overlapStat="D")
+overlap <- calc.niche.overlap(e.mx.lqh@predictions, overlapStat="D")
 overlap
 ```
 
@@ -345,36 +345,36 @@ cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test canno
 tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 
 # 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
-eval <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+e.mx <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                     tune.args = tune.args, categoricals = "biome", partitions = "block")
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with the original Java software
-eval.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", 
+e.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", 
                     tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
-eval.indPart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+e.ind <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "independent", 
                         occs.ind = occs.ind)
 
 # 3. User partitions
 user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), 
                  bg.grp = round(runif(nrow(bg), 1, 2)))
-eval.userPart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                          tune.args = tune.args, categoricals = "biome", partitions = "user", 
                          user.grp = user.grp)
 
 # 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
-eval.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+e.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                          tune.args = tune.args, categoricals = "biome", partitions = "none")
 
 # 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.test will be calculated on the point data (training and testing background) instead of on the "envs" rasters (default)
 occs.vals <- cbind(occs, raster::extract(envs, occs))
 bg.vals <- cbind(bg, raster::extract(envs, bg))
-eval.swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", 
+e.swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 6. Background test CBI: this will calculate cbi.test on the point data (training and testing background) instead of on the "envs" rasters (default)
-eval.bgCBI <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+e.bgCBI <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                           tune.args = tune.args, categoricals = "biome", partitions = "block", 
                           cbi.eval = "bg")
 ```
@@ -396,10 +396,10 @@ enm.maxnet@kstats <- function(e.test, mod, other.args) {
   return(user.kstats)
 }
 # ENMevaluate() can now be run with the modified ENMdetails object
-eval.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.maxnet, 
+e.userENM1 <- ENMevaluate(occs, envs, bg, user.enm = enm.maxnet, 
                              tune.args = tune.args, categoricals = "biome", partitions = "block")
 # You will see the results of the new statistics in the results table
-eval.userENM@results
+e.userENM1@results
 ```
 
 Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model and save as a new script in the /R folder, and use it to run `ENMevaluate()`.
@@ -410,7 +410,7 @@ Users can also construct their own `ENMdetails` object using the built-in ones a
 # NOTE: It is important to make sure that your custom model can handle categorical variables
 # By default, ENMevaluate() removes them for BIOCLIM models, but if you specify a custom model,
 # you will need to remove them yourself before running ENMevaluate()
-eval.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.myMod, 
+e.userENM2 <- ENMevaluate(occs, envs, bg, user.enm = enm.myMod, 
                              tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
 
@@ -432,27 +432,27 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 
 Let's first examine the structure of the object:
 ```{r results1}
-eval
+e.mx
 
-str(eval, max.level=3)
+str(e.mx, max.level=3)
 ```
 
 We can use helper functions to access the slots in the ENMevaluate object.
 ```{r algorithm}
 # Access algorithm, tuning settings, and partition method information
-eval.algorithm(eval)
-eval.tune.settings(eval)
-eval.partition.method(eval)
+eval.algorithm(e.mx)
+eval.tune.settings(e.mx)
+eval.partition.method(e.mx)
 # Results table with summary statistics for cross validation on test data
-eval.results(eval)
+eval.results(e.mx)
 # Results table with cross validation statistics for each test partition
-eval.results.grp(eval)
+eval.results.grp(e.mx)
 # List of models with names corresponding to tune.args column label
-eval.models(eval)
+eval.models(e.mx)
 # The "betas" slot in a maxnet model is a named vector of the variable coefficients 
 # and what kind they are (in R formula notation)
 # Note that the html file that is created when maxent.jar is run is **not** kept
-m1 <- eval.models(eval)[["LQH_1"]]
+m1 <- eval.models(e.mx)[["LQH_1"]]
 m1$betas
 # For maxent.jar models, we can access this information in the lambdas slot
 # The notation used here is difficult to decipher, so check out the [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package
@@ -463,15 +463,15 @@ m1.mxjar@lambdas
 m1.mxjar@results
 # RasterStack of model predictions (for extent of "envs") with names corresponding 
 # to tune.args column label
-eval.predictions(eval)
+eval.predictions(e.mx)
 # Original occurrence data coordinates with associated predictor variable values
-eval.occs(eval)
+eval.occs(e.mx)
 # Background data coordinates with associated predictor variable values
-eval.bg(eval)
+eval.bg(e.mx)
 # Partition group assignments for occurrence data
-eval.occ.grp(eval)
+eval.occ.grp(e.mx)
 # Partition group assignments for background data
-eval.bg.grp(eval)
+eval.bg.grp(e.mx)
 ```
 
 ## Plotting tuning results {#plot}
@@ -501,18 +501,18 @@ Once we have our results, we will want to select one or more models that we thin
 
 ```{r evaluations}
 # Overall results
-res <- results(eval)
+res <- eval.results(e.mx)
 opt.aicc <- res %>% filter(delta.AICc == 0)
 opt.aicc
 opt.seq <- res %>% 
-  filter(or.mtp.avg == min(or.mtp.avg)) %>% 
+  filter(or.10p.avg == min(or.10p.avg)) %>% 
   filter(auc.test.avg == max(auc.test.avg))
 opt.seq
 ```
 
 Let's now pull the optimal model (using the sequential criteria) from the model list and examine it.
 ```{r mod.obj1}
-mod.seq <- models(eval)[[opt.seq$tune.args]]
+mod.seq <- models(e.mx)[[opt.seq$tune.args]]
 # The non-zero coefficients in our model
 mod.seq$betas
 # The response curves for our model
@@ -525,11 +525,11 @@ Now let's pull out and plot the prediction raster for our optimal model. Note th
 These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
 
 ```{r plotPred, fig.width = 5, fig.height = 5}
-pred.seq <- predictions(eval)[[opt.seq$tune.args]]
+pred.seq <- eval.predictions(e.mx)[[opt.seq$tune.args]]
 plot(pred.seq)
 # Let's also plot the binned background points with the occurrence points on top
-points(bg(eval), pch = 3, col = bg.grp(eval), cex = 0.5)
-points(occs(eval), pch = 21, bg = occ.grp(eval))
+points(bg(e.mx), pch = 3, col = bg.grp(e.mx), cex = 0.5)
+points(occs(e.mx), pch = 21, bg = occ.grp(e.mx))
 ```
 
 Let's see how model complexity changes the predictions in our example. We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://doi.org/10.1111/ecog.00845).
@@ -537,20 +537,20 @@ Let's see how model complexity changes the predictions in our example. We'll com
 ```{r plot.pred2, fig.width = 5, fig.height = 2.5}
 # First, let's examine the non-zero model coefficients in the betas slot
 # The simpler model has fewer model coefficients
-models(eval)[['L_5']]$betas
-length(models(eval)[['L_5']]$betas)
-models(eval)[['LQH_1']]$betas
-length(models(eval)[['LQH_1']]$betas)
+models(e.mx)[['L_5']]$betas
+length(models(e.mx)[['L_5']]$betas)
+models(e.mx)[['LQH_1']]$betas
+length(models(e.mx)[['LQH_1']]$betas)
 # Next, let's take a look at the response curves
 # The complex model has responses with more curves (quadratic terms) and spikes (hinge terms)
-plot(models(eval)[['L_5']])
-plot(models(eval)[['LQH_1']])
+plot(models(e.mx)[['L_5']])
+plot(models(e.mx)[['LQH_1']])
 # Finally, let's cut the plotting area into two rows to visualize the predictions side-by-side
 par(mfrow=c(2,1), mar=c(2,1,2,0))
 # The simplest model: linear features only and high regularization
-plot(predictions(eval)[['L_5']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='L_5 prediction')
+plot(predictions(e.mx)[['L_5']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='L_5 prediction')
 # The most complex model: linear, quadratic, and hinge features with low regularization
-plot(predictions(eval)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='LQH_1 prediction')
+plot(predictions(e.mx)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='LQH_1 prediction')
 ```
 
 ## Null models
@@ -565,10 +565,22 @@ real.vs.null.results(mod.null)
 ```
 
 #### Metadata {#metadata}
-ENMeval now catalogs details of the analysis essential for reproducibility in a rangeModelMetadata list, accessible from the ENMevaluation object output. The framework and philosophy behind rangeModelMetadata is described in [Merow et al. 2019](https://doi.org/10.1111/geb.12993). 
+ENMeval now catalogs details of the analysis essential for reproducibility in a rangeModelMetadata object, accessible from the output ENMevaluation object. The framework and philosophy behind rangeModelMetadata is described in [Merow et al. 2019](https://doi.org/10.1111/geb.12993). 
 
 ```{r}
-eval.rmm(eval)
+# fill in a RMM object based on the ENMevaluate object
+rmm <- eval.rmm(e.mx1)
+# Let's fill in our selection rules based on the sequential criteria we chose
+rmm$model$selectionRules <- "lowest 10 percentile omission rate, break ties with average test AUC"
+# And enter our optimal model settings
+rmm$model$finalModelSettings <- "LQ4"
+# And then enter the details of our optimal model's prediction
+rmm$prediction$continuous$minVal <- cellStats(pred.seq, min)
+rmm$prediction$continuous$maxVal <- cellStats(pred.seq, max)
+rmm$prediction$continuous$units <- "suitability (cloglog transformation)"
+# This is just an example -- there may be more fields that you want to fill in
+# Finally, save the metadata to CSV
+rangeModelMetadata::rmmToCSV(rmm, "rmm_mx1.csv")
 ```
 
 ## Downstream Analyses (*under construction*) {#downstream}
