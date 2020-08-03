@@ -44,14 +44,21 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 }
 
 #' @title MESS plots for partition groups
-#' @description Plot multivariate environmental similarity surface (MESS) estimates of test occurrences on the study extent 
-#' by partition group with density curves or rasters
+#' @description Plot environmental similarity of predictor variable extent with respect to occurrence partitions
 #' @param e ENMevaluation object
-#' @param envs RasterStack of environmental predictor variables used to build the models in "e"; categorical variables should be 
+#' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input, as they cannot be used to calculate MESS
-#' @param pts.type Character specifying which to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
-#' @param plot.type Character specifying which to plot: MESS density curves ("density") or MESS rasters ("raster")
-#' @details There are two variations for this plot. If "density", density curves are plotted showing the MESS estimates for each partition group. 
+#' @param envs.var Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
+#' with respect to all variables
+#' @param sim.type Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
+#' or "most_sim" for most similar variable; uses similarity function from package rmaxent
+#' @param pts.type Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
+#' @param plot.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
+#' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
+#' @param palette.dir Numeric: direction for palette plotting; either 1 or -1
+#' @param hist.bins Numeric: number of histogram bins for histogram plots; default is 30
+#' @details There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 #' If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 #' As implemented here, MESS calculates the similarity between environmental values associated with the 
 #' test occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
@@ -62,41 +69,83 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-evalplot.grps.mess <- function(e, envs, pts.type = "occs", plot.type = "density") {
-  names(e@occs)[1:2] <- c("longitude","latitude")
-  pts <- switch(pts.type, occs = dplyr::bind_cols(e@occs[,c("longitude","latitude")], grp = e@occs.grp),
-                bg = dplyr::bind_cols(e@bg[,c("longitude","latitude")], grp = e@bg.grp))
-  pts.x <- raster::extract(envs, pts[,c("longitude","latitude")])
-  vals <- data.frame(pts.x, grp = pts$grp) 
+evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL, 
+                                 bg.grp = NULL, e = NULL, envs.var = NULL, sim.type = "mess",
+                                 pts.type = "occs", plot.type = "histogram", plot.palette = NULL, 
+                                 palette.dir = 1, hist.bins = 30) {
+  if(!is.null(e)) {
+    pts <- switch(pts.type, occs = e@occs, bg = e@bg)
+    pts.grp <- switch(pts.type, occs = e@occs.grp, bg = e@bg.grp)
+    pts.z <- pts[,3:ncol(pts)]
+    pts <- cbind(pts[,1:2], partition = pts.grp)
+  }else{
+    pts <- switch(pts.type, occs = occs, bg = bg)
+    pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
+    pts.z <- raster::extract(envs, pts)
+    pts <- cbind(pts, partition = factor(pts.grp))
+  }
+  names(pts)[1:2] <- c("longitude","latitude")
+  
+  vals <- data.frame(pts.z, partition = pts.grp) 
+  
   test.mss <- list()
   ras.mss <- list()
-  nk <- length(unique(e@occs.grp))
+  nk <- length(unique(pts.grp))
   for(k in 1:nk) {
-    test.vals <- vals %>% dplyr::filter(grp == k) %>% dplyr::select(-grp)
-    train.xy <- pts %>% dplyr::filter(grp != k) %>% dplyr::select(-grp)
+    test.vals <- vals %>% dplyr::filter(partition == k) %>% dplyr::select(-partition)
+    train.xy <- pts %>% dplyr::filter(partition != k) %>% dplyr::select(-partition)
     # test.ext <- as(raster::extent(sp::bbox(sp::SpatialPoints(test.xy))), "SpatialPolygons")
     # envs.mess.train <- raster::mask(envs.mess, test.ext, inverse = TRUE)
-    mss <- enmeval.mess(envs, test.vals)
+    if(!is.null(envs.var)) {
+      sim <- rmaxent::similarity(envs, test.vals, full = TRUE)
+      mss <- sim$similarity[[envs.var]]
+      names(mss) <- "mess"
+    }else{
+      sim <- rmaxent::similarity(envs, test.vals)
+      mss <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
+    }
+    
     ras.mss[[k]] <- mss
     mss.x <- raster::extract(mss, train.xy)
-    test.mss[[k]] <- data.frame(mess.value = mss.x, grp = k)
+    test.mss[[k]] <- data.frame(mss.x, partition = k)
+    names(test.mss[[k]])[1] <- sim.type  
   }
   if(plot.type == "raster") {
     rs.mss <- raster::stack(ras.mss)
     rs.mss.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
-      tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = "mess.value")
-    rs.mss.df$ras <- gsub("mess", "grp", rs.mss.df$ras)
-    ggplot2::ggplot() + ggplot2::geom_raster(data = rs.mss.df, ggplot2::aes(x = x, y = y, fill = mess.value)) +
-      ggplot2::scale_fill_viridis_c(na.value = "white") +
-      ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = grp)) +
+      tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
+    rs.mss.df$ras <- gsub("layer|mess", "partition", rs.mss.df$ras)
+    if(sim.type != "mess") {
+      if(is.null(plot.palette)) plot.palette <- "Set1"
+      rs.mss.df$ras <- gsub("_var", "", rs.mss.df$ras)
+      title.part <- switch(sim.type, most_diff = "Most different", most_sim = "Most similar")  
+      title <- paste(title.part, "variable mapped with respect to occurrence partitions")
+    }else{
+      if(is.null(plot.palette)) plot.palette <- "RdYlBu"
+      if(!is.null(envs.var)) {
+        title <- paste("MESS mapped for", envs.var, "with respect to occurrence partitions")
+      }else{
+        title <- paste("MESS mapped for all variables with respect to occurrence partitions")
+      }  
+    }
+    
+    g <- ggplot2::ggplot() + 
+      ggplot2::geom_raster(data = rs.mss.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type)) +
+      ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = partition)) +
       ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
+      ggplot2::ggtitle(title) +
       ggplot2::theme_classic()
-  }else{
+    if(sim.type != "mess") {
+      g + ggplot2::scale_fill_brewer(palette = plot.palette, na.value = "white")
+    }else{
+      g + ggplot2::scale_fill_distiller(palette = plot.palette, direction = palette.dir, na.value = "white")
+    }
+  }else if(plot.type == "histogram"){
     test.mss.df <- dplyr::bind_rows(test.mss)
-    test.mss.df$grp <- factor(test.mss.df$grp)
-    ggplot2::ggplot(test.mss.df, ggplot2::aes(x = mess.value, fill = grp)) + 
-      ggplot2::geom_density() +
-      ggplot2::facet_grid(ggplot2::vars(grp)) + 
+    test.mss.df$partition <- factor(test.mss.df$partition)
+    ggplot2::ggplot(test.mss.df, ggplot2::aes_string(x = sim.type, fill = "partition")) + 
+      ggplot2::geom_histogram(bins = hist.bins) +
+      ggplot2::facet_grid(ggplot2::vars(partition)) + 
       ggplot2::theme_classic() +
       ggplot2::theme(
         strip.background = ggplot2::element_blank(),

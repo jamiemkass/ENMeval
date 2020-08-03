@@ -13,7 +13,7 @@ editor_options:
 
 ```{r setup, echo = FALSE, include=FALSE}
 library(knitr)
-knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
+knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, eval=FALSE, comment="#>")
 ```
 
 - [Introduction](#intro)
@@ -87,6 +87,28 @@ points(occs, col='red')
 # As we will demonstrate model evaluation using independent data, we will specify a fake independent occurrence dataset
 occs.ind <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 0, 5))
 points(occs.ind, col="blue")
+```
+
+
+Now let's take a look at which areas of this extent are considerably different climatically with respect to environment associated with the occurrence points. To do this, we'll use the Multivariate Environmental Similarity surface, or MESS (see Elith et al. 2010 for details). Here we will use tools from the rmaxent because it also outputs maps of most similar and dissimilar variables, something that dismo::mess does not (it also avoids values of -Inf that dismo::mess often outputs). You'll need to use this code to install rmaxent, because it's not on CRAN: devtools::install_github('johnbaums/rmaxent'). We'll also use the rasterVis package because it maps categorical rasters better than base plotting functions, and the RColorBrewer package for plotting colors.
+
+```{r}
+library(rmaxent)
+library(rasterVis)
+# First we extract the climatic variable values at the occurrence points -- these values
+# are our "reference"
+occs.z <- extract(envs, occs)
+# Now we use the rmaxent function similarity to calculate environmental similarity metrics
+occs.sim <- similarity(envs, occs.z)
+# This is the MESS plot -- increasingly negative values represent increasingly different climatic
+# conditions from the reference (our occurrences), while increasingly positive values are more similar
+plot(occs.sim$similarity_min)
+# Here we define some good colors for representing categorical variables
+cols <- brewer.pal(9, "Set1")
+# This map shows the variable for each grid cell that is most different from the reference
+levelplot(occs.sim$mod, col.regions = cols)
+# This map shows the variable for each grid cell that is most similar to the reference
+levelplot(occs.sim$mos, col.regions = cols)
 ```
 
 Next, we will specify the background extent by cropping our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
@@ -555,7 +577,6 @@ plot(predictions(e.mx)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, ma
 
 ## Null models
 
-
 ```{r}
 mod.null <- ENMnullSims(eval, mod.settings = list(fc = "L", rm = 2), no.iter = 10, 
                      envs = envs, userStats.signs = list(maxTSS.test = 1, maxKappa.test = 1))
@@ -607,6 +628,11 @@ Below is a running list of other things we plan to add to this vignette.  Feel f
 - [Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., and Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](http://press.princeton.edu/titles/9641.html)
 
 - [Renner, I.W., Elith, J., Baddeley, A., Fithian, W., Hastie, T., Phillips, S.J., . . . Warton, D.I. (2015) Point process models for presence-only analysis. Methods in Ecology and Evolution 6, 366-379.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12352/abstract)
+
+###### Environmental Similarity
+= [Elith, J., Kearney, M., & Phillips, S. (2010). The art of modelling range‐shifting species. Methods in ecology and evolution, 1(4), 330-342.](https://doi.org/10.1111/j.2041-210X.2010.00036.x)
+
+- [Owens, H. L., Campbell, L. P., Dornak, L. L., Saupe, E. E., Barve, N., Soberón, J., ... & Peterson, A. T. (2013). Constraints on interpretation of ecological niche models by limited environmental ranges on calibration areas. Ecological Modelling, 263, 10-18.](https://doi.org/10.1016/j.ecolmodel.2013.04.011)
 
 ###### Model Evaluation
 - [Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., and Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography 38, 541-545.](http://onlinelibrary.wiley.com/doi/10.1111/ecog.01132/abstract)
