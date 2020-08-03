@@ -12,7 +12,7 @@
 evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
   if(!is.null(e)) {
     pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
-                  bg = cbind(e@bg, partition = e@bg.grp))  
+                       bg = cbind(e@bg, partition = e@bg.grp))  
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
@@ -73,7 +73,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL, 
                                  bg.grp = NULL, e = NULL, envs.var = NULL, sim.type = "mess",
                                  pts.type = "occs", plot.type = "histogram", plot.palette = NULL, 
-                                 palette.dir = 1, hist.bins = 30, df = FALSE) {
+                                 palette.dir = 1, hist.bins = 30, return.output = FALSE) {
   # remove for categorical rasters
   nr <- raster::nlayers(envs)
   cats <- numeric(nr)
@@ -98,7 +98,7 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
   names(pts)[1:2] <- c("longitude","latitude")
   pts$id <- row.names(pts)
   
-  vals <- data.frame(pts.z, partition = pts.grp, id = row.names(pts.z)) 
+  vals <- data.frame(pts.z, partition = pts.grp) 
   
   test.mss <- list()
   ras.mss <- list()
@@ -107,7 +107,7 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
     test.vals <- vals %>% dplyr::filter(partition == k) %>% dplyr::select(-partition)
     train.xy <- pts %>% dplyr::filter(partition != k) %>% dplyr::select(-partition)
     if(!is.null(envs.var)) {
-      sim <- rmaxent::similarity(envs, test.vals %>% dplyr::select(-id), full = TRUE)
+      sim <- rmaxent::similarity(envs, test.vals, full = TRUE)
       mss <- sim$similarity[[envs.var]]
       names(mss) <- "mess"
     }else{
@@ -116,15 +116,15 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
     }
     
     ras.mss[[k]] <- mss
-    mss.x <- raster::extract(mss, train.xy)
-    test.mss[[k]] <- data.frame(mss.x, partition = k)
+    mss.x <- raster::extract(mss, train.xy %>% select(-id))
+    test.mss[[k]] <- data.frame(mss.x, partition = k, id = train.xy$id)
     names(test.mss[[k]])[1] <- sim.type  
   }
   if(plot.type == "raster") {
     rs.mss <- raster::stack(ras.mss)
+    names(rs.mss) <- gsub("layer|mess", "partition", names(rs.mss))
     plot.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
       tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
-    plot.df$ras <- gsub("layer|mess", "partition", plot.df$ras)
     if(sim.type != "mess") {
       if(is.null(plot.palette)) plot.palette <- "Set1"
       plot.df$ras <- gsub("_var", "", plot.df$ras)
@@ -162,7 +162,12 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
         strip.text.y = ggplot2::element_blank()
       )
   }
-  if(df == TRUE) return(plot.df) else g
+  if(return.output == TRUE) {
+    out <- switch(plot.type, histogram = plot.df, raster = rs.mss)
+    return(out)
+  }else{
+    g 
+  }
 }
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
@@ -208,7 +213,7 @@ evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
       ggplot2::theme_bw()  
     if(error.bars == TRUE) {
       p + ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.5, 
-                                                      position=ggplot2::position_dodge(width=dodge))
+                                 position=ggplot2::position_dodge(width=dodge))
     }else{
       p
     }
@@ -263,14 +268,14 @@ evalplot.nulls <- function(e.null, stats, plot.type) {
   # stat.nullResults.name <- ifelse(stat == "auc.train", "auc.train", paste0(stat, ".avg"))
   # null.stats <- round(e.null@null.results[,stat.nullResults.name, drop = FALSE], 3)
   # real.stat <- round(e.null@real.vs.null.results %>% 
-                       # dplyr::filter(statistic == "real.mean") %>% 
-                       # dplyr::pull(stat), 3)
+  # dplyr::filter(statistic == "real.mean") %>% 
+  # dplyr::pull(stat), 3)
   # stat.max <- ifelse(real.stat < max(null.stats), max(null.stats), real.stat)
   # all.stats <- rbind(null.stats, real.stat)
   # vlines <- data.frame(name = c("95 quantile", "99 quantile", "real value"),
-                       # value = c(quantile(null.stats[[stat.nullResults.name]], 0.95),
-                                 # quantile(null.stats[[stat.nullResults.name]], 0.99),
-                                 # real.stat))
+  # value = c(quantile(null.stats[[stat.nullResults.name]], 0.95),
+  # quantile(null.stats[[stat.nullResults.name]], 0.99),
+  # real.stat))
   if(plot.type == "violin") {
     ggplot2::ggplot(null.avgs, ggplot2::aes(x = metric, y = avg)) + 
       ggplot2::geom_violin(draw_quantiles = c(0.01, 0.05, 0.5, 0.95, 0.99)) +
