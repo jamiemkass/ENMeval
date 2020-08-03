@@ -51,11 +51,12 @@ library(ENMeval)
 set.seed(48)
 
 # Search GBIF for occurrence data.
-bv <- occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
+# bv <- occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
+occs <- readRDS("data/bvariegatus.rds")
 
 # Get the latitude/coordinates for each locality. Also convert the tibble that occ() outputs
 # to a data frame for compatibility with ENMeval functions.
-occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+# occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 
 # Remove duplicate rows (Note that you may or may not want to do this).
 occs <- occs[!duplicated(occs),]
@@ -71,6 +72,7 @@ files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pat
 
 # Read the raster files into a RasterStack
 envs <- stack(files)
+envs$biome <- as.factor(envs$biome)
 
 # Plot first raster in the stack, bio1
 plot(envs[[1]], main=names(envs)[1])
@@ -94,6 +96,7 @@ Now let's take a look at which areas of this extent are considerably different c
 
 ```{r}
 library(rmaxent)
+library(RColorBrewer)
 library(rasterVis)
 # First we extract the climatic variable values at the occurrence points -- these values
 # are our "reference"
@@ -106,9 +109,9 @@ plot(occs.sim$similarity_min)
 # Here we define some good colors for representing categorical variables
 cols <- brewer.pal(9, "Set1")
 # This map shows the variable for each grid cell that is most different from the reference
-levelplot(occs.sim$mod, col.regions = cols)
+levelplot(occs.sim$mod, col.regions = cols, main = "Most different variable")
 # This map shows the variable for each grid cell that is most similar to the reference
-levelplot(occs.sim$mos, col.regions = cols)
+levelplot(occs.sim$mos, col.regions = cols, main = "Most similar variable")
 ```
 
 Next, we will specify the background extent by cropping our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
@@ -196,10 +199,12 @@ First, the 'block' method partitions data according to the latitude and longitud
 
 ```{r part.block, fig.width = 5, fig.height = 5}
 block <- get.block(occs, bg)
-evalplot.grps(pts = occs, pts.grp = block$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg)
 # PLotting the background shows that the background extent is partitioned in a way that maximizes evenness
 # of points across the four bins, not to maximize evenness of area
 evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg)
+evalplot.grps.envSim(envs, occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "histogram")
+evalplot.grps.envSim(envs[[-9]], occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "raster")
 ```
 
 #### 2. Checkerboard1 {#cb1}

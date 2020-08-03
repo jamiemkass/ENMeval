@@ -60,11 +60,12 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 #' @param hist.bins Numeric: number of histogram bins for histogram plots; default is 30
 #' @details There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 #' If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
-#' As implemented here, MESS calculates the similarity between environmental values associated with the 
+#' With sim.type option "mess", the similarity between environmental values associated with the 
 #' test occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
-#' of the input RasterStack "envs"). Higher negative values indicate greater environmental difference between the test occurrences
-#' and the study extent, and higher positive values indicate greater similarity. This function uses the `dismo::mess()` function 
-#' to calculate MESS. See the below reference for more details. 
+#' of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
+#' Higher negative values indicate greater environmental difference between the test occurrences
+#' and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
+#' to calculate the similarities. See the below reference for details on MESS. 
 #' @return A ggplot of MESS calculations for data partitions.
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
@@ -72,7 +73,17 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL, 
                                  bg.grp = NULL, e = NULL, envs.var = NULL, sim.type = "mess",
                                  pts.type = "occs", plot.type = "histogram", plot.palette = NULL, 
-                                 palette.dir = 1, hist.bins = 30) {
+                                 palette.dir = 1, hist.bins = 30, df = FALSE) {
+  # remove for categorical rasters
+  nr <- raster::nlayers(envs)
+  cats <- numeric(nr)
+  for(n in 1:nr) cats[n] <- is.factor(envs[[n]])
+  if(sum(cats) > 0) {
+    rem.ras <- which(cats == 1)
+    message(paste("Ignoring categorical raster", names(envs)[rem.ras], "..."))
+    envs <- envs[[-rem.ras]]
+  }
+  
   if(!is.null(e)) {
     pts <- switch(pts.type, occs = e@occs, bg = e@bg)
     pts.grp <- switch(pts.type, occs = e@occs.grp, bg = e@bg.grp)
@@ -81,12 +92,13 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
   }else{
     pts <- switch(pts.type, occs = occs, bg = bg)
     pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
-    pts.z <- raster::extract(envs, pts)
+    pts.z <- raster::extract(envs, pts) %>% as.data.frame()
     pts <- cbind(pts, partition = factor(pts.grp))
   }
   names(pts)[1:2] <- c("longitude","latitude")
+  pts$id <- row.names(pts)
   
-  vals <- data.frame(pts.z, partition = pts.grp) 
+  vals <- data.frame(pts.z, partition = pts.grp, id = row.names(pts.z)) 
   
   test.mss <- list()
   ras.mss <- list()
@@ -94,10 +106,8 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
   for(k in 1:nk) {
     test.vals <- vals %>% dplyr::filter(partition == k) %>% dplyr::select(-partition)
     train.xy <- pts %>% dplyr::filter(partition != k) %>% dplyr::select(-partition)
-    # test.ext <- as(raster::extent(sp::bbox(sp::SpatialPoints(test.xy))), "SpatialPolygons")
-    # envs.mess.train <- raster::mask(envs.mess, test.ext, inverse = TRUE)
     if(!is.null(envs.var)) {
-      sim <- rmaxent::similarity(envs, test.vals, full = TRUE)
+      sim <- rmaxent::similarity(envs, test.vals %>% dplyr::select(-id), full = TRUE)
       mss <- sim$similarity[[envs.var]]
       names(mss) <- "mess"
     }else{
@@ -112,12 +122,12 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
   }
   if(plot.type == "raster") {
     rs.mss <- raster::stack(ras.mss)
-    rs.mss.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
+    plot.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
       tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
-    rs.mss.df$ras <- gsub("layer|mess", "partition", rs.mss.df$ras)
+    plot.df$ras <- gsub("layer|mess", "partition", plot.df$ras)
     if(sim.type != "mess") {
       if(is.null(plot.palette)) plot.palette <- "Set1"
-      rs.mss.df$ras <- gsub("_var", "", rs.mss.df$ras)
+      plot.df$ras <- gsub("_var", "", plot.df$ras)
       title.part <- switch(sim.type, most_diff = "Most different", most_sim = "Most similar")  
       title <- paste(title.part, "variable mapped with respect to occurrence partitions")
     }else{
@@ -130,28 +140,29 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
     }
     
     g <- ggplot2::ggplot() + 
-      ggplot2::geom_raster(data = rs.mss.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type)) +
+      ggplot2::geom_raster(data = plot.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type)) +
       ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = partition)) +
       ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
       ggplot2::ggtitle(title) +
       ggplot2::theme_classic()
     if(sim.type != "mess") {
-      g + ggplot2::scale_fill_brewer(palette = plot.palette, na.value = "white")
+      g <- g + ggplot2::scale_fill_brewer(palette = plot.palette, na.value = "white")
     }else{
-      g + ggplot2::scale_fill_distiller(palette = plot.palette, direction = palette.dir, na.value = "white")
+      g <- g + ggplot2::scale_fill_distiller(palette = plot.palette, direction = palette.dir, na.value = "white")
     }
   }else if(plot.type == "histogram"){
-    test.mss.df <- dplyr::bind_rows(test.mss)
-    test.mss.df$partition <- factor(test.mss.df$partition)
-    ggplot2::ggplot(test.mss.df, ggplot2::aes_string(x = sim.type, fill = "partition")) + 
+    plot.df <- dplyr::bind_rows(test.mss)
+    plot.df$partition <- factor(plot.df$partition)
+    g <- ggplot2::ggplot(plot.df, ggplot2::aes_string(x = sim.type, fill = "partition")) + 
       ggplot2::geom_histogram(bins = hist.bins) +
       ggplot2::facet_grid(ggplot2::vars(partition)) + 
       ggplot2::theme_classic() +
       ggplot2::theme(
         strip.background = ggplot2::element_blank(),
         strip.text.y = ggplot2::element_blank()
-      )  
+      )
   }
+  if(df == TRUE) return(plot.df) else g
 }
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
