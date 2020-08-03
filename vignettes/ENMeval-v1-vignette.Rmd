@@ -71,8 +71,10 @@ library(raster)
 files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
 
 # Read the raster files into a RasterStack
-envs <- stack(files)
-envs$biome <- as.factor(envs$biome)
+# We remove the "biome" categorical variable because categoricals can present a number of technical difficulties
+# in many of the operations we do in this vignette, but ENMevaluate is fully compatible with categorical variables
+# (as long as you declare them with parameter "categoricals")
+envs <- stack(files)[[-9]]
 
 # Plot first raster in the stack, bio1
 plot(envs[[1]], main=names(envs)[1])
@@ -98,10 +100,10 @@ Now let's take a look at which areas of this extent are considerably different c
 library(rmaxent)
 library(RColorBrewer)
 library(rasterVis)
-# First we extract the climatic variable values at the occurrence points -- these values
-# are our "reference"
+# First we extract the climatic variable values at the occurrence points -- these values are our "reference"
 occs.z <- extract(envs, occs)
 # Now we use the rmaxent function similarity to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
 occs.sim <- similarity(envs, occs.z)
 # This is the MESS plot -- increasingly negative values represent increasingly different climatic
 # conditions from the reference (our occurrences), while increasingly positive values are more similar
@@ -182,7 +184,7 @@ points(bg, col='red', pch=20, cex=0.2)
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
-A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for *k*-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()`, but can also be done externally with the partitioning functions. In this section, we explain and illustrate these different functions.
+A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for *k*-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()`, but can also be done externally with the partitioning functions. In this section, we explain and illustrate these different functions. We also demonstrate how to make informative plots of partitions and the environmental similarity of partitions to the background or projection extent.
 
 1. [Spatial Block](#block)
 2. [Spatial Checkerboard](#cb1)
@@ -199,12 +201,18 @@ First, the 'block' method partitions data according to the latitude and longitud
 
 ```{r part.block, fig.width = 5, fig.height = 5}
 block <- get.block(occs, bg)
-evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg)
+# Let's make sure that we have an even number of occurrences in each partition
+table(block$occs.grp)
+# We can plot our partitions on one of our predictor variable rasters to visualize where they fall in space
+evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg[[1]])
 # PLotting the background shows that the background extent is partitioned in a way that maximizes evenness
 # of points across the four bins, not to maximize evenness of area
 evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg)
+# If we are curious how different the environment associated with each partition is from that of all the others,
+# we can use this function to plot histograms or rasters of MESS predictions with each partition as the reference
+# It is clear that the block method results in partitions that can differ widely in their environmental representation
 evalplot.grps.envSim(envs, occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "histogram")
-evalplot.grps.envSim(envs[[-9]], occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "raster")
+evalplot.grps.envSim(envs, occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "raster")
 ```
 
 #### 2. Checkerboard1 {#cb1}
@@ -214,13 +222,17 @@ The Checkerboard1 method partitions the points into *k* = 2 spatial groups using
 
 ```{r part.ck1, fig.width = 5, fig.height = 5}
 cb1 <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=5)
-evalplot.grps(pts = occs, pts.grp = cb1$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = cb1$occs.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
 evalplot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
+# We can see from the MESS maps that this method results in similar
+# environmental representation between the partitions
+evalplot.grps.envSim(envs, occs, bg, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, plot.type = "histogram")
+evalplot.grps.envSim(envs, occs, bg, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, plot.type = "raster")
 
 # We can increase the aggregation factor to give the groups bigger boxes
 cb1.large <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=30)
-evalplot.grps(pts = occs, pts.grp = cb1.large$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = cb1.large$occs.grp, envs = envs.bg)
 evalplot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
 ```
 
@@ -229,9 +241,13 @@ The Checkerboard2 method partitions the data into *k* = 4 spatial groups. This i
 
 ```{r part.ck2, fig.width = 5, fig.height = 5}
 cb2 <- get.checkerboard2(occs, envs.bg, bg, aggregation.factor=c(5,5))
-evalplot.grps(pts = occs, pts.grp = cb2$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = cb2$occs.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
 evalplot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
+# Different from checkerboard1, some partitions here do show some difference
+# in environmental representation, but not as extreme as with block
+evalplot.grps.envSim(envs, occs, bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, plot.type = "histogram")
+evalplot.grps.envSim(envs, occs, bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, plot.type = "raster")
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
@@ -240,7 +256,7 @@ The next two methods differ from the first three in that (i) they do not partiti
 ```{r part.jk, fig.width = 5, fig.height = 5}
 jack <- get.jackknife(occs, bg)
 # If the number of input points is larger than 10, the legend for the groups is suppressed
-evalplot.grps(pts = occs, pts.grp = jack$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = jack$occs.grp, envs = envs.bg)
 ```
 
 #### 5. Random k-fold {#rand}
@@ -248,7 +264,10 @@ The 'random k-fold' method partitions occurrence localities randomly into a user
 
 ```{r part.rand, fig.width = 5, fig.height = 5}
 rand <- get.randomkfold(occs, bg, k = 5)
-evalplot.grps(pts = occs, pts.grp = rand$occ.grp, envs = envs.bg)
+evalplot.grps(pts = occs, pts.grp = rand$occs.grp, envs = envs.bg)
+# As the partitions are random, there is no clear environmental difference between them
+evalplot.grps.envSim(envs, occs, bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, plot.type = "histogram")
+evalplot.grps.envSim(envs, occs, bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, plot.type = "raster")
 ```
 
 #### 6. Independent {#ind}: 
@@ -258,6 +277,12 @@ The 'independent' method evaluates the model on an independent dataset that is n
 pts <- rbind(occs, occs.ind)
 pts.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.ind)))
 evalplot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
+# We use the same background groups as random partitions here and input the training data and
+# independent dataset as though they were partitions of one big dataset
+# We can see what is to be expected -- the independent dataset is much more restricted environmentally
+# than the training data, and thus is much more different from the wider extent
+evalplot.grps.envSim(envs, pts, bg, occs.grp = pts.grp, bg.grp = rand$bg.grp, plot.type = "histogram")
+evalplot.grps.envSim(envs, pts, bg, occs.grp = pts.grp, bg.grp = rand$bg.grp, plot.type = "raster")
 ```
 
 #### 7. User-defined {#user}
@@ -266,8 +291,8 @@ For maximum flexibility, the last partitioning method is designed so that users 
 ```{r part.user1, fig.width = 5, fig.height = 5}
 grp.n <- 6
 kmeans <- kmeans(occs, grp.n)
-occ.grp <- kmeans$cluster
-evalplot.grps(pts = occs, pts.grp = occ.grp, envs = envs.bg)
+occs.grp <- kmeans$cluster
+evalplot.grps(pts = occs, pts.grp = occs.grp, envs = envs.bg)
 ```
 
 When using the user-defined partitioning method, we need to supply ENMevaluate with group identifiers for both occurrence points AND background points. If we want to use all background points for each group, we can set the background to zero.
@@ -384,7 +409,7 @@ e.ind <- ENMevaluate(occs, envs, bg, mod.name = "maxnet",
                         occs.ind = occs.ind)
 
 # 3. User partitions
-user.grp <- list(occ.grp = round(runif(nrow(occs), 1, 2)), 
+user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), 
                  bg.grp = round(runif(nrow(bg), 1, 2)))
 e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                          tune.args = tune.args, categoricals = "biome", partitions = "user", 
@@ -399,11 +424,6 @@ occs.vals <- cbind(occs, raster::extract(envs, occs))
 bg.vals <- cbind(bg, raster::extract(envs, bg))
 e.swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "block")
-
-# 6. Background test CBI: this will calculate cbi.test on the point data (training and testing background) instead of on the "envs" rasters (default)
-e.bgCBI <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
-                          tune.args = tune.args, categoricals = "biome", partitions = "block", 
-                          cbi.eval = "bg")
 ```
 
 The last way to run `ENMevaluate()` is by specifying user model settings or completely different models. Users can either modify how built-in models function, or specify their own. This is all done using the `ENMdetails` object. Built-in models (maxent.jar, maxnet, BIOCLIM, brt) are implemented as `ENMdetails` objects. You can find them in the /R folder with the prefix "enm", as in "enm.maxnet". The `ENMdetails` object specifies the way `ENMevaluate()` should run the model. It defines the model's name, what the model function is, how to assemble arguments for the model function, how (or if) to calculate AIC, how to run `dismo::evaluate()` for evaluation statistics, which additional evaluation statistics to calculate, how to make model predictions, how to extract the number of model parameters, and particular messages to write to the console during the analysis.
@@ -452,7 +472,7 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 - `models` A list of model objects
 - `predictions` A RasterStack of model predictions
 - `occ.pts` A data.frame of occurrence coordinates used for model training
-- `occ.grp` A vector of partition groups for occurrence points
+- `occs.grp` A vector of partition groups for occurrence points
 - `bg.pts` A data.frame of background coordinates used for model training
 - `bg.grp` A vector of partition groups for background points
 - `overlap` A list of matrices of pairwise niche overlap statistics
@@ -496,7 +516,7 @@ eval.occs(e.mx)
 # Background data coordinates with associated predictor variable values
 eval.bg(e.mx)
 # Partition group assignments for occurrence data
-eval.occ.grp(e.mx)
+eval.occs.grp(e.mx)
 # Partition group assignments for background data
 eval.bg.grp(e.mx)
 ```
@@ -556,7 +576,7 @@ pred.seq <- eval.predictions(e.mx)[[opt.seq$tune.args]]
 plot(pred.seq)
 # Let's also plot the binned background points with the occurrence points on top
 points(bg(e.mx), pch = 3, col = bg.grp(e.mx), cex = 0.5)
-points(occs(e.mx), pch = 21, bg = occ.grp(e.mx))
+points(occs(e.mx), pch = 21, bg = occs.grp(e.mx))
 ```
 
 Let's see how model complexity changes the predictions in our example. We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://doi.org/10.1111/ecog.00845).

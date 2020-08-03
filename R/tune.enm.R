@@ -158,7 +158,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
     }
     
     eval.test <- enm@eval.test(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.test.vals, 
-                               bg.vals, mod.k, nk, other.settings)
+                               bg.vals, mod.k, nk, envs, other.settings)
     
     # put into list as one-row data frame for easy binding
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(eval.test)
