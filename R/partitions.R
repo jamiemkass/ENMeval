@@ -1,6 +1,6 @@
 #' @title Methods to partition data for evaluation
 #' 
-#' @description \code{ENMeval} provides several ways to partition occurrence and background localities into bins for training and testing (or, evaluation and calibration). 
+#' @description \code{ENMeval} provides several ways to partition occurrence and background localities into bins for training and validation (or, evaluation and calibration). 
 #' Users should carefully consider the objectives of their study and the influence of spatial bias when deciding on a method of data partitioning.
 #' 
 #' These functions are used internally to partition data during a call of \code{\link{ENMevaluate}} but can also be used independently to generate data partitions. 

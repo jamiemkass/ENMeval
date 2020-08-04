@@ -14,7 +14,7 @@ tune.parallel(
   partitions,
   tune.tbl,
   other.settings,
-  user.test.grps,
+  user.val.grps,
   numCores,
   parallelType,
   quiet
@@ -27,12 +27,12 @@ tune.regular(
   partitions,
   tune.tbl,
   other.settings,
-  user.test.grps,
+  user.val.grps,
   updateProgress,
   quiet
 )
 
-cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet)
+cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet)
 }
 \arguments{
 \item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
@@ -55,5 +55,5 @@ cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet)
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
-Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and testing evaluation statistics for one set of specified tuning parameters.
+Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and validation evaluation statistics for one set of specified tuning parameters.
 }

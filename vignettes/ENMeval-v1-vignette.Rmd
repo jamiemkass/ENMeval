@@ -88,9 +88,9 @@ occs <- filter(occs, latitude > -20, longitude < -45)
 # Plot the subsetted occurrences over the original ones to make sure we excluded the right ones
 points(occs, col='red')
 
-# As we will demonstrate model evaluation using independent data, we will specify a fake independent occurrence dataset
-occs.ind <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 0, 5))
-points(occs.ind, col="blue")
+# As we will demonstrate model evaluation using testing data, we will specify a fake testing occurrence dataset
+occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 0, 5))
+points(occs.testing, col="blue")
 ```
 
 
@@ -184,17 +184,17 @@ points(bg, col='red', pch=20, cex=0.2)
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
-A run of ENMevaluate begins by using one of six methods to partition occurrence localities into testing and training bins (folds) for *k*-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()`, but can also be done externally with the partitioning functions. In this section, we explain and illustrate these different functions. We also demonstrate how to make informative plots of partitions and the environmental similarity of partitions to the background or projection extent.
+A run of ENMevaluate begins by using one of six methods to partition occurrence localities into validation and training bins (folds) for *k*-fold cross-validation (Fielding and Bell 1997; Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()`, but can also be done externally with the partitioning functions. In this section, we explain and illustrate these different functions. We also demonstrate how to make informative plots of partitions and the environmental similarity of partitions to the background or projection extent.
 
 1. [Spatial Block](#block)
 2. [Spatial Checkerboard](#cb1)
 3. [Spatial Hierarchical Checkerboard](#cb2)
 4. [Jackknife (leave-one-out)](#jack)
 5. [Random *k*-fold](#rand)
-6. [Independent](#ind)
+6. [Testing Data](#testing)
 7. [User](#user)
 
-The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence records and background points into evaluation bins based on some spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the testing and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009; Hijmans 2012; Wenger and Olden 2012).
+The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence records and background points into evaluation bins based on some spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the validation and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009; Hijmans 2012; Wenger and Olden 2012).
 
 #### 1. Block {#block}
 First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four spatial groups of (insofar as possible) equal numbers. Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines. The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point.
@@ -251,7 +251,7 @@ evalplot.grps.envSim(envs, occs, bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.gr
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
-The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between testing and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning.  As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets. The background is not partitioned with jackknife.
+The next two methods differ from the first three in that (i) they do not partition the background points into different groups, and (ii) they do not account for spatial autocorrelation between validation and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova and Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning.  As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets. The background is not partitioned with jackknife.
 
 ```{r part.jk, fig.width = 5, fig.height = 5}
 jack <- get.jackknife(occs, bg)
@@ -270,16 +270,16 @@ evalplot.grps.envSim(envs, occs, bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.
 evalplot.grps.envSim(envs, occs, bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, plot.type = "raster")
 ```
 
-#### 6. Independent {#ind}: 
-The 'independent' method evaluates the model on an independent dataset that is not used to create the full model (i.e., not included in the training data, and thus fully withheld), and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and independent testing data and plot the partitions in the same way as above. However, unlike before, the independent testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the independent testing data (group 2) is used only to evaluate it. Thus, the background extent does not include the independent testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
+#### 6. Testing Data {#testing}: 
+The 'testing' method evaluates the model on a testing dataset that is not used to create the full model (i.e., not included in the training data, or fully withheld), and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and testing data and plot the partitions in the same way as above. However, the testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the testing data (group 2) are used only to evaluate it. Thus, the background extent does not include the testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
 
 ```{r part.ind, fig.width = 5, fig.height = 5}
-pts <- rbind(occs, occs.ind)
-pts.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.ind)))
+pts <- rbind(occs, occs.testing)
+pts.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.testing)))
 evalplot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
 # We use the same background groups as random partitions here and input the training data and
-# independent dataset as though they were partitions of one big dataset
-# We can see what is to be expected -- the independent dataset is much more restricted environmentally
+# testing dataset as though they were partitions of one big dataset
+# We can see what is to be expected -- the testing dataset is much more restricted environmentally
 # than the training data, and thus is much more different from the wider extent
 evalplot.grps.envSim(envs, pts, bg, occs.grp = pts.grp, bg.grp = rand$bg.grp, plot.type = "histogram")
 evalplot.grps.envSim(envs, pts, bg, occs.grp = pts.grp, bg.grp = rand$bg.grp, plot.type = "raster")
@@ -389,7 +389,7 @@ overlap
 There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
 
 full.mod.pred: raster model prediction based on `envs`
-cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test cannot only be calculated for partitions "randomkfold", "independent", or "user"
+cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test cannot only be calculated for partitions "randomkfold", "testing", or "user"
 
 
 ```{r evalExamples, eval= F}
@@ -403,10 +403,10 @@ e.mx <- ENMevaluate(occs, envs, bg, mod.name = "maxnet",
 e.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", 
                     tune.args = tune.args, categoricals = "biome", partitions = "block")
 
-# 2. Independent partition: no cross validation statistics calculated; instead, model will be evaluated on an independent dataset that is not used to create the full model
-e.ind <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
-                        tune.args = tune.args, categoricals = "biome", partitions = "independent", 
-                        occs.ind = occs.ind)
+# 2. Testing partition: no cross validation statistics calculated; instead, model will be evaluated on a testing dataset that is not used to create the full model
+e.testing <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+                        tune.args = tune.args, categoricals = "biome", partitions = "testing", 
+                        occs.testing = occs.testing)
 
 # 3. User partitions
 user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), 
@@ -419,16 +419,16 @@ e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet",
 e.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                          tune.args = tune.args, categoricals = "biome", partitions = "none")
 
-# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.test will be calculated on the point data (training and testing background) instead of on the "envs" rasters (default)
-occs.vals <- cbind(occs, raster::extract(envs, occs))
-bg.vals <- cbind(bg, raster::extract(envs, bg))
-e.swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", 
+# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.test will be calculated on the point data (training and validation background) instead of on the "envs" rasters (default)
+occs.z <- cbind(occs, raster::extract(envs, occs))
+bg.z <- cbind(bg, raster::extract(envs, bg))
+e.swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
 
 The last way to run `ENMevaluate()` is by specifying user model settings or completely different models. Users can either modify how built-in models function, or specify their own. This is all done using the `ENMdetails` object. Built-in models (maxent.jar, maxnet, BIOCLIM, brt) are implemented as `ENMdetails` objects. You can find them in the /R folder with the prefix "enm", as in "enm.maxnet". The `ENMdetails` object specifies the way `ENMevaluate()` should run the model. It defines the model's name, what the model function is, how to assemble arguments for the model function, how (or if) to calculate AIC, how to run `dismo::evaluate()` for evaluation statistics, which additional evaluation statistics to calculate, how to make model predictions, how to extract the number of model parameters, and particular messages to write to the console during the analysis.
 
-Users can modify the built-in `ENMdetails` objects to customize an analysis. For example, the user can redefine the "kstats" slot of an existing `ENMdetails` objects to calculate the average max TSS and max Kappa statistics for testing data. In order to run the model with this new behavior, the user needs to input the modified `ENMdetails` object in as the "user.enm" parameter. In this case, "mod.name" is left at the default NULL.
+Users can modify the built-in `ENMdetails` objects to customize an analysis. For example, the user can redefine the "kstats" slot of an existing `ENMdetails` objects to calculate the average max TSS and max Kappa statistics for validation data. In order to run the model with this new behavior, the user needs to input the modified `ENMdetails` object in as the "user.enm" parameter. In this case, "mod.name" is left at the default NULL.
 
 ```{r}
 # This is the existing ENMdetails object for maxnet
@@ -532,14 +532,14 @@ ENMeval has a built-in ggplot-based plotting function (`eval.plot`) to visualize
 ```{r plot.res, fig.width = 5, fig.height = 5}
 plot.eval(e = eval, stats = "or.mtp", col = "fc", x = "rm")
 # We can plot more than one statistic at one with ggplot facetting
-plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "fc", x = "rm")
+plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm")
 # Sometimes the error bars make it hard to visualize the plot, so we can try turning them off
-plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "fc", x = "rm", error.bars = FALSE)
+plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm", error.bars = FALSE)
 # We can also fiddle with the dodge parameter to jitter the positions of overlapping points
-plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "fc", x = "rm", dodge = 0.5)
+plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm", dodge = 0.5)
 # Finally, we can switch which parameters are on the x-axis and which symbolized by color
 # ENMeval currently only accepts two parameters for plotting at a time
-plot.eval(e = eval, stats = c("or.mtp", "auc.test"), col = "rm", x = "fc", error.bars = FALSE)
+plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "rm", x = "fc", error.bars = FALSE)
 ```
 
 #### Model selection {#eval.select}
@@ -553,7 +553,7 @@ opt.aicc <- res %>% filter(delta.AICc == 0)
 opt.aicc
 opt.seq <- res %>% 
   filter(or.10p.avg == min(or.10p.avg)) %>% 
-  filter(auc.test.avg == max(auc.test.avg))
+  filter(auc.val.avg == max(auc.val.avg))
 opt.seq
 ```
 

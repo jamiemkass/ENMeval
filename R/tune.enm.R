@@ -1,6 +1,6 @@
 #' @title Iterate tuning of ENMs
 #' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
-#' Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and testing evaluation statistics for one set of specified tuning parameters.
+#' Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and validation evaluation statistics for one set of specified tuning parameters.
 #' @aliases tune.parallel tune.regular cv.enm
 #' @param d data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
 #' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
@@ -15,7 +15,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -38,7 +38,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.test.grps, quiet)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.val.grps, quiet)
   }
   if(quiet != TRUE) close(pb)
   parallel::stopCluster(cl)
@@ -46,7 +46,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress, quiet) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, quiet) {
   results <- list()
   n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
   
@@ -64,7 +64,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet)
   }
   if(quiet != TRUE) close(pb)
   return(results)
@@ -73,15 +73,15 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
 #' @param tune.i vector of single set of tuning parameters
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.grps, quiet) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
-  occs.vals <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(all_of(envs.names))
+  occs.z <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(all_of(envs.names))
   bg.xy <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
-  bg.vals <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(all_of(envs.names))
+  bg.z <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(all_of(envs.names))
   # build the full model from all the data
-  mod.full.args <- enm@args(occs.vals, bg.vals, tune.i, other.settings)
+  mod.full.args <- enm@args(occs.z, bg.z, tune.i, other.settings)
   mod.full <- do.call(enm@fun, mod.full.args)
   if(is.null(mod.full)) stop("Training model is NULL. Consider changing the tuning parameters.")
   # make full model prediction as raster using raster envs (if raster envs exists) 
@@ -93,7 +93,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
   }
   mod.full.pred <- enm@pred(mod.full, pred.envs, other.settings)
   # get evaluation statistics for training data
-  eval.train <- enm@eval.train(occs.xy, bg.xy, occs.vals, bg.vals, mod.full, mod.full.pred, envs, other.settings)
+  eval.train <- enm@eval.train(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings)
   # make training stats table
   tune.args.col <- paste(tune.i, collapse = "_")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(eval.train)
@@ -118,26 +118,26 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
   cv.stats <- list()
   
   for(k in 1:nk) {
-    # assign partitions for training and testing occurrence data and for background data
+    # assign partitions for training and validation occurrence data and for background data
     occs.train.xy <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(1:2)
-    occs.train.vals <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(all_of(envs.names))
-    bg.train.vals <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(all_of(envs.names))
-    if(is.null(user.test.grps)) {
+    occs.train.z <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(all_of(envs.names))
+    bg.train.z <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(all_of(envs.names))
+    if(is.null(user.val.grps)) {
       occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
-      occs.test.vals <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(all_of(envs.names))
-      # bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
+      occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(all_of(envs.names))
+      # bg.test.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
     }else{
-      # assign partitions for training and testing occurrence data and for background data based on user data
-      occs.test.xy <- user.test.grps %>% dplyr::filter(grp == k) %>% dplyr::select(1:2)
-      occs.test.vals <- user.test.grps %>% dplyr::filter(grp == k) %>% dplyr::select(all_of(envs.names))
-      # bg.test.vals <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
+      # assign partitions for training and validation occurrence data and for background data based on user data
+      occs.test.xy <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(1:2)
+      occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(all_of(envs.names))
+      # bg.test.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
     }
     
     # if no cross validation (nk = 1), define the model used for evaluation (mod.k) 
     # as the full model (mod.full) to avoid having to refit the same model
     if(nk != 1) {
       # define model arguments for current model k
-      mod.k.args <- enm@args(occs.train.vals, bg.train.vals, tune.i, other.settings)
+      mod.k.args <- enm@args(occs.train.z, bg.train.z, tune.i, other.settings)
       # run the current model k
       mod.k <- tryCatch({
         do.call(enm@fun, mod.k.args)  
@@ -157,11 +157,11 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.test.g
       next
     }
     
-    eval.test <- enm@eval.test(occs.test.xy, occs.train.xy, bg.xy, occs.train.vals, occs.test.vals, 
-                               bg.vals, mod.k, nk, envs, other.settings)
+    eval.validate <- enm@eval.validate(occs.test.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
+                               bg.z, mod.k, nk, envs, other.settings)
     
     # put into list as one-row data frame for easy binding
-    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(eval.test)
+    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(eval.validate)
   } 
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)

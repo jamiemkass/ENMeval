@@ -19,14 +19,14 @@
 # abs.auc.diff <- TRUE
 # pred.type <- "cloglog"
 # user.grp = NULL
-# occs.ind = NULL
+# occs.testing = NULL
 # quiet = FALSE
 # 
 # # user groups
 # user.grp <- list(occs.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
 # 
-# # independent partitions
-# occs.ind <- occs[1:50,]
+# # testing partitions
+# occs.testing <- occs[1:50,]
 # occs <- occs[51:nrow(occs),]
 # 
 # # null models
@@ -55,8 +55,8 @@
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # ## run with SWD
 # # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with independent testing data
-# # e <- ENMevaluate(occs[1:50,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "independent", occs.ind = occs[51:nrow(occs),])
+# ## run with testing validation data
+# # e <- ENMevaluate(occs[1:50,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs[51:nrow(occs),])
 # ## run with just AIC
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 # ## run with maxent.jar

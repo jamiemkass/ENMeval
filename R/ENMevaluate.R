@@ -1,7 +1,7 @@
 #' @title Tune ecological niche model (ENM) settings and calculate evaluation statistics
 #' @description \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
-#' user-specified tuning settings. Users can choose to tune with cross validation or an independent 
-#' occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+#' user-specified tuning settings. Users can choose to evaluate models with cross validation or an
+#' independent testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
 #' evaluation statistics for each combination of settings and for each cross validation fold therein, as
 #' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 #' results table should aid users in identifying model settings that balance fit and predictive ability.
@@ -26,9 +26,9 @@
 #' @param user.grp named list with occs.grp = vector of partition group (fold) for each
 #' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
 #' background (or pseudo-absence) localities
-#' @param occs.ind matrix or data frame with two columns for longitude and latitude 
-#' of occurrence localities, in that order, intended for independent evaluation;
-#' when \code{partitions = "independent"}; these occurrences will be used only 
+#' @param occs.testing matrix or data frame with two columns for longitude and latitude 
+#' of occurrence localities, in that order, intended for a testing dataset;
+#' when \code{partitions = "testing"}; these occurrences will be used only 
 #' for evaluation, and not for model training, and thus no cross validation will be done
 #' @param kfolds numeric for number of partition groups (grp), only for random k-fold partitioning
 #' @param aggregation.factor numeric vector with length 2 that specifies the factors for aggregating 
@@ -43,7 +43,7 @@
 #' @param pred.type character (default: "cloglog") that specifies which prediction type should be used to
 #' generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models
 #' @param abs.auc.diff boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE
-#' @param user.test.grps matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
+#' @param user.val.grps matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 #' internally by ENMnullSims() to force each null model to evaluate with real test data
 #' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
@@ -60,10 +60,10 @@
 #' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
-                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.ind = NULL, 
+                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.testing = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
-                        abs.auc.diff = TRUE, user.test.grps = NULL,
+                        abs.auc.diff = TRUE, user.val.grps = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
@@ -121,14 +121,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   ## general parameter checks
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
-                      "checkerboard2", "user", "independent", "none")
+                      "checkerboard2", "user", "testing", "none")
   
   if(!(partitions %in% all.partitions)) {
     stop("* Please enter an accepted partition method.")
   }
   
-  if(partitions == "independent" & is.null(occs.ind)) {
-    stop("* If doing independent evaluations, please provide independent testing data (occs.ind).")
+  if(partitions == "testing" & is.null(occs.testing)) {
+    stop("* If doing testing evaluations, please provide testing data (occs.testing).")
   }
   
   if((partitions == "checkerboard1" | partitions == "checkerboard2") & is.null(envs)) {
@@ -200,10 +200,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
     
     # bind coordinates to predictor variable values for occs and bg
-    occs.vals <- raster::extract(envs, occs)
-    bg.vals <- raster::extract(envs, bg)
-    occs <- cbind(occs, occs.vals)
-    bg <- cbind(bg, bg.vals)
+    occs.z <- raster::extract(envs, occs)
+    bg.z <- raster::extract(envs, bg)
+    occs <- cbind(occs, occs.z)
+    bg <- cbind(bg, bg.z)
   }else{
     # if no bg included, stop
     if(is.null(bg)) {
@@ -216,18 +216,18 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   
   # if NA predictor variable values exist for occs or bg, remove these records and modify user.grp accordingly
-  occs.vals.na <- which(rowSums(is.na(occs)) > 0)
-  if(length(occs.vals.na) > 0) {
-    if(quiet != TRUE) message(paste0("* Removed ", length(occs.vals.na), " occurrence points with NA predictor variable values."))
-    occs <- occs[-occs.vals.na,]
-    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[-occs.vals.na]
+  occs.z.na <- which(rowSums(is.na(occs)) > 0)
+  if(length(occs.z.na) > 0) {
+    if(quiet != TRUE) message(paste0("* Removed ", length(occs.z.na), " occurrence points with NA predictor variable values."))
+    occs <- occs[-occs.z.na,]
+    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[-occs.z.na]
   }
   
-  bg.vals.na <- which(rowSums(is.na(bg)) > 0)
-  if(length(bg.vals.na) > 0) {
-    if(quiet != TRUE) message(paste0("* Removed ", length(bg.vals.na), " background points with NA predictor variable values."))
-    bg <- bg[-bg.vals.na,]
-    if(!is.null(user.grp)) user.grp$bg.grp <- user.grp$bg.grp[-bg.vals.na]
+  bg.z.na <- which(rowSums(is.na(bg)) > 0)
+  if(length(bg.z.na) > 0) {
+    if(quiet != TRUE) message(paste0("* Removed ", length(bg.z.na), " background points with NA predictor variable values."))
+    bg <- bg[-bg.z.na,]
+    if(!is.null(user.grp)) user.grp$bg.grp <- user.grp$bg.grp[-bg.z.na]
   }
   
   # make main df with coordinates and predictor variable values
@@ -268,9 +268,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   d.occs <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
   d.bg <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
   
-  # if occs.ind input, coerce partitions to 'independent'
-  if(!is.null(occs.ind) & partitions != "independent") {
-    partitions <- "independent"
+  # if occs.testing input, coerce partitions to 'testing'
+  if(!is.null(occs.testing) & partitions != "testing") {
+    partitions <- "testing"
   }
   
   # partition occs based on selected partition method
@@ -281,7 +281,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                  checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = NULL,
-                 independent = list(occs.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
+                 testing = list(occs.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
   
   
@@ -293,7 +293,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                       checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
                       checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
                       user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
-                      independent = "* Model evaluations with independent testing data...",
+                      testing = "* Model evaluations with testing data...",
                       none = "* Skipping model evaluations (only calculating full model statistics)...")
   if(quiet != TRUE) message(parts.message)
   
@@ -309,29 +309,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
   
   ############################################ #
-  # ADD INDEPENDENT TESTING DATA (IF INPUT) ####
+  # ADD TESTING DATA (IF INPUT) ####
   ############################################ #
   
-  # add independent tesing data to main df if provided
-  if(partitions == "independent") {
-    occs.ind.vals <- as.data.frame(raster::extract(envs, occs.ind))
-    occs.ind.vals <- cbind(occs.ind, occs.ind.vals)
-    occs.ind.vals$pb <- 1
-    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the independent data
+  # add testing data to main df if provided
+  if(partitions == "testing") {
+    occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
+    occs.testing.z <- cbind(occs.testing, occs.testing.z)
+    occs.testing.z$pb <- 1
+    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the testing data
     # and the second iteration is not performed
-    occs.ind.vals$grp <- 1
-    user.test.grps <- occs.ind.vals
+    occs.testing.z$grp <- 1
+    user.val.grps <- occs.testing.z
     # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
     # d$grp <- factor(d$grp, levels = 0:2)
-    # and then add the independent testing data with grp value 1
-    # d <- rbind(d, occs.ind.vals)
+    # and then add the testing data with grp value 1
+    # d <- rbind(d, occs.testing.z)
   }
   
   ##################################### #
   # TURN ON/OFF CBI.TEST CALCULATION ####
   ##################################### #
   
-  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index on testing data is problematic, as
+  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index on validation data is problematic, as
   # 1) the full study area must be considered, and 2) too few test records are considered, so currently we turn it off
   if(length(unique(d[d$pb==0,"grp"])) > 1 | length(unique(d[d$pb==1,"grp"])) == nrow(occs)) {
     if(quiet != TRUE) message("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).")
@@ -360,9 +360,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                          abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv)
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, numCores, parallelType, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.test.grps, updateProgress, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, quiet)
   }
   
   ##################### #
@@ -396,7 +396,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
   
   # define number of grp (the value of "k") for occurrences
-  # k is 1 for partition "independent"
+  # k is 1 for partition "testing"
   # k is 0 for partitions "none" and "user"
   occGrps <- unique(d[d$pb == 1, "grp"])
   if(length(occGrps) == 1 & 0 %in% occGrps) {
@@ -418,8 +418,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
       sum.list <- list(avg = mean, sd = sd)
     } 
     
-    # if there is one partition, or if using an independent evaluation dataset, do not take summary statistics
-    if(nk == 1 | partitions == "independent") sum.list <- list(function(x) {x})
+    # if there is one partition, or if using an testing dataset, do not take summary statistics
+    if(nk == 1 | partitions == "testing") sum.list <- list(function(x) {x})
     
     # if tune.tbl exists, make tune.args column a factor to keep order after using dplyr functions
     if(nrow(tune.tbl) > 0) cv.stats.all$tune.args <- factor(cv.stats.all$tune.args, levels = tune.names)

@@ -4,7 +4,17 @@
 \alias{ENMdetails}
 \title{ENMdetails class}
 \usage{
-ENMdetails(name, fun, pkgs, msgs, args, eval.train, eval.test, pred, nparams)
+ENMdetails(
+  name,
+  fun,
+  pkgs,
+  msgs,
+  args,
+  eval.train,
+  eval.validate,
+  pred,
+  nparams
+)
 }
 \description{
 An S4 class that details packages, functions, messages associated with a specific species distribution model (SDM) or ecological niche model (ENM). 
@@ -26,7 +36,7 @@ pre-made ENMdetails object specifications that work with ENMeval out of the box.
 
 \item{\code{eval.train}}{function specifying how to calculate training evaluation statistics}
 
-\item{\code{eval.test}}{function specifying how to calculate testing evaluation statistics}
+\item{\code{eval.validate}}{function specifying how to calculate validation evaluation statistics}
 
 \item{\code{pred}}{function specifying how to calculate a model prediction for a Raster* or a data frame}
 

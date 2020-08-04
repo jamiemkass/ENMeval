@@ -5,15 +5,15 @@ set.seed(48)
 occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
 envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
                                  pattern='grd', full.names=TRUE))
-occs.vals <- cbind(occs, raster::extract(envs, occs))
+occs.z <- cbind(occs, raster::extract(envs, occs))
 bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
-bg.vals <- cbind(bg, raster::extract(envs, bg))
+bg.z <- cbind(bg, raster::extract(envs, bg))
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args.ls <- list("maxnet" = list(fc = c("L","LQ"), rm = 2:3),
                   "brt" = list(tree.complexity = 1:2, learning.rate = 0.01, bag.fraction = 0.5))
 tune.args.tbl.ls <- lapply(tune.args.ls, expand.grid, stringsAsFactors = FALSE)
-parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "independent", "none", "user", rep("randomkfold", 4))
+parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "testing", "none", "user", rep("randomkfold", 4))
 kfolds.n <- 4
 user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
 # random sample of occs for runs that use subsets
@@ -36,9 +36,9 @@ e.ls$rand <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.a
 # jackknife partitions
 e.ls$jack <- ENMevaluate(occs[i[1:10],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "jackknife", overlap = TRUE)
-# independent partition
+# testing partition
 e.ls$ind <- ENMevaluate(occs[i[1:100],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
-                      partitions = "independent", occs.ind = occs[i[101:nrow(occs)],], overlap = TRUE)
+                      partitions = "testing", occs.testing = occs[i[101:nrow(occs)],], overlap = TRUE)
 # no partitions
 e.ls$nopart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "none", overlap = TRUE)
@@ -46,7 +46,7 @@ e.ls$nopart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune
 e.ls$user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       user.grp = user.grp, partitions = "user", overlap = TRUE)
 # no envs (SWD)
-e.ls$swd <- ENMevaluate(occs.vals, bg = bg.vals, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                          partitions = "randomkfold", kfolds = kfolds.n)
 # no bg
 e.ls$nobg <- ENMevaluate(occs, envs, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
@@ -154,7 +154,7 @@ test_that("Jackknife has correct number of partitions", {
   expect_true(length(unique(e.ls$jack@bg.grp)) == 1)
 })
 
-test_that("Independent has correct number of partitions", {
+test_that("Testing data has correct number of partitions", {
   expect_true(length(unique(e.ls$ind@occs.grp)) == 1)
   expect_true(length(unique(e.ls$ind@bg.grp)) == 1)
 })
@@ -212,7 +212,7 @@ test_that("Jackknife test results table has correct form", {
   expect_true(sum(is.na(jack.res)) == 0)
 })
 
-test_that("Independent test results table has correct form", {
+test_that("Testing data test results table has correct form", {
   ind.res <- e.ls$ind@results.grp
   expect_true(nrow(ind.res) == nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(ind.res$fold) == 1)

@@ -41,7 +41,7 @@ A named list of two items:
 \item{$bg.grp}{ A vector of bin designation for background localities in the same order they were provided.}
 }
 \description{
-\code{ENMeval} provides several ways to partition occurrence and background localities into bins for training and testing (or, evaluation and calibration). 
+\code{ENMeval} provides several ways to partition occurrence and background localities into bins for training and validation (or, evaluation and calibration). 
 Users should carefully consider the objectives of their study and the influence of spatial bias when deciding on a method of data partitioning.
 
 These functions are used internally to partition data during a call of \code{\link{ENMevaluate}} but can also be used independently to generate data partitions. 
