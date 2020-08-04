@@ -104,7 +104,7 @@ buildRMM <- function(e, envs) {
   if(e@partition.method == "testing") {
     rmm$assessment$testingDataStats$AUC <- paste(e@tune.settings$tune.args, e@results$auc.val, sep = ": ")
     rmm$assessment$testingDataStats$AUCDiff <- paste(e@tune.settings$tune.args, e@results$auc.diff.avg, sep = ": ")
-    rmm$assessment$testingDataStats$boyce <- ifelse(!is.null(e@results$cbi.test), paste(e@tune.settings$tune.args, e@results$cbi.test, sep = ": "), "none")
+    rmm$assessment$testingDataStats$boyce <- ifelse(!is.null(e@results$cbi.val), paste(e@tune.settings$tune.args, e@results$cbi.val, sep = ": "), "none")
     rmm$assessment$testingDataStats$omissionRate <- list(or.mtp = paste(e@tune.settings$tune.args, round(e@results[grepl("or.mtp",names(e@results))], 3), sep = ": "),
                                                             or.10p = paste(e@tune.settings$tune.args, round(e@results[grepl("or.10p",names(e@results))], 3), sep = ": "))
   }else{
@@ -112,7 +112,7 @@ buildRMM <- function(e, envs) {
     rmm$assessment$trainingDataStats$boyce <- paste(e@tune.settings$tune.args, round(e@results$cbi.train, 3), sep = ": ")
     rmm$assessment$validationDataStats$AUC <- paste(e@tune.settings$tune.args, e@results$auc.val, sep = ": ")
     rmm$assessment$validationDataStats$AUCDiff <- paste(e@tune.settings$tune.args, e@results$auc.diff.avg, sep = ": ")
-    rmm$assessment$validationDataStats$boyce <- ifelse(!is.null(e@results$cbi.test), paste(e@tune.settings$tune.args, e@results$cbi.test, sep = ": "), "none")
+    rmm$assessment$validationDataStats$boyce <- ifelse(!is.null(e@results$cbi.val), paste(e@tune.settings$tune.args, e@results$cbi.val, sep = ": "), "none")
     rmm$assessment$validationDataStats$omissionRate <- list(or.mtp = paste(e@tune.settings$tune.args, round(e@results[grepl("or.mtp",names(e@results))], 3), sep = ": "),
                                                             or.10p = paste(e@tune.settings$tune.args, round(e@results[grepl("or.10p",names(e@results))], 3), sep = ": "))
   }
