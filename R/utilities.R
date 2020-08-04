@@ -198,10 +198,10 @@ calc.10p.trainThresh <- function(pred.train) {
 #   return(rmess)
 # }
 # 
-# calc.mess.kstats <- function(occs.train.vals, bg.train.vals, occs.test.vals, bg.test.vals) {
-#   p <- rbind(occs.train.vals, bg.train.vals)
-#   v <- rbind(occs.test.vals, bg.test.vals)
-#   cat.j <- which(sapply(occs.train.vals, is.factor) == 1)
+# calc.mess.kstats <- function(occs.train.z, bg.train.z, occs.val.z, bg.test.z) {
+#   p <- rbind(occs.train.z, bg.train.z)
+#   v <- rbind(occs.val.z, bg.test.z)
+#   cat.j <- which(sapply(occs.train.z, is.factor) == 1)
 #   if(length(cat.j) > 0) {
 #     p <- p[,-cat.j]
 #     v <- v[,-cat.j]

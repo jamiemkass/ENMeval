@@ -17,7 +17,8 @@ evalplot.grps.envSim(
   plot.type = "histogram",
   plot.palette = NULL,
   palette.dir = 1,
-  hist.bins = 30
+  hist.bins = 30,
+  return.output = FALSE
 )
 }
 \arguments{
@@ -52,11 +53,12 @@ Plot environmental similarity of predictor variable extent with respect to occur
 \details{
 There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
-As implemented here, MESS calculates the similarity between environmental values associated with the 
+With sim.type option "mess", the similarity between environmental values associated with the 
 test occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
-of the input RasterStack "envs"). Higher negative values indicate greater environmental difference between the test occurrences
-and the study extent, and higher positive values indicate greater similarity. This function uses the `dismo::mess()` function 
-to calculate MESS. See the below reference for more details.
+of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
+Higher negative values indicate greater environmental difference between the test occurrences
+and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
+to calculate the similarities. See the below reference for details on MESS.
 }
 \references{
 Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.

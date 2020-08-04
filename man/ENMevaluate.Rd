@@ -16,7 +16,7 @@ ENMevaluate(
   user.enm = NULL,
   partitions = NULL,
   user.grp = NULL,
-  occs.ind = NULL,
+  occs.testing = NULL,
   kfolds = NA,
   aggregation.factor = c(2, 2),
   orientation = "lat_lon",
@@ -26,7 +26,7 @@ ENMevaluate(
   clamp = TRUE,
   pred.type = "cloglog",
   abs.auc.diff = TRUE,
-  user.test.grps = NULL,
+  user.val.grps = NULL,
   parallel = FALSE,
   numCores = NULL,
   parallelType = "doSNOW",
@@ -77,9 +77,9 @@ used for the analysis, and is an alternative to specifying mod.name}
 occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
 background (or pseudo-absence) localities}
 
-\item{occs.ind}{matrix or data frame with two columns for longitude and latitude 
-of occurrence localities, in that order, intended for independent evaluation;
-when \code{partitions = "independent"}; these occurrences will be used only 
+\item{occs.testing}{matrix or data frame with two columns for longitude and latitude 
+of occurrence localities, in that order, intended for a testing dataset;
+when \code{partitions = "testing"}; these occurrences will be used only 
 for evaluation, and not for model training, and thus no cross validation will be done}
 
 \item{kfolds}{numeric for number of partition groups (grp), only for random k-fold partitioning}
@@ -103,7 +103,7 @@ generate prediction rasters for the ENMevaluation object; currently only applica
 
 \item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
 
-\item{user.test.grps}{matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
+\item{user.val.grps}{matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 internally by ENMnullSims() to force each null model to evaluate with real test data}
 
 \item{parallel}{boolean (TRUE or FALSE) which if TRUE, run with parallel processing}
@@ -119,8 +119,8 @@ internally by ENMnullSims() to force each null model to evaluate with real test 
 }
 \description{
 \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
-user-specified tuning settings. Users can choose to tune with cross validation or an independent 
-occurrence dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+user-specified tuning settings. Users can choose to evaluate models with cross validation or an
+independent testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
 evaluation statistics for each combination of settings and for each cross validation fold therein, as
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 results table should aid users in identifying model settings that balance fit and predictive ability.

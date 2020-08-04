@@ -23,7 +23,7 @@
 #' @export
 #'
 
-# for split evaluation, label training occs "1" and independent evaluation occs "2" in partitions
+# for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
 ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.partition = NULL,
                      userStats.signs = NULL, removeMxTemp = TRUE) {
 
@@ -34,20 +34,20 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
                       block = "kspatial",
                       checkerboard1 = "kspatial",
                       checkerboard2 = "kspatial",
-                      independent = "knonspatial")
+                      testing = "knonspatial")
   
   # checks
   if(!all(sapply(mod.settings, length) == 1)) stop("Please input a single set of model settings.")
   
   # assign directionality of sign for evaluation stats
-  signs <- c(list("auc.test" = 1, "auc.train" = 1, "cbi.test" = 1, "cbi.train" = 1,
+  signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
                    "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
   
   # record start time
   start.time <- proc.time()
 
   # assign the number of cross validation iterations
-  nk <- ifelse(e@partition.method == "independent", 1, max(as.numeric(e@occs.grp)))
+  nk <- ifelse(e@partition.method == "testing", 1, max(as.numeric(e@occs.grp)))
 
   # get number of occurrence points by partition
   occs.grp.tbl <- table(e@occs.grp)
@@ -94,7 +94,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
     if(eval.type == "kspatial") {
       # randomly sample the same number of training occs over each k partition
       # of envs; if kspatial evaluation, only sample over the current spatial
-      # partition of envs.vals
+      # partition of envs.z
       for(k in 1:nk) {
         # sample null occurrences only from
         # the environment variable grid cells in partition group k
@@ -119,20 +119,20 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
       if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occs.grp
       if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
     }
-    null.occs.i.vals <- null.occs.i.df %>% dplyr::select(-grp)
+    null.occs.i.z <- null.occs.i.df %>% dplyr::select(-grp)
     # assign the null occurrence partitions as user partition settings, but
     # keep the real model background partitions
     user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
     # shortcuts for settings
     e.s <- e@other.settings
-    # assign user test partitions to those used in the real model
-    user.test.grps <- cbind(e@occs, grp = e@occs.grp)
+    # assign user validation partitions to those used in the real model
+    user.val.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
 
-    null.e.i <- ENMevaluate(occs = null.occs.i.vals, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
+    null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
                             mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
-                            user.test.grps = user.test.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
+                            user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
                             aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
                             pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
     setTxtProgressBar(pb, i)

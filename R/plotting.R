@@ -104,14 +104,14 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
   ras.mss <- list()
   nk <- length(unique(pts.grp))
   for(k in 1:nk) {
-    test.vals <- vals %>% dplyr::filter(partition == k) %>% dplyr::select(-partition)
+    test.z <- vals %>% dplyr::filter(partition == k) %>% dplyr::select(-partition)
     train.xy <- pts %>% dplyr::filter(partition != k) %>% dplyr::select(-partition)
     if(!is.null(envs.var)) {
-      sim <- rmaxent::similarity(envs, test.vals, full = TRUE)
+      sim <- rmaxent::similarity(envs, test.z, full = TRUE)
       mss <- sim$similarity[[envs.var]]
       names(mss) <- "mess"
     }else{
-      sim <- rmaxent::similarity(envs, test.vals)
+      sim <- rmaxent::similarity(envs, test.z)
       mss <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
     }
     
