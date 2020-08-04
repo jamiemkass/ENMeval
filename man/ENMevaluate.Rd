@@ -26,6 +26,7 @@ ENMevaluate(
   clamp = TRUE,
   pred.type = "cloglog",
   abs.auc.diff = TRUE,
+  validation.bg = "full",
   user.val.grps = NULL,
   parallel = FALSE,
   numCores = NULL,
@@ -102,6 +103,9 @@ applicable for maxent.jar/maxnet models}
 generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models}
 
 \item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
+
+\item{validation.bg}{Character: either "full" to calculate AUC and CBI with respect to the full background, or
+"partition" to calculate them with respect to the validation partition background}
 
 \item{user.val.grps}{matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 internally by ENMnullSims() to force each null model to evaluate with real test data}

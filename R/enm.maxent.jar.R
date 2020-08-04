@@ -73,19 +73,29 @@ eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, en
   return(out.df)
 }
 
-eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, mod.k, nk, envs, other.settings) {
+eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
   ## validation AUC
   # calculate auc on validation data: validation occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
-  # for auc.diff calculation, do perform the subtraction, it is essential that both stats are calculated over the same background
+  # for auc.diff calculation, to perform the subtraction, it is essential that both stats are calculated over the same background
   clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   output.format <- paste0("outputformat=", other.settings$pred.type)
   e.train <- dismo::evaluate(occs.train.z, bg.z, mod.k, args = c(output.format, clamp))
-  e.val <- dismo::evaluate(occs.val.z, bg.z, mod.k, args = c(output.format, clamp))
   auc.train <- e.train@auc
-  auc.val <- e.val@auc
-  # calculate auc diff as auc train (partition not k) minus auc validation (partition k)
-  auc.diff <- auc.train - auc.val
-  if(other.settings$abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
+  # AUC validation
+  # calculate AUC on validation data: if training and validation occurrences are evaluated on same background (full), auc.diff can
+  # also be calculated (Radosavljevic & Anderson 2014); if validation occurrences are evaluated on partitioned background, auc.diff is NULL
+  if(other.settings$validation.bg == "full") {
+    e.val <- dismo::evaluate(occs.val.z, bg.z, mod.k, args = c(output.format, clamp))
+    auc.val <- e.val@auc
+    # calculate auc diff as auc train (partition not k) minus auc validation (partition k)
+    auc.diff <- auc.train - auc.val
+  } else if(other.settings$validation.bg == "partition") {
+    e.val <- dismo::evaluate(occs.val.z, bg.val.z, mod.k, args = c(output.format, clamp))
+    auc.val <- e.val@auc
+    auc.diff <- NA
+  }
+  
+  if(other.settings$abs.auc.diff == TRUE & !is.null(auc.diff)) auc.diff <- abs(auc.diff)
   
   ## omission rates
   # get model predictions for training and validation data
@@ -100,21 +110,17 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   
   ## validation CBI
   if(other.settings$cbi.cv == TRUE) {
-    if(!is.null(envs)) {
-      # predict to raster
-      mod.k.pred <- enm.maxent.jar@pred(mod.k, envs, other.settings)
-    }else{
-      # use full background to approximate full model prediction
-      mod.k.pred <- enm.maxent.jar@pred(mod.k, bg.z, other.settings)
+    if(other.settings$validation.bg == "full") {
+      mod.k.pred <- enm.maxent.jar@pred(mod.k, bg.z, other.settings)  
+    }else if(other.settings$validation.bg == "partition") {
+      mod.k.pred <- enm.maxent.jar@pred(mod.k, bg.val.z, other.settings)  
     }
-    cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)
+    cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)$Spearman.cor
   }else{
-    cbi.val <- NULL
-  }
-  
+    cbi.val <- NA
+  }  
   # gather all evaluation statistics for k
-  out.df <- data.frame(auc.val = auc.val, auc.diff = auc.diff, or.mtp = or.mtp, or.10p = or.10p)
-  if(!is.null(cbi.val)) out.df <- cbind(out.df, cbi.val = cbi.val$Spearman.cor)
+  out.df <- data.frame(auc.val = auc.val, auc.diff = auc.diff, cbi.val = cbi.val, or.mtp = or.mtp, or.10p = or.10p)
   
   return(out.df)
 }
