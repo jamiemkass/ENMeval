@@ -123,12 +123,12 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
     occs.train.z <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(all_of(envs.names))
     bg.train.z <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(all_of(envs.names))
     if(is.null(user.val.grps)) {
-      occs.test.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
+      occs.val.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(all_of(envs.names))
       # bg.test.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
     }else{
       # assign partitions for training and validation occurrence data and for background data based on user data
-      occs.test.xy <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(1:2)
+      occs.val.xy <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(1:2)
       occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(all_of(envs.names))
       # bg.test.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
     }
@@ -157,7 +157,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
       next
     }
     
-    eval.validate <- enm@eval.validate(occs.test.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
+    eval.validate <- enm@eval.validate(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
                                bg.z, mod.k, nk, envs, other.settings)
     
     # put into list as one-row data frame for easy binding

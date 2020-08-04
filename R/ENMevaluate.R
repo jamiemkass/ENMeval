@@ -328,7 +328,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   
   ##################################### #
-  # TURN ON/OFF CBI.TEST CALCULATION ####
+  # TURN ON/OFF cbi.val CALCULATION ####
   ##################################### #
   
   # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index on validation data is problematic, as

@@ -53,15 +53,15 @@ eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, en
   return(out.df)
 }
 
-eval.validate <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, mod.k, nk, envs, other.settings) {
+eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, mod.k, nk, envs, other.settings) {
   ## validation AUC
-  # calculate auc on validation data: test occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
+  # calculate auc on validation data: validation occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, do perform the subtraction, it is essential that both stats are calculated over the same background
   e.train <- dismo::evaluate(occs.train.z, bg.z, mod.k, n.trees = length(mod.k$trees))
-  e.test <- dismo::evaluate(occs.val.z, bg.z, mod.k, n.trees = length(mod.k$trees))
+  e.val <- dismo::evaluate(occs.val.z, bg.z, mod.k, n.trees = length(mod.k$trees))
   auc.train <- e.train@auc
-  auc.val <- e.test@auc
-  # calculate auc diff as auc train (partition not k) minus auc test (partition k)
+  auc.val <- e.val@auc
+  # calculate auc diff as auc train (partition not k) minus auc validation (partition k)
   auc.diff <- auc.train - auc.val
   if(other.settings$abs.auc.diff == TRUE) auc.diff <- abs(auc.diff)
   
@@ -85,14 +85,14 @@ eval.validate <- function(occs.test.xy, occs.train.xy, bg.xy, occs.train.z, occs
       # use full background to approximate full model prediction
       mod.k.pred <- enm.brt@pred(mod.k, bg.z, other.settings)
     }
-    cbi.test <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)
+    cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)
   }else{
-    cbi.test <- NULL
+    cbi.val <- NULL
   }
   
   # gather all evaluation statistics for k
   out.df <- data.frame(auc.val = auc.val, auc.diff = auc.diff, or.mtp = or.mtp, or.10p = or.10p)
-  if(!is.null(cbi.test)) out.df <- cbind(out.df, cbi.test = cbi.test$Spearman.cor)
+  if(!is.null(cbi.val)) out.df <- cbind(out.df, cbi.val = cbi.val$Spearman.cor)
   
   return(out.df)
 }

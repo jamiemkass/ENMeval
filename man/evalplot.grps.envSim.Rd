@@ -54,9 +54,9 @@ Plot environmental similarity of predictor variable extent with respect to occur
 There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 With sim.type option "mess", the similarity between environmental values associated with the 
-test occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
+validation occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
 of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
-Higher negative values indicate greater environmental difference between the test occurrences
+Higher negative values indicate greater environmental difference between the validation occurrences
 and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
 to calculate the similarities. See the below reference for details on MESS.
 }

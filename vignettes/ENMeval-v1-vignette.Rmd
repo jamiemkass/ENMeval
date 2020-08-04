@@ -389,7 +389,7 @@ overlap
 There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
 
 full.mod.pred: raster model prediction based on `envs`
-cbi: a) calculated on raster model prediction based on `envs`, b) cbi.test cannot only be calculated for partitions "randomkfold", "testing", or "user"
+cbi: a) calculated on raster model prediction based on `envs`, b) cbi.val cannot only be calculated for partitions "randomkfold", "testing", or "user"
 
 
 ```{r evalExamples, eval= F}
@@ -404,7 +404,7 @@ e.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar",
                     tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Testing partition: no cross validation statistics calculated; instead, model will be evaluated on a testing dataset that is not used to create the full model
-e.testing <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
+e.test <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                         tune.args = tune.args, categoricals = "biome", partitions = "testing", 
                         occs.testing = occs.testing)
 
@@ -419,7 +419,7 @@ e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet",
 e.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
                          tune.args = tune.args, categoricals = "biome", partitions = "none")
 
-# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.test will be calculated on the point data (training and validation background) instead of on the "envs" rasters (default)
+# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.val will be calculated on the point data (training and validation background) instead of on the "envs" rasters (default)
 occs.z <- cbind(occs, raster::extract(envs, occs))
 bg.z <- cbind(bg, raster::extract(envs, bg))
 e.swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", 
@@ -436,10 +436,10 @@ enm.maxnet
 # This is the existing kstats function for maxnet
 enm.maxnet@kstats
 # This kstats function can be redefined
-# The e.test parameter is the ModelEvaluation object (from dismo::evaluate()) calculated on the test data
+# The e.val parameter is the ModelEvaluation object (from dismo::evaluate()) calculated on the test data
 # See the documentation in ?enm.maxnet for more details on the input parameters
-enm.maxnet@kstats <- function(e.test, mod, other.args) {
-  user.kstats <- c(maxTSS.test = max(e.test@TPR + e.test@TNR) - 1, maxKappa.test = max(e.test@kappa))
+enm.maxnet@kstats <- function(e.val, mod, other.args) {
+  user.kstats <- c(maxTSS.val = max(e.val@TPR + e.val@TNR) - 1, maxKappa.val = max(e.val@kappa))
   return(user.kstats)
 }
 # ENMevaluate() can now be run with the modified ENMdetails object
@@ -544,7 +544,7 @@ plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "rm", x = "fc", error.
 
 #### Model selection {#eval.select}
 
-Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models using AICc (which does not consider cross-validation results) and a sequential method that selects models with the lowest average test omission rate, and to break ties, next with the highest average test AUC (this method uses cross-validation results).
+Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models using AICc (which does not consider cross-validation results) and a sequential method that selects models with the lowest average test omission rate, and to break ties, next with the highest average validation AUC (this method uses cross-validation results).
 
 ```{r evaluations}
 # Overall results
@@ -604,7 +604,7 @@ plot(predictions(e.mx)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, ma
 
 ```{r}
 mod.null <- ENMnullSims(eval, mod.settings = list(fc = "L", rm = 2), no.iter = 10, 
-                     envs = envs, userStats.signs = list(maxTSS.test = 1, maxKappa.test = 1))
+                     envs = envs, userStats.signs = list(maxTSS.val = 1, maxKappa.val = 1))
 null.results(mod.null)
 null.results.grp(mod.null)
 real.vs.null.results(mod.null)
@@ -617,7 +617,7 @@ ENMeval now catalogs details of the analysis essential for reproducibility in a 
 # fill in a RMM object based on the ENMevaluate object
 rmm <- eval.rmm(e.mx1)
 # Let's fill in our selection rules based on the sequential criteria we chose
-rmm$model$selectionRules <- "lowest 10 percentile omission rate, break ties with average test AUC"
+rmm$model$selectionRules <- "lowest 10 percentile omission rate, break ties with average validation AUC"
 # And enter our optimal model settings
 rmm$model$finalModelSettings <- "LQ4"
 # And then enter the details of our optimal model's prediction
