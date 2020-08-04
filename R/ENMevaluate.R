@@ -43,6 +43,8 @@
 #' @param pred.type character (default: "cloglog") that specifies which prediction type should be used to
 #' generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models
 #' @param abs.auc.diff boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE
+#' @param validation.bg Character: either "full" to calculate AUC and CBI with respect to the full background, or
+#' "partition" to calculate them with respect to the validation partition background 
 #' @param user.val.grps matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 #' internally by ENMnullSims() to force each null model to evaluate with real test data
 #' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
@@ -63,7 +65,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.testing = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
-                        abs.auc.diff = TRUE, user.val.grps = NULL,
+                        abs.auc.diff = TRUE, validation.bg = "full", user.val.grps = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
@@ -305,6 +307,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                            user = list(kfolds = length(unique(user.grp$occs.grp))))
   if(is.null(parts.settings)) parts.settings <- list()
   
+  # if jackknife partitioning, do not calculate CBI because there are too few validation occurrences
+  # per partition (n=1) to have a meaningful result
+  if(partitions == "jackknife") cbi.cv <- FALSE else cbi.cv <- TRUE
+  
   # add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
   
@@ -327,19 +333,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     # d <- rbind(d, occs.testing.z)
   }
   
-  ##################################### #
-  # TURN ON/OFF cbi.val CALCULATION ####
-  ##################################### #
-  
-  # for 1) spatial cross validation and 2) jackknife, calculating the continuous Boyce Index on validation data is problematic, as
-  # 1) the full study area must be considered, and 2) too few test records are considered, so currently we turn it off
-  if(length(unique(d[d$pb==0,"grp"])) > 1 | length(unique(d[d$pb==1,"grp"])) == nrow(occs)) {
-    if(quiet != TRUE) message("* Turning off test evaluation for Continuous Boyce Index (CBI), as there is no current implementation for jackknife or partitioned background cross-validation (which includes spatial partitioning).")
-    cbi.cv <- FALSE
-  }else{
-    cbi.cv <- TRUE
-  }
-  
   ################# #
   # MODEL TUNING #### 
   ################# #
@@ -357,7 +350,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # put all settings into list
   other.settings <- list(other.args = other.args, clamp = clamp, pred.type = pred.type, 
-                         abs.auc.diff = abs.auc.diff, cbi.cv = cbi.cv)
+                         abs.auc.diff = abs.auc.diff, validation.bg = validation.bg, cbi.cv = cbi.cv)
   
   if(parallel) {
     results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, quiet)  

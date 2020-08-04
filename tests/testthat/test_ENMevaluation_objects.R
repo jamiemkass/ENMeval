@@ -175,7 +175,6 @@ test_that("Block test results table has correct form", {
   block.res <- e.ls$block@results.grp
   expect_true(nrow(block.res) == 4 * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(block.res$fold) == 4)
-  expect_false("cbi.val" %in% names(block.res))
   expect_true(sum(is.na(block.res)) == 0)
 })
 
@@ -183,7 +182,6 @@ test_that("Checkerboard1 test results table has correct form", {
   cb1.res <- e.ls$cb1@results.grp
   expect_true(nrow(cb1.res) == 2 * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(cb1.res$fold) == 2)
-  expect_false("cbi.val" %in% names(cb1.res))
   expect_true(sum(is.na(cb1.res)) == 0)
 })
 
@@ -191,7 +189,6 @@ test_that("Checkerboard2 test results table has correct form", {
   cb2.res <- e.ls$cb2@results.grp
   expect_true(nrow(cb2.res) == 4 * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(cb2.res$fold) == 4)
-  expect_false("cbi.val" %in% names(cb2.res))
   expect_true(sum(is.na(cb2.res)) == 0)
 })
 
@@ -208,8 +205,8 @@ test_that("Jackknife test results table has correct form", {
   noccs <- nrow(e.ls$jack@occs)
   expect_true(nrow(jack.res) == noccs * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(jack.res$fold) == noccs)
-  expect_false("cbi.val" %in% names(jack.res))
-  expect_true(sum(is.na(jack.res)) == 0)
+  expect_true(sum(is.na(jack.res$cbi.val)) == 36)
+  expect_true(sum(is.na(jack.res)) == 36)
 })
 
 test_that("Testing data test results table has correct form", {

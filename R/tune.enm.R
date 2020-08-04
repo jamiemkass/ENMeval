@@ -125,12 +125,12 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
     if(is.null(user.val.grps)) {
       occs.val.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(all_of(envs.names))
-      # bg.test.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
+      bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(all_of(envs.names))
     }else{
       # assign partitions for training and validation occurrence data and for background data based on user data
       occs.val.xy <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(1:2)
       occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(all_of(envs.names))
-      # bg.test.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)  
+      bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     }
     
     # if no cross validation (nk = 1), define the model used for evaluation (mod.k) 
@@ -158,7 +158,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
     }
     
     eval.validate <- enm@eval.validate(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
-                               bg.z, mod.k, nk, envs, other.settings)
+                               bg.z, bg.val.z, mod.k, nk, other.settings)
     
     # put into list as one-row data frame for easy binding
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(eval.validate)
