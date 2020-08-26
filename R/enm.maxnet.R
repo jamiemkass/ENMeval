@@ -10,7 +10,7 @@ pkgs <- c("dismo", "raster", "maxnet")
 
 msgs <- function(tune.args) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
-    stop("For Maxent, please specify both 'rm' and 'fc' settings. See ?tune.args for help.")
+    stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
   }else{
     if(!is.numeric(tune.args[["rm"]])) {
       stop("Please input numeric values for 'rm' settings for Maxent.")

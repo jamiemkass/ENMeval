@@ -10,7 +10,7 @@ pkgs <- c("randomForest", "dismo", "raster")
 
 msgs <- function(tune.args) {
   if(!all("ntree" %in% names(tune.args), "mtry" %in% names(tune.args))) {
-    stop("RF settings must include 'ntree' and 'mtry'.")
+    stop("RF settings must include 'ntree' and 'mtry'. See ?tune.args for details")
   }
   # construct user message with version info
   msg <- paste0("random forest using the randomForest() function from randomForest package v", 

@@ -94,7 +94,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
     numCores <- allCores
   }
   cl <- parallel::makeCluster(numCores)
-  n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
+  n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
   if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
   
@@ -120,7 +120,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
 #' @rdname tune.enm
 tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, quiet) {
   results <- list()
-  n <- ifelse(nrow(tune.tbl) > 0, nrow(tune.tbl), 1)
+  n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
   # set up the console progress bar
   if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
@@ -172,7 +172,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   # get evaluation statistics for training data
   train <- tune.train(enm, occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings)
   # make training stats table
-  tune.args.col <- paste(tune.i, collapse = "_")
+  tune.args.col <- paste(names(tune.i), tune.i, collapse = "_", sep = ":")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)
   
   # define number of grp (the value of "k") for occurrences
