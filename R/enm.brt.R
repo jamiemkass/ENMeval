@@ -33,9 +33,13 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
+evaluate <- function(occs.z, bg.z, mod, other.settings) {
+  dismo::evaluate(occs.z, bg.z, mod, n.trees = length(mod.full$trees))
+}
+
+train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
-  e <- dismo::evaluate(occs.z, bg.z, mod.full, n.trees = length(mod.full$trees))
+  e <- enm.brt@evaluate(occs.z, bg.z, mod.full, other.settings)
   auc.train <- e@auc
   # training CBI
   if(!is.null(envs)) {
@@ -53,22 +57,22 @@ eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, en
   return(out.df)
 }
 
-eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
+validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
   ## validation AUC
   # calculate auc on validation data: validation occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, to perform the subtraction, it is essential that both stats are calculated over the same background
-  e.train <- dismo::evaluate(occs.train.z, bg.z, mod.k, n.trees = length(mod.k$trees))
+  e.train <- enm.brt@evaluate(occs.train.z, bg.z, mod.k, other.settings)
   auc.train <- e.train@auc
   # AUC validation
   # calculate AUC on validation data: if training and validation occurrences are evaluated on same background (full), auc.diff can
   # also be calculated (Radosavljevic & Anderson 2014); if validation occurrences are evaluated on partitioned background, auc.diff is NULL
   if(other.settings$validation.bg == "full") {
-    e.val <- dismo::evaluate(occs.val.z, bg.z, mod.k, n.trees = length(mod.k$trees))
+    e.val <- enm.brt@evaluate(occs.val.z, bg.z, mod.k, other.settings)
     auc.val <- e.val@auc
     # calculate auc diff as auc train (partition not k) minus auc validation (partition k)
     auc.diff <- auc.train - auc.val
   } else if(other.settings$validation.bg == "partition") {
-    e.val <- dismo::evaluate(occs.val.z, bg.val.z, mod.k, n.trees = length(mod.k$trees))
+    e.val <- enm.brt@evaluate(occs.val.z, bg.val.z, mod.k, other.settings)
     auc.val <- e.val@auc
     auc.diff <- NA
   }
@@ -77,8 +81,8 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   
   ## omission rates
   # get model predictions for training and validation data
-  occs.train.pred <- enm.brt@pred(mod.k, occs.train.z, other.settings)
-  occs.val.pred <- enm.brt@pred(mod.k, occs.val.z, other.settings)
+  occs.train.pred <- enm.brt@predict(mod.k, occs.train.z, other.settings)
+  occs.val.pred <- enm.brt@predict(mod.k, occs.val.z, other.settings)
   # get minimum training presence threshold (expected no omission)
   min.train.thr <- min(occs.train.pred)
   or.mtp <- mean(occs.val.pred < min.train.thr)
@@ -89,9 +93,9 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   ## validation CBI
   if(other.settings$cbi.cv == TRUE) {
     if(other.settings$validation.bg == "full") {
-      mod.k.pred <- enm.brt@pred(mod.k, bg.z, other.settings)  
+      mod.k.pred <- enm.brt@predict(mod.k, bg.z, other.settings)  
     }else if(other.settings$validation.bg == "partition") {
-      mod.k.pred <- enm.brt@pred(mod.k, bg.val.z, other.settings)  
+      mod.k.pred <- enm.brt@predict(mod.k, bg.val.z, other.settings)  
     }
     cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)$Spearman.cor
   }else{
@@ -104,11 +108,11 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   return(out.df)
 }
 
-pred <- function(mod, envs, other.settings) {
+predict <- function(mod, envs, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
-    pred <- raster::predict(envs, mod, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)
+    pred <- raster::predict(envs, mod, type = "response", n.trees = length(mod$trees), na.rm = TRUE)
   }else{
-    pred <- dismo::predict(mod, envs, type = "response", n.trees = mod$gbm.call$best.trees, na.rm = TRUE)  
+    pred <- dismo::predict(mod, envs, type = "response", n.trees = length(mod$trees), na.rm = TRUE)  
   }
   return(pred)
 }
@@ -120,5 +124,5 @@ nparams <- function(mod) {
 
 #' @export
 enm.brt <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                      eval.train = eval.train, eval.validate = eval.validate,
-                      pred = pred, nparams = nparams)
+                      evaluate = evaluate, train = train, validate = validate,
+                      predict = predict, nparams = nparams)

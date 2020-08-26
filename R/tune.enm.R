@@ -91,12 +91,17 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   }else{
     pred.envs <- d %>% dplyr::select(all_of(envs.names))
   }
-  mod.full.pred <- enm@pred(mod.full, pred.envs, other.settings)
+  # if using BIOCLIM, put the current tail specification into other.settings
+  # for use in doing evaluations and making predictions
+  if(enm@name == "bioclim") {
+    other.settings$tails <- tune.i
+  }
+  mod.full.pred <- enm@predict(mod.full, pred.envs, other.settings)
   # get evaluation statistics for training data
-  eval.train <- enm@eval.train(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings)
+  train <- enm@train(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings)
   # make training stats table
   tune.args.col <- paste(tune.i, collapse = "_")
-  train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(eval.train)
+  train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)
   
   # define number of grp (the value of "k") for occurrences
   # k is 1 for partition "independent"
@@ -157,11 +162,11 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
       next
     }
     
-    eval.validate <- enm@eval.validate(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
+    validate <- enm@validate(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
                                bg.z, bg.val.z, mod.k, nk, other.settings)
     
     # put into list as one-row data frame for easy binding
-    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(eval.validate)
+    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(validate)
   } 
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)

@@ -37,9 +37,13 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
+evaluate <- function(occs.z, bg.z, mod, other.settings) {
+  dismo::evaluate(occs.z, bg.z, mod, clamp = other.settings$clamp, type = other.settings$pred.type)
+}
+
+train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
   # training AUC
-  e <- dismo::evaluate(occs.z, bg.z, mod.full, clamp = other.settings$clamp, type = other.settings$pred.type)
+  e <- enm.maxnet@evaluate(occs.z, bg.z, mod.full, other.settings)
   auc.train <- e@auc
   # training CBI
   if(!is.null(envs)) {
@@ -57,20 +61,20 @@ eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, en
   return(out.df)
 }
 
-eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
+validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
   ## AUC train
-  e.train <- dismo::evaluate(occs.train.z, bg.z, mod.k, clamp = other.settings$clamp, type = other.settings$pred.type)
+  e.train <- enm.maxnet@evaluate(occs.train.z, bg.z, mod.k, other.settings)
   auc.train <- e.train@auc
   # AUC validation
   # calculate AUC on validation data: if training and validation occurrences are evaluated on same background (full), auc.diff can
   # also be calculated (Radosavljevic & Anderson 2014); if validation occurrences are evaluated on partitioned background, auc.diff is NULL
   if(other.settings$validation.bg == "full") {
-    e.val <- dismo::evaluate(occs.val.z, bg.z, mod.k, clamp = other.settings$clamp, type = other.settings$pred.type)  
+    e.val <- enm.maxnet@evaluate(occs.val.z, bg.z, mod.k, other.settings)  
     auc.val <- e.val@auc
     # calculate auc diff as auc train (partition not k) minus auc validation (partition k)
     auc.diff <- auc.train - auc.val
   } else if(other.settings$validation.bg == "partition") {
-    e.val <- dismo::evaluate(occs.val.z, bg.val.z, mod.k, clamp = other.settings$clamp, type = other.settings$pred.type)  
+    e.val <- enm.maxnet@evaluate(occs.val.z, bg.val.z, mod.k, other.settings)  
     auc.val <- e.val@auc
     auc.diff <- NA
   }
@@ -79,8 +83,8 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   
   ## omission rates
   # get model predictions for training and validation data
-  occs.train.pred <- enm.maxnet@pred(mod.k, occs.train.z, other.settings)
-  occs.val.pred <- enm.maxnet@pred(mod.k, occs.val.z, other.settings)
+  occs.train.pred <- enm.maxnet@predict(mod.k, occs.train.z, other.settings)
+  occs.val.pred <- enm.maxnet@predict(mod.k, occs.val.z, other.settings)
   # get minimum training presence threshold (expected no omission)
   min.train.thr <- min(occs.train.pred)
   or.mtp <- mean(occs.val.pred < min.train.thr)
@@ -95,9 +99,9 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   ## validation CBI
   if(other.settings$cbi.cv == TRUE) {
     if(other.settings$validation.bg == "full") {
-      mod.k.pred <- enm.maxnet@pred(mod.k, bg.z, other.settings)  
+      mod.k.pred <- enm.maxnet@predict(mod.k, bg.z, other.settings)  
     }else if(other.settings$validation.bg == "partition") {
-      mod.k.pred <- enm.maxnet@pred(mod.k, bg.val.z, other.settings)  
+      mod.k.pred <- enm.maxnet@predict(mod.k, bg.val.z, other.settings)  
     }
     cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)$Spearman.cor
   }else{
@@ -111,19 +115,19 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   return(out.df)
 }
 
-pred <- function(mod, envs, other.settings) {
+predict <- function(mod, envs, other.settings) {
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "BasicRaster") == TRUE) {
     envs.n <- raster::nlayers(envs)
     envs.pts <- raster::getValues(envs) %>% as.data.frame()
-    mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
+    mxnet.p <- dismo::predict(mod, envs.pts, type = other.settings$pred.type, 
                        clamp = other.settings$clamp,  other.settings$other.args)
     envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
     pred <- raster::rasterFromXYZ(cbind(raster::coordinates(envs), envs.pts$pred), res=raster::res(envs), crs = raster::crs(envs)) 
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
-    pred <- predict(mod, envs, type = other.settings$pred.type, 
+    pred <- dismo::predict(mod, envs, type = other.settings$pred.type, 
                     clamp = other.settings$clamp, na.rm = TRUE, other.settings$other.args) %>% as.numeric()
   }
   return(pred)
@@ -135,5 +139,5 @@ nparams <- function(mod) {
 
 #' @export
 enm.maxnet <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                         eval.train = eval.train, eval.validate = eval.validate,
-                         pred = pred, nparams = nparams)
+                         evaluate = evaluate, train = train, validate = validate,
+                         predict = predict, nparams = nparams)
