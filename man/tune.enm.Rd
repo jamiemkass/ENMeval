@@ -5,8 +5,36 @@
 \alias{tune.parallel}
 \alias{tune.regular}
 \alias{cv.enm}
+\alias{tune.train}
+\alias{tune.validate}
 \title{Iterate tuning of ENMs}
 \usage{
+tune.train(
+  enm,
+  occs.xy,
+  bg.xy,
+  occs.z,
+  bg.z,
+  mod.full,
+  mod.full.pred,
+  envs,
+  other.settings
+)
+
+tune.validate(
+  enm,
+  occs.val.xy,
+  occs.train.xy,
+  bg.xy,
+  occs.train.z,
+  occs.val.z,
+  bg.z,
+  bg.val.z,
+  mod.k,
+  nk,
+  other.settings
+)
+
 tune.parallel(
   d,
   envs,
@@ -35,17 +63,17 @@ tune.regular(
 cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet)
 }
 \arguments{
-\item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
+\item{enm}{Object of class \link{ENMdetails}.}
 
 \item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
 
-\item{enm}{Object of class \link{ENMdetails}.}
+\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, clamp, pred.type, abs.auc.diff, cbi.cv}
+
+\item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 
 \item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
-
-\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, clamp, pred.type, abs.auc.diff, cbi.cv}
 
 \item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing}
 

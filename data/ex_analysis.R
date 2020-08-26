@@ -1,16 +1,23 @@
-set.seed(48)
-bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
-occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
-occs <- occs[!duplicated(occs),]
-envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
-# which(rowSums(is.na(raster::extract(envs, occs))) > 0)
-bg <- as.data.frame(dismo::randomPoints(envs, 10000))
-names(bg) <- names(occs)
-tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
+# set.seed(48)
+# bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
+# occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+# occs <- occs[!duplicated(occs),]
+# occs.sp <- sf::st_as_sf(occs, coords=c("longitude","latitude"))
+# occs.buf <- sf::st_buffer(occs.sp, 10)
+# plot(envs[[1]])
+# plot(occs.buf$geometry,add=T)
+# envs.msk <- mask(envs, as(occs.buf, "Spatial"))
+# bg <- as.data.frame(dismo::randomPoints(envs.msk, 500))
+# 
+# envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
+# # which(rowSums(is.na(raster::extract(envs, occs))) > 0)
+# bg <- as.data.frame(dismo::randomPoints(envs, 10000))
+# names(bg) <- names(occs)
+# tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
 # tune.args <- list(tails = c("low", "high", "both"))
 # tune.args <- list(ntree = c(500,1000), mtry = c(5,10))
 # tune.args <- list(fc = "L", rm = 1)
-partitions <- "randomkfold"
+# partitions <- "randomkfold"
 # kfolds <- 4
 # categoricals <- "biome"
 # skipRasters <- FALSE
@@ -66,7 +73,7 @@ partitions <- "randomkfold"
 # # tune.args <- list(ntree = c(500,1000), mtry = c(2,5))
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "rf", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # ## run with BRT
-# # tune.args <- list(tree.complexity = 1:2, learning.rate = 0.1, bag.fraction = 0.5)
+# # tune.args <- list(n.trees = 100, tc = 1:2, lr = 0.01)
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # # run with BIOCLIM
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", tune.args = tune.args, categoricals = "biome", partitions = "block")
