@@ -10,9 +10,10 @@ ENMdetails(
   pkgs,
   msgs,
   args,
-  eval.train,
-  eval.validate,
-  pred,
+  evaluate,
+  train,
+  validate,
+  predict,
   nparams
 )
 }
@@ -34,11 +35,13 @@ pre-made ENMdetails object specifications that work with ENMeval out of the box.
 
 \item{\code{args}}{function specifying the parameters needed to run the model function}
 
-\item{\code{eval.train}}{function specifying how to calculate training evaluation statistics}
+\item{\code{evaluate}}{function specifying how to calculate evaluation statistics}
 
-\item{\code{eval.validate}}{function specifying how to calculate validation evaluation statistics}
+\item{\code{train}}{function specifying how to calculate training evaluation statistics}
 
-\item{\code{pred}}{function specifying how to calculate a model prediction for a Raster* or a data frame}
+\item{\code{validate}}{function specifying how to calculate validation evaluation statistics}
+
+\item{\code{predict}}{function specifying how to calculate a model prediction for a Raster* or a data frame}
 
 \item{\code{nparams}}{function specifying how to measure the number of model coefficients}
 }}

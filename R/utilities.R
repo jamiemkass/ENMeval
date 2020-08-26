@@ -257,8 +257,10 @@ lookup.enm <- function(mod.name) {
   x <- switch(mod.name, 
               maxent.jar = enm.maxent.jar,
               maxnet = enm.maxnet,
+              rf = enm.rf,
               brt = enm.brt,
-              bioclim = enm.bioclim)
+              bioclim = enm.bioclim
+              )
   return(x)
 }
 

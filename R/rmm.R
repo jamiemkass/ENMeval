@@ -5,6 +5,7 @@
 #' To improve reproducibility of the study, this metadata object can be used as supplemental information for a manuscript, shared with collaborators, etc.
 #' @param e ENMevaluation object
 #' @param envs RasterStack of environmental predictor variables used in analysis
+#' @export
 
 buildRMM <- function(e, envs) {
   rmm <- rangeModelMetadata::rmmTemplate()

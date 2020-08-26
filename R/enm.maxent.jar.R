@@ -51,10 +51,17 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
-  # training AUC
-  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
+evaluate <- function(occs.z, bg.z, mod, other.settings) {
   output.format <- paste0("outputformat=", other.settings$pred.type)
+  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
+  dismo::evaluate(occs.z, bg.z, mod, args = c(output.format, clamp))
+}
+
+
+train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
+  # training AUC
+  output.format <- paste0("outputformat=", other.settings$pred.type)
+  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   e <- dismo::evaluate(occs.z, bg.z, mod.full, args = c(output.format, clamp))
   auc.train <- e@auc
   # training CBI
@@ -73,12 +80,12 @@ eval.train <- function(occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, en
   return(out.df)
 }
 
-eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
+validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
   ## validation AUC
   # calculate auc on validation data: validation occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, to perform the subtraction, it is essential that both stats are calculated over the same background
-  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   output.format <- paste0("outputformat=", other.settings$pred.type)
+  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   e.train <- dismo::evaluate(occs.train.z, bg.z, mod.k, args = c(output.format, clamp))
   auc.train <- e.train@auc
   # AUC validation
@@ -99,8 +106,8 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   
   ## omission rates
   # get model predictions for training and validation data
-  occs.train.pred <- enm.maxent.jar@pred(mod.k, occs.train.z, other.settings)
-  occs.val.pred <- enm.maxent.jar@pred(mod.k, occs.val.z, other.settings)
+  occs.train.pred <- enm.maxent.jar@predict(mod.k, occs.train.z, other.settings)
+  occs.val.pred <- enm.maxent.jar@predict(mod.k, occs.val.z, other.settings)
   # get minimum training presence threshold (expected no omission)
   min.train.thr <- min(occs.train.pred)
   or.mtp <- mean(occs.val.pred < min.train.thr)
@@ -111,9 +118,9 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   ## validation CBI
   if(other.settings$cbi.cv == TRUE) {
     if(other.settings$validation.bg == "full") {
-      mod.k.pred <- enm.maxent.jar@pred(mod.k, bg.z, other.settings)  
+      mod.k.pred <- enm.maxent.jar@predict(mod.k, bg.z, other.settings)  
     }else if(other.settings$validation.bg == "partition") {
-      mod.k.pred <- enm.maxent.jar@pred(mod.k, bg.val.z, other.settings)  
+      mod.k.pred <- enm.maxent.jar@predict(mod.k, bg.val.z, other.settings)  
     }
     cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)$Spearman.cor
   }else{
@@ -125,10 +132,10 @@ eval.validate <- function(occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.
   return(out.df)
 }
 
-pred <- function(mod, envs, other.settings) {
-  type.arg <- paste("outputformat", other.settings$pred.type, sep = "=")
-  clamp.arg <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
-  pred <- dismo::predict(mod, envs, args = c(type.arg, clamp.arg), na.rm = TRUE)
+predict <- function(mod, envs, other.settings) {
+  output.format <- paste0("outputformat=", other.settings$pred.type)
+  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
+  pred <- dismo::predict(mod, envs, args = c(output.format, clamp), na.rm = TRUE)
   return(pred)
 }
 
@@ -141,5 +148,5 @@ nparams <- function(mod) {
 
 #' @export
 enm.maxent.jar <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                             eval.train = eval.train, eval.validate = eval.validate, 
-                             pred = pred, nparams = nparams)
+                             evaluate = evaluate, train = train, validate = validate, 
+                             predict = predict, nparams = nparams)

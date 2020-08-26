@@ -255,6 +255,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
       if(enm@name == "bioclim") {
         if(quiet != TRUE) message("* As specified model is BIOCLIM, removing categorical variables.")
         d[, categoricals[i]] <- NULL
+        envs <- raster::dropLayer(envs, categoricals)
       }else{
         if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
         d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
@@ -291,7 +292,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   parts.message <- switch(partitions,
                       jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
                       randomkfold = paste0("* Model evaluations with random ", kfolds, "-fold cross validation..."),
-                      block = "* Model evaluations with spatial block (4-fold) cross validation...",
+                      block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", orientation, " orientation..."),
                       checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
                       checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
                       user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
@@ -458,11 +459,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
     if(!is.null(envs)) {
-      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@pred, envs, aic.settings))
+      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, aic.settings))
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@pred, occs[,-c(1,2)], aic.settings))
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
     aic <- aic.maxent(occs.pred.raw, nparams, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
@@ -496,7 +497,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     }else{
       for(ovStat in overlapStat) {
         if(quiet != TRUE) message(paste0("Calculating niche overlap for statistic ", ovStat, "..."))
-        overlap.mat <- calc.niche.overlap(e@predictions, ovStat, quiet)
+        # turn negative values to 0 for niche overlap calculations
+        predictions.noNegs <- calc(e@predictions, function(x) {x[x<0] <- 0; x})
+        overlap.mat <- calc.niche.overlap(predictions.noNegs, ovStat, quiet)
         e@overlap[[ovStat]] <- overlap.mat
       }
     }

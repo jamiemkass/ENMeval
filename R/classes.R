@@ -129,9 +129,10 @@ setMethod("show",
 #' @slot pkgs vector of package names needed to run the model function
 #' @slot msgs function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}
 #' @slot args function specifying the parameters needed to run the model function
-#' @slot eval.train function specifying how to calculate training evaluation statistics
-#' @slot eval.validate function specifying how to calculate validation evaluation statistics
-#' @slot pred function specifying how to calculate a model prediction for a Raster* or a data frame
+#' @slot evaluate function specifying how to calculate evaluation statistics
+#' @slot train function specifying how to calculate training evaluation statistics
+#' @slot validate function specifying how to calculate validation evaluation statistics
+#' @slot predict function specifying how to calculate a model prediction for a Raster* or a data frame
 #' @slot nparams function specifying how to measure the number of model coefficients
 #' @export
 
@@ -142,14 +143,15 @@ ENMdetails <- setClass("ENMdetails",
                                  pkgs = 'character',
                                  msgs = 'function',
                                  args = 'function',
-                                 eval.train = 'function',
-                                 eval.validate = 'function',
-                                 pred = 'function',
+                                 evaluate = 'function',
+                                 train = 'function',
+                                 validate = 'function',
+                                 predict = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, eval.train, eval.validate, pred, nparams) {
-  new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
-      eval.train = eval.train, eval.validate = eval.validate, pred = pred, nparams = nparams)
+ENMdetails <- function(name, fun, pkgs, msgs, args, evaluate, train, validate, predict, nparams) {
+  new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, evaluate = evaluate,
+      train = train, validate = validate, predict = predict, nparams = nparams)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -207,35 +209,46 @@ setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x
 })
 
-setGeneric("enm.eval.train", function(x) standardGeneric("enm.eval.train"))
-setGeneric("enm.eval.train<-", function(x, value) standardGeneric("enm.eval.train<-"))
+setGeneric("enm.evaluate", function(x) standardGeneric("enm.evaluate"))
+setGeneric("enm.evaluate<-", function(x, value) standardGeneric("enm.evaluate<-"))
 #' @export
-setMethod("enm.eval.train", "ENMdetails", function(x) x@eval.train)
+setMethod("enm.evaluate", "ENMdetails", function(x) x@train)
 #' @export
-setMethod("enm.eval.train<-", "ENMdetails", function(x, value) {
-  x@eval.train <- value
+setMethod("enm.evaluate<-", "ENMdetails", function(x, value) {
+  x@train <- value
   validObject(x)
   x
 })
 
-setGeneric("enm.eval.validate", function(x) standardGeneric("enm.eval.validate"))
-setGeneric("enm.eval.validate<-", function(x, value) standardGeneric("enm.eval.validate<-"))
+setGeneric("enm.train", function(x) standardGeneric("enm.train"))
+setGeneric("enm.train<-", function(x, value) standardGeneric("enm.train<-"))
 #' @export
-setMethod("enm.eval.validate", "ENMdetails", function(x) x@eval.validate)
+setMethod("enm.train", "ENMdetails", function(x) x@train)
 #' @export
-setMethod("enm.eval.validate<-", "ENMdetails", function(x, value) {
-  x@eval.validate <- value
+setMethod("enm.train<-", "ENMdetails", function(x, value) {
+  x@train <- value
   validObject(x)
   x
 })
 
-setGeneric("enm.pred", function(x) standardGeneric("enm.pred"))
-setGeneric("enm.pred<-", function(x, value) standardGeneric("enm.pred<-"))
+setGeneric("enm.validate", function(x) standardGeneric("enm.validate"))
+setGeneric("enm.validate<-", function(x, value) standardGeneric("enm.validate<-"))
 #' @export
-setMethod("enm.pred", "ENMdetails", function(x) x@pred)
+setMethod("enm.validate", "ENMdetails", function(x) x@validate)
 #' @export
-setMethod("enm.pred<-", "ENMdetails", function(x, value) {
-  x@pred <- value
+setMethod("enm.validate<-", "ENMdetails", function(x, value) {
+  x@validate <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.predict", function(x) standardGeneric("enm.predict"))
+setGeneric("enm.predict<-", function(x, value) standardGeneric("enm.predict<-"))
+#' @export
+setMethod("enm.predict", "ENMdetails", function(x) x@predict)
+#' @export
+setMethod("enm.predict<-", "ENMdetails", function(x, value) {
+  x@predict <- value
   validObject(x)
   x
 })
