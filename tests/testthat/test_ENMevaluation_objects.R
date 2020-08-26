@@ -11,7 +11,8 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, raster::extract(envs, bg))
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args.ls <- list("maxnet" = list(fc = c("L","LQ"), rm = 2:3),
-                  "brt" = list(tree.complexity = 1:2, learning.rate = 0.01, bag.fraction = 0.5))
+                  "brt" = list(n.trees = 1000, tc = 1:2, lr = 0.01),
+                  "rf" = list(n.trees = 1000, mtry = 4:5))
 tune.args.tbl.ls <- lapply(tune.args.ls, expand.grid, stringsAsFactors = FALSE)
 parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "testing", "none", "user", rep("randomkfold", 4))
 kfolds.n <- 4
@@ -20,7 +21,7 @@ user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif
 i <- sample(1:nrow(occs))
 
 e.ls <- list()
-e.ls.alg <- c(rep("maxnet", 10), "bioclim", "brt")
+e.ls.alg <- c(rep("maxnet", 10), "bioclim", "brt", "rf")
 # maxnet run with tuning parameters, categorical variable, block partitions, and niche overlap
 e.ls$block <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "block", overlap = TRUE)
@@ -57,6 +58,9 @@ e.ls$bioclim <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals =
 # brt
 e.ls$brt <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args.ls$brt, categoricals = "biome", 
                             partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
+# rf
+e.ls$rf <- ENMevaluate(occs, envs, bg, mod.name = "rf", tune.args = tune.args.ls$rf, categoricals = "biome", 
+                        partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 
 test_that("ENMevaluation object and slots exist", {
   for(x in 1:length(e.ls)) {
@@ -85,7 +89,7 @@ test_that("ENMevaluation object and slots exist", {
 test_that("Data in ENMevaluation object slots have correct form", {
   for(x in 1:length(e.ls)) {
     e <- e.ls[[x]]
-    m <- ifelse(names(e.ls)[x] == "brt", "brt", "maxnet")
+    m <- ifelse(names(e.ls)[x] == "brt", "brt", ifelse(names(e.ls)[x] == "rf", "rf", "maxnet"))
     # algorithm
     expect_true(e@algorithm == e.ls.alg[x])
     # partition method 

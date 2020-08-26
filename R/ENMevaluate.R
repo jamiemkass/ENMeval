@@ -340,14 +340,18 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # print model-specific message
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v1.0.0 with", enm@msgs(tune.args), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v1.0.0 for", taxon.name, "with", enm@msgs(tune.args), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args), "***\n"))
   }
   
   
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
+  # make tune.tbl NULL, not an empty table, if no settings are specified
+  # this makes it easier to use tune.i as a parameter in function calls
+  # when tune.args does not exist
+  if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
   # put all settings into list
   other.settings <- list(other.args = other.args, clamp = clamp, pred.type = pred.type, 
@@ -363,13 +367,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # ASSEMBLE RESULTS #### 
   ##################### #
   
-  if(nrow(tune.tbl) == 0) {
+  # gather all k-fold statistics into a list of data frames,
+  # (these are a single set of stats if no partitions were chosen)
+  cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
+  
+  if(is.null(tune.tbl)) {
     # if not tuned settings, the "tune name" is the model name
     tune.names <- enm@name
   }else{
     # define tuned settings names and bind them to the tune table
     tune.tbl <- dplyr::mutate_all(tune.tbl, as.factor)
-    tune.names <- apply(tune.tbl, 1, function(x) paste(x, collapse = "_"))
+    tune.names <- unique(cv.stats.all$tune.args)
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
   # gather all full models into list and name them
@@ -385,9 +393,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }else{
     mod.full.pred.all <- raster::stack()
   }
-  # gather all k-fold statistics into a list of data frames,
-  # (these are a single set of stats if no partitions were chosen)
-  cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
   
   # define number of grp (the value of "k") for occurrences
   # k is 1 for partition "testing"
@@ -402,7 +407,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # if partitions were specified
   if(nk > 0) {
     # define number of settings (plus the tune.args field)
-    nset <- ncol(tune.tbl)
+    nset <- ifelse(!is.null(tune.tbl), ncol(tune.tbl), 0)
     
     # if jackknife cross-validation (leave-one-out), correct variance for
     # non-independent samples (Shcheglovitova & Anderson 2013)
@@ -416,7 +421,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     if(nk == 1 | partitions == "testing") sum.list <- list(function(x) {x})
     
     # if tune.tbl exists, make tune.args column a factor to keep order after using dplyr functions
-    if(nrow(tune.tbl) > 0) cv.stats.all$tune.args <- factor(cv.stats.all$tune.args, levels = tune.names)
+    if(!is.null(tune.tbl)) cv.stats.all$tune.args <- factor(cv.stats.all$tune.args, levels = tune.names)
     
     # calculate summary statistics
     cv.stats.sum <- cv.stats.all %>% 
@@ -431,7 +436,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     cv.stats.sum <- cv.stats.sum[, order(colnames(cv.stats.sum))]
     
     # if tune.tbl exists
-    if(nrow(tune.tbl) > 0) {
+    if(!is.null(tune.tbl)) {
       # make tune.args column in training stats factor too for smooth join
       train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
       # eval.stats is the join of tune.tbl, training stats, and cv stats
@@ -475,6 +480,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # this avoids putting a NULL in the object slot
   if(nk == 0) d$grp <- 1
   if(is.null(taxon.name)) taxon.name <- ""
+  if(is.null(tune.tbl)) tune.tbl <- data.frame()
   
   e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
                      results = eval.stats, results.grp = cv.stats.all,

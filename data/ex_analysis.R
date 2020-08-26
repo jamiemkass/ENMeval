@@ -8,9 +8,9 @@
 # plot(occs.buf$geometry,add=T)
 # envs.msk <- mask(envs, as(occs.buf, "Spatial"))
 # bg <- as.data.frame(dismo::randomPoints(envs.msk, 500))
-# 
+
 # envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
-# # which(rowSums(is.na(raster::extract(envs, occs))) > 0)
+# which(rowSums(is.na(raster::extract(envs, occs))) > 0)
 # bg <- as.data.frame(dismo::randomPoints(envs, 10000))
 # names(bg) <- names(occs)
 # tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))

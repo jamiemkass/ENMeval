@@ -10,7 +10,7 @@ pkgs <- c("dismo", "raster", "gbm")
 
 msgs <- function(tune.args) {
   if(!all("tc" %in% names(tune.args), "lr" %in% names(tune.args))) {
-    stop('BRT settings must include "n.trees", "tc" (tree complexity, or "interaction depth"), "lr" (learning rate, or "shrinkage").')
+    stop('BRT settings must include "n.trees", "tc" (tree complexity, or "interaction depth"), "lr" (learning rate, or "shrinkage"). See ?tune.args for details')
   }
   # construct user message with version info
   msg <- paste0("boosted regression trees (BRTs) using the gbm() function from gbm package v", packageVersion('gbm'))

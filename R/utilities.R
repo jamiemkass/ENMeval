@@ -114,7 +114,7 @@ aic.maxent <- function(p.occs, nparams, p = NULL) {
   # if determined invalid or if infinite, make AICc NA
   AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
   # make output table
-  out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE))
+  out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE), row.names = NULL)
   out$w.AIC <- exp(-0.5 * out$delta.AICc) / sum(exp(-0.5 * out$delta.AICc), na.rm=TRUE)
   return(out)
 }
