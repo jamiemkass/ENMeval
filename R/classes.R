@@ -141,12 +141,11 @@ ENMdetails <- setClass("ENMdetails",
                                  pkgs = 'character',
                                  msgs = 'function',
                                  args = 'function',
-                                 evaluate = 'function',
                                  predict = 'function',
                                  nparams = 'function'))
 #' @export
-ENMdetails <- function(name, fun, pkgs, msgs, args, evaluate, predict, nparams) {
-  new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, evaluate = evaluate,
+ENMdetails <- function(name, fun, pkgs, msgs, args, predict, nparams) {
+  new("ENMdetails", name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args,
       predict = predict, nparams = nparams)
 }
 
@@ -201,17 +200,6 @@ setMethod("enm.args", "ENMdetails", function(x) x@args)
 #' @export
 setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x@args <- value
-  validObject(x)
-  x
-})
-
-setGeneric("enm.evaluate", function(x) standardGeneric("enm.evaluate"))
-setGeneric("enm.evaluate<-", function(x, value) standardGeneric("enm.evaluate<-"))
-#' @export
-setMethod("enm.evaluate", "ENMdetails", function(x) x@train)
-#' @export
-setMethod("enm.evaluate<-", "ENMdetails", function(x, value) {
-  x@train <- value
   validObject(x)
   x
 })

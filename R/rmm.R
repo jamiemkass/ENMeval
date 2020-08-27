@@ -80,15 +80,15 @@ buildRMM <- function(e, envs) {
   if(e@algorithm == "maxnet") {
     rmm$model$algorithms <- paste(e@algorithm, packageVersion("maxnet"))
   }
-  if(e@algorithm == "brt") {
+  if(e@algorithm == "boostedRegressionTrees") {
     rmm$model$algorithms <- paste(e@algorithm, "using gbm", packageVersion('gbm'), "and dismo", packageVersion("dismo"))
-    rmm$model$algorithm$brt$interactionDepth <- unique(e@tune.settings$tree.complexity)
-    rmm$model$algorithm$brt$bagFraction <- unique(e@tune.settings$bag.fraction)
-    rmm$model$algorithm$brt$learningRate <- unique(e@tune.settings$learning.rate)
-    rmm$model$algorithm$brt$distribution <- "binomial"
-    rmm$model$algorithm$brt$nTrees <- sapply(e@models, function(x) x$n.trees)
-    rmm$model$algorithm$brt$shrinkage <- sapply(e@models, function(x) x$shrinkage)
-    rmm$model$algorithm$brt$notes <- "nTrees estimated with gbm.step() in dismo R package"
+    rmm$model$algorithm$boostedRegressionTrees$interactionDepth <- unique(e@tune.settings$tree.complexity)
+    rmm$model$algorithm$boostedRegressionTrees$bagFraction <- unique(e@tune.settings$bag.fraction)
+    rmm$model$algorithm$boostedRegressionTrees$learningRate <- unique(e@tune.settings$learning.rate)
+    rmm$model$algorithm$boostedRegressionTrees$distribution <- "binomial"
+    rmm$model$algorithm$boostedRegressionTrees$nTrees <- sapply(e@models, function(x) x$n.trees)
+    rmm$model$algorithm$boostedRegressionTrees$shrinkage <- sapply(e@models, function(x) x$shrinkage)
+    rmm$model$algorithm$boostedRegressionTrees$notes <- "nTrees estimated with gbm.step() in dismo R package"
   }
   if(e@algorithm == "bioclim") {
     rmm$model$algorithms <- paste(e@algorithm, "using dismo", packageVersion("dismo"))

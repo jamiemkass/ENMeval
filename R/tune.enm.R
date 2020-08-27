@@ -15,43 +15,58 @@
 NULL
 
 #' @rdname tune.enm
-tune.train <- function(enm, occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings) {
+tune.train <- function(enm, occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings, quiet) {
+  # get model predictions for training data
+  occs.pred <- enm@predict(mod.full, occs.z, other.settings)
+  bg.pred <- enm@predict(mod.full, bg.z, other.settings)
+  
   # training AUC
-  e <- enm@evaluate(occs.z, bg.z, mod.full, other.settings)
+  e <- dismo::evaluate(occs.pred, bg.pred)
   auc.train <- e@auc
-  # training CBI
-  if(!is.null(envs)) {
-    # if raster envs exists, use it to calculate CBI
-    cbi.train.out <- ecospat::ecospat.boyce(mod.full.pred, occs.xy, PEplot = FALSE)
-  }else{
-    # if no raster envs exists, calculate CBI with occs and bg predictions
-    d.full.pred <- dplyr::bind_rows(occs.z, bg.z)
-    d.full.pred$pred <- mod.full.pred
-    d.full.pred$pb <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
-    cbi.train.out <- ecospat::ecospat.boyce(d.full.pred$pred, d.full.pred[d.full.pred$pb == 1, "pred"], PEplot = FALSE)
-  }
-  cbi.train <- cbi.train.out$Spearman.cor
+  
+  # calculate training CBI with background, not raster -- this is in order
+  # to calculate CBI in a standardized way across training and validation data for 
+  # spatial partitions (ENMeval does not mask rasters to partition areas and hence 
+  # does not have this information)
+  # combine occs and bg predictions as input for "fit" because the interval
+  # is determined from "fit" only, and if occs have higher predictions than
+  # bg, the interval will be cut short
+  cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$Spearman.cor
+  
   out.df <- data.frame(auc.train = auc.train, cbi.train = cbi.train)
   return(out.df)
 }
 
 #' @rdname tune.enm
-tune.validate <- function(enm, occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings) {
+tune.validate <- function(enm, occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, bg.z, bg.val.z, mod.k, nk, other.settings, quiet) {
+  # get model predictions for training and validation data for partition k
+  occs.train.pred <- enm@predict(mod.k, occs.train.z, other.settings)
+  occs.val.pred <- enm@predict(mod.k, occs.val.z, other.settings)
+  bg.train.pred <- enm@predict(mod.k, bg.z, other.settings)
+  # if background was partitioned, use the partitioned background for validation
+  # if not, use the training background
+  if(nrow(bg.val.z) > 0) {
+    bg.val.pred <- enm@predict(mod.k, bg.val.z, other.settings)
+  }else{
+    bg.val.pred <- bg.train.pred
+    if(quiet != TRUE & other.settings$validation.bg == "partition") message("\nNOTE: Background points were not partitioned for this analysis, so model validation will proceed on the full background.")
+  }
+  
   ## validation AUC
   # calculate auc on validation data: validation occurrences are evaluated on full background, as in Radosavljevic & Anderson 2014
   # for auc.diff calculation, to perform the subtraction, it is essential that both stats are calculated over the same background
-  e.train <- enm@evaluate(occs.train.z, bg.z, mod.k, other.settings)
+  e.train <- dismo::evaluate(occs.train.pred, bg.train.pred)
   auc.train <- e.train@auc
   # AUC validation
   # calculate AUC on validation data: if training and validation occurrences are evaluated on same background (full), auc.diff can
   # also be calculated (Radosavljevic & Anderson 2014); if validation occurrences are evaluated on partitioned background, auc.diff is NULL
   if(other.settings$validation.bg == "full") {
-    e.val <- enm@evaluate(occs.val.z, bg.z, mod.k, other.settings)
+    e.val <- dismo::evaluate(occs.val.pred, bg.train.pred)
     auc.val <- e.val@auc
     # calculate auc diff as auc train (partition not k) minus auc validation (partition k)
     auc.diff <- auc.train - auc.val
   } else if(other.settings$validation.bg == "partition") {
-    e.val <- enm@evaluate(occs.val.z, bg.val.z, mod.k, other.settings)
+    e.val <- dismo::evaluate(occs.val.pred, bg.val.pred)
     auc.val <- e.val@auc
     auc.diff <- NA
   }
@@ -59,9 +74,6 @@ tune.validate <- function(enm, occs.val.xy, occs.train.xy, bg.xy, occs.train.z, 
   if(other.settings$abs.auc.diff == TRUE & !is.null(auc.diff)) auc.diff <- abs(auc.diff)
   
   ## omission rates
-  # get model predictions for training and validation data
-  occs.train.pred <- enm@predict(mod.k, occs.train.z, other.settings)
-  occs.val.pred <- enm@predict(mod.k, occs.val.z, other.settings)
   # get minimum training presence threshold (expected no omission)
   min.train.thr <- min(occs.train.pred)
   or.mtp <- mean(occs.val.pred < min.train.thr)
@@ -76,7 +88,14 @@ tune.validate <- function(enm, occs.val.xy, occs.train.xy, bg.xy, occs.train.z, 
     }else if(other.settings$validation.bg == "partition") {
       mod.k.pred <- enm@predict(mod.k, bg.val.z, other.settings)  
     }
-    cbi.val <- ecospat::ecospat.boyce(mod.k.pred, occs.val.pred, PEplot = FALSE)$Spearman.cor
+    # calculate validation CBI with background, not raster -- this is in order
+    # to calculate CBI in a standardized way across training and validation data for 
+    # spatial partitions (ENMeval does not mask rasters to partition areas and hence 
+    # does not have this information)
+    # combine occs and bg predictions as input for "fit" because the interval
+    # is determined from "fit" only, and if occs have higher predictions than
+    # bg, the interval will be cut short
+    cbi.val <- ecospat::ecospat.boyce(c(mod.k.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
   }else{
     cbi.val <- NA
   }  
@@ -155,7 +174,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   # build the full model from all the data
   mod.full.args <- enm@args(occs.z, bg.z, tune.i, other.settings)
   mod.full <- do.call(enm@fun, mod.full.args)
-  if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters. NOTE: for BRTs, try lowering the learning.rate "lr".')
+  if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters. NOTE: for boostedRegressionTreess, try lowering the learning.rate "lr".')
   # make full model prediction as raster using raster envs (if raster envs exists) 
   # or full model prediction table using the occs and bg values (if raster envs does not exist)
   if(!is.null(envs)) {
@@ -170,13 +189,13 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   }
   mod.full.pred <- enm@predict(mod.full, pred.envs, other.settings)
   # get evaluation statistics for training data
-  train <- tune.train(enm, occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings)
+  train <- tune.train(enm, occs.xy, bg.xy, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings, quiet)
   # make training stats table
   tune.args.col <- paste(names(tune.i), tune.i, collapse = "_", sep = ":")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)
   
   # define number of grp (the value of "k") for occurrences
-  # k is 1 for partition "independent"
+  # k is 1 for partition "testing"
   # k is 0 for partitions "none" and "user"
   occGrps <- unique(d[d$pb == 1, "grp"])
   if(length(occGrps) == 1 & 0 %in% occGrps) {
@@ -230,12 +249,12 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {
       if(quiet != TRUE) message(paste0("\nThe model for settings ", paste(names(tune.i), tune.i, collapse = ", "), " for partition ", 
-                     k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model."))
+                                       k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model."))
       next
     }
     
     validate <- tune.validate(enm, occs.val.xy, occs.train.xy, bg.xy, occs.train.z, occs.val.z, 
-                               bg.z, bg.val.z, mod.k, nk, other.settings)
+                              bg.z, bg.val.z, mod.k, nk, other.settings, quiet)
     
     # put into list as one-row data frame for easy binding
     cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(validate)

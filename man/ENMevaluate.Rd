@@ -123,8 +123,8 @@ internally by ENMnullSims() to force each null model to evaluate with real test 
 }
 \description{
 \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
-user-specified tuning settings. Users can choose to evaluate models with cross validation or an
-independent testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+user-specified tuning settings. Users can choose to evaluate models with cross validation or a
+full-withheld testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
 evaluation statistics for each combination of settings and for each cross validation fold therein, as
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 results table should aid users in identifying model settings that balance fit and predictive ability.
