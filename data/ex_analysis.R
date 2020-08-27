@@ -1,4 +1,5 @@
 # set.seed(48)
+# envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 # bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
 # occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 # occs <- occs[!duplicated(occs),]
@@ -8,13 +9,14 @@
 # plot(occs.buf$geometry,add=T)
 # envs.msk <- mask(envs, as(occs.buf, "Spatial"))
 # bg <- as.data.frame(dismo::randomPoints(envs.msk, 500))
-
-# envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
+# 
 # which(rowSums(is.na(raster::extract(envs, occs))) > 0)
 # bg <- as.data.frame(dismo::randomPoints(envs, 10000))
 # names(bg) <- names(occs)
+
 # tune.args <- list(fc = c("L", "LQ"), rm = seq(1,2,0.5))
 # tune.args <- list(tails = c("low", "high", "both"))
+# tune.args <- list(n.trees = 1000, lr = c(0.01,0.02), tc = 3)
 # tune.args <- list(ntree = c(500,1000), mtry = c(5,10))
 # tune.args <- list(fc = "L", rm = 1)
 # partitions <- "randomkfold"
@@ -29,6 +31,8 @@
 # user.grp = NULL
 # occs.testing = NULL
 # quiet = FALSE
+# validation.bg = "full"
+# user.val.grps = NULL
 # 
 # # user groups
 # user.grp <- list(occs.grp = rep(1,nrow(occs)), bg.grp = rep(0, nrow(bg)))
@@ -69,12 +73,12 @@
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 # ## run with maxent.jar
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with RF
+# ## run with randomForest
 # # tune.args <- list(ntree = c(500,1000), mtry = c(2,5))
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "rf", tune.args = tune.args, categoricals = "biome", partitions = "block")
-# ## run with BRT
+# # e <- ENMevaluate(occs, envs, bg, mod.name = "randomForest", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# ## run with boostedRegressionTrees
 # # tune.args <- list(n.trees = 100, tc = 1:2, lr = 0.01)
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "brt", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(occs, envs, bg, mod.name = "boostedRegressionTrees", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # # run with BIOCLIM
 # # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # # run parallel

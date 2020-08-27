@@ -2,7 +2,7 @@
 # random forest ENMdetails object ####
 ################################# #
 
-name <- "random forest"
+name <- "randomForest"
 
 fun <- randomForest::randomForest
 
@@ -10,10 +10,10 @@ pkgs <- c("randomForest", "dismo", "raster")
 
 msgs <- function(tune.args) {
   if(!all("ntree" %in% names(tune.args), "mtry" %in% names(tune.args))) {
-    stop("RF settings must include 'ntree' and 'mtry'. See ?tune.args for details")
+    stop("Random forest settings must include 'ntree' and 'mtry'. See ?tune.args for details")
   }
   # construct user message with version info
-  msg <- paste0("random forest using the randomForest() function from randomForest package v", 
+  msg <- paste0("Random forest using the randomForest() function from randomForest package v", 
                 packageVersion('randomForest')) 
   return(msg)
 }
@@ -31,15 +31,11 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-evaluate <- function(occs.z, bg.z, mod, other.settings) {
-  dismo::evaluate(occs.z, bg.z, mod, type = "prob", index = 2)
-}
-
 predict <- function(mod, envs, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
-    pred <- raster::predict(envs, mod, type = "prob", index = 2, na.rm = TRUE)
+    pred <- raster::predict(envs, mod, type = "prob", na.rm = TRUE)
   }else{
-    pred <- dismo::predict(mod, envs, type = "prob", index = 2, na.rm = TRUE)  
+    pred <- dismo::predict(mod, envs, type = "prob", na.rm = TRUE)[,2]
   }
   return(pred)
 }
@@ -54,5 +50,5 @@ varimp <- function(mod) {
 }
 
 #' @export
-enm.rf <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                      evaluate = evaluate, predict = predict, nparams = nparams)
+enm.randomForest <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
+                      predict = predict, nparams = nparams)

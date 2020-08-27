@@ -1,8 +1,8 @@
 ################################# #
-# brt ENMdetails object ####
+# boostedRegressionTrees ENMdetails object ####
 ################################# #
 
-name <- "boosted regression trees"
+name <- "boostedRegressionTrees"
 
 fun <- gbm::gbm
 
@@ -10,10 +10,10 @@ pkgs <- c("dismo", "raster", "gbm")
 
 msgs <- function(tune.args) {
   if(!all("tc" %in% names(tune.args), "lr" %in% names(tune.args))) {
-    stop('BRT settings must include "n.trees", "tc" (tree complexity, or "interaction depth"), "lr" (learning rate, or "shrinkage"). See ?tune.args for details')
+    stop('Boosted regression trees settings must include "ntree", "tc" (tree complexity, or "interaction depth"), "lr" (learning rate, or "shrinkage"). See ?tune.args for details')
   }
   # construct user message with version info
-  msg <- paste0("boosted regression trees (BRTs) using the gbm() function from gbm package v", packageVersion('gbm'))
+  msg <- paste0("Boosted regression trees using the gbm() function from gbm package v", packageVersion('gbm'))
   return(msg)
 }
 
@@ -23,16 +23,12 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
   out$data <- cbind(p, d)
   out$formula <- formula(out$data)
-  out$n.trees <- tune.i$n.trees
+  out$n.trees <- tune.i$ntree
   out$interaction.depth <- tune.i$tc
   out$shrinkage <- tune.i$lr
   out$distribution <- "bernoulli"
   out <- c(out, other.settings$other.args)
   return(out)
-}
-
-evaluate <- function(occs.z, bg.z, mod, other.settings) {
-  dismo::evaluate(occs.z, bg.z, mod, n.trees = length(mod.full$trees))
 }
 
 predict <- function(mod, envs, other.settings) {
@@ -50,5 +46,5 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.brt <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                      evaluate = evaluate, predict = predict, nparams = nparams)
+enm.boostedRegressionTrees <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
+                      predict = predict, nparams = nparams)

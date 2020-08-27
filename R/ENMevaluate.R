@@ -1,7 +1,7 @@
 #' @title Tune ecological niche model (ENM) settings and calculate evaluation statistics
 #' @description \code{ENMevaluate()} builds ecological niche models iteratively across a range of 
-#' user-specified tuning settings. Users can choose to evaluate models with cross validation or an
-#' independent testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+#' user-specified tuning settings. Users can choose to evaluate models with cross validation or a
+#' full-withheld testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
 #' evaluation statistics for each combination of settings and for each cross validation fold therein, as
 #' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 #' results table should aid users in identifying model settings that balance fit and predictive ability.
@@ -367,9 +367,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # ASSEMBLE RESULTS #### 
   ##################### #
   
-  # gather all k-fold statistics into a list of data frames,
-  # (these are a single set of stats if no partitions were chosen)
-  cv.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
+  # flatten all training statistics data frames from results list into a single data frame
+  train.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$train.stats))
+  # flatten all validation statistics data frames from results list into a single data frame
+  # (these are no validation stats if no partitions were chosen)
+  val.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
   
   if(is.null(tune.tbl)) {
     # if not tuned settings, the "tune name" is the model name
@@ -377,14 +379,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }else{
     # define tuned settings names and bind them to the tune table
     tune.tbl <- dplyr::mutate_all(tune.tbl, as.factor)
-    tune.names <- unique(cv.stats.all$tune.args)
+    tune.names <- train.stats.all$tune.args
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
   names(mod.full.all) <- tune.names
-  # gather all training AUCs into vector
-  train.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$train.stats))
+  
   # gather all model prediction rasters into a stack and name them
   # if envs is null, make an empty stack
   if(!is.null(envs)) {
@@ -421,10 +422,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     if(nk == 1 | partitions == "testing") sum.list <- list(function(x) {x})
     
     # if tune.tbl exists, make tune.args column a factor to keep order after using dplyr functions
-    if(!is.null(tune.tbl)) cv.stats.all$tune.args <- factor(cv.stats.all$tune.args, levels = tune.names)
+    if(!is.null(tune.tbl)) val.stats.all$tune.args <- factor(val.stats.all$tune.args, levels = tune.names)
     
     # calculate summary statistics
-    cv.stats.sum <- cv.stats.all %>% 
+    cv.stats.sum <- val.stats.all %>% 
       dplyr::group_by(tune.args) %>%
       dplyr::select(-fold) %>% 
       dplyr::summarize_all(sum.list) %>%
@@ -483,7 +484,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   
   e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
-                     results = eval.stats, results.grp = cv.stats.all,
+                     results = eval.stats, results.grp = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      partition.method = partitions, partition.settings = parts.settings,
                      other.settings = other.settings, taxon.name = taxon.name,

@@ -51,12 +51,6 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-evaluate <- function(occs.z, bg.z, mod, other.settings) {
-  output.format <- paste0("outputformat=", other.settings$pred.type)
-  clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
-  dismo::evaluate(occs.z, bg.z, mod, args = c(output.format, clamp))
-}
-
 predict <- function(mod, envs, other.settings) {
   output.format <- paste0("outputformat=", other.settings$pred.type)
   clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
@@ -73,4 +67,4 @@ nparams <- function(mod) {
 
 #' @export
 enm.maxent.jar <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                             evaluate = evaluate, predict = predict, nparams = nparams)
+                             predict = predict, nparams = nparams)

@@ -37,10 +37,6 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-evaluate <- function(occs.z, bg.z, mod, other.settings) {
-  dismo::evaluate(occs.z, bg.z, mod, clamp = other.settings$clamp, type = other.settings$pred.type)
-}
-
 predict <- function(mod, envs, other.settings) {
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
@@ -65,4 +61,4 @@ nparams <- function(mod) {
 
 #' @export
 enm.maxnet <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                         evaluate = evaluate, predict = predict, nparams = nparams)
+                         predict = predict, nparams = nparams)

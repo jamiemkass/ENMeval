@@ -20,10 +20,6 @@ args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   return(out)
 }
 
-evaluate <- function(occs.z, bg.z, mod, other.settings) {
-  dismo::evaluate(occs.z, bg.z, mod, tails = other.settings$tails)
-}
-
 predict <- function(mod, envs, other.settings) {
   # if no tails in other.args, defaults to NULL
   pred <- dismo::predict(mod, envs, tails = other.settings$tails, na.rm = TRUE)
@@ -37,4 +33,4 @@ nparams <- function(mod) {
 
 #' @export
 enm.bioclim <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
-                          evaluate = evaluate, predict = predict, nparams = nparams)
+                          predict = predict, nparams = nparams)
