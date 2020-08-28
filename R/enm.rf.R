@@ -6,8 +6,6 @@ name <- "randomForest"
 
 fun <- randomForest::randomForest
 
-pkgs <- c("randomForest", "dismo", "raster")
-
 msgs <- function(tune.args) {
   if(!all("ntree" %in% names(tune.args), "mtry" %in% names(tune.args))) {
     stop("Random forest settings must include 'ntree' and 'mtry'. See ?tune.args for details")
@@ -50,5 +48,5 @@ varimp <- function(mod) {
 }
 
 #' @export
-enm.randomForest <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
+enm.randomForest <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
                       predict = predict, nparams = nparams)

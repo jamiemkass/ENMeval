@@ -73,7 +73,7 @@ files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pat
 # Read the raster files into a RasterStack
 # We remove the "biome" categorical variable because categoricals can present a number of technical difficulties
 # in many of the operations we do in this vignette, but ENMevaluate is fully compatible with categorical variables
-# (as long as you declare them with parameter "categoricals")
+# (as long as you declare them with argument "categoricals")
 envs <- stack(files)[[-9]]
 
 # Plot first raster in the stack, bio1
@@ -319,7 +319,7 @@ crs(envs)
 occsBg.sf <- st_as_sf(rbind(occs, bg), coords = c("longitude","latitude"), crs = 4326)
 # Here, we implement the spatialBlock function from the blockCV package
 # The required inputs are similar to ENMeval partitioning functions, but here you assign
-# the size of blocks in meters with the parameter theRange (here set at 1000 km), and the 
+# the size of blocks in meters with the argument theRange (here set at 1000 km), and the 
 # partition selection method can be assigned as either "checkerboard" or "random"
 # In addition, the spatialBlock function returns a map showing the different spatial partitions
 sb <- spatialBlock(speciesData = occsBg.sf, rasterLayer = envs.bg, theRange = 1000000, k = 5, selection = "random")
@@ -340,7 +340,7 @@ Once you decide which method of data partitioning you would like to use, you are
 - [Exploring the results (the ENMevaluate object)](#eval.explore)
 
 #### Initial considerations {#eval.consid}
-The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for adding parameters to the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. Much more description of these parameters is available in the [Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
+The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for using variables or their transformations in the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. A more detailed description of these parameters is available in the [Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
 
 Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will need to define which layer(s) these are using the 'categoricals' argument.
 
@@ -397,68 +397,54 @@ cbi: a) calculated on raster model prediction based on `envs`, b) cbi.val cannot
 tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 
 # 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
-e.mx <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
-                    tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.mx <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with the original Java software
-e.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", 
-                    tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Testing partition: no cross validation statistics calculated; instead, model will be evaluated on a testing dataset that is not used to create the full model
-e.test <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
-                        tune.args = tune.args, categoricals = "biome", partitions = "testing", 
-                        occs.testing = occs.testing)
+e.test <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs.testing)
 
 # 3. User partitions
-user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), 
-                 bg.grp = round(runif(nrow(bg), 1, 2)))
-e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
-                         tune.args = tune.args, categoricals = "biome", partitions = "user", 
-                         user.grp = user.grp)
+user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
+e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp)
 
 # 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
-e.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", 
-                         tune.args = tune.args, categoricals = "biome", partitions = "none")
+e.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 
 # 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.val will be calculated on the point data (training and validation background) instead of on the "envs" rasters (default)
 occs.z <- cbind(occs, raster::extract(envs, occs))
 bg.z <- cbind(bg, raster::extract(envs, bg))
-e.swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", 
-                        tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
 
-The last way to run `ENMevaluate()` is by specifying user model settings or completely different models. Users can either modify how built-in models function, or specify their own. This is all done using the `ENMdetails` object. Built-in models (maxent.jar, maxnet, BIOCLIM, boostedRegressionTrees) are implemented as `ENMdetails` objects. You can find them in the /R folder with the prefix "enm", as in "enm.maxnet". The `ENMdetails` object specifies the way `ENMevaluate()` should run the model. It defines the model's name, what the model function is, how to assemble arguments for the model function, how (or if) to calculate AIC, how to run `dismo::evaluate()` for evaluation statistics, which additional evaluation statistics to calculate, how to make model predictions, how to extract the number of model parameters, and particular messages to write to the console during the analysis.
-
-Users can modify the built-in `ENMdetails` objects to customize an analysis. For example, the user can redefine the "kstats" slot of an existing `ENMdetails` objects to calculate the average max TSS and max Kappa statistics for validation data. In order to run the model with this new behavior, the user needs to input the modified `ENMdetails` object in as the "user.enm" parameter. In this case, "mod.name" is left at the default NULL.
+You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments
 
 ```{r}
-# This is the existing ENMdetails object for maxnet
-enm.maxnet
-# This is the existing kstats function for maxnet
-enm.maxnet@kstats
-# This kstats function can be redefined
-# The e.val parameter is the ModelEvaluation object (from dismo::evaluate()) calculated on the test data
-# See the documentation in ?enm.maxnet for more details on the input parameters
-enm.maxnet@kstats <- function(e.val, mod, other.args) {
-  user.kstats <- c(maxTSS.val = max(e.val@TPR + e.val@TNR) - 1, maxKappa.val = max(e.val@kappa))
-  return(user.kstats)
+# Define a custom function with these exact arguments, which are used by the ENMeval internal function tune.validate
+# They should provide you with the ingredients you need to specify most evaluation functions
+# Make sure you return a data frame that specifies the names you want to see in the results tables
+proc <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, other.settings, partitions) {
+  proc <- kuenm::kuenm_proc(occs.val.pred, c(bg.train.pred, bg.val.pred))
+  out <- data.frame(proc_auc_ratio = proc$pROC_summary[1], proc_pval = proc$pROC_summary[2], row.names = NULL)
+  return(out)
 }
-# ENMevaluate() can now be run with the modified ENMdetails object
-e.userENM1 <- ENMevaluate(occs, envs, bg, user.enm = enm.maxnet, 
-                             tune.args = tune.args, categoricals = "biome", partitions = "block")
-# You will see the results of the new statistics in the results table
-e.userENM1@results
+
+# Now we can run ENMevaluate() with the argument "user.eval", and simply give it the custom function
+e.mx.proc <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", user.eval = proc)
+# We can see the new performance statistic averages in the results table
+head(e.mx.proc@results)
+# Especially for the p-values, it likely makes more sense to look at the results tables for the partitions
+head(e.mx.proc@results.grp)
 ```
 
-Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model and save as a new script in the /R folder, and use it to run `ENMevaluate()`.
+The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the model. It has a some simple functions to define that output 1) the model's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of model parameters (non-zero coefficients). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
 
 ```{r}
-# If you saved a new script for "enm.myMod.R" and specified all the internal functions, 
-# run ENMevaluate() like this
-# NOTE: It is important to make sure that your custom model can handle categorical variables
-# By default, ENMevaluate() removes them for BIOCLIM models, but if you specify a custom model,
-# you will need to remove them yourself before running ENMevaluate()
-e.userENM2 <- ENMevaluate(occs, envs, bg, user.enm = enm.myMod, 
-                             tune.args = tune.args, categoricals = "biome", partitions = "block")
+# If you saved a new script for "enm.myAlgorithm.R" and specified all the internal functions, enter it to the argument "user.enm"
+# NOTE: It is important to make sure that your custom model can handle categorical variables if you decide to specify them as predictors
+# By default, ENMevaluate() removes categorical variables when running BIOCLIM models, but if you specify a custom model that cannot use them,
+# you will need to exclude them yourself before running
+e.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.myAlgorithm, tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
 
 #### Exploring the results {#eval.explore}
@@ -535,10 +521,10 @@ plot.eval(e = eval, stats = "or.mtp", col = "fc", x = "rm")
 plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm")
 # Sometimes the error bars make it hard to visualize the plot, so we can try turning them off
 plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm", error.bars = FALSE)
-# We can also fiddle with the dodge parameter to jitter the positions of overlapping points
+# We can also fiddle with the dodge argument to jitter the positions of overlapping points
 plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm", dodge = 0.5)
-# Finally, we can switch which parameters are on the x-axis and which symbolized by color
-# ENMeval currently only accepts two parameters for plotting at a time
+# Finally, we can switch which variables are on the x-axis and which symbolized by color
+# ENMeval currently only accepts two variables for plotting at a time
 plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "rm", x = "fc", error.bars = FALSE)
 ```
 
@@ -568,7 +554,7 @@ plot(mod.seq)
 dev.off()
 ```
 
-Now let's pull out and plot the prediction raster for our optimal model. Note that by default for maxent.jar or maxnet models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (see Phillips et al. 2017 for more details). This can be changed with the pred.type parameter in `ENMevaluate()`.
+Now let's pull out and plot the prediction raster for our optimal model. Note that by default for maxent.jar or maxnet models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (see Phillips et al. 2017 for more details). This can be changed with the pred.type argument in `ENMevaluate()`.
 These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
 
 ```{r plotPred, fig.width = 5, fig.height = 5}
