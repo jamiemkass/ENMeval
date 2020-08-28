@@ -6,26 +6,25 @@
 \alias{get.params}
 \title{Calculate AICc from Maxent model prediction}
 \usage{
-aic.maxent(p.occs, nparams, p = NULL)
+aic.maxent(p.occs, ncoefs, p = NULL)
 }
 \arguments{
 \item{p.occs}{data frame of raw (maxent.jar) or exponential (maxnet) predictions for
 the occurrence localities based on one or more models}
 
+\item{ncoefs}{integer; number of non-zero model coefficients}
+
 \item{p}{Raster* of raw (maxent.jar) or exponential (maxnet) model predictions;
 if NULL, AICc will be calculated based on the background points, which already
 have predictions that sum to 1 and thus need no correction -- this assumes that
 the background points represent a good sample of the study extent}
-
-\item{nparam}{integer; number of model parameters (non-zero coefficients)}
 }
 \value{
 data frame with three columns:
 \code{AICc} is the Akaike Information Criterion corrected for small sample
 sizes calculated as:
 \deqn{ (2 * K - 2 * logLikelihood) + (2 * K) * (K+1) / (n - K - 1)}
-where \emph{K} is the number of parameters in the model (i.e., number of
-non-zero parameters) and \emph{n} is the number of
+where \emph{K} is the number of non-zero coefficients in the model and \emph{n} is the number of
 occurrence localities.  The \emph{logLikelihood} is calculated as:
 \deqn{ sum(log(vals))}
 where \emph{vals} is a vector of Maxent raw/expontential values at occurrence localities
@@ -47,9 +46,9 @@ ENMTools (Warren  \emph{et al.} 2010), this function calculates the small
 sample size version of Akaike Information Criterion for ENMs (Akaike 1974).  
 We use AICc (instead of AIC) regardless of sample size based on the 
 recommendation of Burnham and Anderson (1998, 2004).  The number of 
-parameters is determined by counting the number of non-zero parameters in 
+coefficients is determined by counting the number of non-zero coefficients in 
 the \code{maxent} lambda file (\code{m@lambdas} for maxent.jar and \code{m$betas} for maxnet.  
-See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of parameters is an 
+See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of non-zero coefficients is an 
 estimate of the true degrees of freedom.  For Maxent ENMs, AICc is 
 calculated by standardizing the raw output such that all cells in the study 
 extent sum to 1. The likelihood of the data for a given model is then 
@@ -57,7 +56,7 @@ calculated by taking the product of the raw output values (or the sum of their l
 for all grid cells that contain an occurrence locality (Warren and Seifert 2011).
 }
 \note{
-Returns all \code{NA}s if the number of parameters is larger than the
+Returns all \code{NA}s if the number of non-zero coefficients is larger than the
 number of observations (occurrence localities).
 }
 \references{

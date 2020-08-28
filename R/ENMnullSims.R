@@ -131,14 +131,14 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
     categoricals <- names(which(sapply(e@occs, is.factor)))
 
     null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
-                            mod.name = e@algorithm, other.args = e.s$other.args, partitions = "user",
+                            algorithm = e@algorithm, other.args = e.s$other.args, partitions = "user",
                             user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
                             aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
                             pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
     setTxtProgressBar(pb, i)
 
     nulls.ls[[i]] <- null.e.i@results
-    nulls.grp.ls[[i]] <- null.e.i@results.grp %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything())
+    nulls.grp.ls[[i]] <- null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything())
   }
 
   # assemble null evaluation statistics and take summaries
@@ -184,7 +184,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
                  null.other.settings = e@other.settings,
                  no.iter = no.iter,
                  null.results = nulls,
-                 null.results.grp = nulls.grp,
+                 null.results.partitions = nulls.grp,
                  real.vs.null.results = realNull.stats,
                  real.occs = e@occs,
                  real.occs.grp = e@occs.grp,

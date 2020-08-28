@@ -53,10 +53,15 @@ predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-nparams <- function(mod) {
+ncoefs <- function(mod) {
   length(mod$betas)
+}
+
+# no existing method in model object for variable importance
+varimp <- function(mod) {
+  NULL
 }
 
 #' @export
 enm.maxnet <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                         predict = predict, nparams = nparams)
+                         predict = predict, ncoefs = ncoefs, varimp = varimp)

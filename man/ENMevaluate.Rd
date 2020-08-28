@@ -12,7 +12,7 @@ ENMevaluate(
   taxon.name = NULL,
   other.args = NULL,
   categoricals = NULL,
-  mod.name = NULL,
+  algorithm = NULL,
   user.enm = NULL,
   partitions = NULL,
   user.grp = NULL,
@@ -28,6 +28,7 @@ ENMevaluate(
   abs.auc.diff = TRUE,
   validation.bg = "full",
   user.val.grps = NULL,
+  user.eval = NULL,
   parallel = FALSE,
   numCores = NULL,
   parallelType = "doSNOW",
@@ -40,7 +41,6 @@ ENMevaluate(
   fc = NULL,
   occ.grp = NULL,
   bg.grp = NULL,
-  algorithm = NULL,
   method = NULL,
   bin.output = NULL,
   rasterPreds = NULL,
@@ -59,7 +59,7 @@ one column for each predictor variable}
 background (or pseudo-absence) localities, in that order; if specifying predictor variable values
 assigned to presence/background localities (species with data "SWD" form), this table will also have 
 one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
-with the number specified by parameter \code{n.bg}}
+with the number specified by argument \code{n.bg}}
 
 \item{tune.args}{named list of model settings to be tuned}
 
@@ -67,10 +67,10 @@ with the number specified by parameter \code{n.bg}}
 
 \item{categoricals}{character vector of names of categorical environmental variables}
 
-\item{mod.name}{character of the name of the chosen model}
+\item{algorithm}{character of the name of the chosen model}
 
 \item{user.enm}{ENMdetails object specified by the user; this model will be
-used for the analysis, and is an alternative to specifying mod.name}
+used for the analysis, and is an alternative to specifying algorithm}
 
 \item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 

@@ -15,13 +15,13 @@
 #' background (or pseudo-absence) localities, in that order; if specifying predictor variable values
 #' assigned to presence/background localities (species with data "SWD" form), this table will also have 
 #' one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
-#' with the number specified by parameter \code{n.bg}
+#' with the number specified by argument \code{n.bg}
 #' @param tune.args named list of model settings to be tuned
 #' @param other.args named list of any additional model arguments not specified for tuning
 #' @param categoricals character vector of names of categorical environmental variables
-#' @param mod.name character of the name of the chosen model
+#' @param algorithm character of the name of the chosen model
 #' @param user.enm ENMdetails object specified by the user; this model will be
-#' used for the analysis, and is an alternative to specifying mod.name
+#' used for the analysis, and is an alternative to specifying algorithm
 #' @param partitions character of name of partitioning technique (see \code{?partitions})
 #' @param user.grp named list with occs.grp = vector of partition group (fold) for each
 #' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
@@ -61,7 +61,7 @@
 #' @export 
 #' 
 
-ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, mod.name = NULL,
+ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, algorithm = NULL,
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.testing = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
@@ -69,38 +69,32 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
-                        algorithm = NULL, method = NULL, bin.output = NULL, rasterPreds = NULL, progbar = NULL) {
+                        method = NULL, bin.output = NULL, rasterPreds = NULL, progbar = NULL) {
   
-  # legacy parameter handling so ENMevaluate doesn't break for older code
+  # legacy argument handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
-    if(quiet != TRUE) message("* Running ENMeval v1.0.0 with legacy parameters. These will be phased out in the next version.")
+    if(quiet != TRUE) message("* Running ENMeval v2.0.0 with legacy parameters. These will be phased out in the next version.")
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
   if(!is.null(bg.coords)) bg <- bg.coords
   if(!is.null(method)) partitions <- method
   if(!is.null(rasterPreds)) {
-    stop("Warning: This parameter was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
-  }
-  if(!is.null(algorithm)) {
-    if(quiet != TRUE) message("Warning: This parameter was deprecated and replaced with the parameter mod.name.")
-    mod.name <- algorithm
-    tune.args <- list(fc = c("L", "LQ", "H", "LQH", "LQHP", "LQHPT"),
-                      rm = seq(0.5, 4, 0.5))
+    stop("Warning: This argument was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
   }
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
   if(!is.null(occ.grp) & !is.null(bg.grp)) {
     user.grp <- list(occs.grp = occ.grp, bg.grp = bg.grp)
-    if(quiet != TRUE) message("Warning: These parameters were deprecated and replaced with the parameter user.grp.")
+    if(quiet != TRUE) message('Warning: These arguments were deprecated and replaced with the argument "user.grp".')
   }
   if((!is.null(occ.grp) & is.null(bg.grp)) | (is.null(occ.grp) & !is.null(bg.grp))) {
-    stop("For user partitions, please input both occ.grp and bg.grp. Warning: These are legacy parameters that were replaced with the parameter user.grp.")
+    stop('For user partitions, please input both arguments "occ.grp" and "bg.grp". Warning: These are legacy parameters that were replaced with the argument "user.grp".')
   }
   
-  if(is.null(mod.name) & is.null(user.enm)) {
-    stop("* Please select a model name (mod.name) or specify a user model (user.enm).")
+  if(is.null(algorithm) & is.null(user.enm)) {
+    stop('* Please select a model name (argument "algorithm") or specify a user model (argument "user.enm").')
   }
   
   # record start time
@@ -121,7 +115,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     if(quiet != TRUE) message(paste0("*** Running initial checks for ", taxon.name, " ... ***\n"))
   }
   
-  ## general parameter checks
+  ## general argument checks
   all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
                       "checkerboard2", "user", "testing", "none")
   
@@ -166,7 +160,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # choose a built-in ENMdetails object matching the input model name
   # unless the model is chosen by the user
   if(is.null(user.enm)) {
-    enm <- lookup.enm(mod.name)
+    enm <- lookup.enm(algorithm)
   }else{
     enm <- user.enm
   }
@@ -345,7 +339,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args), "***\n"))
   }
   
-  
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   # make tune.tbl NULL, not an empty table, if no settings are specified
@@ -457,7 +450,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   
   # calculate number of non-zero parameters in model
-  nparams <- sapply(mod.full.all, enm@nparams)
+  ncoefs <- sapply(mod.full.all, enm@ncoefs)
   
   # calculate AICc
   if((enm@name == "maxnet" | enm@name == "maxent.jar")) {
@@ -470,12 +463,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
       pred.all.raw <- NULL
     }
     occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
-    aic <- aic.maxent(occs.pred.raw, nparams, pred.all.raw)
+    aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
   
-  # add nparam column
-  eval.stats$nparam <- nparams
+  # add ncoef column
+  eval.stats$ncoef <- ncoefs
   
   # assign all groups to 1 if no partitions were selected
   # this avoids putting a NULL in the object slot
@@ -483,14 +476,20 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(is.null(taxon.name)) taxon.name <- ""
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   
+  # get variable importance for all models
+  varimp.all <- lapply(mod.full.all, enm@varimp)
+  
+  # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
-                     results = eval.stats, results.grp = val.stats.all,
+                     results = eval.stats, results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
+                     variable.importance = varimp.all,
                      partition.method = partitions, partition.settings = parts.settings,
                      other.settings = other.settings, taxon.name = taxon.name,
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
                      rmm = list())
+  
   # add the rangeModelMetadata object to the ENMevaluation object
   e@rmm <- buildRMM(e, envs)
   

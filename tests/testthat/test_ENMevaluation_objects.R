@@ -23,43 +23,43 @@ i <- sample(1:nrow(occs))
 e.ls <- list()
 e.ls.alg <- c(rep("maxnet", 10), "bioclim", "boostedRegressionTrees", "randomForest")
 # maxnet run with tuning parameters, categorical variable, block partitions, and niche overlap
-e.ls$block <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$block <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "block", overlap = TRUE)
 # checkerboard1 partitions
-e.ls$cb1 <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$cb1 <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                         partitions = "checkerboard1", overlap = TRUE)
 # checkerboard2 partitions
-e.ls$cb2 <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$cb2 <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                         partitions = "checkerboard2", overlap = TRUE)
 # random k-fold partitions
-e.ls$rand <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$rand <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 # jackknife partitions
-e.ls$jack <- ENMevaluate(occs[i[1:10],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$jack <- ENMevaluate(occs[i[1:10],], envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "jackknife", overlap = TRUE)
 # testing partition
-e.ls$ind <- ENMevaluate(occs[i[1:100],], envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$ind <- ENMevaluate(occs[i[1:100],], envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "testing", occs.testing = occs[i[101:nrow(occs)],], overlap = TRUE)
 # no partitions
-e.ls$nopart <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$nopart <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       partitions = "none", overlap = TRUE)
 # user partitions
-e.ls$user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$user <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                       user.grp = user.grp, partitions = "user", overlap = TRUE)
 # no envs (SWD)
-e.ls$swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                          partitions = "randomkfold", kfolds = kfolds.n)
 # no bg
-e.ls$nobg <- ENMevaluate(occs, envs, mod.name = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
+e.ls$nobg <- ENMevaluate(occs, envs, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 # bioclim
-e.ls$bioclim <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", categoricals = "biome", 
+e.ls$bioclim <- ENMevaluate(occs, envs, bg, algorithm = "bioclim", categoricals = "biome", 
                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 # boostedRegressionTrees
-e.ls$boostedRegressionTrees <- ENMevaluate(occs, envs, bg, mod.name = "boostedRegressionTrees", tune.args = tune.args.ls$boostedRegressionTrees, categoricals = "biome", 
+e.ls$boostedRegressionTrees <- ENMevaluate(occs, envs, bg, algorithm = "boostedRegressionTrees", tune.args = tune.args.ls$boostedRegressionTrees, categoricals = "biome", 
                             partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 # randomForest
-e.ls$randomForest <- ENMevaluate(occs, envs, bg, mod.name = "randomForest", tune.args = tune.args.ls$randomForest, categoricals = "biome", 
+e.ls$randomForest <- ENMevaluate(occs, envs, bg, algorithm = "randomForest", tune.args = tune.args.ls$randomForest, categoricals = "biome", 
                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 
 test_that("ENMevaluation object and slots exist", {
@@ -70,7 +70,7 @@ test_that("ENMevaluation object and slots exist", {
     expect_true(!is.null(e@tune.settings))
     expect_true(!is.null(e@partition.method))
     expect_true(!is.null(e@results))
-    expect_true(!is.null(e@results.grp))
+    expect_true(!is.null(e@results.partitions))
     expect_true(!is.null(e@models))
     expect_true(!is.null(e@predictions))
     if(names(e.ls)[x] != "swd") {
@@ -176,28 +176,28 @@ test_that("User has correct number of partitions", {
 # check results of specific parameterizations
 
 test_that("Block test results table has correct form", {
-  block.res <- e.ls$block@results.grp
+  block.res <- e.ls$block@results.partitions
   expect_true(nrow(block.res) == 4 * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(block.res$fold) == 4)
   expect_true(sum(is.na(block.res)) == 0)
 })
 
 test_that("Checkerboard1 test results table has correct form", {
-  cb1.res <- e.ls$cb1@results.grp
+  cb1.res <- e.ls$cb1@results.partitions
   expect_true(nrow(cb1.res) == 2 * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(cb1.res$fold) == 2)
   expect_true(sum(is.na(cb1.res)) == 0)
 })
 
 test_that("Checkerboard2 test results table has correct form", {
-  cb2.res <- e.ls$cb2@results.grp
+  cb2.res <- e.ls$cb2@results.partitions
   expect_true(nrow(cb2.res) == 4 * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(cb2.res$fold) == 4)
   expect_true(sum(is.na(cb2.res)) == 0)
 })
 
 test_that("Random test results table has correct form", {
-  rand.res <- e.ls$rand@results.grp
+  rand.res <- e.ls$rand@results.partitions
   expect_true(nrow(rand.res) == kfolds.n * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(rand.res$fold) == kfolds.n)
   expect_true("cbi.val" %in% names(rand.res))
@@ -205,7 +205,7 @@ test_that("Random test results table has correct form", {
 })
 
 test_that("Jackknife test results table has correct form", {
-  jack.res <- e.ls$jack@results.grp
+  jack.res <- e.ls$jack@results.partitions
   noccs <- nrow(e.ls$jack@occs)
   expect_true(nrow(jack.res) == noccs * nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(jack.res$fold) == noccs)
@@ -214,7 +214,7 @@ test_that("Jackknife test results table has correct form", {
 })
 
 test_that("Testing data test results table has correct form", {
-  ind.res <- e.ls$ind@results.grp
+  ind.res <- e.ls$ind@results.partitions
   expect_true(nrow(ind.res) == nrow(tune.args.tbl.ls$maxnet))
   expect_true(max(ind.res$fold) == 1)
   expect_true("cbi.val" %in% names(ind.res))
@@ -222,7 +222,7 @@ test_that("Testing data test results table has correct form", {
 })
 
 test_that("No partition has no test results table", {
-  no.res <- e.ls$nopart@results.grp
+  no.res <- e.ls$nopart@results.partitions
   expect_true(nrow(no.res) == 0)
 })
 

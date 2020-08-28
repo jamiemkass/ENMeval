@@ -188,7 +188,7 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
 evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
-    tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
+    tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
     dplyr::filter(grepl(exp, metric))
   avgs <- res %>% 
     dplyr::filter(grepl("avg", metric)) %>%
@@ -245,7 +245,7 @@ evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
 evalplot.nulls <- function(e.null, stats, plot.type) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
-    tidyr::pivot_longer(cols = auc.train:nparam, names_to = "metric", values_to = "value") %>%
+    tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
     dplyr::filter(grepl(exp, metric)) %>%
     dplyr::select(metric, value)
   null.avgs <- null.res %>% 

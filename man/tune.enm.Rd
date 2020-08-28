@@ -11,29 +11,27 @@
 \usage{
 tune.train(
   enm,
-  occs.xy,
-  bg.xy,
   occs.z,
   bg.z,
   mod.full,
   mod.full.pred,
   envs,
   other.settings,
+  partitions,
   quiet
 )
 
 tune.validate(
   enm,
-  occs.val.xy,
-  occs.train.xy,
-  bg.xy,
   occs.train.z,
   occs.val.z,
-  bg.z,
+  bg.train.z,
   bg.val.z,
   mod.k,
   nk,
   other.settings,
+  partitions,
+  user.eval,
   quiet
 )
 
@@ -47,6 +45,7 @@ tune.parallel(
   user.val.grps,
   numCores,
   parallelType,
+  user.eval,
   quiet
 )
 
@@ -59,10 +58,21 @@ tune.regular(
   other.settings,
   user.val.grps,
   updateProgress,
+  user.eval,
   quiet
 )
 
-cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet)
+cv.enm(
+  d,
+  envs,
+  enm,
+  partitions,
+  tune.i,
+  other.settings,
+  user.val.grps,
+  user.eval,
+  quiet
+)
 }
 \arguments{
 \item{enm}{Object of class \link{ENMdetails}.}
@@ -71,9 +81,9 @@ cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet)
 
 \item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, clamp, pred.type, abs.auc.diff, cbi.cv}
 
-\item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
-
 \item{partitions}{character of name of partitioning technique (see \code{?partitions})}
+
+\item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 
 \item{tune.tbl}{Data frame of tuning parameter combinations.}
 
@@ -86,4 +96,6 @@ cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, quiet)
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
 Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and validation evaluation statistics for one set of specified tuning parameters.
+
+Validation CBI is calculated here with background values, not raster data, in order
 }

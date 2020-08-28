@@ -351,21 +351,21 @@ ENMevaluate builds a separate model for each unique combination of RM values and
 <!-- ``` -->
 
 ```{r enmeval1, eval=FALSE}
-e.mx.l <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+e.mx.l <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
                              partitions = 'checkerboard2', tune.args = list(fc = "L", rm = 1:2))
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
 
 ```{r maxnet2, eval=TRUE}
-e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
                              partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3))
 ```
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
 
 ```{r maxnet2par, eval=FALSE}
-e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
                              partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3),
                              parallel = TRUE)
 ```
@@ -373,12 +373,12 @@ e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxn
 Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
 
 ```{r maxnet2.noRas, eval=FALSE}
-e.mx.lqh.nr <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, mod.name = 'maxnet',
+e.mx.lqh.nr <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
                              partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3),
                              rasterPreds = NULL)
 ```
 
-We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=T` and `overlapStat`, which support Moran's I or Schoener's D. Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
+We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=TRUE` and `overlapStat`, which support Moran's I or Schoener's D (see [Warren et al. (2008)](https://dx.doi.org/10.1111/j.1558-5646.2008.00482.x)). Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap()` function.
 
 ```{r maxnet2.overlap, results='hide'}
 overlap <- calc.niche.overlap(e.mx.lqh@predictions, overlapStat="D")
@@ -388,39 +388,35 @@ overlap
 #### Different parameterizations {#eval.parameterizations}
 There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
 
-full.mod.pred: raster model prediction based on `envs`
-cbi: a) calculated on raster model prediction based on `envs`, b) cbi.val cannot only be calculated for partitions "randomkfold", "testing", or "user"
-
-
 ```{r evalExamples, eval= F}
 # This example is for Maxent models, and so we will specify the tune.tbl with ranges of feature classes and regularization multipliers
 tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 
 # 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
-e.mx <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.mx <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with the original Java software
-e.mxjar <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
 
 # 2. Testing partition: no cross validation statistics calculated; instead, model will be evaluated on a testing dataset that is not used to create the full model
-e.test <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs.testing)
+e.test <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs.testing)
 
 # 3. User partitions
 user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
-e.user <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp)
+e.user <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp)
 
 # 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
-e.noCV <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
+e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 
 # 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.val will be calculated on the point data (training and validation background) instead of on the "envs" rasters (default)
 occs.z <- cbind(occs, raster::extract(envs, occs))
 bg.z <- cbind(bg, raster::extract(envs, bg))
-e.swd <- ENMevaluate(occs.z, bg = bg.z, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
 
-You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments
+You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the ENMeval internal function `tune.validate()`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in [Peterson et al. (2008)](http://dx.doi.org/10.1016/j.ecolmodel.2007.11.008) and implemented by the package [kuenm](http://dx.doi.org/10.7717/peerj.6281).
 
 ```{r}
-# Define a custom function with these exact arguments, which are used by the ENMeval internal function tune.validate
+# Define a custom function with these exact arguments, 
 # They should provide you with the ingredients you need to specify most evaluation functions
 # Make sure you return a data frame that specifies the names you want to see in the results tables
 proc <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, other.settings, partitions) {
@@ -430,19 +426,19 @@ proc <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk,
 }
 
 # Now we can run ENMevaluate() with the argument "user.eval", and simply give it the custom function
-e.mx.proc <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", user.eval = proc)
+e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", user.eval = proc)
 # We can see the new performance statistic averages in the results table
 head(e.mx.proc@results)
 # Especially for the p-values, it likely makes more sense to look at the results tables for the partitions
-head(e.mx.proc@results.grp)
+head(e.mx.proc@results.partitions)
 ```
 
-The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the model. It has a some simple functions to define that output 1) the model's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of model parameters (non-zero coefficients). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
+The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has a some simple functions to define that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
 
 ```{r}
 # If you saved a new script for "enm.myAlgorithm.R" and specified all the internal functions, enter it to the argument "user.enm"
-# NOTE: It is important to make sure that your custom model can handle categorical variables if you decide to specify them as predictors
-# By default, ENMevaluate() removes categorical variables when running BIOCLIM models, but if you specify a custom model that cannot use them,
+# NOTE: It is important to make sure that your custom algorithm can handle categorical variables if you decide to specify them as predictors
+# By default, ENMevaluate() removes categorical variables when running BIOCLIM models, but if you specify an algorithm that cannot use them,
 # you will need to exclude them yourself before running
 e.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.myAlgorithm, tune.args = tune.args, categoricals = "biome", partitions = "block")
 ```
@@ -454,7 +450,7 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 - `tune.settings` A data.frame of settings that were tuned
 - `partition.method` A character of partitioning method used
 - `results` A data.frame of evaluation summary statistics
-- `results.grp` A data.frame of evaluation k-fold statistics
+- `results.partitions` A data.frame of evaluation k-fold statistics
 - `models` A list of model objects
 - `predictions` A RasterStack of model predictions
 - `occ.pts` A data.frame of occurrence coordinates used for model training
@@ -479,7 +475,7 @@ eval.partition.method(e.mx)
 # Results table with summary statistics for cross validation on test data
 eval.results(e.mx)
 # Results table with cross validation statistics for each test partition
-eval.results.grp(e.mx)
+eval.results.partitions(e.mx)
 # List of models with names corresponding to tune.args column label
 eval.models(e.mx)
 # The "betas" slot in a maxnet model is a named vector of the variable coefficients 
@@ -592,7 +588,7 @@ plot(predictions(e.mx)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, ma
 mod.null <- ENMnullSims(eval, mod.settings = list(fc = "L", rm = 2), no.iter = 10, 
                      envs = envs, userStats.signs = list(maxTSS.val = 1, maxKappa.val = 1))
 null.results(mod.null)
-null.results.grp(mod.null)
+null.results.partitions(mod.null)
 real.vs.null.results(mod.null)
 ```
 
