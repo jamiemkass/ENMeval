@@ -38,11 +38,16 @@ predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-nparams <- function(mod) {
-  # as no L1 regularization occurs, no parameters are dropped
-  length(mod$var.names)
+ncoefs <- function(mod) {
+  # as no L1 regularization occurs, no coefficients are dropped
+  return(length(mod$var.names))
+}
+
+# see ?summary.gbm for detailed description of how to interpret the table
+varimp <- function(mod) {
+  return(summary(mod, plotit=FALSE))
 }
 
 #' @export
 enm.boostedRegressionTrees <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                      predict = predict, nparams = nparams)
+                      predict = predict, ncoefs = ncoefs, varimp = varimp)

@@ -23,7 +23,7 @@ An S4 class that contains the ENMevaluate results.
 
 \item{\code{results}}{data.frame of evaluation summary statistics}
 
-\item{\code{results.grp}}{data.frame of evaluation k-fold statistics}
+\item{\code{results.partitions}}{data.frame of evaluation k-fold statistics}
 
 \item{\code{models}}{list of model objects}
 

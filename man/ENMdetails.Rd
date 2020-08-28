@@ -4,7 +4,7 @@
 \alias{ENMdetails}
 \title{ENMdetails class}
 \usage{
-ENMdetails(name, fun, msgs, args, predict, nparams)
+ENMdetails(name, fun, msgs, args, predict, ncoefs, varimp)
 }
 \description{
 An S4 class that details packages, functions, messages associated with a specific species distribution model (SDM) or ecological niche model (ENM). 
@@ -14,21 +14,19 @@ pre-made ENMdetails object specifications that work with ENMeval out of the box.
 \section{Slots}{
 
 \describe{
-\item{\code{name}}{character of name of model}
+\item{\code{name}}{character of name of algorithm}
 
-\item{\code{fun}}{function that runs the model}
-
-\item{\code{pkgs}}{vector of package names needed to run the model function}
+\item{\code{fun}}{function that runs the algorithm}
 
 \item{\code{msgs}}{function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}}
 
 \item{\code{args}}{function specifying the parameters needed to run the model function}
 
-\item{\code{evaluate}}{function specifying how to calculate evaluation statistics}
-
 \item{\code{predict}}{function specifying how to calculate a model prediction for a Raster* or a data frame}
 
-\item{\code{nparams}}{function specifying how to measure the number of model coefficients}
+\item{\code{ncoefs}}{function specifying how to measure the number of non-zero model coefficients}
+
+\item{\code{varimp}}{function specifying how to generate a data frame of variable importance from the model object (if possible)}
 }}
 
 \author{

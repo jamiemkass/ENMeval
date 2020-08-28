@@ -38,15 +38,16 @@ predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-nparams <- function(mod) {
+ncoefs <- function(mod) {
   # as no L1 regularization occurs, no parameters are dropped
-  nrow(mod$importance)
+  return(nrow(mod$importance))
 }
 
+# see ?randomForest for detailed description of how to interpret the table
 varimp <- function(mod) {
-  mod@importance
+  return(mod$importance)
 }
 
 #' @export
 enm.randomForest <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                      predict = predict, nparams = nparams)
+                      predict = predict, ncoefs = ncoefs, varimp = varimp)

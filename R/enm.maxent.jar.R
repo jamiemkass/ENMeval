@@ -56,13 +56,36 @@ predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-nparams <- function(mod) {
+ncoefs <- function(mod) {
   lambdas <- mod@lambdas[1:(length(mod@lambdas)-4)]
   countNonZeroParams <- function(x) if(strsplit(x, split=", ")[[1]][2] != '0.0') 1
   np <- sum(unlist(sapply(lambdas, countNonZeroParams)))
   return(np)
 }
 
+varimp <- function(mod) {
+  res <- mod@results
+  # percent contribution is a heuristic measure of variable importance
+  # quoting A Brief Tutorial on Maxent (Phillips 2017):
+  # "(It) depend(s) on the particular path that the Maxent code uses to get to the optimal solution, 
+  # and a different algorithm could get to the same solution via a different path, resulting in 
+  # different percent contribution values. In addition, when there are highly correlated environmental 
+  # variables, the percent contributions should be interpreted with caution."
+  # ref: https://biodiversityinformatics.amnh.org/open_source/maxent/Maxent_tutorial2017.pdf
+  pc <- res[grepl('contribution', rownames(res)),]
+  # permutation importance is a non-heuristic measure of variable importance
+  # From the older 2006 version of A Brief Tutorial:
+  # "The permutation importance measure depends only on the final Maxent model, not the path used to 
+  # obtain it. The contribution for each variable is determined by randomly permuting the values of 
+  # that variable among the training points (both presence and background) and measuring the resulting 
+  # decrease in training AUC. A large decrease indicates that the model depends heavily on that variable. 
+  # Values are normalized to give percentages."
+  pi <- res[grepl('permutation', rownames(res)),]
+  varnames <- sapply(strsplit(names(pc), '.contribution'), function(x) x[1])
+  df <- data.frame(variable=varnames, percent.contribution=pc, permutation.importance=pi, row.names=NULL)
+  return(df)
+}
+
 #' @export
 enm.maxent.jar <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                             predict = predict, nparams = nparams)
+                             predict = predict, ncoefs = ncoefs, varimp = varimp)

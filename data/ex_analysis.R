@@ -58,30 +58,30 @@
 # # e <- ENMevaluate(occs, envs, bg, alg = "maxnet", fc = c("L", "LQ"), RMvalues = 1:4, categoricals = "biome", method = "block")
 # 
 # ## regular run
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE)
 # ## regular run with user partitions
 # # user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp, overlap = TRUE)
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp, overlap = TRUE)
 # ## regular run with NA in occurrences
 # # occs[18,] <- c(0,0)
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # ## run with SWD
-# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(cbind(occs, raster::extract(envs, occs)), bg = cbind(bg, raster::extract(envs, bg)), algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # ## run with testing validation data
-# # e <- ENMevaluate(occs[1:50,], envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs[51:nrow(occs),])
+# # e <- ENMevaluate(occs[1:50,], envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs[51:nrow(occs),])
 # ## run with just AIC
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
 # ## run with maxent.jar
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # ## run with randomForest
 # # tune.args <- list(ntree = c(500,1000), mtry = c(2,5))
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "randomForest", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "randomForest", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # ## run with boostedRegressionTrees
 # # tune.args <- list(n.trees = 100, tc = 1:2, lr = 0.01)
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "boostedRegressionTrees", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "boostedRegressionTrees", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # # run with BIOCLIM
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "bioclim", tune.args = tune.args, categoricals = "biome", partitions = "block")
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "bioclim", tune.args = tune.args, categoricals = "biome", partitions = "block")
 # # run parallel
-# # e <- ENMevaluate(occs, envs, bg, mod.name = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
+# # e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # # null models
 # ns <- ENMnullSims(e, mod.settings = list(fc = "L", rm = 2), no.iter = 10)

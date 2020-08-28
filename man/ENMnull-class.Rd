@@ -25,7 +25,7 @@ An S4 class that contains the ENMnullSims results.
 
 \item{\code{null.results}}{data.frame of evaluation summary statistics for null models}
 
-\item{\code{null.results.grp}}{data.frame of evaluation k-fold statistics for null models}
+\item{\code{null.results.partitions}}{data.frame of evaluation k-fold statistics for null models}
 
 \item{\code{real.vs.null.results}}{data.frame of evaluation summary statistics for the real model, means for all null models, z-scores, and p-values}
 

@@ -34,7 +34,7 @@ NULL
 #' and Seifert (2011).
 #' @param p.occs data frame of raw (maxent.jar) or exponential (maxnet) predictions for
 #' the occurrence localities based on one or more models
-#' @param nparam integer; number of model parameters (non-zero coefficients)
+#' @param ncoefs integer; number of non-zero model coefficients
 #' @param p Raster* of raw (maxent.jar) or exponential (maxnet) model predictions;
 #' if NULL, AICc will be calculated based on the background points, which already
 #' have predictions that sum to 1 and thus need no correction -- this assumes that
@@ -43,8 +43,7 @@ NULL
 #' \code{AICc} is the Akaike Information Criterion corrected for small sample
 #' sizes calculated as:
 #' \deqn{ (2 * K - 2 * logLikelihood) + (2 * K) * (K+1) / (n - K - 1)}
-#' where \emph{K} is the number of parameters in the model (i.e., number of
-#' non-zero parameters) and \emph{n} is the number of
+#' where \emph{K} is the number of non-zero coefficients in the model and \emph{n} is the number of
 #' occurrence localities.  The \emph{logLikelihood} is calculated as:
 #' \deqn{ sum(log(vals))}
 #' where \emph{vals} is a vector of Maxent raw/expontential values at occurrence localities
@@ -61,16 +60,16 @@ NULL
 #' sample size version of Akaike Information Criterion for ENMs (Akaike 1974).  
 #' We use AICc (instead of AIC) regardless of sample size based on the 
 #' recommendation of Burnham and Anderson (1998, 2004).  The number of 
-#' parameters is determined by counting the number of non-zero parameters in 
+#' coefficients is determined by counting the number of non-zero coefficients in 
 #' the \code{maxent} lambda file (\code{m@lambdas} for maxent.jar and \code{m$betas} for maxnet.  
-#' See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of parameters is an 
+#' See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of non-zero coefficients is an 
 #' estimate of the true degrees of freedom.  For Maxent ENMs, AICc is 
 #' calculated by standardizing the raw output such that all cells in the study 
 #' extent sum to 1. The likelihood of the data for a given model is then 
 #' calculated by taking the product of the raw output values (or the sum of their logs, as is implemented here)
 #' for all grid cells that contain an occurrence locality (Warren and Seifert 2011).
 #' @seealso \code{maxent} in the \pkg{dismo} package.
-#' @note Returns all \code{NA}s if the number of parameters is larger than the
+#' @note Returns all \code{NA}s if the number of non-zero coefficients is larger than the
 #' number of observations (occurrence localities).
 #' @references Akaike, H. (1974) A new look at the statistical model
 #' identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}:
@@ -97,20 +96,20 @@ NULL
 #' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
 
 #' @export
-aic.maxent <- function(p.occs, nparams, p = NULL) {
+aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   # differential behavior for summing if p is Raster* or data frame
   if(!is.null(p)) {
     p.sum <- raster::cellStats(p, sum)  
     # if total does not sum to 1, standardize so that the sum is 1
     for(i in 1:raster::nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
   }
-  # if more parameters than data points, determine AIC to be invalid:
+  # if more model coefficients than data points, determine AIC to be invalid:
   # this avoids considering overly complex models at all
   n.occs <- nrow(p.occs)
-  AIC.valid <- nparams < n.occs
+  AIC.valid <- ncoefs < n.occs
   # calculate log likelihood
   LL <- colSums(log(p.occs), na.rm = TRUE)
-  AICc <- (2 * nparams - 2 * LL) + (2 * (nparams) * (nparams + 1) / (n.occs - nparams - 1))
+  AICc <- (2 * ncoefs - 2 * LL) + (2 * (ncoefs) * (ncoefs + 1) / (n.occs - ncoefs - 1))
   # if determined invalid or if infinite, make AICc NA
   AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
   # make output table
@@ -253,8 +252,8 @@ calc.niche.overlap <- function(envs, overlapStat, quiet=FALSE){
 
 # function to look up the corresponding ENMdetails abject
 #' @export
-lookup.enm <- function(mod.name) {
-  x <- switch(mod.name, 
+lookup.enm <- function(algorithm) {
+  x <- switch(algorithm, 
               maxent.jar = enm.maxent.jar,
               maxnet = enm.maxnet,
               randomForest = enm.randomForest,
