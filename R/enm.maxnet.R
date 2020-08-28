@@ -6,8 +6,6 @@ name <- "maxnet"
 
 fun <- maxnet::maxnet
 
-pkgs <- c("dismo", "raster", "maxnet")
-
 msgs <- function(tune.args) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
     stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
@@ -60,5 +58,5 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.maxnet <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
+enm.maxnet <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
                          predict = predict, nparams = nparams)

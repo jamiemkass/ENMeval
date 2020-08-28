@@ -18,7 +18,8 @@ tune.train(
   mod.full,
   mod.full.pred,
   envs,
-  other.settings
+  other.settings,
+  quiet
 )
 
 tune.validate(
@@ -32,7 +33,8 @@ tune.validate(
   bg.val.z,
   mod.k,
   nk,
-  other.settings
+  other.settings,
+  quiet
 )
 
 tune.parallel(

@@ -6,8 +6,6 @@ name <- "bioclim"
 
 fun <- dismo::bioclim
 
-pkgs <- c("dismo", "raster")
-
 msgs <- function(tune.args) {
   msg <- paste0("BIOCLIM from dismo v", packageVersion('dismo'))
   return(msg)
@@ -32,5 +30,5 @@ nparams <- function(mod) {
 }
 
 #' @export
-enm.bioclim <- ENMdetails(name = name, fun = fun, pkgs = pkgs, msgs = msgs, args = args, 
+enm.bioclim <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
                           predict = predict, nparams = nparams)

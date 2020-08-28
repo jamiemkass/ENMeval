@@ -65,7 +65,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.testing = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
-                        abs.auc.diff = TRUE, validation.bg = "full", user.val.grps = NULL,
+                        abs.auc.diff = TRUE, validation.bg = "full", user.val.grps = NULL, user.eval = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
@@ -358,9 +358,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                          abs.auc.diff = abs.auc.diff, validation.bg = validation.bg, cbi.cv = cbi.cv)
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, user.eval, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, user.eval, quiet)
   }
   
   ##################### #
