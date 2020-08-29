@@ -201,7 +201,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   # get evaluation statistics for training data
   train <- tune.train(enm, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings, partitions, quiet)
   # make training stats table
-  tune.args.col <- paste(names(tune.i), tune.i, collapse = "_", sep = ":")
+  tune.args.col <- paste(names(tune.i), tune.i, collapse = "_", sep = ".")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)
   
   # define number of grp (the value of "k") for occurrences
