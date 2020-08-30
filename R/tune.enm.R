@@ -136,10 +136,10 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
     if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
   }
   numCoresUsed <- foreach::getDoParWorkers()
-  if(quiet != TRUE) message(paste0("Of ", allCores, " total cores using ", numCoresUsed, "..."))
+  if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
   if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
   
-  results <- foreach::foreach(i = 1:n, .packages = enm.pkgs(enm), .options.snow = opts, .export = "cv.enm") %dopar% {
+  results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
     cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.val.grps, user.eval, quiet)
   }
   if(quiet != TRUE) close(pb)
