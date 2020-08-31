@@ -47,6 +47,8 @@
 #' "partition" to calculate them with respect to the validation partition background 
 #' @param user.val.grps matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 #' internally by ENMnullSims() to force each null model to evaluate with real test data
+#' @param user.eval function specifying custom validation evaluation (see vignette for example)
+#' @param rmm RMM object to be written to by ENMevaluate; if not specified, a new RMM object is output
 #' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
 #' @param parallelType character (default: "doSNOW") specifying either "doParallel" or "doSNOW"
@@ -65,7 +67,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                         user.enm = NULL, partitions = NULL, user.grp = NULL, occs.testing = NULL, 
                         kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
-                        abs.auc.diff = TRUE, validation.bg = "full", user.val.grps = NULL, user.eval = NULL,
+                        abs.auc.diff = TRUE, validation.bg = "full", user.val.grps = NULL, user.eval = NULL, rmm = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy parameters
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
@@ -491,7 +493,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                      rmm = list())
   
   # add the rangeModelMetadata object to the ENMevaluation object
-  e@rmm <- buildRMM(e, envs)
+  # write to existing RMM if input by user
+  e@rmm <- buildRMM(e, envs, rmm)
   
   # if niche overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
