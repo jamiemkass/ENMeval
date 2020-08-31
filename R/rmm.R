@@ -7,8 +7,11 @@
 #' @param envs RasterStack of environmental predictor variables used in analysis
 #' @export
 
-buildRMM <- function(e, envs) {
-  rmm <- rangeModelMetadata::rmmTemplate()
+buildRMM <- function(e, envs, rmm = NULL) {
+  if(is.null(rmm)) {
+    rmm <- rangeModelMetadata::rmmTemplate()  
+  }
+  
   rmm$code$software$packages <- "ENMeval 2.0.0"
   
   # occurrence/background metadata ####
