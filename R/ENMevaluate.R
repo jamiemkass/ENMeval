@@ -74,7 +74,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                         method = NULL, bin.output = NULL, rasterPreds = NULL, progbar = NULL) {
   
   # legacy argument handling so ENMevaluate doesn't break for older code
-  all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, algorithm, method, bin.output, rasterPreds)
+  all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
     if(quiet != TRUE) message("* Running ENMeval v2.0.0 with legacy parameters. These will be phased out in the next version.")
   }
