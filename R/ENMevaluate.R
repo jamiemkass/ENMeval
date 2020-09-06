@@ -241,6 +241,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
   }
   
+  ############################################ #
+  # ADD TESTING DATA (IF INPUT) ####
+  ############################################ #
+  
+  # add testing data to main df if provided
+  if(partitions == "testing") {
+    occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
+    occs.testing.z <- cbind(occs.testing, occs.testing.z)
+    occs.testing.z$pb <- 1
+    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the testing data
+    # and the second iteration is not performed
+    occs.testing.z$grp <- 1
+    user.val.grps <- occs.testing.z
+    # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
+    # d$grp <- factor(d$grp, levels = 0:2)
+    # and then add the testing data with grp value 1
+    # d <- rbind(d, occs.testing.z)
+  }
+  
   ################################# #
   # ASSIGN CATEGORICAL VARIABLES ####
   ################################# #
@@ -251,10 +270,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
       if(enm@name == "bioclim") {
         if(quiet != TRUE) message("* As specified model is BIOCLIM, removing categorical variables.")
         d[, categoricals[i]] <- NULL
-        envs <- raster::dropLayer(envs, categoricals)
+        if(!is.null(user.val.grps)) user.val.grps[, categoricals[i]] <- NULL
+        if(inherits(envs, "BasicRaster") == TRUE) envs <- raster::dropLayer(envs, categoricals)
       }else{
         if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
-        d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
+        d[, categoricals[i]] <- factor(d[, categoricals[i]])  
+        if(!is.null(user.val.grps)) user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], levels = levels(d[, categoricals[i]]))
       }
     }
   }
@@ -310,25 +331,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
-  
-  ############################################ #
-  # ADD TESTING DATA (IF INPUT) ####
-  ############################################ #
-  
-  # add testing data to main df if provided
-  if(partitions == "testing") {
-    occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
-    occs.testing.z <- cbind(occs.testing, occs.testing.z)
-    occs.testing.z$pb <- 1
-    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the testing data
-    # and the second iteration is not performed
-    occs.testing.z$grp <- 1
-    user.val.grps <- occs.testing.z
-    # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
-    # d$grp <- factor(d$grp, levels = 0:2)
-    # and then add the testing data with grp value 1
-    # d <- rbind(d, occs.testing.z)
-  }
   
   ################# #
   # MODEL TUNING #### 
