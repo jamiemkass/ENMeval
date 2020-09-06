@@ -14,8 +14,8 @@ bg.z <- cbind(bg, raster::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
 
 
-# functions 
-test_all <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg, type = "") {
+# testing functions 
+test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg, type = "") {
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   test_that("ENMevaluation object and slots exist", {
     expect_true(!is.null(e))
@@ -37,52 +37,52 @@ test_all <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg, type = ""
     expect_true(!is.null(e@bg.grp))
     expect_true(!is.null(e@overlap))
   })  
-
+  
   test_that("Data in ENMevaluation object slots have correct form", {
-      # algorithm
-      expect_true(e@algorithm == alg)
-      # partition method 
-      expect_true(e@partition.method == parts)
-      # these checks relate to tune.args, which is NULL for BIOCLIM
-      if(!is.null(tune.args)) {
-        # tune.settings 
-        expect_true(all(as.data.frame(e@tune.settings[,1:ncol(tune.tbl)]) == tune.tbl))
-        # nrow of results
-        expect_true(nrow(e@results) == nrow(tune.tbl))
-        # tune.args column values are concat of tuning parameters columns
-        # expect_true(all(apply(e@results[names(tune.args.ls[[m]])], 1, paste, collapse = "_") == as.character(e@results$tune.args)))
-        # number of models
-        expect_true(length(e@models) == nrow(tune.tbl))
-      }
-      # number of rows for occs matches occs.grp
-      expect_true(nrow(e@occs) == length(e@occs.grp))
-      # number of rows for bg matches bg.grp
-      expect_true(nrow(e@bg) == length(e@bg.grp))
-      # no overlap is calculated for no tuning or BIOCLIM
-      if(length(e@overlap) > 0) {
-        # both indices exist for overlap
-        expect_true(length(e@overlap) == 2)
-        # number of rows of overlap D matches tune.args
-        expect_true(nrow(e@overlap$D) == nrow(tune.tbl))
-        # number of rows of overlap I matches tune.args
-        expect_true(nrow(e@overlap$I) == nrow(tune.tbl))  
-      }else{
-        # no overlap matrix
-        expect_true(length(e@overlap) == 0)
-      }
-    })
-
+    # algorithm
+    expect_true(e@algorithm == alg)
+    # partition method 
+    expect_true(e@partition.method == parts)
+    # these checks relate to tune.args, which may be NULL
+    if(!is.null(tune.args)) {
+      # tune.settings 
+      expect_true(all(as.data.frame(e@tune.settings[,1:ncol(tune.tbl)]) == tune.tbl))
+      # nrow of results
+      expect_true(nrow(e@results) == nrow(tune.tbl))
+      # tune.args column values are concat of tuning parameters columns
+      # expect_true(all(apply(e@results[names(tune.args.ls[[m]])], 1, paste, collapse = "_") == as.character(e@results$tune.args)))
+      # number of models
+      expect_true(length(e@models) == nrow(tune.tbl))
+    }
+    # number of rows for occs matches occs.grp
+    expect_true(nrow(e@occs) == length(e@occs.grp))
+    # number of rows for bg matches bg.grp
+    expect_true(nrow(e@bg) == length(e@bg.grp))
+    # no overlap is calculated for no tuning or BIOCLIM
+    if(length(e@overlap) > 0) {
+      # both indices exist for overlap
+      expect_true(length(e@overlap) == 2)
+      # number of rows of overlap D matches tune.args
+      expect_true(nrow(e@overlap$D) == nrow(tune.tbl))
+      # number of rows of overlap I matches tune.args
+      expect_true(nrow(e@overlap$I) == nrow(tune.tbl))  
+    }else{
+      # no overlap matrix
+      expect_true(length(e@overlap) == 0)
+    }
+  })
+  
   test_that("Records with missing environmental values were removed", {
     expect_true(sum(is.na(e@occs)) == 0)
     expect_true(sum(is.na(e@bg)) == 0)
   })
-
+  
   test_that("Number of partitions is correct", {
     expect_true(length(unique(e@occs.grp)) == nparts.occs)
     expect_true(length(unique(e@bg.grp)) == nparts.bg)
   })
-
-
+  
+  
   test_that("Results table for partitions has correct form", {
     if(parts == "none") {
       expect_true(nrow(e@results.partitions) == 0)
@@ -99,68 +99,142 @@ test_all <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg, type = ""
   })
 }
 
+test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs, nparts.bg, n.sims, type = "") {
+  mod.settings.tbl <- expand.grid(mod.settings)
+  test_that("ENMnullSims object and slots exist", {
+    expect_true(!is.null(ns))
+    expect_true(!is.null(ns@null.algorithm))
+    expect_true(!is.null(ns@null.mod.settings))
+    expect_true(!is.null(ns@null.partition.method))
+    expect_true(!is.null(ns@null.partition.settings))
+    expect_true(!is.null(ns@null.other.settings))
+    expect_true(!is.null(ns@no.iter))
+    expect_true(!is.null(ns@null.results))
+    expect_true(!is.null(ns@null.results.partitions))
+    expect_true(!is.null(ns@real.vs.null.results))
+    expect_true(!is.null(ns@real.occs))
+    expect_true(!is.null(ns@real.occs.grp))
+    expect_true(!is.null(ns@real.bg))
+    expect_true(!is.null(ns@real.bg.grp))
+  })  
+  
+  test_that("Data in ENMnullSims object slots have correct form", {
+    # algorithm
+    expect_true(ns@null.algorithm == alg)
+    # partition method 
+    expect_true(ns@null.partition.method == parts)
+    # mod.settings 
+    expect_true(all(ns@null.mod.settings[,1:ncol(mod.settings.tbl)] == mod.settings.tbl))
+    # no. of iterations
+    expect_true(ns@no.iter == no.iter)
+    # number of rows in results table
+    expect_true(nrow(ns@null.results) == no.iter)
+    # number of rows in results table for partitions
+    expect_true(nrow(ns@null.results.partitions) == no.iter * nparts.occs)
+    # number of rows in real vs null results table
+    expect_true(nrow(ns@real.vs.null.results) == 6)
+    # there should only be two NA values for this table: read.sd for auc.train and cbi.train
+    expect_true(sum(is.na(ns@real.vs.null.results)) == 2)
+    # check that tables match
+    expect_true(all(ns@real.occs == e@occs))
+    expect_true(all(ns@real.bg == e@bg))
+    expect_true(all(ns@real.occs.grp == e@occs.grp))
+  })
+}
 
 algs <- list(maxnet = list(fc = c("L","LQ"), rm = 2:3),
              bioclim = list(tails = c("low", "high", "both")),
              boostedRegressionTrees = list(tc = 1:2, lr = 0.01),
              randomForest = list(ntree = 1000, mtry = 4:5))
 
+no.iter <- 5
+
 for(i in 1:length(algs)) {
   
   alg <- names(algs)[i]
   targs <- algs[[i]]
+  mset <- lapply(targs, function(x) x[1])
   
   # block partitions
-  context(paste("Testing", alg, "with block partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "block", overlap = TRUE, quiet = TRUE)
-  # ns <- ENMnullSims(e, mod.settings = targs, no.iter = 10)
-  test_all(e, alg, "block", targs, 4, 4)
+  test_ENMevaluation(e, alg, "block", targs, 4, 4)
+  context(paste("Testing ENMnullSims for", alg, "with block partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "block", mset, 4, 4)
   
   # checkerboard1 partitions
-  context(paste("Testing", alg, "with checkerboard1 partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with checkerboard1 partitions..."))
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "checkerboard1", overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "checkerboard1", targs, 2, 2)
+  test_ENMevaluation(e, alg, "checkerboard1", targs, 2, 2)
+  context(paste("Testing ENMnullSims for", alg, "with checkerboard1 partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "checkerboard1", mset, 2, 2)
   
   # checkerboard2 partitions
-  context(paste("Testing", alg, "with checkerboard2 partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with checkerboard2 partitions..."))
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "checkerboard2", overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "checkerboard2", targs, 4, 4)
+  test_ENMevaluation(e, alg, "checkerboard2", targs, 4, 4)
+  context(paste("Testing ENMnullSims for", alg, "with checkerboard2 partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "checkerboard2", mset, 4, 4)
   
   # random k-fold partitions
-  context(paste("Testing", alg, "with random 4-fold partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with random 4-fold partitions..."))
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "randomkfold", kfolds = 4, overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "randomkfold", targs, 4, 1)
+  test_ENMevaluation(e, alg, "randomkfold", targs, 4, 1)
+  context(paste("Testing ENMnullSims for", alg, "with random 4-fold partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "randomkfold", mset, 4, 1)
   
   # jackknife partitions
-  context(paste("Testing", alg, "with jackknife partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with jackknife partitions..."))
   e <- ENMevaluate(occs[1:10,], envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "jackknife", overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "jackknife", targs, nrow(e@occs), 1)
+  test_ENMevaluation(e, alg, "jackknife", targs, nrow(e@occs), 1)
+  context(paste("Testing ENMnullSims for", alg, "with jackknife partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "jackknife", mset, nrow(e@occs), 1)
   
   # testing partition
-  context(paste("Testing", alg, "with testing partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with testing partitions..."))
   e <- ENMevaluate(occs[1:100,], envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "testing", occs.testing = occs[101:nrow(occs),], overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "testing", targs, 1, 1)
+  test_ENMevaluation(e, alg, "testing", targs, 1, 1)
+  context(paste("Testing ENMnullSims for", alg, "with testing partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "testing", mset, 1, 1)
   
   # no partitions
-  context(paste("Testing", alg, "with no partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with no partitions..."))
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "none", overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "none", targs, 1, 1)
+  test_ENMevaluation(e, alg, "none", targs, 1, 1)
+  context(paste("Testing ENMnullSims for", alg, "with no partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "none", mset, 1, 1)
   
   # user partitions
-  context(paste("Testing", alg, "with user partitions..."))
+  context(paste("Testing ENMevaluate for", alg, "with user partitions..."))
   user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", user.grp = user.grp, partitions = "user", overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "user", targs, 4, 4)
+  test_ENMevaluation(e, alg, "user", targs, 4, 4)
+  context(paste("Testing ENMnullSims for", alg, "with user partitions..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "user", mset, 4, 4)
   
   # no envs (SWD)
-  context(paste("Testing", alg, "with random 4-fold partitions and no raster environmental variables..."))
+  context(paste("Testing ENMevaluate for", alg, "with random 4-fold partitions and no raster environmental variables..."))
   e <- ENMevaluate(occs.z, bg = bg.z, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "randomkfold", kfolds = 4, quiet = TRUE)
-  test_all(e, alg, "randomkfold", targs, 4, 1, type = "swd")
+  test_ENMevaluation(e, alg, "randomkfold", targs, 4, 1, type = "swd")
+  context(paste("Testing ENMnullSims for", alg, "with random 4-fold partitions and no raster environmental variables..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "randomkfold", mset, 4, 1)
   
   # no bg
-  context(paste("Testing", alg, "with random 4-fold partitions and no input background data..."))
+  context(paste("Testing ENMevaluate for", alg, "with random 4-fold partitions and no input background data..."))
   e <- ENMevaluate(occs, envs, algorithm = alg, n.bg = 1000, tune.args = targs, categoricals = "biome", partitions = "randomkfold", kfolds = 4, overlap = TRUE, quiet = TRUE)
-  test_all(e, alg, "randomkfold", targs, 4, 1) 
+  test_ENMevaluation(e, alg, "randomkfold", targs, 4, 1) 
+  context(paste("Testing ENMnullSims for", alg, "with random 4-fold partitions and no input background data..."))
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnullSims(e, ns, no.iter, alg, "randomkfold", mset, 4, 1)
 }
 
 
