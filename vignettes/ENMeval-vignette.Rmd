@@ -32,21 +32,16 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, comment="#>")
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
 
-We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` and [`spocc`](https://cran.r-project.org/package=spocc) packages.  (We are using `spocc` to download occurrence records).
+We'll start by reading in an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` package.  (We are using [`spocc`](https://cran.r-project.org/package=spocc) to download occurrence records).
 
 ```{r occDownload}
 if (!require('spocc')) install.packages('spocc', repos="http://cran.us.r-project.org")
 if (!require('ENMeval')) install.packages('ENMeval', repos="http://cran.us.r-project.org")
 
-library(spocc)
 library(ENMeval)
 
 # Search GBIF for occurrence data.
-bv <- occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
-
-# Get the latitude/coordinates for each locality. Also convert the tibble that occ() outputs
-# to a data frame for compatibility with ENMeval functions.
-occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+occs <- readRDS("bvariegatus.rds")
 
 # Remove duplicate rows (Note that you may or may not want to do this).
 occs <- occs[!duplicated(occs),]
