@@ -2,11 +2,13 @@
 # maxent.jar ENMdetails object ####
 ################################# #
 
-name <- "maxent.jar"
+maxent.jar.name <- "maxent.jar"
 
-fun <- dismo::maxent
+maxent.jar.fun.train <- dismo::maxent
 
-msgs <- function(tune.args) {
+maxent.jar.fun.val <- maxent.jar.fun.train
+
+maxent.jar.msgs <- function(tune.args, other.settings) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
     stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
   }else{
@@ -34,7 +36,7 @@ msgs <- function(tune.args) {
   return(msg)
 }
 
-args <- function(occs.z, bg.z, tune.i, other.settings) {
+maxent.jar.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   out$x <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
@@ -49,21 +51,26 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-predict <- function(mod, envs, other.settings) {
+# same as args.train
+maxent.jar.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod.full = NULL) {
+  maxent.jar.args.train(occs.z, bg.z, tune.i, other.settings)
+}
+
+maxent.jar.predict <- function(mod, envs, other.settings) {
   output.format <- paste0("outputformat=", other.settings$pred.type)
   clamp <- ifelse(other.settings$clamp == TRUE, "doclamp=true", "doclamp=false")
   pred <- dismo::predict(mod, envs, args = c(output.format, clamp), na.rm = TRUE)
   return(pred)
 }
 
-ncoefs <- function(mod) {
+maxent.jar.ncoefs <- function(mod) {
   lambdas <- mod@lambdas[1:(length(mod@lambdas)-4)]
   countNonZeroParams <- function(x) if(strsplit(x, split=", ")[[1]][2] != '0.0') 1
   np <- sum(unlist(sapply(lambdas, countNonZeroParams)))
   return(np)
 }
 
-varimp <- function(mod) {
+maxent.jar.varimp <- function(mod) {
   res <- mod@results
   # percent contribution is a heuristic measure of variable importance
   # quoting A Brief Tutorial on Maxent (Phillips 2017):
@@ -87,5 +94,6 @@ varimp <- function(mod) {
 }
 
 #' @export
-enm.maxent.jar <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                             predict = predict, ncoefs = ncoefs, varimp = varimp)
+enm.maxent.jar <- ENMdetails(name = maxent.jar.name, fun.train = maxent.jar.fun.train, fun.val = maxent.jar.fun.val,
+                             msgs = maxent.jar.msgs, args.train = maxent.jar.args.train, args.val = maxent.jar.args.val,
+                             predict = maxent.jar.predict, ncoefs = maxent.jar.ncoefs, varimp = maxent.jar.varimp)

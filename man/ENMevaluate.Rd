@@ -29,6 +29,7 @@ ENMevaluate(
   validation.bg = "full",
   user.val.grps = NULL,
   user.eval = NULL,
+  rmm = NULL,
   parallel = FALSE,
   numCores = NULL,
   parallelType = "doSNOW",
@@ -109,6 +110,10 @@ generate prediction rasters for the ENMevaluation object; currently only applica
 
 \item{user.val.grps}{matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 internally by ENMnullSims() to force each null model to evaluate with real test data}
+
+\item{user.eval}{function specifying custom validation evaluation (see vignette for example)}
+
+\item{rmm}{RMM object to be written to by ENMevaluate; if not specified, a new RMM object is output}
 
 \item{parallel}{boolean (TRUE or FALSE) which if TRUE, run with parallel processing}
 

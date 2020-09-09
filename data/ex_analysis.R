@@ -2,6 +2,7 @@
 # envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE))
 # bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
 # occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+# occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
 # occs <- occs[!duplicated(occs),]
 # occs.sp <- sf::st_as_sf(occs, coords=c("longitude","latitude"))
 # occs.buf <- sf::st_buffer(occs.sp, 10)
