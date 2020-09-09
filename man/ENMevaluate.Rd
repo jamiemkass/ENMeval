@@ -188,7 +188,8 @@ occ <- cbind(x,y)
 
 \dontrun{
 ### This call gives the results loaded below
-enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500, categoricals=4, algorithm='maxent.jar')
+enmeval_results <- ENMevaluate(occ, env, method="block", n.bg=500, 
+  categoricals=4, algorithm='maxent.jar')
 }
 
 data(enmeval_results)
