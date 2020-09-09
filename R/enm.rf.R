@@ -2,11 +2,13 @@
 # random forest ENMdetails object ####
 ################################# #
 
-name <- "randomForest"
+rf.name <- "randomForest"
 
-fun <- randomForest::randomForest
+rf.fun.train <- randomForest::randomForest
 
-msgs <- function(tune.args) {
+rf.fun.val <- rf.fun.train
+
+rf.msgs <- function(tune.args, other.settings) {
   if(!all("ntree" %in% names(tune.args), "mtry" %in% names(tune.args))) {
     stop("Random forest settings must include 'ntree' and 'mtry'. See ?tune.args for details")
   }
@@ -16,7 +18,7 @@ msgs <- function(tune.args) {
   return(msg)
 }
 
-args <- function(occs.z, bg.z, tune.i, other.settings) {
+rf.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   out$x <- rbind(occs.z, bg.z)
   out$y <- factor(c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))))
@@ -29,7 +31,11 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-predict <- function(mod, envs, other.settings) {
+rf.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
+  rf.args.train(occs.z, bg.z, tune.i, other.settings)
+}
+
+rf.predict <- function(mod, envs, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
     pred <- raster::predict(envs, mod, type = "prob", na.rm = TRUE)
   }else{
@@ -38,16 +44,17 @@ predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-ncoefs <- function(mod) {
+rf.ncoefs <- function(mod) {
   # as no L1 regularization occurs, no parameters are dropped
   return(nrow(mod$importance))
 }
 
 # see ?randomForest for detailed description of how to interpret the table
-varimp <- function(mod) {
+rf.varimp <- function(mod) {
   return(mod$importance)
 }
 
 #' @export
-enm.randomForest <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                      predict = predict, ncoefs = ncoefs, varimp = varimp)
+enm.randomForest <- ENMdetails(name = rf.name, fun.train = rf.fun.train, fun.val = rf.fun.val,
+                               msgs = rf.msgs, args.train = rf.args.train, args.val = rf.args.val,
+                               predict = rf.predict, ncoefs = rf.ncoefs, varimp = rf.varimp)

@@ -11,7 +11,7 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, raster::extract(envs, bg))
 # tune.args <- list(fc = c("L","LQ","H"), rm = 1:5)
 tune.args.ls <- list("maxnet" = list(fc = c("L","LQ"), rm = 2:3),
-                  "boostedRegressionTrees" = list(ntree = 1000, tc = 1:2, lr = 0.01),
+                  "boostedRegressionTrees" = list(tc = 1:2, lr = 0.01),
                   "randomForest" = list(ntree = 1000, mtry = 4:5))
 tune.args.tbl.ls <- lapply(tune.args.ls, expand.grid, stringsAsFactors = FALSE)
 parts <- c("block", "checkerboard1", "checkerboard2", "randomkfold", "jackknife", "testing", "none", "user", rep("randomkfold", 5))
@@ -53,7 +53,7 @@ e.ls$swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tun
 e.ls$nobg <- ENMevaluate(occs, envs, algorithm = "maxnet", tune.args = tune.args.ls$maxnet, categoricals = "biome", 
                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 # bioclim
-e.ls$bioclim <- ENMevaluate(occs, envs, bg, algorithm = "bioclim", categoricals = "biome", 
+e.ls$bioclim <- ENMevaluate(occs, envs[[-9]], bg, algorithm = "bioclim", 
                         partitions = "randomkfold", kfolds = kfolds.n, overlap = TRUE)
 # boostedRegressionTrees
 e.ls$boostedRegressionTrees <- ENMevaluate(occs, envs, bg, algorithm = "boostedRegressionTrees", tune.args = tune.args.ls$boostedRegressionTrees, categoricals = "biome", 

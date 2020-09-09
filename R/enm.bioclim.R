@@ -2,38 +2,48 @@
 # bioclim ENMdetails object ####
 ################################# #
 
-name <- "bioclim"
+bioclim.name <- "bioclim"
 
-fun <- dismo::bioclim
+bioclim.fun.train <- dismo::bioclim
 
-msgs <- function(tune.args) {
+bioclim.fun.val <- bioclim.fun.train
+
+bioclim.msgs <- function(tune.args, other.settings) {
+  if(!is.null(other.settings$categoricals)) {
+    stop("* BIOCLIM cannot run with categorical variables. Please remove these variables before running.")
+  }
   msg <- paste0("BIOCLIM from dismo v", packageVersion('dismo'))
   return(msg)
 }
 
-args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
+bioclim.args.train <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   out <- list()
   out$x <- occs.z 
   out <- c(out, other.settings$other.args)
   return(out)
 }
 
-predict <- function(mod, envs, other.settings) {
+bioclim.args.val <- function(occs.z, bg.z, tune.tbl.i, other.settings, mod = NULL) {
+  bioclim.args.train(occs.z, bg.z, tune.tbl.i, other.settings)
+}
+
+bioclim.predict <- function(mod, envs, other.settings) {
   # if no tails in other.args, defaults to NULL
   pred <- dismo::predict(mod, envs, tails = other.settings$tails, na.rm = TRUE)
   return(pred)
 }
 
-ncoefs <- function(mod) {
+bioclim.ncoefs <- function(mod) {
   # as no L1 regularization occurs, no parameters are dropped
   length(mod@min)
 }
 
 # no existing method in model object for variable importance
-varimp <- function(mod) {
+bioclim.varimp <- function(mod) {
   NULL
 }
 
 #' @export
-enm.bioclim <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                          predict = predict, ncoefs = ncoefs, varimp = varimp)
+enm.bioclim <- ENMdetails(name = bioclim.name, fun.train = bioclim.fun.train, fun.val = bioclim.fun.val,
+                          msgs = bioclim.msgs, args.train = bioclim.args.train, args.val = bioclim.args.val,
+                          predict = bioclim.predict, ncoefs = bioclim.ncoefs, varimp = bioclim.varimp)
