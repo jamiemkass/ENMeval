@@ -33,7 +33,7 @@ var.importance(mod)
 
 \note{Both metrics should be interpreted with caution when the predictor variables are correlated (Phillips 2006).}
 
-\references{Phillips, S. (2006) A brief tutorial on Maxent. AT&T Research. Available at: http://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc}
+\references{Phillips, S. (2006) A brief tutorial on Maxent. AT&T Research. Available at: https://www.cs.princeton.edu/~schapire/maxent/tutorial/tutorial.doc}
 
 \author{Jamie M. Kass <jkass@gc.cuny.edu> and Robert Muscarella <bob.muscarella@gmail.com>}
 

@@ -14,13 +14,13 @@ Introduction
 ------------
 
 <!-- [`ENMeval`](https://cran.r-project.org/web/packages/ENMeval/index.html) is an R package that performs automated runs and evaluations of ecological niche models, and currently only implements [Maxent](https://www.cs.princeton.edu/~schapire/maxent/). `ENMeval` was made for those who want to "tune" their models to maximize predictive ability and avoid overfitting, or in other words, optimize model complexity to balance goodness-of-fit and predictive ability. The primary function, `ENMevaluate`, does all the heavy lifting and returns several items including a table of evaluation statistics and, for each setting combination (here, colloquially: *runs*), a model object and a raster layer showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication: -->
-<!-- [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full) -->
+<!-- [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](https://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full) -->
 <!-- ## Data Acquisition & Pre-processing -->
 <!-- In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](Resources) section. -->
 <!-- We'll start by downloading an occurrence dataset for [*Bradypus variegatus*] (https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval` and [`spocc`](https://cran.r-project.org/web/packages/spocc/index.html) packages.  (We are using `spocc` to download occurrence records). -->
 <!-- ```{r occDownload} -->
-<!-- if (!require('spocc')) install.packages('spocc', repos = "http://cran.us.r-project.org")  -->
-<!-- if (!require('ENMeval')) install.packages('ENMeval', repos = "http://cran.us.r-project.org") -->
+<!-- if (!require('spocc')) install.packages('spocc', repos = "https://cran.us.r-project.org")  -->
+<!-- if (!require('ENMeval')) install.packages('ENMeval', repos = "https://cran.us.r-project.org") -->
 <!-- library(spocc) -->
 <!-- library(ENMeval) -->
 <!-- # Search GBIF for occurrence data. -->
@@ -30,7 +30,7 @@ Introduction
 <!-- # Remove duplicate rows. -->
 <!-- occs <- occs[!duplicated(occs),]   -->
 <!-- ``` -->
-<!-- We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `dismo` package. These climatic data are based on 50-year averages from 1950-2000. Now's also a good time to load the package, as it includes all the downstream dependencies (`raster`, `dismo`, etc.). -->
+<!-- We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](https://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `dismo` package. These climatic data are based on 50-year averages from 1950-2000. Now's also a good time to load the package, as it includes all the downstream dependencies (`raster`, `dismo`, etc.). -->
 <!-- ```{r envDownload, warning=FALSE, message=FALSE, fig.width=6, fig.height=8} -->
 <!-- # First, load some predictor rasters from the dismo folder: -->
 <!-- files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE) -->
@@ -62,8 +62,8 @@ Introduction
 <!-- ``` -->
 <!-- We may also, however, want to remove the Caribbean islands (for example) from our background extent. For this, we can use tools from the [`maptools`](https://cran.r-project.org/web/packages/maptools/index.html) package, which is not automatically loaded with `ENMeval`. -->
 <!-- ```{r removeCaribbean, message=FALSE} -->
-<!-- if (!require('maptools')) install.packages('maptools', repos = "http://cran.us.r-project.org") -->
-<!-- if (!require('rgeos')) install.packages('rgeos', repos = "http://cran.us.r-project.org") -->
+<!-- if (!require('maptools')) install.packages('maptools', repos = "https://cran.us.r-project.org") -->
+<!-- if (!require('rgeos')) install.packages('rgeos', repos = "https://cran.us.r-project.org") -->
 <!-- library(maptools) -->
 <!-- library(rgeos) -->
 <!-- # Get a simple world countries polygon -->
@@ -283,21 +283,21 @@ Introduction
 <!-- - [References](References) -->
 <!-- #### Web Resources -->
 <!-- [Hijmans, R. and Elith, J. (2016) Species distribution modeling with R. dismo vignette.](https://cran.r-project.org/web/package=dismo) -->
-<!-- [Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](http://www.molecularecologist.com/2013/04/species-distribution-models-in-r/) -->
+<!-- [Yoder, J. (2013) Species distribution models in R. The Molecular Ecologist.](https://www.molecularecologist.com/2013/04/species-distribution-models-in-r/) -->
 <!-- [Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent) -->
 <!-- #### References -->
 <!-- ###### General guides -->
-<!-- [Merow, C., Smith, M., and Silander, J.A. (2013) A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography 36, 1-12.](http://onlinelibrary.wiley.com/doi/10.1111/j.1600-0587.2013.07872.x/abstract) -->
-<!-- [Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., and Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](http://press.princeton.edu/titles/9641.html) -->
-<!-- [Renner, I.W., Elith, J., Baddeley, A., Fithian, W., Hastie, T., Phillips, S.J., . . . Warton, D.I. (2015) Point process models for presence-only analysis. Methods in Ecology and Evolution 6, 366-379.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12352/abstract) -->
+<!-- [Merow, C., Smith, M., and Silander, J.A. (2013) A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography 36, 1-12.](https://onlinelibrary.wiley.com/doi/10.1111/j.1600-0587.2013.07872.x/abstract) -->
+<!-- [Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., and Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](https://press.princeton.edu/titles/9641.html) -->
+<!-- [Renner, I.W., Elith, J., Baddeley, A., Fithian, W., Hastie, T., Phillips, S.J., . . . Warton, D.I. (2015) Point process models for presence-only analysis. Methods in Ecology and Evolution 6, 366-379.](https://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12352/abstract) -->
 <!-- ###### Model Evaluation -->
-<!-- [Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., and Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography 38, 541-545.](http://onlinelibrary.wiley.com/doi/10.1111/ecog.01132/abstract) -->
-<!-- [Fielding, A.H. and Bell, J.F. (1997) A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf) -->
-<!-- [Hijmans, R.J. (2012) Cross-validation of species distribution models: removing spatial sorting bias and calibration with a null model. Ecology 93, 679-688.](http://onlinelibrary.wiley.com/doi/10.1890/11-0826.1/abstract) -->
-<!-- [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full) -->
-<!-- [Radosavljevic, A. and Anderson, R.P. (2014) Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](http://onlinelibrary.wiley.com/doi/10.1111/jbi.12227/abstract) -->
-<!-- [Shcheglovitova, M. and Anderson, R.P. (2013) Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecol. Model. 269, 9-17.](http://www.sciencedirect.com/science/article/pii/S0304380013004043) -->
-<!-- [Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36, 2290-2299.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2009.02174.x/abstract) -->
-<!-- [Wenger, S.J. and Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution 3, 260-267.](http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00170.x/abstract) -->
+<!-- [Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., and Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography 38, 541-545.](https://onlinelibrary.wiley.com/doi/10.1111/ecog.01132/abstract) -->
+<!-- [Fielding, A.H. and Bell, J.F. (1997) A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf) -->
+<!-- [Hijmans, R.J. (2012) Cross-validation of species distribution models: removing spatial sorting bias and calibration with a null model. Ecology 93, 679-688.](https://onlinelibrary.wiley.com/doi/10.1890/11-0826.1/abstract) -->
+<!-- [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods Ecol Evol, 5: 1198–1205.](https://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full) -->
+<!-- [Radosavljevic, A. and Anderson, R.P. (2014) Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](https://onlinelibrary.wiley.com/doi/10.1111/jbi.12227/abstract) -->
+<!-- [Shcheglovitova, M. and Anderson, R.P. (2013) Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecol. Model. 269, 9-17.](https://www.sciencedirect.com/science/article/pii/S0304380013004043) -->
+<!-- [Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36, 2290-2299.](https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2009.02174.x/abstract) -->
+<!-- [Wenger, S.J. and Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution 3, 260-267.](https://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00170.x/abstract) -->
 <!-- ###### Some examples -->
-<!-- [Pearson, R.G., Raxworthy, C.J., Nakamura, M., and Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2006.01594.x/abstract) -->
+<!-- [Pearson, R.G., Raxworthy, C.J., Nakamura, M., and Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2006.01594.x/abstract) -->

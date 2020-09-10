@@ -21,7 +21,7 @@ When \code{labels = FALSE}, the following additional arguments are added:
 
 \code{noaddsamplestobackground, noremoveDuplicates, noautofeature}.
 
-For details on these arguments, see Phillips \emph{et al.} (2006) and the help documentation and tutorial of the Maxent software and the tutorial that can be downloaded from \href{http://www.cs.princeton.edu/~schapire/maxent/}{this website}.
+For details on these arguments, see Phillips \emph{et al.} (2006) and the help documentation and tutorial of the Maxent software and the tutorial that can be downloaded from \href{https://www.cs.princeton.edu/~schapire/maxent/}{this website}.
 }
 
 \value{
