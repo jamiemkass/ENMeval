@@ -1,6 +1,7 @@
 ENMeval 0.3.1
 ===========
 o  Vignette no longer uses spocc to download occurrences due to intermittent problems downloading from GBIF. This data is now loaded from a RDS file.
+o  Various URL changes in vignette.
 
 
 ENMeval 0.3.0
