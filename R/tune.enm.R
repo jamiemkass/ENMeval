@@ -123,7 +123,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   if (is.null(numCores)) {
     numCores <- allCores
   }
-  cl <- parallel::makeCluster(numCores)
+  cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
   if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
