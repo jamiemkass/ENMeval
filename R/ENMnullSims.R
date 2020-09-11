@@ -22,8 +22,8 @@
 #'
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
-ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, 
-                     userStats.signs = NULL, removeMxTemp = TRUE, quiet = FALSE) {
+ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.signs = NULL, removeMxTemp = TRUE, 
+                        parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
 
   # assign evaluation type based on partition method
   eval.type <- switch(e@partition.method,
@@ -78,16 +78,33 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL,
   # build null models ####
   ############################## #
 
-  # initialize list to record stats for null iteration i
-  nulls.ls <- list()
-  nulls.grp.ls <- list()
-
   if(quiet == FALSE) message(paste("Building and evaluating null ENMs with", no.iter, "iterations..."))
-  if(quiet == FALSE) message("Sampling null occurrences from background values...")
-  if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
 
-  for(i in 1:no.iter) {
-
+  # set up parallel processing functionality
+  if(parallel == TRUE) {
+    allCores <- parallel::detectCores()
+    if (is.null(numCores)) {
+      numCores <- allCores
+    }
+    cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
+    if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
+    
+    if(parallelType == "doParallel") {
+      doParallel::registerDoParallel(cl)
+      opts <- NULL
+    } else if(parallelType == "doSNOW") {
+      doSNOW::registerDoSNOW(cl)
+      if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
+    }
+    numCoresUsed <- foreach::getDoParWorkers()
+    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
+    if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))  
+  }else{
+    if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
+  }
+  
+  # define function to run null model for iteration i
+  null_i <- function(i) {
     null.occs.ik <- list()
     if(eval.type == "kspatial") {
       # randomly sample the same number of training occs over each k partition
@@ -110,7 +127,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL,
         null.occs.ik[[k]] <- null.samps[samp.k, ]
       }
     }
-
+    
     # bind rows together to make full null occurrence dataset
     null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
     if(eval.type == "knonspatial") {
@@ -127,31 +144,50 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL,
     user.val.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
-
+    if(length(categoricals) == 0) categoricals <- NULL
+    
     null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
                             algorithm = e@algorithm, other.args = e.s$other.args, partitions = "user",
                             user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
                             aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
                             pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
-    if(quiet == FALSE) setTxtProgressBar(pb, i)
-
-    nulls.ls[[i]] <- null.e.i@results
-    nulls.grp.ls[[i]] <- null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything())
+    
+    
+    out <- list(results = null.e.i@results, 
+                results.partitions = null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything()))
     
     # restore NA row if partition evaluation is missing (model was NULL)
-    allParts <- unique(user.grp$occs.grp) %in% nulls.grp.ls[[i]]$fold
+    allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
     if(!all(allParts)) {
       inds <- which(allParts == FALSE)
-      newrow <- nulls.grp.ls[[i]][1,]
+      newrow <- out$results.partitions[1,]
       newrow[,4:ncol(newrow)] <- NA
       for(ind in inds) {
-        nulls.grp.ls[[i]] <- bind_rows(nulls.grp.ls[[i]], newrow %>% mutate(fold = ind))  
+        out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
       }
-      nulls.grp.ls[[i]] <- arrange(nulls.grp.ls[[i]], fold)
+      out$results.partitions <- arrange(out$results.partitions, fold)
     }
+    return(out)
   }
+  
+  if(parallel == TRUE) {
+    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .export = "null_i", .packages = c("dplyr", "ENMeval")) %dopar% {
+      null_i(i)
+    }
+  }else{
+    outs <- list()
+    for(i in 1:no.iter) {
+      outs[[i]] <- null_i(i)
+      if(quiet == FALSE) setTxtProgressBar(pb, i)
+    }  
+  }
+  
+  if(quiet != TRUE) close(pb)
+  if(parallel == TRUE) parallel::stopCluster(cl)
 
   # assemble null evaluation statistics and take summaries
+  nulls.ls <- lapply(outs, function(x) x$results)
+  nulls.grp.ls <- lapply(outs, function(x) x$results.partitions)
   nulls <- dplyr::bind_rows(nulls.ls)
   nulls.grp <- dplyr::bind_rows(nulls.grp.ls)
   nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarize_all(mean)
