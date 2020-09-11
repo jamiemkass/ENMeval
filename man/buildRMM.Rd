@@ -4,7 +4,7 @@
 \alias{buildRMM}
 \title{Build metadata object from ENMeval results}
 \usage{
-buildRMM(e, envs)
+buildRMM(e, envs, rmm = NULL)
 }
 \arguments{
 \item{e}{ENMevaluation object}
