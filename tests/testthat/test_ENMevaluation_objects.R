@@ -13,7 +13,6 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, raster::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
 
-
 # testing functions 
 test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg, type = "") {
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)

@@ -2,11 +2,13 @@
 # maxnet ENMdetails object ####
 ################################# #
 
-name <- "maxnet"
+maxnet.name <- "maxnet"
 
-fun <- maxnet::maxnet
+maxnet.fun.train <- maxnet::maxnet
+  
+maxnet.fun.val <- maxnet.fun.train
 
-msgs <- function(tune.args) {
+maxnet.msgs <- function(tune.args, other.settings) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
     stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
   }else{
@@ -22,7 +24,7 @@ msgs <- function(tune.args) {
   }
 }
 
-args <- function(occs.z, bg.z, tune.i, other.settings) {
+maxnet.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   out$data <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
@@ -35,7 +37,11 @@ args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-predict <- function(mod, envs, other.settings) {
+maxnet.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
+  maxnet.args.train(occs.z, bg.z, tune.i, other.settings)
+}
+
+maxnet.predict <- function(mod, envs, other.settings) {
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "BasicRaster") == TRUE) {
@@ -53,15 +59,16 @@ predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-ncoefs <- function(mod) {
+maxnet.ncoefs <- function(mod) {
   length(mod$betas)
 }
 
 # no existing method in model object for variable importance
-varimp <- function(mod) {
+maxnet.varimp <- function(mod) {
   NULL
 }
 
 #' @export
-enm.maxnet <- ENMdetails(name = name, fun = fun, msgs = msgs, args = args, 
-                         predict = predict, ncoefs = ncoefs, varimp = varimp)
+enm.maxnet <- ENMdetails(name = maxnet.name, fun.train = maxnet.fun.train, fun.val = maxnet.fun.val,
+                         msgs = maxnet.msgs, args.train = maxnet.args.train, args.val = maxnet.args.val,
+                         predict = maxnet.predict, ncoefs = maxnet.ncoefs, varimp = maxnet.varimp)
