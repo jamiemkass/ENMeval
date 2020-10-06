@@ -9,9 +9,12 @@ ENMnullSims(
   mod.settings,
   no.iter,
   user.enm = NULL,
-  user.bg.partition = NULL,
   userStats.signs = NULL,
-  removeMxTemp = TRUE
+  removeMxTemp = TRUE,
+  parallel = FALSE,
+  numCores = NULL,
+  parallelType = "doSNOW",
+  quiet = FALSE
 )
 }
 \arguments{
@@ -22,9 +25,6 @@ ENMnullSims(
 \item{no.iter}{numeric of number of null model iterations}
 
 \item{user.enm}{ENMdetails object specified by the user}
-
-\item{user.bg.partition}{numeric vector designating user-defined partition groups (folds) for \code{bg};
-this is necessary for user-defined partitions so that background points can be sampled as null occurrences}
 
 \item{userStats.signs}{named list of user-defined evaluation statistics attributed with
 either 1 or -1 to designate whether the expected difference between real and null models is 

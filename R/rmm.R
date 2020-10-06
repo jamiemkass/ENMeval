@@ -28,6 +28,9 @@ buildRMM <- function(e, envs, rmm = NULL) {
     rmm$data$environment$projection <- as.character(raster::crs(envs)) 
   }
   
+  # settings for tuning
+  rmm$model$tuneSettings <- e@tune.settings
+  
   # partition metadata ####
   rmm$model$partition$numberFolds <- length(unique(e@occs.grp))
 
@@ -79,28 +82,40 @@ buildRMM <- function(e, envs, rmm = NULL) {
   # model metadata ####
   if(e@algorithm == "maxent.jar") {
     rmm$model$algorithms <- paste(e@algorithm, maxentJARversion())
+    rmm$model$algorithmCitation <- "Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E., & Blair, M. E. (2017). Opening the black box: An open‐source release of Maxent. Ecography, 40(7), 887-893."
   }
   if(e@algorithm == "maxnet") {
     rmm$model$algorithms <- paste(e@algorithm, packageVersion("maxnet"))
+    rmm$model$algorithmCitation <- citation("maxnet")
   }
   if(e@algorithm == "boostedRegressionTrees") {
     rmm$model$algorithms <- paste(e@algorithm, "using gbm", packageVersion('gbm'), "and dismo", packageVersion("dismo"))
-    rmm$model$algorithm$boostedRegressionTrees$interactionDepth <- unique(e@tune.settings$tree.complexity)
-    rmm$model$algorithm$boostedRegressionTrees$bagFraction <- unique(e@tune.settings$bag.fraction)
-    rmm$model$algorithm$boostedRegressionTrees$learningRate <- unique(e@tune.settings$learning.rate)
-    rmm$model$algorithm$boostedRegressionTrees$distribution <- "binomial"
-    rmm$model$algorithm$boostedRegressionTrees$nTrees <- sapply(e@models, function(x) x$n.trees)
-    rmm$model$algorithm$boostedRegressionTrees$shrinkage <- sapply(e@models, function(x) x$shrinkage)
-    rmm$model$algorithm$boostedRegressionTrees$notes <- "nTrees estimated with gbm.step() in dismo R package"
+    rmm$model$algorithmCitation <- c(citation("dismo"), citation("gbm"))
+    rmm$model$algorithm$brt$interactionDepth <- unique(e@tune.settings$tree.complexity)
+    rmm$model$algorithm$brt$bagFraction <- unique(e@tune.settings$bag.fraction)
+    rmm$model$algorithm$brt$learningRate <- unique(e@tune.settings$learning.rate)
+    rmm$model$algorithm$brt$distribution <- "binomial"
+    rmm$model$algorithm$brt$nTrees <- sapply(e@models, function(x) x$n.trees)
+    rmm$model$algorithm$brt$shrinkage <- sapply(e@models, function(x) x$shrinkage)
+    rmm$model$algorithm$brt$notes <- "nTrees estimated with gbm.step() in dismo R package"
+  }
+  if(e@algorithm == "randomForest") {
+    rmm$model$algorithms <- paste(e@algorithm, "using randomForest", packageVersion('randomForest'))
+    rmm$model$algorithmCitation <- citation("randomForest")
+    rmm$model$algorithm$randomForest$ntree <- unique(e@tune.settings$ntree)
+    rmm$model$algorithm$randomForest$mtry <- unique(e@tune.settings$mtry)
+    rmm$model$algorithm$randomForest$maxnodes <- "default: maximum possible"
   }
   if(e@algorithm == "bioclim") {
     rmm$model$algorithms <- paste(e@algorithm, "using dismo", packageVersion("dismo"))
+    rmm$model$algorithmCitation <- "Booth, T. H., Nix, H. A., Busby, J. R., & Hutchinson, M. F. (2014). BIOCLIM: the first species distribution modelling package, its early applications and relevance to most current MAXENT studies. Diversity and Distributions, 20(1), 1-9."
   }
   if(e@algorithm == "maxnet" | e@algorithm == "maxent.jar") {
     rmm$model$algorithm$maxent$featureSet <- unique(e@tune.settings$fc)
     rmm$model$algorithm$maxent$regularizationMultiplierSet <- unique(e@tune.settings$rm)
     rmm$model$algorithm$maxent$clamping <- e@other.settings$clamp
     rmm$model$algorithm$maxent$samplingBiasRule <- 'ignored'
+    rmm$model$algorithm$maxent$notes <- "cloglog transformation used for model predictions"
   }
   
   
