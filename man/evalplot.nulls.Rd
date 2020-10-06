@@ -4,7 +4,7 @@
 \alias{evalplot.nulls}
 \title{ENMnullSims statistics plot}
 \usage{
-evalplot.nulls(e.null, stats, plot.type)
+evalplot.nulls(e.null, stats, plot.type, facet.labs = NULL, metric.levs = NULL)
 }
 \arguments{
 \item{e.null}{ENMnull object}
