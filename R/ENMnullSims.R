@@ -127,6 +127,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL,
     user.val.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
+    if(length(categoricals) == 0) categoricals <- NULL
 
     null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
                             algorithm = e@algorithm, other.args = e.s$other.args, partitions = "user",
