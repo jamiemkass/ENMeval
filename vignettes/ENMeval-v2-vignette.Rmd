@@ -448,11 +448,47 @@ head(e.mx.proc@results.partitions)
 The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
 
 ```{r}
-# If you saved a new script for "enm.myAlgorithm.R" and specified all the internal functions, enter it to the argument "user.enm"
+# Here, we demonstrate modifying the BRT ENMdetails object to add the bag.fraction parameter for tuning and using it as a user.enm
 # NOTE: It is important to make sure that your custom algorithm can handle categorical variables if you decide to specify them as predictors
 # By default, ENMevaluate() removes categorical variables when running BIOCLIM models, but if you specify an algorithm that cannot use them,
 # you will need to exclude them yourself before running
-e.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.boostedRegressionTrees, tune.args = list(tc = 1:2, lr = c(0.01,0.001)), partitions = "block")
+my.brt <- enm.boostedRegressionTrees
+my.brt@args.train <- function(occs.z, bg.z, tune.i, other.settings) {
+  out <- list()
+  d <- rbind(occs.z, bg.z)
+  p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
+  out$data <- cbind(p, d)
+  out$tree.complexity <- tune.i$tc
+  out$learning.rate <- tune.i$lr
+  out$gbm.x <- 2:ncol(out$data)
+  out$gbm.y <- 1
+  out$family <- "bernoulli"
+  out$site.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
+  out$silent <- TRUE
+  # inserted here ############
+  out$bag.fraction <- tune.i$bf
+  # ##########################
+  out <- c(out, other.settings$other.args)
+  return(out)
+}
+my.brt@args.val <- function(occs.z, bg.z, tune.i, other.settings, mod.full = NULL) {
+  out <- list()
+  d <- rbind(occs.z, bg.z)
+  p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
+  out$data <- cbind(p, d)
+  out$formula <- formula(out$data)
+  out$n.trees <- mod.full$n.trees
+  out$interaction.depth <- tune.i$tc
+  out$shrinkage <- tune.i$lr
+  out$distribution <- "bernoulli" 
+  out$weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
+  # inserted here ############
+  out$bag.fraction <- tune.i$bf
+  # ##########################
+  out <- c(out, other.settings$other.args)
+  return(out)
+}
+e.userENM <- ENMevaluate(occs, envs, bg, user.enm = my.brt, tune.args = list(tc = 1:2, lr = c(0.01,0.001), bf = c(0.5, 0.75)), partitions = "block")
 ```
 
 #### Exploring the results {#eval.explore}
