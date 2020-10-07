@@ -104,7 +104,13 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
   
   # perform user-specified validation statistics if available
   if(is.function(user.eval)) {
-    user.eval.out <- user.eval(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, other.settings, partitions)  
+    vars <- list(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, 
+                 other.settings, partitions, occs.train.pred, occs.val.pred,
+                 bg.train.pred, bg.val.pred)
+    names(vars) <- c("enm", "occs.train.z", "occs.val.z", "bg.train.z", "bg.val.z", "mod.k", "nk", 
+                        "other.settings", "partitions", "occs.train.pred", "occs.val.pred",
+                        "bg.train.pred", "bg.val.pred")
+    user.eval.out <- user.eval(vars)
   }else{
     user.eval.out <- NULL
   }
