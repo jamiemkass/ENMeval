@@ -445,14 +445,14 @@ head(e.mx.proc@results)
 head(e.mx.proc@results.partitions)
 ```
 
-The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has a some simple functions to define that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
+The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
 
 ```{r}
 # If you saved a new script for "enm.myAlgorithm.R" and specified all the internal functions, enter it to the argument "user.enm"
 # NOTE: It is important to make sure that your custom algorithm can handle categorical variables if you decide to specify them as predictors
 # By default, ENMevaluate() removes categorical variables when running BIOCLIM models, but if you specify an algorithm that cannot use them,
 # you will need to exclude them yourself before running
-e.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.myAlgorithm, tune.args = tune.args, partitions = "block")
+e.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.boostedRegressionTrees, tune.args = list(tc = 1:2, lr = c(0.01,0.001)), partitions = "block")
 ```
 
 #### Exploring the results {#eval.explore}
