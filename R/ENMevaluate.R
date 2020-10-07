@@ -268,7 +268,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # ASSIGN CATEGORICAL VARIABLES ####
   ################################# #
   
-  # convert fields for categorical data to factor class
+  # find factor rasters or columns and identify them as categoricals
+  if(!is.null(envs)) {
+    categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+  }else{
+    categoricals <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
+  }
+  
+  # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
       if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
