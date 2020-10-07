@@ -13,7 +13,7 @@ brt.msgs <- function(tune.args, other.settings) {
     stop('Boosted regression trees settings must include "tc" (tree complexity, or "interaction depth") and "lr" (learning rate, or "shrinkage"). See ?tune.args for details')
   }
   # construct user message with version info
-  msg <- paste0("Boosted regression trees tuned for optimal tree number with gbm.step() from dismo package v", packageVersion('dismo'), "and validated with gbm() function from gbm package v", packageVersion('gbm'))
+  msg <- paste0("Boosted regression trees tuned for optimal tree number with gbm.step() from dismo package v", packageVersion('dismo'), " and validated with gbm() function from gbm package v", packageVersion('gbm'))
   return(msg)
 }
 
