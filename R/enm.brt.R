@@ -28,6 +28,7 @@ brt.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out$gbm.x <- 2:ncol(out$data)
   out$gbm.y <- 1
   out$family <- "bernoulli"
+  out$site.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
   # out$silent <- TRUE
   out <- c(out, other.settings$other.args)
   return(out)
@@ -43,7 +44,8 @@ brt.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod.full = NULL) 
   out$n.trees <- mod.full$n.trees
   out$interaction.depth <- tune.i$tc
   out$shrinkage <- tune.i$lr
-  out$distribution <- "bernoulli"  
+  out$distribution <- "bernoulli" 
+  out$weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
   out <- c(out, other.settings$other.args)
   return(out)
 }
