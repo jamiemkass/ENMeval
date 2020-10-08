@@ -104,7 +104,13 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
   
   # perform user-specified validation statistics if available
   if(is.function(user.eval)) {
-    user.eval.out <- user.eval(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, other.settings, partitions)  
+    vars <- list(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, 
+                 other.settings, partitions, occs.train.pred, occs.val.pred,
+                 bg.train.pred, bg.val.pred)
+    names(vars) <- c("enm", "occs.train.z", "occs.val.z", "bg.train.z", "bg.val.z", "mod.k", "nk", 
+                        "other.settings", "partitions", "occs.train.pred", "occs.val.pred",
+                        "bg.train.pred", "bg.val.pred")
+    user.eval.out <- user.eval(vars)
   }else{
     user.eval.out <- NULL
   }
@@ -123,7 +129,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   if (is.null(numCores)) {
     numCores <- allCores
   }
-  cl <- parallel::makeCluster(numCores)
+  cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
   if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
@@ -182,8 +188,11 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   bg.xy <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
   bg.z <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(all_of(envs.names))
   # build the full model from all the data
-  mod.full.args <- enm@args(occs.z, bg.z, tune.i, other.settings)
-  mod.full <- do.call(enm@fun, mod.full.args)
+  # set the mod.type to "train" in case training and testing models are
+  # set to run differently
+  mod.full.args <- enm@args.train(occs.z, bg.z, tune.i, other.settings)
+  # run training model with specified arguments
+  mod.full <- do.call(enm@fun.train, mod.full.args)
   if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters.')
   # make full model prediction as raster using raster envs (if raster envs exists) 
   # or full model prediction table using the occs and bg values (if raster envs does not exist)
@@ -243,10 +252,10 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
     # as the full model (mod.full) to avoid having to refit the same model
     if(nk != 1) {
       # define model arguments for current model k
-      mod.k.args <- enm@args(occs.train.z, bg.train.z, tune.i, other.settings)
-      # run the current model k
+      mod.k.args <- enm@args.val(occs.train.z, bg.train.z, tune.i, other.settings, mod.full)
+      # run model k with specified arguments
       mod.k <- tryCatch({
-        do.call(enm@fun, mod.k.args)  
+        do.call(enm@fun.val, mod.k.args)  
       }, error = function(cond) {
         if(quiet != TRUE) message(paste0("\n", cond, "\n"))
         # Choose a return value in case of error

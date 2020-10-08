@@ -167,6 +167,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     enm <- user.enm
   }
   
+  # put all settings into list
+  other.settings <- list(other.args = other.args, clamp = clamp, pred.type = pred.type, 
+                         abs.auc.diff = abs.auc.diff, validation.bg = validation.bg)
+  
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
   ########################################################### #
@@ -241,23 +245,46 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
   }
   
+  ############################################ #
+  # ADD TESTING DATA (IF INPUT) ####
+  ############################################ #
+  
+  # add testing data to main df if provided
+  if(partitions == "testing") {
+    occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
+    occs.testing.z <- cbind(occs.testing, occs.testing.z)
+    occs.testing.z$pb <- 1
+    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the testing data
+    # and the second iteration is not performed
+    occs.testing.z$grp <- 1
+    user.val.grps <- occs.testing.z
+    # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
+    # d$grp <- factor(d$grp, levels = 0:2)
+    # and then add the testing data with grp value 1
+    # d <- rbind(d, occs.testing.z)
+  }
+  
   ################################# #
   # ASSIGN CATEGORICAL VARIABLES ####
   ################################# #
   
-  # convert fields for categorical data to factor class
+  # find factor rasters or columns and identify them as categoricals
+  if(!is.null(envs)) {
+    categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+  }else{
+    categoricals <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
+  }
+  
+  # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      if(enm@name == "bioclim") {
-        if(quiet != TRUE) message("* As specified model is BIOCLIM, removing categorical variables.")
-        d[, categoricals[i]] <- NULL
-        envs <- raster::dropLayer(envs, categoricals)
-      }else{
-        if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
-        d[, categoricals[i]] <- as.factor(d[, categoricals[i]])  
-      }
+      if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
+      d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
+      if(!is.null(user.val.grps)) user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], levels = levels(d[, categoricals[i]]))
     }
   }
+  # drop categoricals designation in other.settings to feed into other functions
+  other.settings$categoricals <- categoricals
   
   ###################### #
   # ASSIGN PARTITIONS ####
@@ -286,14 +313,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # choose a user message reporting on partition choice
   parts.message <- switch(partitions,
-                      jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
-                      randomkfold = paste0("* Model evaluations with random ", kfolds, "-fold cross validation..."),
-                      block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", orientation, " orientation..."),
-                      checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
-                      checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
-                      user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
-                      testing = "* Model evaluations with testing data...",
-                      none = "* Skipping model evaluations (only calculating full model statistics)...")
+                          jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
+                          randomkfold = paste0("* Model evaluations with random ", kfolds, "-fold cross validation..."),
+                          block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", orientation, " orientation..."),
+                          checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
+                          checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
+                          user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
+                          testing = "* Model evaluations with testing data...",
+                          none = "* Skipping model evaluations (only calculating full model statistics)...")
   if(quiet != TRUE) message(parts.message)
   
   # record partition settings
@@ -306,29 +333,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # if jackknife partitioning, do not calculate CBI because there are too few validation occurrences
   # per partition (n=1) to have a meaningful result
-  if(partitions == "jackknife") cbi.cv <- FALSE else cbi.cv <- TRUE
+  if(partitions == "jackknife") other.settings$cbi.cv <- FALSE else other.settings$cbi.cv <- TRUE
   
   # add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
-  
-  ############################################ #
-  # ADD TESTING DATA (IF INPUT) ####
-  ############################################ #
-  
-  # add testing data to main df if provided
-  if(partitions == "testing") {
-    occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
-    occs.testing.z <- cbind(occs.testing, occs.testing.z)
-    occs.testing.z$pb <- 1
-    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the testing data
-    # and the second iteration is not performed
-    occs.testing.z$grp <- 1
-    user.val.grps <- occs.testing.z
-    # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
-    # d$grp <- factor(d$grp, levels = 0:2)
-    # and then add the testing data with grp value 1
-    # d <- rbind(d, occs.testing.z)
-  }
   
   ################# #
   # MODEL TUNING #### 
@@ -336,9 +344,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # print model-specific message
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args, other.settings), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
   }
   
   # make table for all tuning parameter combinations
@@ -347,10 +355,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # this makes it easier to use tune.i as a parameter in function calls
   # when tune.args does not exist
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
-  
-  # put all settings into list
-  other.settings <- list(other.args = other.args, clamp = clamp, pred.type = pred.type, 
-                         abs.auc.diff = abs.auc.diff, validation.bg = validation.bg, cbi.cv = cbi.cv)
   
   if(parallel) {
     results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, user.eval, quiet)  

@@ -4,7 +4,16 @@
 \alias{evalplot.stats}
 \title{ENMevaluation statistics plot}
 \usage{
-evalplot.stats(e, stats, x, col, dodge = NULL, error.bars = TRUE)
+evalplot.stats(
+  e,
+  stats,
+  x,
+  col,
+  dodge = NULL,
+  error.bars = TRUE,
+  facet.labs = NULL,
+  metric.levs = NULL
+)
 }
 \arguments{
 \item{e}{ENMevaluation object}
