@@ -8,26 +8,29 @@
 #' @usage lhs \%>\% rhs
 NULL
 
-#' @export
-# remove.env.na <- function(d) {
-#   d.envs <- d[,3:ncol(d)]
-#   ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
-#   names(ind.NA) <- NULL
-#   d.envs.NA <- d.envs[ind.NA,]
-#   ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]
-#   ind.NA.bg <- ind.NA[which(d.envs.NA$pb == 0)]
-#   occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
-#   bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
-#   if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
-#     envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
-#                             length(ind.NA.occs) > 0 ~ occs.msg,
-#                             length(ind.NA.bg) > 0 ~ bg.msg)
-#     message(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis..."))
-#     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
-#     return(d.naRem)    
-#   }
-#   return(d)
-# }
+#' @title User-specified evaluation function for model validation
+#' @name user.eval
+#' @usage my.user.eval <- myFunc(vars)
+#' ENMevaluate(..., user.eval = my.user.eval)
+#' @description This is a custom function for specifying performance metrics not included in ENMeval.
+#' The function must be first defined and then input as the argument "user.eval" into ENMevaluate(). 
+#' This function has a single argument called "vars", which is a list that includes different data 
+#' that can be used to calculate the metric. Below is the list of data included in vars, which can
+#' be accessed with $, as in vars$occs.train.z. See the vignette for a worked example.
+#' @param enm ENMdetails object containing the algorithm
+#' @param occs.train.z data frame: predictor variable values for training occurrences
+#' @param occs.val.z data frame: predictor variable values for validation occurrences
+#' @param bg.train.z data frame: predictor variable values for training background
+#' @param bg.val.z data frame: predictor variable values for validation background
+#' @param mod.k Model object for current partition (k)
+#' @param nk numeric: number of folds (i.e., partitions)
+#' @param other.settings list: other settings specified in ENMevaluate()
+#' @param partitions character: name of the partition method (e.g., "block")
+#' @param occs.train.pred numeric: predictions made by mod.k for training occurrences
+#' @param occs.val.pred numeric: predictions made by mod.k for validation occurrences
+#' @param bg.train.pred numeric: predictions made by mod.k for training background
+#' @param bg.val.pred numeric: predictions made by mod.k for validation background
+NULL
 
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
@@ -263,114 +266,6 @@ lookup.enm <- function(algorithm) {
   return(x)
 }
 
-#' # Modified version of dismo::mess
-#' # This version ignores raster cells with NA for every variable, and it also
-#' # removes variables that result in all Inf values (probably because the values for
-#' # that variable for "v" are all 0), thus avoiding the generation of -Inf values and the corresponding warnings
-#' enmeval.messi3 <- function(p,v) {
-#'   # seems 2-3 times faster than messi2
-#'   v <- stats::na.omit(v)
-#'   f <- 100*findInterval(p, sort(v)) / length(v)
-#'   minv <- min(v)
-#'   maxv <- max(v)
-#'   res <- 2*f 
-#'   f[is.na(f)] <- -99
-#'   i <- f>50 & f<100
-#'   res[i] <- 200-res[i]
-#'   
-#'   i <- f==0 
-#'   res[i] <- 100*(p[i]-minv)/(maxv-minv)
-#'   i <- f==100
-#'   res[i] <- 100*(maxv-p[i])/(maxv-minv)
-#'   res
-#' }
-#' 
-#' #' @export
-#' enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
-#'   
-#'   stopifnot(NCOL(v) == raster::nlayers(x))
-#'   out <- raster(x)
-#'   nl <- raster::nlayers(x)
-#'   filename <- trim(filename)
-#'   nms <- paste(names(x), '_mess', sep='')
-#'   
-#'   if (canProcessInMemory(x)) {
-#'     x <- getValues(x)
-#'     if (nl == 1) {
-#'       rmess <- enmeval.messi3(x, v)
-#'       names(out) <- 'mess'
-#'       out <- setValues(out, rmess)
-#'     } else {
-#'       x <- sapply(1:ncol(x), function(i) enmeval.messi3(x[,i], v[,i]))
-#'       colRemove <- numeric(ncol(x)) + 1
-#'       for(i in 1:ncol(x)) if(sum(is.infinite(x[,i])) == length(na.omit(x[,i]))) colRemove[i] <- 0
-#'       x <- x[,colRemove]
-#'       rmess <- apply(x, 1, function(x) ifelse(!all(is.na(x)), min(x, na.rm=TRUE), NA))
-#'       if (full) {
-#'         out <- brick(out, nl=nl+1)
-#'         names(out) <- c(nms, "mess")
-#'         out <- setValues(out, cbind(x, rmess))
-#'       } else {
-#'         names(out) <- 'mess'
-#'         out <- setValues(out, rmess)
-#'       }
-#'     }	
-#'     if (filename != '') {
-#'       out <- writeRaster(out, filename, ...)
-#'     }
-#'     return(out)
-#'     
-#'   } else {
-#'     
-#'     if (nl == 1) {
-#'       
-#'       names(out) <- "mess"
-#'       tr <- blockSize(out)
-#'       pb <- pbCreate(tr$n, ...)	
-#'       out <- writeStart(out, filename, ...)
-#'       for (i in 1:tr$n) {
-#'         vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-#'         vv <- enmeval.messi3(vv, v)
-#'         out <- writeValues(out, vv, tr$row[i])
-#'         pbStep(pb) 
-#'       }
-#'       
-#'     } else {
-#'       
-#'       if (full) {
-#'         out <- brick(out, nl=nl+1)
-#'         names(out) <- c(nms, "mess")
-#'         tr <- blockSize(out)
-#'         pb <- pbCreate(tr$n, ...)	
-#'         out <- writeStart(out, filename, ...)
-#'         for (i in 1:tr$n) {
-#'           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-#'           vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
-#'           m <- apply(vv, 1, min, na.rm=TRUE)
-#'           out <- writeValues(out, cbind(vv, m), tr$row[i])
-#'           pbStep(pb) 
-#'         }
-#'         
-#'       } else {
-#'         
-#'         names(out) <- "mess"
-#'         tr <- blockSize(out)
-#'         pb <- pbCreate(tr$n, ...)	
-#'         out <- writeStart(out, filename, ...)
-#'         for (i in 1:tr$n) {
-#'           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-#'           vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
-#'           m <- apply(vv, 1, min, na.rm=TRUE)
-#'           out <- writeValues(out, m, tr$row[i])
-#'           pbStep(pb) 
-#'         }
-#'       }
-#'     }
-#'     out <- writeStop(out)
-#'     pbClose(pb) 
-#'   }	
-#'   out
-#' }
 
 # function to look up the version of maxent.jar
 #' @export
@@ -389,3 +284,131 @@ maxentJARversion <- function() {
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
   return(v)
 }
+
+# remove.env.na <- function(d) {
+#   d.envs <- d[,3:ncol(d)]
+#   ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
+#   names(ind.NA) <- NULL
+#   d.envs.NA <- d.envs[ind.NA,]
+#   ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]
+#   ind.NA.bg <- ind.NA[which(d.envs.NA$pb == 0)]
+#   occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
+#   bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
+#   if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
+#     envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
+#                             length(ind.NA.occs) > 0 ~ occs.msg,
+#                             length(ind.NA.bg) > 0 ~ bg.msg)
+#     message(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis..."))
+#     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
+#     return(d.naRem)    
+#   }
+#   return(d)
+# }
+
+# # Modified version of dismo::mess
+# # This version ignores raster cells with NA for every variable, and it also
+# # removes variables that result in all Inf values (probably because the values for
+# # that variable for "v" are all 0), thus avoiding the generation of -Inf values and the corresponding warnings
+# enmeval.messi3 <- function(p,v) {
+#   # seems 2-3 times faster than messi2
+#   v <- stats::na.omit(v)
+#   f <- 100*findInterval(p, sort(v)) / length(v)
+#   minv <- min(v)
+#   maxv <- max(v)
+#   res <- 2*f 
+#   f[is.na(f)] <- -99
+#   i <- f>50 & f<100
+#   res[i] <- 200-res[i]
+#   
+#   i <- f==0 
+#   res[i] <- 100*(p[i]-minv)/(maxv-minv)
+#   i <- f==100
+#   res[i] <- 100*(maxv-p[i])/(maxv-minv)
+#   res
+# }
+# 
+# enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
+#   
+#   stopifnot(NCOL(v) == raster::nlayers(x))
+#   out <- raster(x)
+#   nl <- raster::nlayers(x)
+#   filename <- trim(filename)
+#   nms <- paste(names(x), '_mess', sep='')
+#   
+#   if (canProcessInMemory(x)) {
+#     x <- getValues(x)
+#     if (nl == 1) {
+#       rmess <- enmeval.messi3(x, v)
+#       names(out) <- 'mess'
+#       out <- setValues(out, rmess)
+#     } else {
+#       x <- sapply(1:ncol(x), function(i) enmeval.messi3(x[,i], v[,i]))
+#       colRemove <- numeric(ncol(x)) + 1
+#       for(i in 1:ncol(x)) if(sum(is.infinite(x[,i])) == length(na.omit(x[,i]))) colRemove[i] <- 0
+#       x <- x[,colRemove]
+#       rmess <- apply(x, 1, function(x) ifelse(!all(is.na(x)), min(x, na.rm=TRUE), NA))
+#       if (full) {
+#         out <- brick(out, nl=nl+1)
+#         names(out) <- c(nms, "mess")
+#         out <- setValues(out, cbind(x, rmess))
+#       } else {
+#         names(out) <- 'mess'
+#         out <- setValues(out, rmess)
+#       }
+#     }	
+#     if (filename != '') {
+#       out <- writeRaster(out, filename, ...)
+#     }
+#     return(out)
+#     
+#   } else {
+#     
+#     if (nl == 1) {
+#       
+#       names(out) <- "mess"
+#       tr <- blockSize(out)
+#       pb <- pbCreate(tr$n, ...)	
+#       out <- writeStart(out, filename, ...)
+#       for (i in 1:tr$n) {
+#         vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
+#         vv <- enmeval.messi3(vv, v)
+#         out <- writeValues(out, vv, tr$row[i])
+#         pbStep(pb) 
+#       }
+#       
+#     } else {
+#       
+#       if (full) {
+#         out <- brick(out, nl=nl+1)
+#         names(out) <- c(nms, "mess")
+#         tr <- blockSize(out)
+#         pb <- pbCreate(tr$n, ...)	
+#         out <- writeStart(out, filename, ...)
+#         for (i in 1:tr$n) {
+#           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
+#           vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
+#           m <- apply(vv, 1, min, na.rm=TRUE)
+#           out <- writeValues(out, cbind(vv, m), tr$row[i])
+#           pbStep(pb) 
+#         }
+#         
+#       } else {
+#         
+#         names(out) <- "mess"
+#         tr <- blockSize(out)
+#         pb <- pbCreate(tr$n, ...)	
+#         out <- writeStart(out, filename, ...)
+#         for (i in 1:tr$n) {
+#           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
+#           vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
+#           m <- apply(vv, 1, min, na.rm=TRUE)
+#           out <- writeValues(out, m, tr$row[i])
+#           pbStep(pb) 
+#         }
+#       }
+#     }
+#     out <- writeStop(out)
+#     pbClose(pb) 
+#   }	
+#   out
+# }

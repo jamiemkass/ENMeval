@@ -5,11 +5,12 @@
 #' @param pts Matrix or data frame of coordinates for occurrence or background data
 #' @param pts.grp Numeric vector of partition groups corresponding to data in "pts"
 #' @param pts.type Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param pts.size Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
 #' @details This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
 #' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs") {
+evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs", pts.size = 1.5) {
   if(!is.null(e)) {
     pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
@@ -34,13 +35,18 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
     pt.cols <- RColorBrewer::brewer.pal(9, "Set1")
   }
   
+  if(raster::nlayers(envs) > 1) {
+    message("Plotting first raster in stack...")
+    envs <- envs[[1]]
+  }
   envs.df <- raster::as.data.frame(envs, xy = TRUE)
   names(envs.df)[3] <- "value"
-  ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
-    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = partition)) +
+  g <- ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
+    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = partition), size = pts.size) +
     ggplot2::scale_color_manual(values = pt.cols) +
     ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
     ggplot2::coord_equal() + theme.custom
+  return(g)
 }
 
 #' @title MESS plots for partition groups
@@ -54,7 +60,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
 #' @param pts.type Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
 #' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
-#' @param plot.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
+#' @param sim.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
 #' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
 #' @param palette.dir Numeric: direction for palette plotting; either 1 or -1
 #' @param hist.bins Numeric: number of histogram bins for histogram plots; default is 30
@@ -70,11 +76,11 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL, 
-                                 bg.grp = NULL, e = NULL, envs.var = NULL, sim.type = "mess",
-                                 pts.type = "occs", plot.type = "histogram", plot.palette = NULL, 
-                                 palette.dir = 1, hist.bins = 30, return.output = FALSE) {
-  # remove for categorical rasters
+evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, occs.grp = NULL, 
+                                 bg.grp = NULL, envs.var = NULL, pts.type = c("occs", "bg"), 
+                                 sim.type = c("mess", "most_diff", "most_sim"),
+                                 hist.bins = 30, return.tbl = FALSE) {
+  # remove categorical rasters
   nr <- raster::nlayers(envs)
   cats <- numeric(nr)
   for(n in 1:nr) cats[n] <- is.factor(envs[[n]])
@@ -85,90 +91,166 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
   }
   
   if(!is.null(e)) {
-    pts <- switch(pts.type, occs = e@occs, bg = e@bg)
-    pts.grp <- switch(pts.type, occs = e@occs.grp, bg = e@bg.grp)
-    pts.z <- pts[,3:ncol(pts)]
-    pts <- cbind(pts[,1:2], partition = pts.grp)
+    pts <- rbind(e@occs, e@bg) %>% mutate(type = c(rep(1, nrow(e@occs)), rep(0, nrow(e@bg))),
+                                          partition = c(e@occs.grp, e@bg.grp))
   }else{
     pts <- switch(pts.type, occs = occs, bg = bg)
     pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
-    pts.z <- raster::extract(envs, pts) %>% as.data.frame()
-    pts <- cbind(pts, partition = factor(pts.grp))
+    pts.z <- raster::extract(envs, pts)
+    pts.plot <- bind_cols(pts, pts.z, partition = factor(pts.grp))
   }
-  names(pts)[1:2] <- c("longitude","latitude")
-  pts$id <- row.names(pts)
+  names(pts.plot)[1:2] <- c("longitude","latitude")
   
-  vals <- data.frame(pts.z, partition = pts.grp) 
-  
-  test.mss <- list()
-  ras.mss <- list()
+  test.sim <- list()
   nk <- length(unique(pts.grp))
+  
   for(k in 1:nk) {
-    test.z <- vals %>% dplyr::filter(partition == k) %>% dplyr::select(-partition)
-    train.xy <- pts %>% dplyr::filter(partition != k) %>% dplyr::select(-partition)
+    test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
+    train.z <- pts.plot %>% dplyr::filter(partition != k) %>% dplyr::select(-longitude, -latitude, -partition)
     if(!is.null(envs.var)) {
-      sim <- rmaxent::similarity(envs, test.z, full = TRUE)
-      mss <- sim$similarity[[envs.var]]
-      names(mss) <- "mess"
-    }else{
-      sim <- rmaxent::similarity(envs, test.z)
-      mss <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
+      test.z <- test.z %>% select(all_of(envs.var))
+      train.z <- train.z %>% select(all_of(envs.var))
     }
+    sim <- rmaxent::similarity(train.z, test.z)
+    mss <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
     
-    ras.mss[[k]] <- mss
-    mss.x <- raster::extract(mss, train.xy %>% select(-id))
-    test.mss[[k]] <- data.frame(mss.x, partition = k, id = train.xy$id)
-    names(test.mss[[k]])[1] <- sim.type  
+    test.sim[[k]] <- data.frame(mss, partition = k)
+    names(test.sim[[k]])[1] <- sim.type  
   }
-  if(plot.type == "raster") {
-    rs.mss <- raster::stack(ras.mss)
-    names(rs.mss) <- gsub("layer|mess", "partition", names(rs.mss))
-    plot.df <- raster::as.data.frame(rs.mss, xy = TRUE) %>% 
-      tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
-    if(sim.type != "mess") {
-      if(is.null(plot.palette)) plot.palette <- "Set1"
-      plot.df$ras <- gsub("_var", "", plot.df$ras)
-      title.part <- switch(sim.type, most_diff = "Most different", most_sim = "Most similar")  
-      title <- paste(title.part, "variable mapped with respect to occurrence partitions")
-    }else{
-      if(is.null(plot.palette)) plot.palette <- "RdYlBu"
-      if(!is.null(envs.var)) {
-        title <- paste("MESS mapped for", envs.var, "with respect to occurrence partitions")
-      }else{
-        title <- paste("MESS mapped for all variables with respect to occurrence partitions")
-      }  
-    }
-    
-    g <- ggplot2::ggplot() + 
-      ggplot2::geom_raster(data = plot.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type)) +
-      ggplot2::geom_point(data = pts, ggplot2::aes(x = longitude, y = latitude, shape = partition)) +
-      ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
-      ggplot2::ggtitle(title) +
-      ggplot2::theme_classic()
-    if(sim.type != "mess") {
-      g <- g + ggplot2::scale_fill_brewer(palette = plot.palette, na.value = "white")
-    }else{
-      g <- g + ggplot2::scale_fill_distiller(palette = plot.palette, direction = palette.dir, na.value = "white")
-    }
-  }else if(plot.type == "histogram"){
-    plot.df <- dplyr::bind_rows(test.mss)
-    plot.df$partition <- factor(plot.df$partition)
-    g <- ggplot2::ggplot(plot.df, ggplot2::aes_string(x = sim.type, fill = "partition")) + 
-      ggplot2::geom_histogram(bins = hist.bins) +
+  
+  if(nk > 9) {
+    theme.custom <- ggplot2::guides(color = FALSE)
+    pt.cols <- rainbow(grp.n)
+  }else{
+    theme.custom <- NULL
+    pt.cols <- RColorBrewer::brewer.pal(nk, "Set1")
+  }
+  
+  plot.df <- dplyr::bind_rows(test.sim)
+  plot.df$partition <- factor(plot.df$partition)
+  if(sim.type != "mess") {
+    envs.tbl <- data.frame(sort(unique(plot.df[,1])), names(envs))
+    names(envs.tbl) <- c(sim.type, "env.var")
+    envs.tbl$env.var <- factor(envs.tbl$env.var)
+    plot.df <- plot.df %>% left_join(envs.tbl, by = sim.type)
+    title <- ifelse(sim.type == "most_diff", "Most different environmental variable\n(Differences based on training groups with respect to validation group)", 
+                    "Most similar environmental variable\n(Differences based on training groups with respect to validation group)")
+    g <- ggplot2::ggplot(plot.df, ggplot2::aes(x = env.var, fill = partition)) + 
+      ggplot2::stat_count() +
       ggplot2::facet_grid(ggplot2::vars(partition)) + 
+      ggplot2::scale_fill_manual(values = pt.cols) +
       ggplot2::theme_classic() +
+      ggplot2::geom_vline(xintercept = 0) +
+      ggplot2::ggtitle(title) +
       ggplot2::theme(
         strip.background = ggplot2::element_blank(),
         strip.text.y = ggplot2::element_blank()
       )
-  }
-  if(return.output == TRUE) {
-    out <- switch(plot.type, histogram = plot.df, raster = rs.mss)
-    return(out)
   }else{
-    g 
+    g <- ggplot2::ggplot(plot.df, ggplot2::aes(x = mess, fill = partition)) + 
+      ggplot2::geom_histogram(bins = hist.bins) +
+      ggplot2::facet_grid(ggplot2::vars(partition)) + 
+      ggplot2::scale_fill_manual(values = pt.cols) +
+      ggplot2::theme_classic() +
+      ggplot2::geom_vline(xintercept = 0) +
+      ggplot2::ggtitle("Multivariate environmental similarity\n(Differences based on training groups with respect to validation group)") +
+      ggplot2::theme(
+        strip.background = ggplot2::element_blank(),
+        strip.text.y = ggplot2::element_blank()
+      )  
+  }
+  g
+  
+  if(return.tbl == TRUE) {
+    return(plot.df)
+  }else{
+    return(g)  
   }
 }
+
+evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, occs.grp = NULL, 
+                                bg.grp = NULL, envs.var = NULL, pts.type = c("occs", "bg"), 
+                                pts.size = 1.5, mess.cols = c("red","yellow","blue"), mess.naCol = "white",
+                                sim.palette = NULL,
+                                sim.type = c("mess", "most_diff", "most_sim"), bb.buf = NULL,
+                                return.tbl = FALSE) {
+  # remove categorical rasters
+  nr <- raster::nlayers(envs)
+  cats <- numeric(nr)
+  for(n in 1:nr) cats[n] <- is.factor(envs[[n]])
+  if(sum(cats) > 0) {
+    rem.ras <- which(cats == 1)
+    message(paste("Ignoring categorical raster", names(envs)[rem.ras], "..."))
+    envs <- envs[[-rem.ras]]
+  }
+  
+  if(!is.null(e)) {
+    pts <- rbind(e@occs, e@bg) %>% mutate(type = c(rep(1, nrow(e@occs)), rep(0, nrow(e@bg))),
+                                          partition = c(e@occs.grp, e@bg.grp))
+  }else{
+    pts <- switch(pts.type, occs = occs, bg = bg)
+    pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
+    pts.z <- raster::extract(envs, pts)
+    pts.plot <- bind_cols(pts, pts.z, partition = factor(pts.grp))
+  }
+  names(pts.plot)[1:2] <- c("longitude","latitude")
+  # pts$id <- row.names(pts)
+  
+  ras.sim <- list()
+  nk <- length(unique(pts.grp))
+  
+  for(k in 1:nk) {
+    test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
+    if(!is.null(envs.var)) {
+      test.z <- test.z %>% select(all_of(envs.var))
+    }
+    sim <- rmaxent::similarity(envs, test.z)
+    sim.sel <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
+    
+    ras.sim[[k]] <- sim.sel
+  }
+  
+  rs.sim <- raster::stack(ras.sim)
+  names(rs.sim) <- gsub("layer|mess", "partition", names(rs.sim))
+  plot.df <- raster::as.data.frame(rs.sim, xy = TRUE) %>%
+    tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = "value")
+  if(!is.null(bb.buf)) {
+    plot.df <- plot.df %>% filter(x > min(pts$longitude) - bb.buf, x < max(pts$longitude) + bb.buf,
+                                  y > min(pts$latitude) - bb.buf, y < max(pts$latitude) + bb.buf)
+  }
+  if(sim.type != "mess") {
+    if(is.null(sim.palette)) sim.palette <- "Set1"
+    plot.df$ras <- gsub("_var", "", plot.df$ras)
+    plot.df$value <- factor(plot.df$value)
+    title.part <- switch(sim.type, most_diff = "Most different", most_sim = "Most similar")
+    title <- paste(title.part, "environmental variable\n(Differences based on entire extent with respect to validation group)")
+  }
+  if(sim.type == "mess") title <- "Multivariate environmental similarity\n(Differences based on entire extent with respect to validation group)"
+  
+  g <- ggplot2::ggplot() +
+    ggplot2::geom_raster(data = plot.df, ggplot2::aes(x = x, y = y, fill = value)) +
+    # geom_sf(data=west.shp2,fill="gray40",color=NA) +
+    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, shape = partition), color = "black", size = pts.size) +
+    ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
+    ggplot2::ggtitle(title) +
+    ggplot2::theme_classic()
+  if(sim.type != "mess") {
+    g <- g + ggplot2::scale_fill_brewer(palette = sim.palette, na.value = "white", breaks = levels(plot.df$value))
+  }else{
+    g <- g + ggplot2::scale_fill_gradientn(na.value = mess.naCol,
+                                           colors = mess.cols,
+                                           values = scales::rescale(c(min(plot.df$value, na.rm=TRUE), 0, 0.01,
+                                                                      max(plot.df$value, na.rm=TRUE))))
+  }
+  g
+  
+  if(return.tbl == TRUE) {
+    return(plot.df)
+  }else{
+    return(g)  
+  }
+}
+
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
 #' @param e ENMevaluation object
@@ -185,7 +267,7 @@ evalplot.grps.envSim <- function(envs, occs = NULL, bg = NULL, occs.grp = NULL,
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
+evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE, facet.labs = NULL, metric.levs = NULL) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -203,13 +285,16 @@ evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
   res.avgs <- dplyr::left_join(avgs, sds, by = join.names) %>%
     dplyr::mutate(lower = avg - sd, upper = avg + sd,
                   metric = factor(metric, levels = stats))
+  if(!is.null(facet.labs)) labeller <- as_labeller(facet.labs) else labeller <- NULL
+  if(!is.null(metric.levs)) res$metric <- factor(res$metric, levels = metric.levs)
+  if(!is.null(metric.levs)) res.avgs$metric <- factor(res.avgs$metric, levels = metric.levs)
   
   if(nrow(res.avgs) > 0) {
     if(is.null(dodge)) dodge <- 0.2
     p <- ggplot2::ggplot(res.avgs, ggplot2::aes_string(x = x, y = "avg", color = col, group = col)) + 
       ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
       ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
-      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats)) + 
+      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats), labeller = labeller) + 
       ggplot2::theme_bw()  
     if(error.bars == TRUE) {
       p + ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.5, 
@@ -223,7 +308,7 @@ evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
     ggplot2::ggplot(res, ggplot2::aes_string(x = x, y = "value", color = col, group = col)) + 
       ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
       ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
-      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats)) + 
+      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats), labeller = labeller) + 
       ggplot2::theme_bw()
   }
 }
@@ -242,7 +327,7 @@ evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE) {
 #' @return A ggplot of null model statistics. 
 #' @export
 
-evalplot.nulls <- function(e.null, stats, plot.type) {
+evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.levs = NULL) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -252,6 +337,7 @@ evalplot.nulls <- function(e.null, stats, plot.type) {
     dplyr::filter(grepl("avg", metric) | metric %in% stats) %>%
     dplyr::rename(avg = value) %>%
     dplyr::mutate(metric = gsub(".avg", "", metric))
+  if(!is.null(metric.levs)) null.avgs$metric <- factor(null.avgs$metric, levels = metric.levs)
   # null.sds <- null.res %>% 
   #   dplyr::filter(grepl("sd", metric)) %>%
   #   dplyr::rename(sd = value) %>%
@@ -264,6 +350,8 @@ evalplot.nulls <- function(e.null, stats, plot.type) {
     dplyr::select(statistic, metric, value) %>%
     tidyr::pivot_wider(names_from = statistic, values_from = value) %>%
     dplyr::rename(avg = real.mean)
+  
+  if(!is.null(facet.labs)) labeller <- as_labeller(facet.labs) else labeller <- NULL
   
   # stat.nullResults.name <- ifelse(stat == "auc.train", "auc.train", paste0(stat, ".avg"))
   # null.stats <- round(e.null@null.results[,stat.nullResults.name, drop = FALSE], 3)
@@ -290,7 +378,7 @@ evalplot.nulls <- function(e.null, stats, plot.type) {
                        `0.95 quantile` = quantile(avg, 0.95),
                        `0.99 quantile` = quantile(avg, 0.99)) %>%
       tidyr::pivot_longer(cols = `0.01 quantile`:`0.99 quantile`, names_to = "quantile", values_to = "value")
-    vlines <- rbind(vlines, real.res %>% dplyr::mutate(quantile = "real value") %>% dplyr::rename(value = avg))
+    vlines <- rbind(vlines, real.res %>% dplyr::mutate(quantile = "empirical value") %>% dplyr::rename(value = avg))
     ggplot2::ggplot(mapping = ggplot2::aes(x = avg)) + 
       ggplot2::geom_histogram(data = null.avgs, fill = "gray80") +
       ggplot2::geom_vline(data = vlines, ggplot2::aes(xintercept = value, color = quantile, linetype = quantile)) +
@@ -299,14 +387,14 @@ evalplot.nulls <- function(e.null, stats, plot.type) {
                                              `0.50 quantile` = "blue",
                                              `0.95 quantile` = "blue",
                                              `0.99 quantile` = "purple",
-                                             `real value` = "red")) +
+                                             `empirical value` = "red")) +
       ggplot2::scale_linetype_manual(values = c(`0.01 quantile` = "dotted", 
                                                 `0.05 quantile` = "dashed",
                                                 `0.50 quantile` = "solid",
                                                 `0.95 quantile` = "dashed", 
                                                 `0.99 quantile` = "dotted",
-                                                `real value` = "solid")) +
-      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1) +
+                                                `empirical value` = "solid")) +
+      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1, labeller = labeller) +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.title=ggplot2::element_blank(), 
                      legend.position="bottom")

@@ -1,6 +1,6 @@
 ---
-title: "ENMeval v1.0.0 Vignette"
-author: "Jamie M. Kass, Robert Muscarella, and Peter Galante"
+title: "ENMeval v2.0.0 Vignette"
+author: "Jamie M. Kass, Robert Muscarella, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -27,160 +27,166 @@ knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, eval=FALSE, c
 
 ## Introduction {#intro}
 
-[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated runs and evaluations of ecological niche models (ENMs, a.k.a. SDMs), which can estimate species' ranges and niche characteristics from data on species occurrences and environmental variables. 
+[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated runs and evaluations of ecological niche models (ENMs, a.k.a. species distribution models or SDMs), which can estimate species' ranges and niche characteristics using data on species occurrences and environmental variables. 
 
 Some of the most frequently used ENMs are machine learning algorithms with settings that can be "tuned" to determine optimal levels of model complexity. In implementation, this means building models of varying settings, then evaluating them and comparing their performance to select the optimal settings. Such tuning exercises can result in models that balance goodness-of-fit (i.e., avoiding overfitting) and predictive ability. Model evaluation is often done with cross validation, which consists of partitioning the data into groups, building a model with all the groups but one, evaluating this model on the left-out group, then repeating the process until all groups have been left out once.
 
-The primary function, `ENMevaluate`, does all the heavy lifting and returns several items including a table of evaluation statistics and, for each setting combination (or *run*), a model object and a raster layer showing the model prediction across the study extent. There are also options for calculating niche overlap between predictions, running in parallel to speed up computation, and more. For a more detailed description of the package, check out the open-access publication:
+The primary function `ENMevaluate` runs the full analysis and returns an `ENMevaluation` object, which contains various results including a table of evaluation statistics and model objects and prediction rasters for each combination of model settings. The package also features functionality for adding and customizing ENM algorithms and evaluations, automatic generation of metadata, a null model for calculating effect size and significance of performance metrics, various plotting tools, options for parallel computing, and more. 
 
+For a detailed description of the original `ENMeval` 0.1.0, check out the open-access publication:
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Older versions (v0.3.0 and earlier) implemented only [Maxent](http://biodiversityinformatics.amnh.org/open_source/maxent/) and [maxnet](https://cran.r-project.org/package=maxnet), but v2.0.0 and onward can implement any ENM in theory provided its settings are specified in a ENMdetails object (see below for an example). This version has additional built-in algorithms: [boosted regression trees](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x) (boostedRegressionTreess), [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144), , but users can provide their own custom model specifications. 
+Although older versions (0.3.0 and earlier) implemented only the ENM presence-only algorithm Maxent through the [Java software](http://biodiversityinformatics.amnh.org/open_source/maxent/) and R with the package  [`maxnet`](https://cran.r-project.org/package=maxnet), this new version 2.0.0 can implement any ENM in theory provided its settings are specified in a *ENMdetails* object (see below for an example). Additional built-in algorithms included in this version are specified as *ENMdetails* objects for reference: [boosted regression trees](https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2656.2008.01390.x), [random forest](https://www.researchgate.net/profile/Andy_Liaw/publication/228451484_Classification_and_Regression_by_RandomForest/links/53fb24cc0cf20a45497047ab/Classification-and-Regression-by-RandomForest.pdf), and  [BIOCLIM](https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.12144). 
 
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
 
-We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load the `ENMeval`, `dplyr` for data management, and [`spocc`](https://cran.r-project.org/package=spocc) packages (which we use to download occurrence records).
+We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the Brown-throated sloth.  We'll go ahead and load  `ENMeval` and other packages we'll be using in the vignette.
 
 ```{r occDownload}
-library(spocc)
+# Load packages -- the order here is important because some pkg functions overwrite others
+# For example, rasterVis needs to be loaded before ggplot2 or else layer() doesn't work, etc.
+# Keep in mind that conflicts such as this can lead to otherwise mysterious errors
+library(raster)
+library(dismo)
 library(dplyr)
+library(RColorBrewer)
+library(ggplot2)
+library(rasterVis)
+library(sf)
 library(ENMeval)
 
-# set a random seed for reproducibility
+# Set a random seed in order to be able to reproduce this analysis
 set.seed(48)
 
-# Search GBIF for occurrence data.
-# bv <- occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
+# You can search online databases like GBIF using the spocc package (commented below),
+# but here we will load in some pre-downloaded data
+# bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords=TRUE)
+# occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
 occs <- readRDS("data/bvariegatus.rds")
 
-# Get the latitude/coordinates for each locality. Also convert the tibble that occ() outputs
-# to a data frame for compatibility with ENMeval functions.
-# occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
-
-# Remove duplicate rows (Note that you may or may not want to do this).
+# Remove duplicate rows - doesn't change our data, but is good practice in general
 occs <- occs[!duplicated(occs),]
 ```
 
-We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `dismo` package. These climatic data are based on 50-year averages from 1950-2000. Now's also a good time to load the package, as it includes all the downstream dependencies (`raster`, `dismo`, etc.).
+We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `dismo` package from WorldClim 1.4. These climatic data are based on 50-year averages from 1950-2000.
 
 ```{r envDownload, warning=FALSE, message=FALSE, fig.width = 5, fig.height = 5}
-library(raster)
-
-# Locate some predictor raster files from the dismo folder
-files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
+# Locate the predictor raster files from the dismo folder
+envs.files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
 
 # Read the raster files into a RasterStack
-# We remove the "biome" categorical variable because categoricals can present a number of technical difficulties
-# in many of the operations we do in this vignette, but ENMevaluate is fully compatible with categorical variables
-# (as long as you declare them with argument "categoricals")
-envs <- stack(files)[[-9]]
+# These variables represent 8 bioclimatic variables and one categorical variable "biome"
+# Find the descriptions of the bioclimatic variables here: https://www.worldclim.org/data/bioclim.html
+envs <- stack(envs.files)
+# The biome raster has some NAs for cells that have values in the other rasters
+# Let's mask all rasters to biome to change the value of these cells to NA for all rasters
+# ENMeval will do this automatically, but let's do it here to avoid the warning message later
+# We change back from a RasterBrick to RasterStack because of issues with assigning factor rasters
+# for RasterBricks
+envs <- mask(envs, envs[[9]]) %>% stack()
+# Make sure to declare the categorical variable as a factor
+envs$biome <- as.factor(envs$biome)
+# Let's now remove occurrences that are cell duplicates
+# ALthough Maxent does this by default, keep in mind that for other algorithms you may
+# or may not want to do this based on the aims of your study
+occs.cells <- extract(envs[[1]], occs, cellnumbers = TRUE)
+occs.cellDups <- duplicated(occs.cells[,1])
+occs <- occs[!occs.cellDups,]
 
-# Plot first raster in the stack, bio1
-plot(envs[[1]], main=names(envs)[1])
+# Plot first raster in the stack, bio1 (mean annual temperature)
+plot(envs[[1]], main="Mean annual temperature")
 
 # Add points for all the occurrence points onto the raster
 points(occs)
 
-# There are some points east on the Amazon. Let's say we know that this represents a subpopulation that we don't want to include in the model -- we can remove these points from the analysis by subsetting the occurrences by latitude and longitude
+# There are some points east of the Amazon River 
+# Suppose we know this is a population that we don't want to include in the model
+# We can remove these points from the analysis by subsetting the occurrences by latitude and longitude
 occs <- filter(occs, latitude > -20, longitude < -45)
 
-# Plot the subsetted occurrences over the original ones to make sure we excluded the right ones
-points(occs, col='red')
+# Plot the subsetted occurrences to make sure we filtered correctly
+points(occs, col = 'red')
 
-# As we will demonstrate model evaluation using testing data, we will specify a fake testing occurrence dataset
+# We will demonstrate model evaluation using fully-withheld testing data later, so now we will specify a fake testing occurrence dataset
 occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 0, 5))
 points(occs.testing, col="blue")
 ```
 
-
-Now let's take a look at which areas of this extent are considerably different climatically with respect to environment associated with the occurrence points. To do this, we'll use the Multivariate Environmental Similarity surface, or MESS (see Elith et al. 2010 for details). Here we will use tools from the rmaxent because it also outputs maps of most similar and dissimilar variables, something that dismo::mess does not (it also avoids values of -Inf that dismo::mess often outputs). You'll need to use this code to install rmaxent, because it's not on CRAN: devtools::install_github('johnbaums/rmaxent'). We'll also use the rasterVis package because it maps categorical rasters better than base plotting functions, and the RColorBrewer package for plotting colors.
+Now let's take a look at which areas of this extent are climatically different areas associated with the occurrence points. To do this, we'll use the Multivariate Environmental Similarity surface, or MESS (see Elith et al. 2010 for details). Higher positive values indicate increasing similarity, while higher negative values indicate dissimilarity. Although the `mess()` function from the dismo package is frequently used, here we will use tools from the package [`rmaxent`](https://github.com/johnbaums/rmaxent) because it also plots maps of the most similar and dissimilar variables (and it also avoids values of -Inf that dismo::mess often outputs). We will demonstrate the `ENMeval` plotting functions for environmental similarity later.
 
 ```{r}
+# You'll need to install rmaxnet from Github because it's not on CRAN
+devtools::install_github('johnbaums/rmaxent')
 library(rmaxent)
-library(RColorBrewer)
-library(rasterVis)
+
 # First we extract the climatic variable values at the occurrence points -- these values are our "reference"
-occs.z <- extract(envs, occs)
+# We remove the categorical variable for these operations because the math is for continuous variables
+occs.z <- extract(envs[[-9]], occs)
 # Now we use the rmaxent function similarity to calculate environmental similarity metrics
 # Just as a note, you cannot input categorical variables into this function or it won't work
-occs.sim <- similarity(envs, occs.z)
+occs.sim <- similarity(envs[[-9]], occs.z)
+occs.mess <- occs.sim$similarity_min
 # This is the MESS plot -- increasingly negative values represent increasingly different climatic
 # conditions from the reference (our occurrences), while increasingly positive values are more similar
-plot(occs.sim$similarity_min)
+# First, we'll make a SpatialPoints object for our occurrences for plotting with levelplot from the rasterVis package
+# This package has great plotting functionality for rasters, and by default bins values for display when data is continuous
+occs.sp <- SpatialPoints(occs)
+# Vector data (points, polygons) are added to a levelplot with a "+", like ggplot
+levelplot(occs.mess, main = "Environmental similarity", margin = FALSE) + layer(sp.points(occs.sp, col="black"))
+# Continuous plotting can be done as demonstrated below by specifiying a scale
+myScale <- seq(cellStats(occs.mess, min), cellStats(occs.mess, max), length.out = 100)
+levelplot(occs.mess, main = "Environmental similarity", at = myScale, margin = FALSE) + layer(sp.points(occs.sp, col="black"))
 # Here we define some good colors for representing categorical variables
-cols <- brewer.pal(9, "Set1")
+cols <- brewer.pal(8, "Set1")
 # This map shows the variable for each grid cell that is most different from the reference
-levelplot(occs.sim$mod, col.regions = cols, main = "Most different variable")
+levelplot(occs.sim$mod, col.regions = cols, main = "Most different variable") + layer(sp.points(occs.sp, col="black"))
 # This map shows the variable for each grid cell that is most similar to the reference
-levelplot(occs.sim$mos, col.regions = cols, main = "Most similar variable")
+levelplot(occs.sim$mos, col.regions = cols, main = "Most similar variable") + layer(sp.points(occs.sp, col="black"))
 ```
 
 Next, we will specify the background extent by cropping our global predictor variable rasters to a smaller region. Since our models will compare the environment at occurrence (i.e., presence) localities to the environment at background localities, we need to sample random points from a background extent. To help ensure we don't include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities. We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
 
 ```{r backgExt, message=FALSE, warning=FALSE}
-library(sf)
-# library(sp)
-
-# Make occs into a sf point object
-occs.sf <- st_as_sf(occs, coords = c("longitude","latitude"), crs = 4326)
+# We'll now experiment with a different spatial R package called sf (simple features)
+# Let's make our occs into a sf object -- here we specify the coordinate reference system (crs) 
+# in order to perform spatial functions
+occs.sf <- st_as_sf(occs, coords = c("longitude","latitude"), crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 # Make sure the RasterStack has the same coordinate reference system (CRS) string
 # Both are the same CRS, but when the strings are different, some spatial functions error
-crs(envs) <- "+proj=longlat +datum=WGS84 +no_defs"
-# occs.sf <- st_transform(occs.sf, "+proj=cea +lat_ts=0 +lon_0=-65.302734375")
+crs(envs) <- crs(occs)
 
-# Buffer all occurrences by 5 degrees
-# * this will give a warning because we are not buffering in a projected coordinate system
-# * for simplicity, this vignette does not involve coordinate reference system (CRS) transformations,
-# * but for a real analysis, transforming to a projected CRS before buffering is best practice
-occs.buf <- st_buffer(occs.sf, dist = 5)
+# Buffer all occurrences by 7 degrees: this will give a warning because we are not buffering 
+# in a projected coordinate system, then union the polygons together (for visualization), and convert
+# back to a form that the raster package can use
+# We choose 7 degrees here to avoid sampling the Caribbean islands
+# For simplicity, this vignette does not involve coordinate reference system (CRS) transformations,
+# but for a real analysis, transforming to a projected CRS before buffering is best practice
+occs.buf <- st_buffer(occs.sf, dist = 7) %>% st_union() %>% st_sf()
 plot(envs[[1]], main = names(envs)[1])
-plot(occs.buf, add = TRUE)
+points(occs)
+# To add sf objects to a plot, use add = TRUE
+plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 
 # Crop environmental rasters to match the study extent
 envs.bg <- crop(envs, occs.buf)
 # Next, mask the rasters to the shape of the buffers
 envs.bg <- mask(envs.bg, occs.buf)
-```
-
-We may want to restrict the study extent to the continental areas (for example). We can use the simplified world map from the [`maptools`](https://cran.r-project.org/package=maptools) package and geoprocessing tools from the [`sf`](https://cran.r-project.org/package=sf) package to exclude the Caribbean from our study extent.
-
-```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5, warning = FALSE}
-library(maptools)
-
-# Get a simple world countries polygon
-data(wrld_simpl)
-
-# Get polygons for Central and South America
-central.amer <- wrld_simpl@data$SUBREGION==5
-south.amer <- wrld_simpl@data$SUBREGION==13
-# Subset wrld_simpl and convert to sf
-ca.sa <- st_as_sf(wrld_simpl[central.amer | south.amer,])
-
-# Buffer by 1 degree before masking to make sure you don't clip the coastline
-ca.sa.buf <- st_buffer(ca.sa, dist = 1)
-
-# Mask envs by the combined Central-South America polygon excluding the Caribbean
-envs.bg <- mask(envs.bg, ca.sa.buf)
-
-# Plot one of the new masked rasters -- we still have a few cells from the Galapagos, but are now missing the Caribbean
-plot(envs.bg[[1]], main=names(envs.bg)[1])
+plot(envs.bg[[1]], main = names(envs)[1])
 points(occs)
+plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 ```
 
 In the next step, we'll sample 10,000 random points from the background (note that the number of background points is also a consideration you should make with respect to your own study).
 
 ```{r backgPts, fig.width = 5, fig.height = 5}
-library(dismo)
-
 # Randomly sample 10,000 background points from one background extent raster (only one per cell without replacement). Note: Since the raster has <10,000 pixels, you'll get a warning and all pixels will be used for background. We will be sampling from the biome variable because it is missing some grid cells, and we are trying to avoid getting background points with NA.
-bg <- randomPoints(envs.bg[[9]], n=10000)
-bg <- as.data.frame(bg)
+bg <- randomPoints(envs.bg[[9]], n = 10000)
 colnames(bg) <- colnames(occs)
 
 # Notice how we have pretty good coverage (every cell).
-plot(envs.bg[[1]], legend=FALSE)
-points(bg, col='red', pch=20, cex=0.2)
+plot(envs.bg[[1]])
+points(bg, pch = 20, cex = 0.2)
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
@@ -204,15 +210,23 @@ block <- get.block(occs, bg)
 # Let's make sure that we have an even number of occurrences in each partition
 table(block$occs.grp)
 # We can plot our partitions on one of our predictor variable rasters to visualize where they fall in space
-evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg[[1]])
+# The ENMeval plotting functions use ggplot2, a widely popular plotting package for R with many online resources
+# We can add to the ggplots with other ggplot functions in an additive way, making these plots easily customizable
+evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg) + ggtitle("Spatial block partitions: occurrences")
 # PLotting the background shows that the background extent is partitioned in a way that maximizes evenness
 # of points across the four bins, not to maximize evenness of area
-evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg)
+evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg) + ggtitle("Spatial block partitions: background")
 # If we are curious how different the environment associated with each partition is from that of all the others,
 # we can use this function to plot histograms or rasters of MESS predictions with each partition as the reference
 # It is clear that the block method results in partitions that can differ widely in their environmental representation
-evalplot.grps.envSim(envs, occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "histogram")
-evalplot.grps.envSim(envs, occs, bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, plot.type = "raster")
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, pts.type = "occs", sim.type = "mess")
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, pts.type = "occs", sim.type = "most_diff")
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, pts.type = "occs", sim.type = "most_sim")
+# Here we plot environmental similarity values for the entire extent with respect to each validation group
+# We use the bb.buf (bounding box buffer) parameter to zoom in to our study extent
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, pts.type = "occs", sim.type = "mess", bb.buf = 7)
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, pts.type = "occs", sim.type = "most_diff", bb.buf = 7)
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = block$occs.grp, bg.grp = block$bg.grp, pts.type = "occs", sim.type = "most_sim", bb.buf = 7)
 ```
 
 #### 2. Checkerboard1 {#cb1}
@@ -227,13 +241,15 @@ evalplot.grps(pts = occs, pts.grp = cb1$occs.grp, envs = envs.bg)
 evalplot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
 # We can see from the MESS maps that this method results in similar
 # environmental representation between the partitions
-evalplot.grps.envSim(envs, occs, bg, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, plot.type = "histogram")
-evalplot.grps.envSim(envs, occs, bg, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, plot.type = "raster")
-
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, pts.type = "occs", sim.type = "mess")
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, pts.type = "occs", sim.type = "mess", bb.buf = 7)
 # We can increase the aggregation factor to give the groups bigger boxes
+# This can result in groups that are more environmentally different from each other
 cb1.large <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=30)
 evalplot.grps(pts = occs, pts.grp = cb1.large$occs.grp, envs = envs.bg)
 evalplot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = cb1.large$occs.grp, bg.grp = cb1.large$bg.grp, pts.type = "occs", sim.type = "mess")
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = cb1.large$occs.grp, bg.grp = cb1.large$bg.grp, pts.type = "occs", sim.type = "mess", bb.buf = 7)
 ```
 
 #### 3. Checkerboard2 {#cb2}
@@ -245,9 +261,9 @@ evalplot.grps(pts = occs, pts.grp = cb2$occs.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly
 evalplot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 # Different from checkerboard1, some partitions here do show some difference
-# in environmental representation, but not as extreme as with block
-evalplot.grps.envSim(envs, occs, bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, plot.type = "histogram")
-evalplot.grps.envSim(envs, occs, bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, plot.type = "raster")
+# in environmental representation, but not as consistently different as with block
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, pts.type = "occs", sim.type = "mess")
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, pts.type = "occs", sim.type = "mess", bb.buf = 7)
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
@@ -265,24 +281,25 @@ The 'random k-fold' method partitions occurrence localities randomly into a user
 ```{r part.rand, fig.width = 5, fig.height = 5}
 rand <- get.randomkfold(occs, bg, k = 5)
 evalplot.grps(pts = occs, pts.grp = rand$occs.grp, envs = envs.bg)
-# As the partitions are random, there is no clear environmental difference between them
-evalplot.grps.envSim(envs, occs, bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, plot.type = "histogram")
-evalplot.grps.envSim(envs, occs, bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, plot.type = "raster")
+# As the partitions are random, there is no large environmental difference between them
+evalplot.envSim.hist(envs = envs, occs = occs, bg = bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, pts.type = "occs", sim.type = "mess")
+evalplot.envSim.map(envs = envs, occs = occs, bg = bg, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, pts.type = "occs", sim.type = "mess", bb.buf = 7)
 ```
 
 #### 6. Testing Data {#testing}: 
 The 'testing' method evaluates the model on a testing dataset that is not used to create the full model (i.e., not included in the training data, or fully withheld), and thus cross validation statistics are not calculated. To illustrate this, we will make a table containing occurrences representing both training data and testing data and plot the partitions in the same way as above. However, the testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the testing data (group 2) are used only to evaluate it. Thus, the background extent does not include the testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
 
 ```{r part.ind, fig.width = 5, fig.height = 5}
-pts <- rbind(occs, occs.testing)
-pts.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.testing)))
-evalplot.grps(pts = pts, pts.grp = pts.grp, envs = envs.bg)
+occs.test <- rbind(occs, occs.testing)
+# Here we label the fully withheld test group with a partition value of 2, and the occurrences with 1
+occs.test.grp <- c(rep(1, nrow(occs)), rep(2, nrow(occs.testing)))
+evalplot.grps(pts = occs.test, pts.grp = occs.test.grp, envs = envs.bg)
 # We use the same background groups as random partitions here and input the training data and
 # testing dataset as though they were partitions of one big dataset
 # We can see what is to be expected -- the testing dataset is much more restricted environmentally
 # than the training data, and thus is much more different from the wider extent
-evalplot.grps.envSim(envs, pts, bg, occs.grp = pts.grp, bg.grp = rand$bg.grp, plot.type = "histogram")
-evalplot.grps.envSim(envs, pts, bg, occs.grp = pts.grp, bg.grp = rand$bg.grp, plot.type = "raster")
+evalplot.envSim.hist(envs = envs, occs = occs.test, bg = bg, occs.grp = occs.test.grp, bg.grp = rand$bg.grp, pts.type = "occs", sim.type = "mess")
+evalplot.envSim.map(envs = envs, occs = occs.test, bg = bg, occs.grp = occs.test.grp, bg.grp = rand$bg.grp, pts.type = "occs", sim.type = "mess", bb.buf = 7)
 ```
 
 #### 7. User-defined {#user}
@@ -315,8 +332,9 @@ We can also use other packages to partition our data. As an example, we next sho
 
 ```{r}
 library(blockCV)
-crs(envs)
-occsBg.sf <- st_as_sf(rbind(occs, bg), coords = c("longitude","latitude"), crs = 4326)
+
+occsBg.sf <- st_as_sf(rbind(occs, bg), coords = c("longitude","latitude"), crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+crs(envs.bg) <- crs(occsBg.sf)
 # Here, we implement the spatialBlock function from the blockCV package
 # The required inputs are similar to ENMeval partitioning functions, but here you assign
 # the size of blocks in meters with the argument theRange (here set at 1000 km), and the 
@@ -342,46 +360,34 @@ Once you decide which method of data partitioning you would like to use, you are
 #### Initial considerations {#eval.consid}
 The two main parameters to define when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature class to consider. The ***regularization multiplier*** (RM) determines the penalty for using variables or their transformations in the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. A more detailed description of these parameters is available in the [Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
 
-Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will need to define which layer(s) these are using the 'categoricals' argument.
+Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the 'n.bg' argument. If any of your predictor variables are categorical (e.g., biomes), you will either need to define which layer(s) these are using the 'categoricals' argument or assign them as factors in the RasterStack (like we did here) or input table.
 
 ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
-<!-- ```{r load_vignette_data, echo = FALSE} -->
-<!-- data(eval2) -->
-<!-- ``` -->
 
 ```{r enmeval1, eval=FALSE}
-e.mx.l <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = "L", rm = 1:2))
+e.mx.l <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'checkerboard2', 
+                      tune.args = list(fc = "L", rm = 1:2))
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
 
 ```{r maxnet2, eval=TRUE}
-e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3))
+e.mx.lqh <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'checkerboard2', 
+                        tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3))
 ```
 
-When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be faster. Note that running parallel can also be slower when working on small projects...
+When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=T`) can be considerably faster. Note that running parallel can also be slower when working on small datasets.
 
 ```{r maxnet2par, eval=FALSE}
-e.mx.lqh <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3),
-                             parallel = TRUE)
-```
-
-Another way to save time at this stage is to turn off the option that generates model predictions across the full study extent (`rasterPreds=F`). Note, however, that the full model predictions are needed for calculating AICc values so those are returned as NA in the results table when the `rasterPreds` argument is set to NULL.
-
-```{r maxnet2.noRas, eval=FALSE}
-e.mx.lqh.nr <- ENMevaluate(occ = occs, env = envs, bg.coords = bg, algorithm = 'maxnet',
-                             partitions = 'checkerboard2', tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3),
-                             rasterPreds = NULL)
+e.mx.lqh <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'checkerboard2', 
+                        tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3), parallel = TRUE)
 ```
 
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=TRUE` and `overlapStat`, which support Moran's I or Schoener's D (see [Warren et al. (2008)](https://dx.doi.org/10.1111/j.1558-5646.2008.00482.x)). Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap()` function.
 
 ```{r maxnet2.overlap, results='hide'}
-overlap <- calc.niche.overlap(e.mx.lqh@predictions, overlapStat="D")
+overlap <- calc.niche.overlap(e.mx.lqh@predictions, overlapStat = "D")
 overlap
 ```
 
@@ -393,54 +399,96 @@ There are multiple ways to run the function `ENMevaluate()`, and we will go over
 tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
 
 # 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
-e.mx <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.mx <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, partitions = "block")
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with the original Java software
-e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", tune.args = tune.args, partitions = "block")
 
 # 2. Testing partition: no cross validation statistics calculated; instead, model will be evaluated on a testing dataset that is not used to create the full model
-e.test <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "testing", occs.testing = occs.testing)
+e.test <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, partitions = "testing", occs.testing = occs.testing)
 
 # 3. User partitions
 user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), bg.grp = round(runif(nrow(bg), 1, 2)))
-e.user <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "user", user.grp = user.grp)
+e.user <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, partitions = "user", user.grp = user.grp)
 
 # 4. No partitions: no cross validation statistics calculated, nor any model evaluation on test data
-e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "none")
+e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, partitions = "none")
 
 # 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions created, so will run faster; also, both cbi.train and cbi.val will be calculated on the point data (training and validation background) instead of on the "envs" rasters (default)
+# For this implementation, assigning the categorical variable to factor with the argument "categoricals" is easier,
+# as ENMevaluate() internally assigns the levels based on both occs and bg, avoiding any errors associated with
+# different factor levels when combining data
 occs.z <- cbind(occs, raster::extract(envs, occs))
 bg.z <- cbind(bg, raster::extract(envs, bg))
-e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block")
+e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, partitions = "block", categoricals = "biome")
 ```
 
 You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the ENMeval internal function `tune.validate()`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in [Peterson et al. (2008)](http://dx.doi.org/10.1016/j.ecolmodel.2007.11.008) and implemented by the package [kuenm](http://dx.doi.org/10.7717/peerj.6281).
 
 ```{r}
-# Define a custom function with these exact arguments, 
-# They should provide you with the ingredients you need to specify most evaluation functions
+# Define a custom function that implements a performance metric not included in ENMeval
+# The function should have a single argument "vars", which is a list that includes the data
+# most performance metrics should require -- the total list of these data can be found here: ?user.eval
 # Make sure you return a data frame that specifies the names you want to see in the results tables
-proc <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, other.settings, partitions) {
-  proc <- kuenm::kuenm_proc(occs.val.pred, c(bg.train.pred, bg.val.pred))
+devtools::install_github("marlonecobos/kuenm")
+library(kuenm)
+proc <- function(vars) {
+  proc <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
   out <- data.frame(proc_auc_ratio = proc$pROC_summary[1], proc_pval = proc$pROC_summary[2], row.names = NULL)
   return(out)
 }
 
 # Now we can run ENMevaluate() with the argument "user.eval", and simply give it the custom function
-e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", user.eval = proc)
+e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, partitions = "block", user.eval = proc)
 # We can see the new performance statistic averages in the results table
 head(e.mx.proc@results)
 # Especially for the p-values, it likely makes more sense to look at the results tables for the partitions
 head(e.mx.proc@results.partitions)
 ```
 
-The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has a some simple functions to define that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
+The last way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM, randomForest, boostedRegressionTrees) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). Users can also construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`.
 
 ```{r}
-# If you saved a new script for "enm.myAlgorithm.R" and specified all the internal functions, enter it to the argument "user.enm"
+# Here, we demonstrate modifying the BRT ENMdetails object to add the bag.fraction parameter for tuning and using it as a user.enm
 # NOTE: It is important to make sure that your custom algorithm can handle categorical variables if you decide to specify them as predictors
 # By default, ENMevaluate() removes categorical variables when running BIOCLIM models, but if you specify an algorithm that cannot use them,
 # you will need to exclude them yourself before running
-e.userENM <- ENMevaluate(occs, envs, bg, user.enm = enm.myAlgorithm, tune.args = tune.args, categoricals = "biome", partitions = "block")
+my.brt <- enm.boostedRegressionTrees
+my.brt@args.train <- function(occs.z, bg.z, tune.i, other.settings) {
+  out <- list()
+  d <- rbind(occs.z, bg.z)
+  p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
+  out$data <- cbind(p, d)
+  out$tree.complexity <- tune.i$tc
+  out$learning.rate <- tune.i$lr
+  out$gbm.x <- 2:ncol(out$data)
+  out$gbm.y <- 1
+  out$family <- "bernoulli"
+  out$site.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
+  out$silent <- TRUE
+  # inserted here ############
+  out$bag.fraction <- tune.i$bf
+  # ##########################
+  out <- c(out, other.settings$other.args)
+  return(out)
+}
+my.brt@args.val <- function(occs.z, bg.z, tune.i, other.settings, mod.full = NULL) {
+  out <- list()
+  d <- rbind(occs.z, bg.z)
+  p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
+  out$data <- cbind(p, d)
+  out$formula <- formula(out$data)
+  out$n.trees <- mod.full$n.trees
+  out$interaction.depth <- tune.i$tc
+  out$shrinkage <- tune.i$lr
+  out$distribution <- "bernoulli" 
+  out$weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
+  # inserted here ############
+  out$bag.fraction <- tune.i$bf
+  # ##########################
+  out <- c(out, other.settings$other.args)
+  return(out)
+}
+e.userENM <- ENMevaluate(occs, envs, bg, user.enm = my.brt, tune.args = list(tc = 1:2, lr = c(0.01,0.001), bf = c(0.5, 0.75)), partitions = "block")
 ```
 
 #### Exploring the results {#eval.explore}
@@ -661,4 +709,27 @@ Below is a running list of other things we plan to add to this vignette.  Feel f
 ###### Some Empirical Examples
 - [Pearson, R.G., Raxworthy, C.J., Nakamura, M., and Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2006.01594.x/abstract)
 
+<!-- We may want to restrict the study extent to the continental areas (for example). We can use the simplified world map from the [`maptools`](https://cran.r-project.org/package=maptools) package and geoprocessing tools from the [`sf`](https://cran.r-project.org/package=sf) package to exclude the Caribbean from our study extent. -->
 
+<!-- ```{r removeCaribbean, message=FALSE, fig.width = 5, fig.height = 5, warning = FALSE} -->
+<!-- library(maptools) -->
+
+<!-- # Get a simple world countries polygon -->
+<!-- data(wrld_simpl) -->
+
+<!-- # Get polygons for Central and South America -->
+<!-- central.amer <- wrld_simpl@data$SUBREGION==5 -->
+<!-- south.amer <- wrld_simpl@data$SUBREGION==13 -->
+<!-- # Subset wrld_simpl and convert to sf -->
+<!-- ca.sa <- st_as_sf(wrld_simpl[central.amer | south.amer,]) -->
+
+<!-- # Buffer by 1 degree before masking to make sure you don't clip the coastline -->
+<!-- ca.sa.buf <- st_buffer(ca.sa, dist = 1) -->
+
+<!-- # Mask envs by the combined Central-South America polygon excluding the Caribbean -->
+<!-- envs.bg <- mask(envs.bg, ca.sa.buf) -->
+
+<!-- # Plot one of the new masked rasters -- we still have a few cells from the Galapagos, but are now missing the Caribbean -->
+<!-- plot(envs.bg[[1]], main=names(envs.bg)[1]) -->
+<!-- points(occs) -->
+<!-- ``` -->

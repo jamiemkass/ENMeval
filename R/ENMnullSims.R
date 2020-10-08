@@ -13,8 +13,6 @@
 #' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data);
 #' necessary when evaluating using spatial cross-validation (see details)
 #' @param user.enm ENMdetails object specified by the user
-#' @param user.bg.partition numeric vector designating user-defined partition groups (folds) for \code{bg};
-#' this is necessary for user-defined partitions so that background points can be sampled as null occurrences
 #' @param userStats.signs named list of user-defined evaluation statistics attributed with
 #' either 1 or -1 to designate whether the expected difference between real and null models is 
 #' positive or negative; this is used to calculate the p-value of the z-score
@@ -24,8 +22,8 @@
 #'
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
-ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.partition = NULL,
-                     userStats.signs = NULL, removeMxTemp = TRUE) {
+ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.signs = NULL, removeMxTemp = TRUE, 
+                        parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
 
   # assign evaluation type based on partition method
   eval.type <- switch(e@partition.method,
@@ -72,7 +70,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
   # specify real model statistics ####
   ############################## #
 
-  mod.tune.args  <- paste(mod.settings, collapse = "_")
+  mod.tune.args  <- paste(names(mod.settings), mod.settings, collapse = "_", sep = ".")
   real.mod <- e@models[[mod.tune.args]]
   real.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
 
@@ -80,16 +78,33 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
   # build null models ####
   ############################## #
 
-  # initialize list to record stats for null iteration i
-  nulls.ls <- list()
-  nulls.grp.ls <- list()
+  if(quiet == FALSE) message(paste("Building and evaluating null ENMs with", no.iter, "iterations..."))
 
-  message(paste("Building and evaluating null ENMs with", no.iter, "iterations..."))
-  message("Sampling null occurrences from background values...")
-  pb <- txtProgressBar(0, no.iter, style = 3)
-
-  for(i in 1:no.iter) {
-
+  # set up parallel processing functionality
+  if(parallel == TRUE) {
+    allCores <- parallel::detectCores()
+    if (is.null(numCores)) {
+      numCores <- allCores
+    }
+    cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
+    if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
+    
+    if(parallelType == "doParallel") {
+      doParallel::registerDoParallel(cl)
+      opts <- NULL
+    } else if(parallelType == "doSNOW") {
+      doSNOW::registerDoSNOW(cl)
+      if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
+    }
+    numCoresUsed <- foreach::getDoParWorkers()
+    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
+    if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))  
+  }else{
+    if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
+  }
+  
+  # define function to run null model for iteration i
+  null_i <- function(i) {
     null.occs.ik <- list()
     if(eval.type == "kspatial") {
       # randomly sample the same number of training occs over each k partition
@@ -112,7 +127,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
         null.occs.ik[[k]] <- null.samps[samp.k, ]
       }
     }
-
+    
     # bind rows together to make full null occurrence dataset
     null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
     if(eval.type == "knonspatial") {
@@ -129,19 +144,50 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
     user.val.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
+    if(length(categoricals) == 0) categoricals <- NULL
 
     null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
                             algorithm = e@algorithm, other.args = e.s$other.args, partitions = "user",
                             user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
                             aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
                             pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
-    setTxtProgressBar(pb, i)
-
-    nulls.ls[[i]] <- null.e.i@results
-    nulls.grp.ls[[i]] <- null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything())
+    
+    
+    out <- list(results = null.e.i@results, 
+                results.partitions = null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything()))
+    
+    # restore NA row if partition evaluation is missing (model was NULL)
+    allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
+    if(!all(allParts)) {
+      inds <- which(allParts == FALSE)
+      newrow <- out$results.partitions[1,]
+      newrow[,4:ncol(newrow)] <- NA
+      for(ind in inds) {
+        out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
+      }
+      out$results.partitions <- arrange(out$results.partitions, fold)
+    }
+    return(out)
   }
+  
+  if(parallel == TRUE) {
+    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .export = "null_i", .packages = c("dplyr", "ENMeval")) %dopar% {
+      null_i(i)
+    }
+  }else{
+    outs <- list()
+    for(i in 1:no.iter) {
+      outs[[i]] <- null_i(i)
+      if(quiet == FALSE) setTxtProgressBar(pb, i)
+    }  
+  }
+  
+  if(quiet != TRUE) close(pb)
+  if(parallel == TRUE) parallel::stopCluster(cl)
 
   # assemble null evaluation statistics and take summaries
+  nulls.ls <- lapply(outs, function(x) x$results)
+  nulls.grp.ls <- lapply(outs, function(x) x$results.partitions)
   nulls <- dplyr::bind_rows(nulls.ls)
   nulls.grp <- dplyr::bind_rows(nulls.grp.ls)
   nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarize_all(mean)
@@ -173,8 +219,13 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
   realNull.stats[6, p.neg.inds] <- sapply(realNull.stats[5, p.neg.inds], pnorm)
   
   mod.settings.tbl <- expand.grid(mod.settings)
-  mod.settings.tbl$tune.args <- apply(mod.settings.tbl, 1, function(x) paste(x, collapse="_"))
+  mod.settings.tbl$tune.args <- apply(mod.settings.tbl, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
   mod.settings.tbl <- dplyr::mutate_all(mod.settings.tbl, as.factor)
+  
+  # make cbi.val column NA for jackknife partitions
+  if(e@partition.method == "jackknife") {
+    nulls.grp$cbi.val <- NA
+  }
   
   # condense mod.args to named matrix for inserting into class slot
   e.n <- ENMnull(null.algorithm = e@algorithm,
@@ -198,7 +249,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, user.bg.parti
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  message(paste("\nENMnullSims completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  if(quiet == FALSE) message(paste("\nENMnullSims completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
   return(e.n)
 }

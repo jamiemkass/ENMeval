@@ -4,7 +4,14 @@
 \alias{evalplot.grps}
 \title{Partition group plots}
 \usage{
-evalplot.grps(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs")
+evalplot.grps(
+  e = NULL,
+  envs,
+  pts = NULL,
+  pts.grp = NULL,
+  pts.type = "occs",
+  pts.size = 1.5
+)
 }
 \arguments{
 \item{e}{ENMevaluation object}
@@ -16,6 +23,8 @@ evalplot.grps(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs")
 \item{pts.grp}{Numeric vector of partition groups corresponding to data in "pts"}
 
 \item{pts.type}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
+
+\item{pts.size}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
 }
 \description{
 Plot occurrence partition groups over an environmental predictor raster.
