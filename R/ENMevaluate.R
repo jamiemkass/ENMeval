@@ -143,6 +143,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     }
   }
   
+  # if occs.testing input, coerce partitions to 'testing'
+  if(partitions == "testing") {
+    if(is.null(occs.testing)) {
+      stop('If performing fully withheld testing, enter occs.testing dataset and assign partitions to "testing".')
+    }
+    if(nrow(occs.testing) == 0) {
+      stop('If performing fully withheld testing, enter occs.testing dataset and assign partitions to "testing".')
+    }
+  }
+  
+  
   if(is.null(tune.args) & overlap == TRUE) {
     if(quiet != TRUE) message('* As no tuning arguments were specified, turning off niche overlap.')
     overlap <- FALSE
@@ -251,17 +262,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # add testing data to main df if provided
   if(partitions == "testing") {
-    occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
-    occs.testing.z <- cbind(occs.testing, occs.testing.z)
-    occs.testing.z$pb <- 1
-    # the grp here is 1 so that the first cv iteration will evaluate the full dataset on the testing data
-    # and the second iteration is not performed
-    occs.testing.z$grp <- 1
-    user.val.grps <- occs.testing.z
-    # change the factor levels to accomodate grp 1 (originally it only has grp 2 for occs and grp 0 for bg)
-    # d$grp <- factor(d$grp, levels = 0:2)
-    # and then add the testing data with grp value 1
-    # d <- rbind(d, occs.testing.z)
+    if(!is.null(envs)) {
+      occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
+      occs.testing.z <- cbind(occs.testing, occs.testing.z)  
+    }else{
+      occs.testing.z <- occs.testing
+    }
+  }else{
+    occs.testing.z <- NULL
   }
   
   ################################# #
@@ -271,8 +279,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # find factor rasters or columns and identify them as categoricals
   if(!is.null(envs)) {
     categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+    if(length(categoricals) == 0) categoricals <- NULL
   }else{
     categoricals <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
+    if(length(categoricals) == 0) categoricals <- NULL
   }
   
   # if categoricals argument was specified, convert these columns to factor class
@@ -294,11 +304,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   d.occs <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
   d.bg <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
   
-  # if occs.testing input, coerce partitions to 'testing'
-  if(!is.null(occs.testing) & partitions != "testing") {
-    partitions <- "testing"
-  }
-  
   # partition occs based on selected partition method
   grps <- switch(partitions, 
                  jackknife = get.jackknife(d.occs, d.bg),
@@ -307,7 +312,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                  checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
                  checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
                  user = NULL,
-                 testing = list(occs.grp = rep(2, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
+                 testing = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
   
   
@@ -325,6 +330,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   
   # record partition settings
   parts.settings <- switch(partitions,
+                           block = list(orientation = orientation),
                            randomkfold = list(kfolds = kfolds),
                            checkerboard1 = list(aggregation.factor = aggregation.factor),
                            checkerboard2 = list(aggregation.factor = aggregation.factor),
@@ -357,9 +363,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, user.eval, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, user.eval, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, updateProgress, user.eval, quiet)
   }
   
   ##################### #
@@ -397,11 +403,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # define number of grp (the value of "k") for occurrences
   # k is 1 for partition "testing"
   # k is 0 for partitions "none" and "user"
-  occGrps <- unique(d[d$pb == 1, "grp"])
-  if(length(occGrps) == 1 & 0 %in% occGrps) {
+  if(partitions %in% c("testing", "none")) {
     nk <- 0
   }else{
-    nk <- length(occGrps)
+    nk <- length(unique(d[d$pb == 1, "grp"]))
   }
   
   # if partitions were specified
@@ -452,7 +457,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     # make tune.args column in training stats factor too for smooth join
     train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
     # if no partitions assigned, eval.stats is the join of tune.tbl to training stats
-    eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args")
+    eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args") 
+    if(nrow(val.stats.all) > 0) eval.stats <- dplyr::left_join(eval.stats, val.stats.all, by = "tune.args")
+    if("fold" %in% names(eval.stats)) eval.stats <- eval.stats %>% select(-fold)
   }
   
   # calculate number of non-zero parameters in model
@@ -476,11 +483,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # add ncoef column
   eval.stats$ncoef <- ncoefs
   
-  # assign all groups to 1 if no partitions were selected
-  # this avoids putting a NULL in the object slot
-  if(nk == 0) d$grp <- 1
   if(is.null(taxon.name)) taxon.name <- ""
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
+  if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
   
   # get variable importance for all models
   varimp.all <- lapply(mod.full.all, enm@varimp)
@@ -492,7 +497,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                      variable.importance = varimp.all,
                      partition.method = partitions, partition.settings = parts.settings,
                      other.settings = other.settings, taxon.name = taxon.name,
-                     occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.grp = factor(d[d$pb == 1, "grp"]),
+                     occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.testing = occs.testing.z, occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
                      rmm = list())
   

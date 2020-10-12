@@ -74,8 +74,8 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     }else{
       cbi.val <- NA
     }
-  # if validation.bg == "partition", calculate training and validation AUC and CBI based on the partitioned backgrounds only 
-  # (training background for training statistics and validation background for validation statistics) 
+    # if validation.bg == "partition", calculate training and validation AUC and CBI based on the partitioned backgrounds only 
+    # (training background for training statistics and validation background for validation statistics) 
   }else if(other.settings$validation.bg == "partition") {
     e.train <- dismo::evaluate(occs.train.pred, bg.train.pred)
     auc.train <- e.train@auc
@@ -108,8 +108,8 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
                  other.settings, partitions, occs.train.pred, occs.val.pred,
                  bg.train.pred, bg.val.pred)
     names(vars) <- c("enm", "occs.train.z", "occs.val.z", "bg.train.z", "bg.val.z", "mod.k", "nk", 
-                        "other.settings", "partitions", "occs.train.pred", "occs.val.pred",
-                        "bg.train.pred", "bg.val.pred")
+                     "other.settings", "partitions", "occs.train.pred", "occs.val.pred",
+                     "bg.train.pred", "bg.val.pred")
     user.eval.out <- user.eval(vars)
   }else{
     user.eval.out <- NULL
@@ -123,7 +123,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
 }
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, numCores, parallelType, user.eval, quiet) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -146,7 +146,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.val.grps, user.eval, quiet)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.val.grps, occs.testing.z, user.eval, quiet)
   }
   if(quiet != TRUE) close(pb)
   parallel::stopCluster(cl)
@@ -154,7 +154,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, updateProgress, user.eval, quiet) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, updateProgress, user.eval, quiet) {
   results <- list()
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
@@ -172,7 +172,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, user.eval, quiet)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, occs.testing.z, user.eval, quiet)
   }
   if(quiet != TRUE) close(pb)
   return(results)
@@ -180,7 +180,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
 
 #' @param tune.i vector of single set of tuning parameters
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, user.eval, quiet) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, occs.testing.z, user.eval, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
@@ -213,57 +213,49 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   tune.args.col <- paste(names(tune.i), tune.i, collapse = "_", sep = ".")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)
   
-  # define number of grp (the value of "k") for occurrences
-  # k is 1 for partition "testing"
-  # k is 0 for partitions "none" and "user"
-  occGrps <- unique(d[d$pb == 1, "grp"])
-  if(length(occGrps) == 1 & 0 %in% occGrps) {
-    nk <- 0
-  }else{
-    nk <- length(occGrps)
-  }
-  
   # if no partitions, return results without cv.stats
-  if(nk == 0) {
+  if(partitions == "none") {
     cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = NULL)
     return(cv.res)
   }
+  
+  if(partitions == "testing") {
+    bg.val.z <- data.frame()
+    validate <- tune.validate(enm, occs.z, occs.testing.z, bg.z, bg.val.z, mod.full, 0, other.settings, partitions, user.eval, quiet)
+    test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, stringsAsFactors = FALSE) %>% cbind(validate)
+    cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = test.stats.df) 
+    return(cv.res)
+  }
+  
+  # define number of grp (the value of "k") for occurrences
+  nk <- length(unique(d[d$pb == 1, "grp"]))
   
   # list to contain cv statistics
   cv.stats <- list()
   
   for(k in 1:nk) {
     # assign partitions for training and validation occurrence data and for background data
-    occs.train.xy <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(1:2)
     occs.train.z <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(all_of(envs.names))
     bg.train.z <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(all_of(envs.names))
     if(is.null(user.val.grps)) {
-      occs.val.xy <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(1:2)
       occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(all_of(envs.names))
       bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(all_of(envs.names))
     }else{
       # assign partitions for training and validation occurrence data and for background data based on user data
-      occs.val.xy <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(1:2)
       occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(all_of(envs.names))
       bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     }
     
-    # if no cross validation (nk = 1), define the model used for evaluation (mod.k) 
-    # as the full model (mod.full) to avoid having to refit the same model
-    if(nk != 1) {
-      # define model arguments for current model k
-      mod.k.args <- enm@args.val(occs.train.z, bg.train.z, tune.i, other.settings, mod.full)
-      # run model k with specified arguments
-      mod.k <- tryCatch({
-        do.call(enm@fun.val, mod.k.args)  
-      }, error = function(cond) {
-        if(quiet != TRUE) message(paste0("\n", cond, "\n"))
-        # Choose a return value in case of error
-        return(NULL)
-      })
-    }else{
-      mod.k <- mod.full
-    }
+    # define model arguments for current model k
+    mod.k.args <- enm@args.val(occs.train.z, bg.train.z, tune.i, other.settings, mod.full)
+    # run model k with specified arguments
+    mod.k <- tryCatch({
+      do.call(enm@fun.val, mod.k.args)  
+    }, error = function(cond) {
+      if(quiet != TRUE) message(paste0("\n", cond, "\n"))
+      # Choose a return value in case of error
+      return(NULL)
+    })
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {
@@ -280,8 +272,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)
   
-  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
-                 train.stats = train.stats.df, cv.stats = cv.stats.df)
+  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = cv.stats.df)
   
   return(cv.res)
 }

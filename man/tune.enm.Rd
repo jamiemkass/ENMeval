@@ -43,6 +43,7 @@ tune.parallel(
   tune.tbl,
   other.settings,
   user.val.grps,
+  occs.testing.z,
   numCores,
   parallelType,
   user.eval,
@@ -57,6 +58,7 @@ tune.regular(
   tune.tbl,
   other.settings,
   user.val.grps,
+  occs.testing.z,
   updateProgress,
   user.eval,
   quiet
@@ -70,6 +72,7 @@ cv.enm(
   tune.i,
   other.settings,
   user.val.grps,
+  occs.testing.z,
   user.eval,
   quiet
 )

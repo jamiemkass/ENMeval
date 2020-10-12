@@ -7,12 +7,13 @@
 evalplot.stats(
   e,
   stats,
-  x,
-  col,
+  x.var,
+  color,
   dodge = NULL,
   error.bars = TRUE,
   facet.labs = NULL,
-  metric.levs = NULL
+  metric.levs = NULL,
+  return.tbl = FALSE
 )
 }
 \arguments{
@@ -21,13 +22,13 @@ evalplot.stats(
 \item{stats}{Character vector of names of statistics from results table to be plotted; if more than
 one statistic is specified, the plot will be faceted}
 
-\item{x}{Character of variable to be plotted on x-axis}
-
-\item{col}{Character of variable used to assign symbology colors}
-
 \item{dodge}{(Optional) numeric value specifying the dodge width for points and lines (this improves visibility when there is high overlap)}
 
 \item{error.bars}{(Optional) boolean specifying whether or not to plot error bars (defaults to TRUE)}
+
+\item{x}{Character of variable to be plotted on x-axis}
+
+\item{col}{Character of variable used to assign symbology colors}
 }
 \value{
 A ggplot of evaluation statistics.
