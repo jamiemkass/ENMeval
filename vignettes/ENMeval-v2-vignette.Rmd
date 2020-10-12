@@ -154,7 +154,7 @@ Next, we will specify the background extent by cropping our global predictor var
 occs.sf <- st_as_sf(occs, coords = c("longitude","latitude"), crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
 # Make sure the RasterStack has the same coordinate reference system (CRS) string
 # Both are the same CRS, but when the strings are different, some spatial functions error
-crs(envs) <- crs(occs)
+crs(envs) <- crs(occs.sf)
 
 # Buffer all occurrences by 7 degrees: this will give a warning because we are not buffering 
 # in a projected coordinate system, then union the polygons together (for visualization), and convert
@@ -419,7 +419,7 @@ e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.arg
 # different factor levels when combining data
 occs.z <- cbind(occs, raster::extract(envs, occs))
 bg.z <- cbind(bg, raster::extract(envs, bg))
-e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, partitions = "block", categoricals = "biome")
+e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, partitions = "block")
 ```
 
 You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the ENMeval internal function `tune.validate()`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in [Peterson et al. (2008)](http://dx.doi.org/10.1016/j.ecolmodel.2007.11.008) and implemented by the package [kuenm](http://dx.doi.org/10.7717/peerj.6281).
@@ -510,8 +510,8 @@ Now let's take a look at the output from `ENMevaluate` (which is an object of cl
 Let's first examine the structure of the object:
 ```{r results1}
 e.mx
-
-str(e.mx, max.level=3)
+# simplify the summary to look at higher level items
+str(e.mx, max.level=2)
 ```
 
 We can use helper functions to access the slots in the ENMevaluate object.
@@ -529,13 +529,16 @@ eval.models(e.mx)
 # The "betas" slot in a maxnet model is a named vector of the variable coefficients 
 # and what kind they are (in R formula notation)
 # Note that the html file that is created when maxent.jar is run is **not** kept
-m1 <- eval.models(e.mx)[["LQH_1"]]
-m1$betas
+m1.mx <- eval.models(e.mx)[["fc.LQH_rm.1"]]
+m1.mx$betas
+# the enframe function from the tibble package makes this named vector into a more readable table
+tibble::enframe(m1.mx$betas)
 # For maxent.jar models, we can access this information in the lambdas slot
 # The notation used here is difficult to decipher, so check out the [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package
 # available on Github for the `parse_lambdas()` function that makes it easier to read
-m1.mxjar <- eval.models(eval.mxjar)[["LQH_1"]]
+m1.mxjar <- eval.models(e.mxjar)[["fc.LQH_rm.1"]]
 m1.mxjar@lambdas
+rmaxent::parse_lambdas(m1.mxjar)
 # We can also get a long list of results statistics from the results slot
 m1.mxjar@results
 # RasterStack of model predictions (for extent of "envs") with names corresponding 
@@ -560,16 +563,16 @@ Plotting options in R are extremely flexible and here we demonstrate some key to
 ENMeval has a built-in ggplot-based plotting function (`eval.plot`) to visualize the results of the different models you tuned. Here, we will plot AICc and delta.AICc values for each feature class for both regularization multipliers.
 
 ```{r plot.res, fig.width = 5, fig.height = 5}
-plot.eval(e = eval, stats = "or.mtp", col = "fc", x = "rm")
+evalplot.stats(e = e.mx, stats = "or.mtp", color = "fc", x.var = "rm")
 # We can plot more than one statistic at one with ggplot facetting
-plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm")
+evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "fc", x.var = "rm")
 # Sometimes the error bars make it hard to visualize the plot, so we can try turning them off
-plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm", error.bars = FALSE)
+evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "fc", x.var = "rm", error.bars = FALSE)
 # We can also fiddle with the dodge argument to jitter the positions of overlapping points
-plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "fc", x = "rm", dodge = 0.5)
+evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "fc", x.var = "rm", dodge = 0.5)
 # Finally, we can switch which variables are on the x-axis and which symbolized by color
 # ENMeval currently only accepts two variables for plotting at a time
-plot.eval(e = eval, stats = c("or.mtp", "auc.val"), col = "rm", x = "fc", error.bars = FALSE)
+evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "rm", x.var = "fc", error.bars = FALSE)
 ```
 
 #### Model selection {#eval.select}
@@ -589,12 +592,13 @@ opt.seq
 
 Let's now pull the optimal model (using the sequential criteria) from the model list and examine it.
 ```{r mod.obj1}
-mod.seq <- models(e.mx)[[opt.seq$tune.args]]
+mod.seq <- eval.models(e.mx)[[opt.seq$tune.args]]
 # The non-zero coefficients in our model
 mod.seq$betas
 # The response curves for our model
-# maxent.jar models use the dismo::response() funtion for this
-plot(mod.seq)
+plot(mod.seq, type = "cloglog")
+# maxent.jar models use the dismo::response() function for this
+dismo::response(eval.models(e.mxjar)[["fc.LQ_rm.5"]])
 dev.off()
 ```
 
@@ -605,8 +609,8 @@ These predictions are for the entire extent of the input predictor variable rast
 pred.seq <- eval.predictions(e.mx)[[opt.seq$tune.args]]
 plot(pred.seq)
 # Let's also plot the binned background points with the occurrence points on top
-points(bg(e.mx), pch = 3, col = bg.grp(e.mx), cex = 0.5)
-points(occs(e.mx), pch = 21, bg = occs.grp(e.mx))
+points(eval.bg(e.mx), pch = 3, col = eval.bg.grp(e.mx), cex = 0.5)
+points(eval.occs(e.mx), pch = 21, bg = eval.occs.grp(e.mx))
 ```
 
 Let's see how model complexity changes the predictions in our example. We'll compare the model built with only linear feature classes and the highest regularization multiplier value we used (i.e., fc='L', RM=5) with the model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  RM=1). We will first examine the response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. For more on simplicity and complexity in ENMs, see [Merow et al. 2014](https://doi.org/10.1111/ecog.00845).
@@ -614,30 +618,39 @@ Let's see how model complexity changes the predictions in our example. We'll com
 ```{r plot.pred2, fig.width = 5, fig.height = 2.5}
 # First, let's examine the non-zero model coefficients in the betas slot
 # The simpler model has fewer model coefficients
-models(e.mx)[['L_5']]$betas
-length(models(e.mx)[['L_5']]$betas)
-models(e.mx)[['LQH_1']]$betas
-length(models(e.mx)[['LQH_1']]$betas)
+mod.simple <- eval.models(e.mx)[['fc.L_rm.5']]
+mod.complex <- eval.models(e.mx)[['fc.LQH_rm.1']]
+mod.simple$betas
+length(mod.simple$betas)
+mod.complex$betas
+length(mod.complex$betas)
 # Next, let's take a look at the response curves
 # The complex model has responses with more curves (quadratic terms) and spikes (hinge terms)
-plot(models(e.mx)[['L_5']])
-plot(models(e.mx)[['LQH_1']])
+plot(mod.simple, type = "cloglog")
+plot(mod.complex, type = "cloglog")
 # Finally, let's cut the plotting area into two rows to visualize the predictions side-by-side
 par(mfrow=c(2,1), mar=c(2,1,2,0))
 # The simplest model: linear features only and high regularization
-plot(predictions(e.mx)[['L_5']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='L_5 prediction')
+plot(eval.predictions(e.mx)[['fc.L_rm.5']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='L_5 prediction')
 # The most complex model: linear, quadratic, and hinge features with low regularization
-plot(predictions(e.mx)[['LQH_1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='LQH_1 prediction')
+plot(eval.predictions(e.mx)[['fc.LQH_rm.1']], ylim=c(-30,20), xlim=c(-90,-30), legend=F, main='LQH_1 prediction')
 ```
 
 ## Null models
 
 ```{r}
-mod.null <- ENMnullSims(eval, mod.settings = list(fc = "L", rm = 2), no.iter = 10, 
-                     envs = envs, userStats.signs = list(maxTSS.val = 1, maxKappa.val = 1))
+# We first run the null simulations with 100 iterations to get a reasonable null distribution for comparisons with the empirical values
+mod.null <- ENMnullSims(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
+# We can inspect the results of each null simulation
 null.results(mod.null)
+# And even inspect the results of each partition of each null simulation
 null.results.partitions(mod.null)
+# For a summary, we can look at a comparison between the empirical and simulated results
 real.vs.null.results(mod.null)
+# Finally, we can make plots of the null model results as a histogram
+evalplot.nulls(mod.null, stats = c("or.10p", "auc.val"), plot.type = "histogram")
+# Or a violin plot
+evalplot.nulls(mod.null, stats = c("or.10p", "auc.val"), plot.type = "violin")
 ```
 
 #### Metadata {#metadata}
@@ -645,7 +658,7 @@ ENMeval now catalogs details of the analysis essential for reproducibility in a 
 
 ```{r}
 # fill in a RMM object based on the ENMevaluate object
-rmm <- eval.rmm(e.mx1)
+rmm <- eval.rmm(e.mx)
 # Let's fill in our selection rules based on the sequential criteria we chose
 rmm$model$selectionRules <- "lowest 10 percentile omission rate, break ties with average validation AUC"
 # And enter our optimal model settings
@@ -659,12 +672,6 @@ rmm$prediction$continuous$units <- "suitability (cloglog transformation)"
 rangeModelMetadata::rmmToCSV(rmm, "rmm_mx1.csv")
 ```
 
-## Downstream Analyses (*under construction*) {#downstream}
-Below is a running list of other things we plan to add to this vignette.  Feel free to let us know if there are particular things you would like to see added.
-
-- Working with the output from the 'maxnet' algorithm
-- Extracting model results from object (various thresholds)
-- Do MESS map (Use `mess()` in the `dismo` package)
 
 ## Resources (*under construction*) {#resources}
 
