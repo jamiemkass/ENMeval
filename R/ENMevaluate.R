@@ -356,7 +356,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   
   # make table for all tuning parameter combinations
-  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
+  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE) %>% tibble::as_tibble()
   # make tune.tbl NULL, not an empty table, if no settings are specified
   # this makes it easier to use tune.i as a parameter in function calls
   # when tune.args does not exist
@@ -491,7 +491,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   varimp.all <- lapply(mod.full.all, enm@varimp)
   
   # assemble the ENMevaluation object
-  e <- ENMevaluation(algorithm = enm@name, tune.settings = tune.tbl,
+  e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
                      results = eval.stats, results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      variable.importance = varimp.all,

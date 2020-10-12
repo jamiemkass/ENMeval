@@ -127,7 +127,11 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
     # partition method 
     expect_true(ns@null.partition.method == parts)
     # mod.settings 
-    expect_true(all(ns@null.mod.settings[,1:ncol(mod.settings.tbl)] == mod.settings.tbl))
+    if(ncol(mod.settings.tbl) > 1) {
+      expect_true(all(ns@null.mod.settings[,1:ncol(mod.settings.tbl)] == mod.settings.tbl))  
+    }else{
+      expect_true(as.character(ns@null.mod.settings[,1]) == mod.settings.tbl)  
+    }
     # no. of iterations
     expect_true(ns@no.iter == no.iter)
     # number of rows in results table
@@ -159,7 +163,7 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
 
 algs <- list(maxnet = list(fc = c("L","LQ"), rm = 2:3),
              bioclim = list(tails = c("low", "high", "both")),
-             boostedRegressionTrees = list(tc = 1:2, lr = 0.01),
+             boostedRegressionTrees = list(tc = 1:2, lr = 0.001),
              randomForest = list(ntree = 1000, mtry = 4:5))
 
 no.iter <- 5
