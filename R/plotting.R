@@ -49,7 +49,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
   return(g)
 }
 
-#' @title MESS plots for partition groups
+#' @title MESS histogram plots for partition groups
 #' @description Plot environmental similarity of predictor variable extent with respect to occurrence partitions
 #' @param e ENMevaluation object
 #' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
@@ -168,6 +168,33 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
   }
 }
 
+#' @title MESS maps for partition groups
+#' @description Plot environmental similarity of predictor variable extent with respect to occurrence partitions
+#' @param e ENMevaluation object
+#' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
+#' removed before input, as they cannot be used to calculate MESS
+#' @param envs.var Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
+#' with respect to all variables
+#' @param sim.type Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
+#' or "most_sim" for most similar variable; uses similarity function from package rmaxent
+#' @param pts.type Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
+#' @param sim.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
+#' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
+#' @param palette.dir Numeric: direction for palette plotting; either 1 or -1
+#' @param hist.bins Numeric: number of histogram bins for histogram plots; default is 30
+#' @details There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
+#' If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
+#' With sim.type option "mess", the similarity between environmental values associated with the 
+#' validation occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
+#' of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
+#' Higher negative values indicate greater environmental difference between the validation occurrences
+#' and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
+#' to calculate the similarities. See the below reference for details on MESS. 
+#' @return A ggplot of MESS calculations for data partitions.
+#' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
+#' @export
+
 evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, occs.grp = NULL, 
                                 bg.grp = NULL, envs.var = NULL, pts.type = c("occs", "bg"), 
                                 pts.size = 1.5, mess.cols = c("red","yellow","blue"), mess.naCol = "white",
@@ -177,7 +204,7 @@ evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, o
   # remove categorical rasters
   nr <- raster::nlayers(envs)
   cats <- numeric(nr)
-  for(n in 1:nr) cats[n] <- is.factor(envs[[n]])
+  for(n in 1:nr) cats[n] <- raster::is.factor(envs[[n]])
   if(sum(cats) > 0) {
     rem.ras <- which(cats == 1)
     message(paste("Ignoring categorical raster", names(envs)[rem.ras], "..."))
@@ -251,6 +278,7 @@ evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, o
   }
 }
 
+
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
 #' @param e ENMevaluation object
@@ -267,7 +295,7 @@ evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, o
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE, facet.labs = NULL, metric.levs = NULL) {
+evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TRUE, facet.labs = NULL, metric.levs = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -290,26 +318,45 @@ evalplot.stats <- function(e, stats, x, col, dodge = NULL, error.bars = TRUE, fa
   if(!is.null(metric.levs)) res.avgs$metric <- factor(res.avgs$metric, levels = metric.levs)
   
   if(nrow(res.avgs) > 0) {
-    if(is.null(dodge)) dodge <- 0.2
-    p <- ggplot2::ggplot(res.avgs, ggplot2::aes_string(x = x, y = "avg", color = col, group = col)) + 
+    if(is.null(dodge)) dodge <- 0.1
+    g <- ggplot2::ggplot(res.avgs, ggplot2::aes_string(x = x.var, y = "avg", color = color, group = color)) + 
       ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
-      ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
-      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats), labeller = labeller) + 
-      ggplot2::theme_bw()  
-    if(error.bars == TRUE) {
-      p + ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.5, 
-                                 position=ggplot2::position_dodge(width=dodge))
-    }else{
-      p
+      ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) +
+      ggplot2::theme_bw()
+    if(length(stats) > 1) {
+      if(!is.null(labeller)) {
+        g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats), labeller = labeller)
+      }else{
+        g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats))  
+      }
     }
-    
+    if(error.bars == TRUE) {
+      g <- g + ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper), width = 0.5, 
+                                      position = ggplot2::position_dodge(width=dodge))
+    }
+    g
+    if(return.tbl == TRUE) {
+      return(res.avgs)
+    }else{
+      return(g)  
+    }
   }else{
     if(is.null(dodge)) dodge <- 0
-    ggplot2::ggplot(res, ggplot2::aes_string(x = x, y = "value", color = col, group = col)) + 
+    g <- ggplot2::ggplot(res, ggplot2::aes_string(x = x.var, y = "value", color = color, group = color)) + 
       ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
       ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
-      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats), labeller = labeller) + 
       ggplot2::theme_bw()
+    if(!is.null(labeller)) {
+      g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats), labeller = labeller)
+    }else{
+      g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_y", nrow = length(stats))
+    }
+    g
+    if(return.tbl == TRUE) {
+      return(res)
+    }else{
+      return(g)  
+    }
   }
 }
 
@@ -379,7 +426,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
                        `0.99 quantile` = quantile(avg, 0.99)) %>%
       tidyr::pivot_longer(cols = `0.01 quantile`:`0.99 quantile`, names_to = "quantile", values_to = "value")
     vlines <- rbind(vlines, real.res %>% dplyr::mutate(quantile = "empirical value") %>% dplyr::rename(value = avg))
-    ggplot2::ggplot(mapping = ggplot2::aes(x = avg)) + 
+    g <- ggplot2::ggplot(mapping = ggplot2::aes(x = avg)) + 
       ggplot2::geom_histogram(data = null.avgs, fill = "gray80") +
       ggplot2::geom_vline(data = vlines, ggplot2::aes(xintercept = value, color = quantile, linetype = quantile)) +
       ggplot2::scale_color_manual(values = c(`0.01 quantile` = "purple", 
@@ -394,9 +441,14 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
                                                 `0.95 quantile` = "dashed", 
                                                 `0.99 quantile` = "dotted",
                                                 `empirical value` = "solid")) +
-      ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1, labeller = labeller) +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.title=ggplot2::element_blank(), 
                      legend.position="bottom")
+    if(!is.null(labeller)) {
+      g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1, labeller = labeller)
+    }else{
+      g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1)
+    }
+    g
   }
 }
