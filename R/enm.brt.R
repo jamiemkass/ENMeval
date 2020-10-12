@@ -29,7 +29,7 @@ brt.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out$gbm.y <- 1
   out$family <- "bernoulli"
   out$site.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
-  # out$silent <- TRUE
+  out$silent <- TRUE
   out <- c(out, other.settings$other.args)
   return(out)
 }
