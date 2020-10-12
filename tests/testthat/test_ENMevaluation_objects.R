@@ -87,7 +87,11 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
       expect_true(nrow(e@results.partitions) == 0)
     }else{
       expect_true(nrow(e@results.partitions) == nparts.occs * nrow(tune.tbl))
-      expect_true(max(e@results.partitions$fold) == nparts.occs)
+      if(parts != "testing") {
+        expect_true(max(e@results.partitions$fold) == nparts.occs)
+      }else{
+        expect_true(max(e@results.partitions$fold) == 0)
+      }
       # jackknife has NAs for cbi.val
       if(parts == "jackknife") {
         expect_true(sum(is.na(e@results.partitions)) == nrow(e@results.partitions))
@@ -129,11 +133,23 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
     # number of rows in results table
     expect_true(nrow(ns@null.results) == no.iter)
     # number of rows in results table for partitions
-    expect_true(nrow(ns@null.results.partitions) == no.iter * nparts.occs)
+    if(ns@null.partition.method == "none") {
+      expect_true(nrow(ns@null.results.partitions) == 0)
+    }else{
+      expect_true(nrow(ns@null.results.partitions) == no.iter * nparts.occs)  
+    }
+    
     # number of rows in real vs null results table
     expect_true(nrow(ns@real.vs.null.results) == 6)
     # there should only be two NA values for this table: read.sd for auc.train and cbi.train
-    expect_true(sum(is.na(ns@real.vs.null.results)) == 2)
+    if(parts == "jackknife") {
+      expect_true(sum(is.na(ns@real.vs.null.results[2,])) == 3)
+      expect_true(sum(is.na(ns@real.vs.null.results[,6])) == 6) 
+    }else if(parts == "testing") {
+      expect_true(sum(is.na(ns@real.vs.null.results[2,])) == 7) 
+    }else{
+      expect_true(sum(is.na(ns@real.vs.null.results[2,])) == 2)  
+    }
     # check that tables match
     expect_true(all(ns@real.occs == e@occs))
     expect_true(all(ns@real.bg == e@bg))
@@ -188,7 +204,7 @@ for(i in 1:length(algs)) {
   
   # jackknife partitions
   context(paste("Testing ENMevaluate for", alg, "with jackknife partitions..."))
-  e <- ENMevaluate(occs[1:10,], envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", partitions = "jackknife", overlap = TRUE, quiet = TRUE)
+  e <- ENMevaluate(occs[1:10,], envs, bg, algorithm = alg, tune.args = targs, partitions = "jackknife", overlap = TRUE, quiet = TRUE)
   test_ENMevaluation(e, alg, "jackknife", targs, nrow(e@occs), 1)
   context(paste("Testing ENMnullSims for", alg, "with jackknife partitions..."))
   ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -216,7 +232,7 @@ for(i in 1:length(algs)) {
   e <- ENMevaluate(occs, envs, bg, algorithm = alg, tune.args = targs, categoricals = "biome", user.grp = user.grp, partitions = "user", overlap = TRUE, quiet = TRUE)
   test_ENMevaluation(e, alg, "user", targs, 4, 4)
   context(paste("Testing ENMnullSims for", alg, "with user partitions..."))
-  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
   test_ENMnullSims(e, ns, no.iter, alg, "user", mset, 4, 4)
   
   # no envs (SWD)

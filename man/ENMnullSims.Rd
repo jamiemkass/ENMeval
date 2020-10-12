@@ -10,6 +10,7 @@ ENMnullSims(
   no.iter,
   user.enm = NULL,
   userStats.signs = NULL,
+  eval.stats = c("auc.val", "auc.diff", "cbi.val", "or.mtp", "or.10p"),
   removeMxTemp = TRUE,
   parallel = FALSE,
   numCores = NULL,

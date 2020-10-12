@@ -22,17 +22,25 @@
 #'
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
-ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.signs = NULL, removeMxTemp = TRUE, 
-                        parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
+ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.signs = NULL, 
+                        user.eval.type = NULL,
+                        eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
+                        removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
 
   # assign evaluation type based on partition method
-  eval.type <- switch(e@partition.method,
-                      randomkfold = "knonspatial",
-                      jackknife = "knonspatial",
-                      block = "kspatial",
-                      checkerboard1 = "kspatial",
-                      checkerboard2 = "kspatial",
-                      testing = "knonspatial")
+  if(is.null(user.eval.type)) {
+    eval.type <- switch(e@partition.method,
+                        randomkfold = "knonspatial",
+                        jackknife = "knonspatial",
+                        block = "kspatial",
+                        checkerboard1 = "kspatial",
+                        checkerboard2 = "kspatial",
+                        testing = "testing",
+                        none = "none")  
+  }else{
+    eval.type <- user.eval.type
+  }
+  
   
   # checks
   if(!all(sapply(mod.settings, length) == 1)) stop("Please input a single set of model settings.")
@@ -45,7 +53,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
   start.time <- proc.time()
 
   # assign the number of cross validation iterations
-  nk <- ifelse(e@partition.method == "testing", 1, max(as.numeric(e@occs.grp)))
+  nk <- max(as.numeric(as.character(e@occs.grp)))
 
   # get number of occurrence points by partition
   occs.grp.tbl <- table(e@occs.grp)
@@ -54,16 +62,15 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
   # keep existing partitions
   null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
   
-  # assign algorithm
-  if(is.null(user.enm)) {
-    enm <- lookup.enm(e@algorithm)
-    if(e@algorithm == "maxent.jar") {
-      # create temp directory to store maxent.jar output, for potential removal later
-      tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
-      dir.create(tmpdir, showWarnings = TRUE, recursive = FALSE)
-    }
-  }else{
-    enm <- user.enm
+  if(e@algorithm == "maxent.jar") {
+    # create temp directory to store maxent.jar output, for potential removal later
+    tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
+    dir.create(tmpdir, showWarnings = TRUE, recursive = FALSE)
+  }
+  
+  # assign user algorithm if provided
+  if(!is.null(user.enm)) {
+    e@algorithm <- user.enm
   }
 
   ############################## #
@@ -112,7 +119,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
       # partition of envs.z
       for(k in 1:nk) {
         # sample null occurrences only from
-        # the environment variable grid cells in partition group k
+        # the records in partition group k
         null.samps.k <- null.samps %>% dplyr::filter(grp == k)
         # randomly sample n null occurrences, where n equals the number
         # of real occurrence in partition group k
@@ -126,6 +133,9 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
         samp.k <- sample(1:nrow(null.samps), occs.grp.tbl[k])
         null.occs.ik[[k]] <- null.samps[samp.k, ]
       }
+    }else if(eval.type %in% c("testing", "none")) {
+      samp.test <- sample(1:nrow(null.samps), occs.grp.tbl)
+      null.occs.ik[[1]] <- null.samps[samp.test, ]
     }
     
     # bind rows together to make full null occurrence dataset
@@ -135,37 +145,46 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
       if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
     }
     null.occs.i.z <- null.occs.i.df %>% dplyr::select(-grp)
-    # assign the null occurrence partitions as user partition settings, but
-    # keep the real model background partitions
-    user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
-    # shortcuts for settings
+    # shortcuts
     e.s <- e@other.settings
-    # assign user validation partitions to those used in the real model
-    user.val.grps <- cbind(e@occs, grp = e@occs.grp)
     e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
     if(length(categoricals) == 0) categoricals <- NULL
-
+    
+    if(eval.type %in% c("testing", "none")) {
+      partitions <- eval.type
+      user.grp <- NULL
+      user.val.grps <- NULL
+    }else{
+      # assign the null occurrence partitions as user partition settings, but
+      # keep the real model background partitions
+      user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
+      # assign user validation partitions to those used in the real model
+      user.val.grps <- cbind(e@occs, grp = e@occs.grp)
+      partitions <- "user"
+    }
     null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
-                            algorithm = e@algorithm, other.args = e.s$other.args, partitions = "user",
+                            algorithm = e@algorithm, other.args = e.s$other.args, partitions = partitions,
+                            occs.testing = e@occs.testing,
                             user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
                             aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
-                            pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
-    
+                            pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)  
     
     out <- list(results = null.e.i@results, 
                 results.partitions = null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything()))
     
     # restore NA row if partition evaluation is missing (model was NULL)
-    allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
-    if(!all(allParts)) {
-      inds <- which(allParts == FALSE)
-      newrow <- out$results.partitions[1,]
-      newrow[,4:ncol(newrow)] <- NA
-      for(ind in inds) {
-        out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
-      }
-      out$results.partitions <- arrange(out$results.partitions, fold)
+    if(eval.type != "testing") {
+      allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
+      if(!all(allParts)) {
+        inds <- which(allParts == FALSE)
+        newrow <- out$results.partitions[1,]
+        newrow[,4:ncol(newrow)] <- NA
+        for(ind in inds) {
+          out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
+        }
+        out$results.partitions <- arrange(out$results.partitions, fold)
+      }  
     }
     return(out)
   }
@@ -188,13 +207,21 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
   # assemble null evaluation statistics and take summaries
   nulls.ls <- lapply(outs, function(x) x$results)
   nulls.grp.ls <- lapply(outs, function(x) x$results.partitions)
-  nulls <- dplyr::bind_rows(nulls.ls)
+  nulls <- dplyr::bind_rows(nulls.ls) %>% dplyr::select(!dplyr::contains("AIC"))
   nulls.grp <- dplyr::bind_rows(nulls.grp.ls)
-  nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarize_all(mean)
-  nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarise_all(sd)
-  # get real model evaluation statistics for comparison
-  real.avgs <- real.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg"))
+  if(eval.type %in% c("testing", "none")) {
+    nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats)) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+    nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats)) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+    # get real model evaluation statistics for comparison
+    real.avgs <- real.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats))
+  }else{
+    nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+    nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+    # get real model evaluation statistics for comparison
+    real.avgs <- real.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg"))  
+  }
   real.sds <- real.mod.res %>% dplyr::select(dplyr::ends_with("sd"))
+  if(ncol(real.sds) == 0) real.sds <- NULL
   
   realNull.stats <- as.data.frame(matrix(nrow = 6, ncol = ncol(real.avgs)+1))
   names(realNull.stats)[1] <- "statistic"
@@ -204,7 +231,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
   # populate real and null means and standard deviations
   realNull.stats[1, -1] <- real.avgs
   real.sds.nameStrip <- gsub(".sd", "", names(real.sds))
-  realNull.stats[2, which(names(realNull.stats) %in% real.sds.nameStrip)] <- real.sds
+  if(length(real.sds.nameStrip) > 0) realNull.stats[2, which(names(realNull.stats) %in% real.sds.nameStrip)] <- real.sds
   realNull.stats[3,-1] <- nulls.avgs
   realNull.stats[4,-1] <- nulls.sds
   # calculate z-scores
@@ -224,6 +251,9 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
   
   # make cbi.val column NA for jackknife partitions
   if(e@partition.method == "jackknife") {
+    realNull.stats$cbi.val <- NA
+    nulls$cbi.val.avg <- NA
+    nulls$cbi.val.sd <- NA
     nulls.grp$cbi.val <- NA
   }
   

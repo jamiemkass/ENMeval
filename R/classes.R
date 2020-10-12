@@ -34,6 +34,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                     predictions = 'RasterStack',
                                     taxon.name = 'character',
                                     occs = 'data.frame',
+                                    occs.testing = 'data.frame',
                                     occs.grp = 'factor',
                                     bg = 'data.frame',
                                     bg.grp = 'factor',
@@ -83,6 +84,10 @@ setMethod("eval.taxon.name", "ENMevaluation", function(x) x@taxon.name)
 setGeneric("eval.occs", function(x) standardGeneric("eval.occs"))
 #' @export
 setMethod("eval.occs", "ENMevaluation", function(x) x@occs)
+
+setGeneric("eval.occs.testing", function(x) standardGeneric("eval.occs.testing"))
+#' @export
+setMethod("eval.occs.testing", "ENMevaluation", function(x) x@occs.testing)
 
 setGeneric("eval.occs.grp", function(x) standardGeneric("eval.occs.grp"))
 #' @export
