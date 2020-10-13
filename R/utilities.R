@@ -32,6 +32,45 @@ NULL
 #' @param bg.val.pred numeric: predictions made by mod.k for validation background
 NULL
 
+#' @title Partition settings
+#' @name partition.settings
+#' @usage ps <- list(kfolds = 5)
+#' ps <- list(orientation = "lat_lat")
+#' ps <- list(aggregation.factor = c(4,4))
+#' ENMevaluate(..., partition.settings = ps)
+#' @description This is a named list used to specify certain settings for partitioning schema.
+#' It is inserted as an argument to ENMevaluate(). Some partitioning schema require a setting to
+#' be specified. It is helpful to use the evalplot.grps() plotting function to visualize differences in settings.
+#' @param orientation Required for the block partition. Can be one of "lat_lon", "lon_lat", "lat_lat", 
+#' or "lon_lon". These are abbreviations for "latitude" and "longitude", and determine the order 
+#' and orientations with which the block partitioning function creates the partition groups. 
+#' @param aggregation.factor Required for the checkerboard partitions. Can be one or two numbers specifying
+#' the factor with which to aggregate the envs raster to assign partitions. For example, checkerboard1 with 
+#' an aggregation factor value of 2 will make the grid cells 4 times larger and then assign occurrence and 
+#' background records to partition groups based on which cell they are in. The checkerboard2 partition is 
+#' hierarchical, so cells are first aggregated to define groups like checkerboard1, but a second aggregation
+#' is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers can be used
+#' to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used for both levels.
+#' @param kfolds Required for the random partition. This specifies the number of random partition groups, or folds, to make.
+NULL
+
+#' @title Other settings
+#' @name other.settings
+#' @usage # an example of specifying settings different from default
+#' os <- list(pred.type = "logistic", 
+#'   abs.auc.diff = FALSE, 
+#'   validation.bg = "partition")
+#' ENMevaluate(..., other.settings = os)
+#' @description This is a named list used to specify extra settings for the analysis.
+#' It is inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
+#' so if they are not specified the analysis will be run with default settings.
+#' @param abs.auc.diff boolean; (default: TRUE) if TRUE, take absolute value of AUCdiff
+#' @param validation.bg character; (default: "full") either "full" to calculate AUC and CBI with respect to the full background, or
+#' "partition" to calculate them with respect to the validation partition background 
+#' @param pred.type character; (default: "cloglog")  specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters 
+#' @param other.args named list of any additional model arguments not specified for tuning
+NULL
+
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
 #' and Seifert (2011).

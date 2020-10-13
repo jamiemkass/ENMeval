@@ -9,24 +9,18 @@ ENMevaluate(
   envs = NULL,
   bg = NULL,
   tune.args = NULL,
-  taxon.name = NULL,
-  other.args = NULL,
-  categoricals = NULL,
-  algorithm = NULL,
-  user.enm = NULL,
   partitions = NULL,
+  algorithm = NULL,
+  partition.settings = NULL,
+  other.settings = NULL,
+  categoricals = NULL,
+  user.enm = NULL,
   user.grp = NULL,
   occs.testing = NULL,
-  kfolds = NA,
-  aggregation.factor = c(2, 2),
-  orientation = "lat_lon",
+  taxon.name = NULL,
   n.bg = 10000,
   overlap = FALSE,
   overlapStat = c("D", "I"),
-  clamp = TRUE,
-  pred.type = "cloglog",
-  abs.auc.diff = TRUE,
-  validation.bg = "full",
   user.val.grps = NULL,
   user.eval = NULL,
   rmm = NULL,
@@ -64,16 +58,14 @@ with the number specified by argument \code{n.bg}}
 
 \item{tune.args}{named list of model settings to be tuned}
 
-\item{other.args}{named list of any additional model arguments not specified for tuning}
-
-\item{categoricals}{character vector of names of categorical environmental variables}
+\item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 
 \item{algorithm}{character of the name of the chosen model}
 
+\item{categoricals}{character vector of names of categorical environmental variables}
+
 \item{user.enm}{ENMdetails object specified by the user; this model will be
 used for the analysis, and is an alternative to specifying algorithm}
-
-\item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 
 \item{user.grp}{named list with occs.grp = vector of partition group (fold) for each
 occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
@@ -84,11 +76,6 @@ of occurrence localities, in that order, intended for a testing dataset;
 when \code{partitions = "testing"}; these occurrences will be used only 
 for evaluation, and not for model training, and thus no cross validation will be done}
 
-\item{kfolds}{numeric for number of partition groups (grp), only for random k-fold partitioning}
-
-\item{aggregation.factor}{numeric vector with length 2 that specifies the factors for aggregating 
-\code{envs} in order to perform checkerboard partitioning}
-
 \item{n.bg}{numeric (default: 10000) for number of random background (or pseudo-absence) points to
 sample; necessary if \code{bg} is NULL}
 
@@ -96,17 +83,6 @@ sample; necessary if \code{bg} is NULL}
 
 \item{overlapStat}{character for one or two (vector) niche overlap statistics:
 choices are "D" and "I" -- see ?calc.niche.overlap for more details}
-
-\item{clamp}{boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
-applicable for maxent.jar/maxnet models}
-
-\item{pred.type}{character (default: "cloglog") that specifies which prediction type should be used to
-generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models}
-
-\item{abs.auc.diff}{boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE}
-
-\item{validation.bg}{Character: either "full" to calculate AUC and CBI with respect to the full background, or
-"partition" to calculate them with respect to the validation partition background}
 
 \item{user.val.grps}{matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
 internally by ENMnullSims() to force each null model to evaluate with real test data}
@@ -122,6 +98,12 @@ internally by ENMnullSims() to force each null model to evaluate with real test 
 \item{parallelType}{character (default: "doSNOW") specifying either "doParallel" or "doSNOW"}
 
 \item{updateProgress}{boolean (TRUE or FALSE) which if TRUE, use shiny progress bar; only for use in shiny apps}
+
+\item{other.args}{named list of any additional model arguments not specified for tuning}
+
+\item{clamp}{boolean; if TRUE, model prediction extrapolations will be restricted to the upper and lower
+bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
+if extrapolation is a study aim, this should be set to FALSE}
 }
 \value{
 
