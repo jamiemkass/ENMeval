@@ -25,9 +25,11 @@
 #' @param categoricals character; name or names of categorical environmental variables -- if not specified,
 #' all predictor variables will be treated as continuous unless they are factors (if categorical variables
 #' are already factors, specifying names of such variables in this argument is not needed)
-#' @param clamp boolean; if TRUE, model prediction extrapolations will be restricted to the upper and lower
+#' @param doClamp boolean; if TRUE, model prediction extrapolations will be restricted to the upper and lower
 #' bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
 #' if extrapolation is a study aim, this should be left at FALSE
+#' @param clamp.directions named list; specifies the direction ("left" for minimum, "right" for maximum) 
+#' of clamping for predictor variables -- (e.g.) list(left = c("bio1","bio5"), right = c("bio10","bio15"))
 #' @param user.enm ENMdetails object; an alternative to specifying an algorithm, users can insert a custom
 #' ENMdetails object to build models with
 #' @param user.grp named list; specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
@@ -65,7 +67,9 @@
 #' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitions = NULL, algorithm = NULL, 
-                        partition.settings = NULL, other.settings = NULL, categoricals = NULL, clamp = FALSE,
+                        partition.settings = list(orientation = "lat_lon", aggregation.factor = 2, kfolds = 5), 
+                        other.settings = list(abs.auc.diff = TRUE, pred.type = "cloglog", validation.bg = "full"), 
+                        categoricals = NULL, doClamp = FALSE, clamp.directions = NULL,
                         user.enm = NULL, user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), 
                         user.val.grps = NULL, user.eval = NULL, rmm = NULL,
@@ -179,11 +183,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     enm <- user.enm
   }
   
-  # apply defaults to other.settings if not input
-  if(is.null(other.settings$abs.auc.diff)) other.settings$abs.auc.diff <- TRUE
-  if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
-  if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
-  
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
   ########################################################### #
@@ -266,7 +265,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(partitions == "testing") {
     if(!is.null(envs)) {
       occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
-      occs.testing.z <- cbind(occs.testing, occs.testing.z)  
+      occs.testing.z <- cbind(occs.testing, occs.testing.z)
     }else{
       occs.testing.z <- occs.testing
     }
@@ -293,8 +292,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
       if(!is.null(user.val.grps)) user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], levels = levels(d[, categoricals[i]]))
+      if(!is.null(occs.testing.z)) occs.testing.z[, categoricals[i]] <- factor(occs.testing.z[, categoricals[i]], levels = levels(d[, categoricals[i]]))
     }
   }
+  
   # drop categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
   
@@ -341,14 +342,30 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
   
   ################# #
+  # CLAMPING ####
+  ################# #
+  if(doClamp == TRUE) {
+    if(is.null(envs)) stop("Cannot clamp without predictor variable rasters.")
+    if(is.null(clamp.directions)) {
+      clamp.envs <- names(envs)[!names(envs) %in% categoricals]
+      clamp.directions <- list(left = clamp.envs, right = clamp.envs)
+    }
+    envs <- ENMeval::clamp(predictors = envs, records = rbind(occs.z, bg.z), 
+                  left = clamp.directions$left, right = clamp.directions$right, 
+                  categoricals = categoricals)
+  }
+  
+  
+  ################# #
   # MODEL TUNING #### 
   ################# #
   
   # print model-specific message
+  clamp.msg <- ifelse(doClamp == TRUE, "with clamping", "with no clamping")
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0", clamp.msg, "with", enm@msgs(tune.args, other.settings), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, clamp.msg, "with", enm@msgs(tune.args, other.settings), "***\n"))
   }
   
   # make table for all tuning parameter combinations
@@ -359,9 +376,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, 
+                             numCores, parallelType, doClamp, user.eval, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, updateProgress, user.eval, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, 
+                            updateProgress, doClamp, user.eval, quiet)
   }
   
   ##################### #
@@ -467,11 +486,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
     if(!is.null(envs)) {
-      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, aic.settings))
+      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, doClamp, aic.settings))
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], doClamp, aic.settings))
     aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
@@ -483,17 +502,19 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
   if(is.null(partition.settings)) partition.settings <- list()
+  if(is.null(clamp.directions)) clamp.directions <- list()
   
   # get variable importance for all models
   varimp.all <- lapply(mod.full.all, enm@varimp)
   
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
-                     results = eval.stats, results.partitions = val.stats.all,
+                     results = as.data.frame(eval.stats), results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      variable.importance = varimp.all,
                      partition.method = partitions, partition.settings = partition.settings,
-                     other.settings = other.settings, taxon.name = taxon.name,
+                     other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
+                     taxon.name = taxon.name,
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.testing = occs.testing.z, occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
                      rmm = list())

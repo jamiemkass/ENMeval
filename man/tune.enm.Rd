@@ -18,6 +18,7 @@ tune.train(
   envs,
   other.settings,
   partitions,
+  doClamp,
   quiet
 )
 
@@ -31,6 +32,7 @@ tune.validate(
   nk,
   other.settings,
   partitions,
+  doClamp,
   user.eval,
   quiet
 )
@@ -46,6 +48,7 @@ tune.parallel(
   occs.testing.z,
   numCores,
   parallelType,
+  doClamp,
   user.eval,
   quiet
 )
@@ -60,6 +63,7 @@ tune.regular(
   user.val.grps,
   occs.testing.z,
   updateProgress,
+  doClamp,
   user.eval,
   quiet
 )
@@ -73,6 +77,7 @@ cv.enm(
   other.settings,
   user.val.grps,
   occs.testing.z,
+  doClamp,
   user.eval,
   quiet
 )
@@ -82,7 +87,7 @@ cv.enm(
 
 \item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
 
-\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, clamp, pred.type, abs.auc.diff, cbi.cv}
+\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg}
 
 \item{partitions}{character of name of partitioning technique (see \code{?partitions})}
 

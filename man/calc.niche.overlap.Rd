@@ -7,7 +7,7 @@
 calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
 }
 \arguments{
-\item{envs}{A rasterStack of at least 2 Maxent predictive raster layers.}
+\item{predictors}{A rasterStack of at least 2 Maxent predictive raster layers.}
 
 \item{overlapStat}{The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).}
 
