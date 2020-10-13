@@ -2,15 +2,16 @@
 % Please edit documentation in R/ENMnullSims.R
 \name{ENMnullSims}
 \alias{ENMnullSims}
-\title{Generate null ecological niche models (ENMs) and compare evaluation statistics with real ENMs}
+\title{Generate null ecological niche models (ENMs) and compare null with empirical performance metrics}
 \usage{
 ENMnullSims(
   e,
   mod.settings,
   no.iter,
-  user.enm = NULL,
-  userStats.signs = NULL,
   eval.stats = c("auc.val", "auc.diff", "cbi.val", "or.mtp", "or.10p"),
+  user.enm = NULL,
+  user.eval.type = NULL,
+  userStats.signs = NULL,
   removeMxTemp = TRUE,
   parallel = FALSE,
   numCores = NULL,
@@ -21,27 +22,60 @@ ENMnullSims(
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{mod.settings}{named list of one set of model settings to build null models with}
+\item{mod.settings}{named list; one set of model settings with which to build null ENMs}
 
-\item{no.iter}{numeric of number of null model iterations}
+\item{no.iter}{numeric; number of null model iterations}
 
-\item{user.enm}{ENMdetails object specified by the user}
+\item{eval.stats}{character vector; the performance metrics that will be used to calculate null model statistics}
 
-\item{userStats.signs}{named list of user-defined evaluation statistics attributed with
+\item{user.enm}{ENMdetails object; if implementing a user-specified model}
+
+\item{user.eval.type}{character; if implementing a user-specified model, specify here which
+evaluation type to use -- either "knonspatial", "kspatial", "testing", or "none"}
+
+\item{userStats.signs}{named list; user-defined evaluation statistics attributed with
 either 1 or -1 to designate whether the expected difference between real and null models is 
 positive or negative; this is used to calculate the p-value of the z-score}
 
-\item{removeMxTemp}{boolean (TRUE or FALSE) which if TRUE delete all temporary data generated
-when using maxent.jar for modeling}
+\item{removeMxTemp}{boolean; if TRUE delete all temporary data generated when using maxent.jar for modeling}
 
-\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data);
-necessary when evaluating using spatial cross-validation (see details)}
+\item{parallel}{boolean; if TRUE use parallel processing}
+
+\item{numCores}{numeric; number of cores to use for parallel processing -- if left NULL, all available cores will be used}
+
+\item{parallelType}{character; type of parallel processing to use -- either "doSNOW" or "doParallel"}
+
+\item{quiet}{boolean; if TRUE, no messages will be printed to the console}
+}
+\value{
+An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
+and their cross-validation results, as well as differences in results between the empirical and null models. 
+This comparison table includes z-scores of these differences and their associated p-values (under a normal distribution).
+See ?ENMnull for more details.
 }
 \description{
-\code{ENMnullSims()} builds null ecological niche models iteratively for a single set of 
+\code{ENMnullSims()} iteratively builds null ENMs for a single set of 
 user-specified model settings based on an input ENMevaluation object, from which all other analysis 
-settings are copied. \code{ENMnullSims()} returns an \code{ENMnull} object with slots containing evaluation
-summary statistics for the null models and their cross-validation results, as well as differences
-in results between the real and null models. This comparison table includes z-scores of these differences
-and their associated p-values (under a normal distribution).
+settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
+(averages and standard deviations) and effect sizes and p-values are calculated by comparing these 
+summary statistics to the empirical values of the performance metrics (i.e., from the model built with
+the real data). See the references below for more details on this method.
+}
+\details{
+This null ENM technique is based on the implementation in Bohl et al. (2019),
+This technique follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
+instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
+validation data used to evaluae the empirical model. Bohl et al. (2019) demonstrates this approach using a single
+defined withheld partition group, but Kass et al. (2020) extended it to use spatial partitions by drawing null occurrences
+from the area of the predictor raster data defining each partition. This function avoids using raster data to speed up each
+iteration, and instead draws null occurrences from the partitioned background records. Thus, you should avoid running this
+when your background records are not well sampled across the study extent, as this limits the extent that null occurrences
+can be sampled from.
+}
+\references{
+Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. Ecography, 30(5), 727-736. \url{https://www.jstor.org/stable/30244521}
+
+Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. Journal of Biogeography, 46(6), 1101-1111. \url{https://doi.org/10.1111/jbi.13573}
+
+Kass, J. M., Anderson, R. P., Espinosa‐Lucas, A., Juárez‐Jaimes, V., Martínez‐Salas, E., Botello, F.,  Tavera, G., Flores‐Martínez, J. J., & Sánchez‐Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. Ecography, 43(3), 341-352. \url{https://doi.org/10.1111/ecog.04886}
 }

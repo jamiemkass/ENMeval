@@ -1,30 +1,50 @@
-#' @title Generate null ecological niche models (ENMs) and compare evaluation statistics with real ENMs
-#' @description \code{ENMnullSims()} builds null ecological niche models iteratively for a single set of 
+#' @title Generate null ecological niche models (ENMs) and compare null with empirical performance metrics
+#' @description \code{ENMnullSims()} iteratively builds null ENMs for a single set of 
 #' user-specified model settings based on an input ENMevaluation object, from which all other analysis 
-#' settings are copied. \code{ENMnullSims()} returns an \code{ENMnull} object with slots containing evaluation
-#' summary statistics for the null models and their cross-validation results, as well as differences
-#' in results between the real and null models. This comparison table includes z-scores of these differences
-#' and their associated p-values (under a normal distribution).
-
+#' settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
+#' (averages and standard deviations) and effect sizes and p-values are calculated by comparing these 
+#' summary statistics to the empirical values of the performance metrics (i.e., from the model built with
+#' the real data). See the references below for more details on this method.
+#' @details This null ENM technique is based on the implementation in Bohl et al. (2019),
+#' This technique follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
+#' instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
+#' validation data used to evaluae the empirical model. Bohl et al. (2019) demonstrates this approach using a single
+#' defined withheld partition group, but Kass et al. (2020) extended it to use spatial partitions by drawing null occurrences
+#' from the area of the predictor raster data defining each partition. This function avoids using raster data to speed up each
+#' iteration, and instead draws null occurrences from the partitioned background records. Thus, you should avoid running this
+#' when your background records are not well sampled across the study extent, as this limits the extent that null occurrences
+#' can be sampled from.
+#' @references Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. Ecography, 30(5), 727-736. \url{https://www.jstor.org/stable/30244521}
+#' 
+#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. Journal of Biogeography, 46(6), 1101-1111. \url{https://doi.org/10.1111/jbi.13573}
+#' 
+#' Kass, J. M., Anderson, R. P., Espinosa‐Lucas, A., Juárez‐Jaimes, V., Martínez‐Salas, E., Botello, F.,  Tavera, G., Flores‐Martínez, J. J., & Sánchez‐Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. Ecography, 43(3), 341-352. \url{https://doi.org/10.1111/ecog.04886}
+#' @return An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
+#' and their cross-validation results, as well as differences in results between the empirical and null models. 
+#' This comparison table includes z-scores of these differences and their associated p-values (under a normal distribution).
+#' See ?ENMnull for more details.
 #' 
 #' @param e ENMevaluation object
-#' @param mod.settings named list of one set of model settings to build null models with
-#' @param no.iter numeric of number of null model iterations
-#' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data);
-#' necessary when evaluating using spatial cross-validation (see details)
-#' @param user.enm ENMdetails object specified by the user
-#' @param userStats.signs named list of user-defined evaluation statistics attributed with
+#' @param mod.settings named list; one set of model settings with which to build null ENMs
+#' @param no.iter numeric; number of null model iterations
+#' @param eval.stats character vector; the performance metrics that will be used to calculate null model statistics
+#' @param user.enm ENMdetails object; if implementing a user-specified model
+#' @param user.eval.type character; if implementing a user-specified model, specify here which
+#' evaluation type to use -- either "knonspatial", "kspatial", "testing", or "none"
+#' @param userStats.signs named list; user-defined evaluation statistics attributed with
 #' either 1 or -1 to designate whether the expected difference between real and null models is 
 #' positive or negative; this is used to calculate the p-value of the z-score
-#' @param removeMxTemp boolean (TRUE or FALSE) which if TRUE delete all temporary data generated
-#' when using maxent.jar for modeling
+#' @param removeMxTemp boolean; if TRUE delete all temporary data generated when using maxent.jar for modeling
+#' @param parallel boolean; if TRUE use parallel processing
+#' @param numCores numeric; number of cores to use for parallel processing -- if left NULL, all available cores will be used
+#' @param parallelType character; type of parallel processing to use -- either "doSNOW" or "doParallel"
+#' @param quiet boolean; if TRUE, no messages will be printed to the console
 #' @export
 #'
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
-ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.signs = NULL, 
-                        user.eval.type = NULL,
-                        eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
+ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
+                        user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL, 
                         removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
 
   # assign evaluation type based on partition method
@@ -163,29 +183,44 @@ ENMnullSims <- function(e, mod.settings, no.iter, user.enm = NULL, userStats.sig
       user.val.grps <- cbind(e@occs, grp = e@occs.grp)
       partitions <- "user"
     }
-    null.e.i <- ENMevaluate(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
-                            algorithm = e@algorithm, other.args = e.s$other.args, partitions = partitions,
-                            occs.testing = e@occs.testing,
-                            user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
-                            aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
-                            pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)  
     
-    out <- list(results = null.e.i@results, 
-                results.partitions = null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything()))
+    args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
+                   algorithm = e@algorithm, other.args = e.s$other.args, partitions = partitions,
+                   occs.testing = e@occs.testing,
+                   user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
+                   aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
+                   pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
     
-    # restore NA row if partition evaluation is missing (model was NULL)
-    if(eval.type != "testing") {
-      allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
-      if(!all(allParts)) {
-        inds <- which(allParts == FALSE)
-        newrow <- out$results.partitions[1,]
-        newrow[,4:ncol(newrow)] <- NA
-        for(ind in inds) {
-          out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
-        }
-        out$results.partitions <- arrange(out$results.partitions, fold)
-      }  
+    null.e.i <- tryCatch({
+      do.call(ENMevaluate, args.i)  
+    }, error = function(cond) {
+      if(quiet != TRUE) message(paste0("\n", cond, "\n"))
+      # Choose a return value in case of error
+      return(NULL)
+    })
+    
+    if(is.null(null.e.i)) {
+      results.na <- e@results[1,] %>% mutate(across(auc.train:ncoef, ~NA))
+      results.partitions.na <- e@results.partitions %>% mutate(across(3:ncol(.), ~NA)) %>% dplyr::mutate(iter = i)
+      out <- list(results = results.na, results.partitions = results.partitions.na)
+    }else{
+      out <- list(results = null.e.i@results, 
+                  results.partitions = null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything()))  
+      # restore NA row if partition evaluation is missing (model was NULL)
+      if(eval.type != "testing") {
+        allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
+        if(!all(allParts)) {
+          inds <- which(allParts == FALSE)
+          newrow <- out$results.partitions[1,]
+          newrow[,4:ncol(newrow)] <- NA
+          for(ind in inds) {
+            out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
+          }
+          out$results.partitions <- arrange(out$results.partitions, fold)
+        }  
+      }
     }
+
     return(out)
   }
   

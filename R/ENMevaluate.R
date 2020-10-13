@@ -6,55 +6,56 @@
 #' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 #' results table should aid users in identifying model settings that balance fit and predictive ability.
 #' 
-#' @param occs matrix or data frame with three columns for taxon name, longitude, and latitude 
-#' of occurrence localities, in that order; if specifying predictor variable values
+#' @param occs matrix or data frame; occurrence records with two columns for longitude and latitude 
+#' of occurrence localities, in that order -- if specifying predictor variable values
 #' assigned to presence/background localities (species with data "SWD" form), this table will also have 
 #' one column for each predictor variable
 #' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
-#' @param bg matrix or data frame with two columns for longitude and latitude of 
-#' background (or pseudo-absence) localities, in that order; if specifying predictor variable values
+#' @param bg matrix or data frame; background records with two columns for longitude and latitude of 
+#' background (or pseudo-absence) localities, in that order -- if specifying predictor variable values
 #' assigned to presence/background localities (species with data "SWD" form), this table will also have 
 #' one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
 #' with the number specified by argument \code{n.bg}
-#' @param tune.args named list of model settings to be tuned
-#' @param other.args named list of any additional model arguments not specified for tuning
-#' @param categoricals character vector of names of categorical environmental variables
-#' @param algorithm character of the name of the chosen model
-#' @param user.enm ENMdetails object specified by the user; this model will be
-#' used for the analysis, and is an alternative to specifying algorithm
-#' @param partitions character of name of partitioning technique (see \code{?partitions})
-#' @param user.grp named list with occs.grp = vector of partition group (fold) for each
-#' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for 
-#' background (or pseudo-absence) localities
-#' @param occs.testing matrix or data frame with two columns for longitude and latitude 
-#' of occurrence localities, in that order, intended for a testing dataset;
-#' when \code{partitions = "testing"}; these occurrences will be used only 
-#' for evaluation, and not for model training, and thus no cross validation will be done
-#' @param kfolds numeric for number of partition groups (grp), only for random k-fold partitioning
-#' @param aggregation.factor numeric vector with length 2 that specifies the factors for aggregating 
-#' \code{envs} in order to perform checkerboard partitioning
-#' @param n.bg numeric (default: 10000) for number of random background (or pseudo-absence) points to
-#'  sample; necessary if \code{bg} is NULL
-#' @param overlap boolean (TRUE or FALSE) which if TRUE, calculate niche overlap statistics
-#' @param overlapStat character for one or two (vector) niche overlap statistics:
-#' choices are "D" and "I" -- see ?calc.niche.overlap for more details
-#' @param clamp boolean (TRUE or FALSE) which if TRUE, clamp model responses; currently only 
-#' applicable for maxent.jar/maxnet models
-#' @param pred.type character (default: "cloglog") that specifies which prediction type should be used to
-#' generate prediction rasters for the ENMevaluation object; currently only applicable for maxent.jar/maxnet models
-#' @param abs.auc.diff boolean (TRUE or FALSE) which if TRUE, take absolute value of AUCdiff; default is TRUE
-#' @param validation.bg Character: either "full" to calculate AUC and CBI with respect to the full background, or
-#' "partition" to calculate them with respect to the validation partition background 
-#' @param user.val.grps matrix or data frame of user-defined test record coordinates and predictor variable values; this is mainly used
-#' internally by ENMnullSims() to force each null model to evaluate with real test data
-#' @param user.eval function specifying custom validation evaluation (see vignette for example)
-#' @param rmm RMM object to be written to by ENMevaluate; if not specified, a new RMM object is output
+#' @param tune.args named list; model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))
+#' @param partitions character; name of partitioning technique (see \code{?partitions})
+#' @param algorithm character; name of the algorithm used to build models -- one of "maxnet",
+#' "maxent.jar", "boostedRegressionTrees", "bioclim", or "randomForest"
+#' @param partition.settings named list; settings specific to certain partitions -- see ?partition.settings
+#' @param other.settings named list; other settings for analysis -- see ?other.settings
+#' @param categoricals character; name or names of categorical environmental variables -- if not specified,
+#' all predictor variables will be treated as continuous unless they are factors (if categorical variables
+#' are already factors, specifying names of such variables in this argument is not needed)
+#' @param clamp boolean; if TRUE, model prediction extrapolations will be restricted to the upper and lower
+#' bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
+#' if extrapolation is a study aim, this should be left at FALSE
+#' @param user.enm ENMdetails object; an alternative to specifying an algorithm, users can insert a custom
+#' ENMdetails object to build models with
+#' @param user.grp named list; specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
+#' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for background (or pseudo-absence) localities
+#' @param occs.testing matrix or data frame; a full withheld testing dataset with two columns for longitude and latitude 
+#' of occurrence localities, in that order -- when \code{partitions = "testing"}; these occurrences will be used only 
+#' for evaluation but not for model training, and thus no cross validation will be performed
+#' @param taxon.name character; name of the focal species or taxon -- used primarily for annotating
+#' the ENMevaluation object and output metadata (rmm), but not necessary
+#' @param n.bg numeric; (default: 10000) if background records not already provided, this specifies the 
+#' number of background (or pseudo-absence) points to randomly sample over envs raster
+#' @param overlap boolean; if TRUE, calculate niche overlap statistics
+#' @param overlapStat character; niche overlap statistics to be calculated -- 
+#' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details
+#' @param user.val.grps matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
+#' this is used internally by ENMnullSims() to force each null model to evaluate with real test data
+#' @param user.eval function; specify custom validation evaluation (see vignette for example)
+#' @param rmm rangeModelMetadata object; if specified, ENMevaluate() will write metadata details for the analysis into
+#' this object, but if not, a new rangeModelMetadata object will be generated and written to
 #' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
 #' @param numCores numeric for number of cores to use for parallel processing
 #' @param parallelType character (default: "doSNOW") specifying either "doParallel" or "doSNOW"
 #' @param updateProgress boolean (TRUE or FALSE) which if TRUE, use shiny progress bar; only for use in shiny apps
-#'
-#' @return 
+#' @param quiet boolean; if TRUE, no messages will be printed to the console
+#' @param legacy.arguments these are included to avoid unnecessary errors for older scripts, but in a later version
+#' these arguments will be permanently deprecated
+#' 
+#' @return An ENMevaluation object. See ?ENMevaluation for details.
 #'
 #' @examples
 #'
@@ -63,20 +64,20 @@
 #' @export 
 #' 
 
-ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.name = NULL, other.args = NULL, categoricals = NULL, algorithm = NULL,
-                        user.enm = NULL, partitions = NULL, user.grp = NULL, occs.testing = NULL, 
-                        kfolds = NA, aggregation.factor = c(2, 2), orientation = "lat_lon",
-                        n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), clamp = TRUE, pred.type = "cloglog", 
-                        abs.auc.diff = TRUE, validation.bg = "full", user.val.grps = NULL, user.eval = NULL, rmm = NULL,
+ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitions = NULL, algorithm = NULL, 
+                        partition.settings = NULL, other.settings = NULL, categoricals = NULL, clamp = FALSE,
+                        user.enm = NULL, user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
+                        n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), 
+                        user.val.grps = NULL, user.eval = NULL, rmm = NULL,
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
-                        # legacy parameters
+                        # legacy arguments
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
                         method = NULL, bin.output = NULL, rasterPreds = NULL, progbar = NULL) {
   
   # legacy argument handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
-    if(quiet != TRUE) message("* Running ENMeval v2.0.0 with legacy parameters. These will be phased out in the next version.")
+    if(quiet != TRUE) message("* Running ENMeval v2.0.0 with legacy arguments. These will be phased out in the next version.")
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
@@ -92,7 +93,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     if(quiet != TRUE) message('Warning: These arguments were deprecated and replaced with the argument "user.grp".')
   }
   if((!is.null(occ.grp) & is.null(bg.grp)) | (is.null(occ.grp) & !is.null(bg.grp))) {
-    stop('For user partitions, please input both arguments "occ.grp" and "bg.grp". Warning: These are legacy parameters that were replaced with the argument "user.grp".')
+    stop('For user partitions, please input both arguments "occ.grp" and "bg.grp". Warning: These are legacy arguments that were replaced with the argument "user.grp".')
   }
   
   if(is.null(algorithm) & is.null(user.enm)) {
@@ -134,10 +135,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   }
   
   if(partitions == "randomkfold") {
-    if(is.null(kfolds)) {
+    if(is.null(partition.settings$kfolds)) {
       stop('* For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
     }else{
-      if(kfolds == 0) {
+      if(partition.settings$kfolds == 0) {
         stop('* For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
       }
     }
@@ -178,9 +179,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
     enm <- user.enm
   }
   
-  # put all settings into list
-  other.settings <- list(other.args = other.args, clamp = clamp, pred.type = pred.type, 
-                         abs.auc.diff = abs.auc.diff, validation.bg = validation.bg)
+  # apply defaults to other.settings if not input
+  if(is.null(other.settings$abs.auc.diff)) other.settings$abs.auc.diff <- TRUE
+  if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
+  if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
   
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
@@ -307,10 +309,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # partition occs based on selected partition method
   grps <- switch(partitions, 
                  jackknife = get.jackknife(d.occs, d.bg),
-                 randomkfold = get.randomkfold(d.occs, d.bg, kfolds),
-                 block = get.block(d.occs, d.bg, orientation),
-                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, aggregation.factor),
-                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, aggregation.factor),
+                 randomkfold = get.randomkfold(d.occs, d.bg, partition.settings$kfolds),
+                 block = get.block(d.occs, d.bg, partition.settings$orientation),
+                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, partition.settings$aggregation.factor),
+                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, partition.settings$aggregation.factor),
                  user = NULL,
                  testing = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
@@ -319,8 +321,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   # choose a user message reporting on partition choice
   parts.message <- switch(partitions,
                           jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
-                          randomkfold = paste0("* Model evaluations with random ", kfolds, "-fold cross validation..."),
-                          block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", orientation, " orientation..."),
+                          randomkfold = paste0("* Model evaluations with random ", partition.settings$kfolds, "-fold cross validation..."),
+                          block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", partition.settings$orientation, " orientation..."),
                           checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
                           checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
                           user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
@@ -328,14 +330,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                           none = "* Skipping model evaluations (only calculating full model statistics)...")
   if(quiet != TRUE) message(parts.message)
   
-  # record partition settings
-  parts.settings <- switch(partitions,
-                           block = list(orientation = orientation),
-                           randomkfold = list(kfolds = kfolds),
-                           checkerboard1 = list(aggregation.factor = aggregation.factor),
-                           checkerboard2 = list(aggregation.factor = aggregation.factor),
-                           user = list(kfolds = length(unique(user.grp$occs.grp))))
-  if(is.null(parts.settings)) parts.settings <- list()
+  # record user partition settings
+  if(partitions == "user") partition.settings <- c(partition.settings, kfolds = length(unique(user.grp$occs.grp)))
   
   # if jackknife partitioning, do not calculate CBI because there are too few validation occurrences
   # per partition (n=1) to have a meaningful result
@@ -486,6 +482,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
   if(is.null(taxon.name)) taxon.name <- ""
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
+  if(is.null(partition.settings)) partition.settings <- list()
   
   # get variable importance for all models
   varimp.all <- lapply(mod.full.all, enm@varimp)
@@ -495,7 +492,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, taxon.na
                      results = eval.stats, results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      variable.importance = varimp.all,
-                     partition.method = partitions, partition.settings = parts.settings,
+                     partition.method = partitions, partition.settings = partition.settings,
                      other.settings = other.settings, taxon.name = taxon.name,
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.testing = occs.testing.z, occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
