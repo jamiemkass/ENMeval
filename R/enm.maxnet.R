@@ -5,7 +5,7 @@
 maxnet.name <- "maxnet"
 
 maxnet.fun.train <- maxnet::maxnet
-  
+
 maxnet.fun.val <- maxnet.fun.train
 
 maxnet.msgs <- function(tune.args, other.settings) {
@@ -41,20 +41,19 @@ maxnet.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
   maxnet.args.train(occs.z, bg.z, tune.i, other.settings)
 }
 
-maxnet.predict <- function(mod, envs, other.settings) {
+maxnet.predict <- function(mod, envs, doClamp, other.settings) {
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "BasicRaster") == TRUE) {
     envs.n <- raster::nlayers(envs)
     envs.pts <- raster::getValues(envs) %>% as.data.frame()
     mxnet.p <- dismo::predict(mod, envs.pts, type = other.settings$pred.type, 
-                       clamp = other.settings$clamp,  other.settings$other.args)
+                              clamp = doClamp,  other.settings$other.args)
     envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
     pred <- raster::rasterFromXYZ(cbind(raster::coordinates(envs), envs.pts$pred), res=raster::res(envs), crs = raster::crs(envs)) 
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
-    pred <- dismo::predict(mod, envs, type = other.settings$pred.type, 
-                    clamp = other.settings$clamp, na.rm = TRUE, other.settings$other.args) %>% as.numeric()
+    pred <- dismo::predict(mod, envs, type = other.settings$pred.type, na.rm = TRUE, clamp = doClamp, other.settings$other.args) %>% as.numeric()
   }
   return(pred)
 }

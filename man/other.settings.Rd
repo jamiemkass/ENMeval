@@ -17,6 +17,8 @@ ENMevaluate(..., other.settings = os)
 "partition" to calculate them with respect to the validation partition background}
 
 \item{pred.type}{character; (default: "cloglog")  specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters}
+
+\item{other.args}{named list of any additional model arguments not specified for tuning}
 }
 \description{
 This is a named list used to specify extra settings for the analysis.

@@ -50,7 +50,7 @@ brt.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod.full = NULL) 
   return(out)
 }
 
-brt.predict <- function(mod, envs, other.settings) {
+brt.predict <- function(mod, envs, clamp, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
     pred <- raster::predict(envs, mod, type = "response", n.trees = length(mod$trees), na.rm = TRUE)
   }else{

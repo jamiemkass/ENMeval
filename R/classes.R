@@ -27,6 +27,8 @@ ENMevaluation <- setClass("ENMevaluation",
                                     partition.method = 'character',
                                     partition.settings = 'list',
                                     other.settings = 'list',
+                                    doClamp = 'logical',
+                                    clamp.directions = 'list',
                                     results = 'data.frame',
                                     results.partitions = 'data.frame',
                                     models = 'list',
@@ -77,6 +79,14 @@ setGeneric("eval.other.settings", function(x) standardGeneric("eval.other.settin
 #' @export
 setMethod("eval.other.settings", "ENMevaluation", function(x) x@other.settings)
 
+setGeneric("eval.doClamp", function(x) standardGeneric("eval.doClamp"))
+#' @export
+setMethod("eval.doClamp", "ENMevaluation", function(x) x@other.settings)
+
+setGeneric("eval.clamp.directions", function(x) standardGeneric("eval.clamp.directions"))
+#' @export
+setMethod("eval.clamp.directions", "ENMevaluation", function(x) x@other.settings)
+
 setGeneric("eval.taxon.name", function(x) standardGeneric("eval.taxon.name"))
 #' @export
 setMethod("eval.taxon.name", "ENMevaluation", function(x) x@taxon.name)
@@ -118,6 +128,8 @@ setMethod("show",
             cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
             cat(" partition method: ", object@partition.method, "\n")
             cat(" partition settings: ", ifelse(length(object@partition.settings) > 0, paste(names(object@partition.settings), unlist(object@partition.settings), sep = " = ", collapse = ", "), "none"), "\n")
+            cat(" clamp: ", object@doClamp, "\n")
+            cat("clamp directions: ", ifelse(length(object@clamp.directions) > 0, paste(sapply(1:2, function(x) paste0(names(object@clamp.directions[x]), ": ", paste(object@clamp.directions[[x]], collapse = ", "))), collapse = "\n"), "none"), "\n")
             cat(" algorithm: ", object@algorithm, "\n")
             cat(" tune settings (", paste0(names(object@tune.settings)[-ncol(object@tune.settings)], collapse = "_"), "): ", paste0(object@tune.settings[,ncol(object@tune.settings)], collapse = ", "), "\n")
             cat(" overlap: ", !is.null(object@overlap), "\n")

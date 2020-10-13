@@ -130,6 +130,8 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
     if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
   }
   
+  if(length(e@clamp.directions) == 0) clamp.directions.i <- NULL else clamp.directions.i <- e@clamp.directions
+  
   # define function to run null model for iteration i
   null_i <- function(i) {
     null.occs.ik <- list()
@@ -166,8 +168,6 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
     }
     null.occs.i.z <- null.occs.i.df %>% dplyr::select(-grp)
     # shortcuts
-    e.s <- e@other.settings
-    e.p <- e@partition.settings
     categoricals <- names(which(sapply(e@occs, is.factor)))
     if(length(categoricals) == 0) categoricals <- NULL
     
@@ -184,12 +184,10 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
       partitions <- "user"
     }
     
-    args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals,
-                   algorithm = e@algorithm, other.args = e.s$other.args, partitions = partitions,
-                   occs.testing = e@occs.testing,
-                   user.val.grps = user.val.grps, user.grp = user.grp, kfolds = e.p$kfolds, 
-                   aggregation.factor = e.p$aggregation.factor, clamp = e.s$clamp, 
-                   pred.type = e.s$pred.type, abs.auc.diff = e.s$abs.auc.diff, quiet = TRUE)
+    args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partition = partitions,
+                   algorithm = e@algorithm, other.settings = e@other.settings, partition.settings = e@partition.settings,
+                   occs.testing = e@occs.testing, user.val.grps = user.val.grps, user.grp = user.grp, 
+                   doClamp = e@doClamp, clamp.directions = clamp.directions.i, quiet = TRUE)
     
     null.e.i <- tryCatch({
       do.call(ENMevaluate, args.i)  
@@ -200,8 +198,14 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
     })
     
     if(is.null(null.e.i)) {
-      results.na <- e@results[1,] %>% mutate(across(auc.train:ncoef, ~NA))
-      results.partitions.na <- e@results.partitions %>% mutate(across(3:ncol(.), ~NA)) %>% dplyr::mutate(iter = i)
+      results.na <- e@results[1,] %>% dplyr::mutate(dplyr::across(auc.train:ncoef, ~NA))
+      mod.settings.i <- paste(names(mod.settings), mod.settings, collapse = "_", sep = ".")
+      if(nrow(e@results.partitions) > 0) {
+        results.partitions.na <- e@results.partitions %>% dplyr::filter(tune.args == mod.settings.i) %>% dplyr::mutate(dplyr::across(3:ncol(.), ~NA)) %>% dplyr::mutate(iter = i)  
+      }else{
+        results.partitions.na <- e@results.partitions
+      }
+      
       out <- list(results = results.na, results.partitions = results.partitions.na)
     }else{
       out <- list(results = null.e.i@results, 
@@ -214,7 +218,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
           newrow <- out$results.partitions[1,]
           newrow[,4:ncol(newrow)] <- NA
           for(ind in inds) {
-            out$results.partitions <- bind_rows(out$results.partitions, newrow %>% mutate(fold = ind))  
+            out$results.partitions <- bind_rows(out$results.partitions, newrow %>% dplyr::mutate(fold = ind))  
           }
           out$results.partitions <- arrange(out$results.partitions, fold)
         }  

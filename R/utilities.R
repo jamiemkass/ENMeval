@@ -71,6 +71,39 @@ NULL
 #' @param other.args named list of any additional model arguments not specified for tuning
 NULL
 
+#' @title Clamp predictor variables
+#' @author Stephen J. Phillips, Jamie M. Kass
+#' @param predictors Raster* object; predictor variables in raster form (either Layer or Stack)
+#' @param records matrix or data frame; the predictor variables values for the reference records, 
+#' used to determine the minimums and maximums -- this should ideally be the occurrences + background
+#' @param left character; names of variables to get a minimum clamp (i.e. left))
+#' @param right character; names of variables to get a maximum clamp (i.e. right))
+#' @param categoricals character; name or names of categorical environmental variables
+#' @export
+
+clamp <- function(predictors, records, left, right, categoricals = NULL) {
+  if(!is.null(categoricals)) {
+    p <- predictors[[-which(names(predictors) == categoricals)]]
+  }else{
+    p <- predictors
+  }
+  p.z <- raster::extract(p, records)
+  minmaxes <- data.frame(min = apply(p.z, 2, min, na.rm = TRUE),
+                         max = apply(p.z, 2, max, na.rm = TRUE))
+  adjust <- function(pp, toadjust, mm) {
+    raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+      layername <- names(oldlayer)
+      if (!(layername %in% toadjust)) return(oldlayer)
+      newlayer <- if(mm=="min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+      names(newlayer) <- layername
+      return(newlayer)
+    }))}
+  out <- adjust(adjust(p, left, "min"), right, "max")
+  if(!is.null(categoricals)) out <- raster::addLayer(out, predictors[[categoricals]])
+  return(out)
+}
+
+
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
 #' and Seifert (2011).
@@ -261,7 +294,7 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @aliases calc.niche.overlap
 #' @usage 
 #' calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
-#' @param envs A rasterStack of at least 2 Maxent predictive raster layers.
+#' @param predictors A rasterStack of at least 2 Maxent predictive raster layers.
 #' @param overlapStat The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
 #' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
@@ -276,18 +309,18 @@ calc.10p.trainThresh <- function(pred.train) {
 #' `nicheOverlap` in the \pkg{dismo} package
 
 #' @export
-calc.niche.overlap <- function(envs, overlapStat, quiet=FALSE){
-  n <- raster::nlayers(envs)
+calc.niche.overlap <- function(predictors, overlapStat, quiet=FALSE){
+  n <- raster::nlayers(predictors)
   ov <- matrix(nrow = n, ncol = n)
   if(quiet != TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
     if(quiet != TRUE) setTxtProgressBar(pb, i)
     for(j in (i + 1):n){
-      ov[j, i] <- dismo::nicheOverlap(envs[[i]], envs[[j]], stat = overlapStat)
+      ov[j, i] <- dismo::nicheOverlap(predictors[[i]], predictors[[j]], stat = overlapStat)
     }
   }
-  colnames(ov) <- names(envs)
-  rownames(ov) <- names(envs)
+  colnames(ov) <- names(predictors)
+  rownames(ov) <- names(predictors)
   if(quiet != TRUE) close(pb)
   return(ov)
 }
@@ -301,7 +334,7 @@ lookup.enm <- function(algorithm) {
               randomForest = enm.randomForest,
               boostedRegressionTrees = enm.boostedRegressionTrees,
               bioclim = enm.bioclim
-              )
+  )
   return(x)
 }
 
