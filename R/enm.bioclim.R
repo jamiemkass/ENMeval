@@ -27,7 +27,7 @@ bioclim.args.val <- function(occs.z, bg.z, tune.tbl.i, other.settings, mod = NUL
   bioclim.args.train(occs.z, bg.z, tune.tbl.i, other.settings)
 }
 
-bioclim.predict <- function(mod, envs, clamp, other.settings) {
+bioclim.predict <- function(mod, envs, doClamp, other.settings) {
   # if no tails in other.args, defaults to NULL
   pred <- dismo::predict(mod, envs, tails = other.settings$tails, na.rm = TRUE)
   return(pred)

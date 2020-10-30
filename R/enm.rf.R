@@ -35,7 +35,7 @@ rf.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
   rf.args.train(occs.z, bg.z, tune.i, other.settings)
 }
 
-rf.predict <- function(mod, envs, clamp, other.settings) {
+rf.predict <- function(mod, envs, doClamp, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
     pred <- raster::predict(envs, mod, type = "prob", na.rm = TRUE)
   }else{
