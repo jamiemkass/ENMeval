@@ -185,6 +185,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.')
   }
   
+  if(doClamp == FALSE & !is.null(clamp.directions)) {
+    stop("If specifying clamp directions, please make doClamp = TRUE.")
+  }
+  
   # if a vector of tuning arguments is numeric, make sure it is sorted (for results table and plotting)
   tune.args.num <- which((sapply(tune.args, class) %in% c("numeric", "integer")) & sapply(tune.args, length) > 1)
   for(i in tune.args.num) {

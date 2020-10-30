@@ -72,7 +72,7 @@ NULL
 NULL
 
 #' @title Clamp predictor variables
-#' @author Stephen J. Phillips, Jamie M. Kass
+#' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
 #' @param predictors Raster* object; predictor variables in raster form (either Layer or Stack)
 #' @param p.z matrix or data frame; the predictor variables values for the reference records
 #' (not including coordinates), used to determine the minimums and maximums -- 
@@ -82,9 +82,10 @@ NULL
 #' @param categoricals character; name or names of categorical environmental variables
 #' @export
 
-clamp <- function(predictors, p.z, left, right, categoricals = NULL) {
+clamp <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
   if(!is.null(categoricals)) {
     p <- predictors[[-which(names(predictors) == categoricals)]]
+    p.z <- p.z[[-which(colnames(p.z) == categoricals)]]
   }else{
     p <- predictors
   }
@@ -94,10 +95,12 @@ clamp <- function(predictors, p.z, left, right, categoricals = NULL) {
     raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
       layername <- names(oldlayer)
       if (!(layername %in% toadjust)) return(oldlayer)
-      newlayer <- if(mm=="min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+      newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
       names(newlayer) <- layername
       return(newlayer)
     }))}
+  if(is.null(left)) left <- names(p)
+  if(is.null(right)) right <- names(p)
   out <- adjust(adjust(p, left, "min"), right, "max")
   if(!is.null(categoricals)) out <- raster::addLayer(out, predictors[[categoricals]])
   return(out)
