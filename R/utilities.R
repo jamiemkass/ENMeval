@@ -74,20 +74,20 @@ NULL
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass
 #' @param predictors Raster* object; predictor variables in raster form (either Layer or Stack)
-#' @param records matrix or data frame; the predictor variables values for the reference records, 
-#' used to determine the minimums and maximums -- this should ideally be the occurrences + background
+#' @param p.z matrix or data frame; the predictor variables values for the reference records
+#' (not including coordinates), used to determine the minimums and maximums -- 
+#' this should ideally be the occurrences + background (can be made with raster::extract())
 #' @param left character; names of variables to get a minimum clamp (i.e. left))
 #' @param right character; names of variables to get a maximum clamp (i.e. right))
 #' @param categoricals character; name or names of categorical environmental variables
 #' @export
 
-clamp <- function(predictors, records, left, right, categoricals = NULL) {
+clamp <- function(predictors, p.z, left, right, categoricals = NULL) {
   if(!is.null(categoricals)) {
     p <- predictors[[-which(names(predictors) == categoricals)]]
   }else{
     p <- predictors
   }
-  p.z <- raster::extract(p, records)
   minmaxes <- data.frame(min = apply(p.z, 2, min, na.rm = TRUE),
                          max = apply(p.z, 2, max, na.rm = TRUE))
   adjust <- function(pp, toadjust, mm) {
