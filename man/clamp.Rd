@@ -4,13 +4,14 @@
 \alias{clamp}
 \title{Clamp predictor variables}
 \usage{
-clamp(predictors, records, left, right, categoricals = NULL)
+clamp(predictors, p.z, left, right, categoricals = NULL)
 }
 \arguments{
 \item{predictors}{Raster* object; predictor variables in raster form (either Layer or Stack)}
 
-\item{records}{matrix or data frame; the predictor variables values for the reference records, 
-used to determine the minimums and maximums -- this should ideally be the occurrences + background}
+\item{p.z}{matrix or data frame; the predictor variables values for the reference records
+(not including coordinates), used to determine the minimums and maximums -- 
+this should ideally be the occurrences + background (can be made with raster::extract())}
 
 \item{left}{character; names of variables to get a minimum clamp (i.e. left))}
 

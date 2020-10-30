@@ -135,6 +135,24 @@ evaluation statistics for each combination of settings and for each cross valida
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 results table should aid users in identifying model settings that balance fit and predictive ability.
 }
+\details{
+There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
+They are also discussed briefly in ?other.settings and ?ENMnullSims.
+
+1. By default, validation AUC is calculated with respect to the full background (training + validation).
+This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
+other.settings$validation.bg to "partition", which will calculate AUC with respect 
+to the validation background only. The default value for other.settings$validation.bg is "full".
+
+2. The continuous Boyce index is not calculated with respect to the RasterStack delineating the study extent,
+but instead to the background records. This decision was made to simplify the code and improve running time. 
+If the background records are a good representation of the study extent, there should not be much difference
+between this and the raster approach.
+
+3. Null occurrences for null ENMs are sample randomly from the background records, not the RasterStack
+delineating the study extent. This decision was made for similar reasons to that for CBI, and as above,
+there should be little difference as long as the background records represent the study extent well.
+}
 \examples{
 
 }
