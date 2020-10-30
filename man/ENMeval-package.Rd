@@ -6,7 +6,7 @@
 \alias{ENMeval-package}
 \title{Automated runs and evaluations of ecological niche models}
 \description{
-Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balancegoodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot the tuning results, and to calculate niche overlap between model predictions, among others. Originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but current version allows possible extensions for any modeling algorithm.
+Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate niche overlap between model predictions, among others. Originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but current version allows possible extensions for any modeling algorithm.
 }
 \details{
 
