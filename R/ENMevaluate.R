@@ -370,7 +370,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       clamp.envs <- names(envs)[!names(envs) %in% categoricals]
       clamp.directions <- list(left = clamp.envs, right = clamp.envs)
     }
-    envs <- ENMeval::clamp(predictors = envs, records = rbind(occs.z, bg.z), 
+    envs <- ENMeval::clamp(predictors = envs, p.z = rbind(occs.z, bg.z), 
                   left = clamp.directions$left, right = clamp.directions$right, 
                   categoricals = categoricals)
   }
