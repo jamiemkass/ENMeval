@@ -4,7 +4,7 @@
 \alias{clamp}
 \title{Clamp predictor variables}
 \usage{
-clamp(predictors, p.z, left, right, categoricals = NULL)
+clamp(predictors, p.z, left = NULL, right = NULL, categoricals = NULL)
 }
 \arguments{
 \item{predictors}{Raster* object; predictor variables in raster form (either Layer or Stack)}
@@ -23,5 +23,5 @@ this should ideally be the occurrences + background (can be made with raster::ex
 Clamp predictor variables
 }
 \author{
-Stephen J. Phillips, Jamie M. Kass
+Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
 }

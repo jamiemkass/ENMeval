@@ -18,7 +18,6 @@ tune.train(
   envs,
   other.settings,
   partitions,
-  doClamp,
   quiet
 )
 
@@ -32,7 +31,6 @@ tune.validate(
   nk,
   other.settings,
   partitions,
-  doClamp,
   user.eval,
   quiet
 )
@@ -48,7 +46,6 @@ tune.parallel(
   occs.testing.z,
   numCores,
   parallelType,
-  doClamp,
   user.eval,
   quiet
 )
@@ -63,7 +60,6 @@ tune.regular(
   user.val.grps,
   occs.testing.z,
   updateProgress,
-  doClamp,
   user.eval,
   quiet
 )
@@ -77,7 +73,6 @@ cv.enm(
   other.settings,
   user.val.grps,
   occs.testing.z,
-  doClamp,
   user.eval,
   quiet
 )
