@@ -41,9 +41,9 @@
 #' @param categoricals character; name or names of categorical environmental variables -- if not specified,
 #' all predictor variables will be treated as continuous unless they are factors (if categorical variables
 #' are already factors, specifying names of such variables in this argument is not needed)
-#' @param doClamp boolean; if TRUE, model prediction extrapolations will be restricted to the upper and lower
+#' @param doClamp boolean; if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 #' bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
-#' if extrapolation is a study aim, this should be left at FALSE
+#' if extrapolation is a study aim, this should be set to FALSE
 #' @param clamp.directions named list; specifies the direction ("left" for minimum, "right" for maximum) 
 #' of clamping for predictor variables -- (e.g.) list(left = c("bio1","bio5"), right = c("bio10","bio15"))
 #' @param user.enm ENMdetails object; an alternative to specifying an algorithm, users can insert a custom
@@ -85,7 +85,7 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitions = NULL, algorithm = NULL, 
                         partition.settings = list(orientation = "lat_lon", aggregation.factor = 2, kfolds = 5), 
                         other.settings = list(abs.auc.diff = TRUE, pred.type = "cloglog", validation.bg = "full"), 
-                        categoricals = NULL, doClamp = FALSE, clamp.directions = NULL,
+                        categoricals = NULL, doClamp = TRUE, clamp.directions = NULL,
                         user.enm = NULL, user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
                         n.bg = 10000, overlap = FALSE, overlapStat = c("D", "I"), 
                         user.val.grps = NULL, user.eval = NULL, rmm = NULL,
@@ -397,10 +397,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   if(parallel) {
     results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, 
-                             numCores, parallelType, doClamp, user.eval, quiet)  
+                             numCores, parallelType, user.eval, quiet)  
   }else{
     results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, 
-                            updateProgress, doClamp, user.eval, quiet)
+                            updateProgress, user.eval, quiet)
   }
   
   ##################### #
@@ -506,11 +506,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
     if(!is.null(envs)) {
-      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, doClamp, aic.settings))
+      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, aic.settings))
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], doClamp, aic.settings))
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
     aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
