@@ -104,7 +104,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(bg.coords)) bg <- bg.coords
   if(!is.null(method)) partitions <- method
   if(!is.null(rasterPreds)) {
-    stop("Warning: This argument was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
+    stop("This argument was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
   }
   if(!is.null(RMvalues)) tune.args$rm <- RMvalues
   if(!is.null(fc)) tune.args$fc <- fc
@@ -216,7 +216,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     if(envs.naMismatch > 0) {
       if(quiet != TRUE) message(paste0("* Found ", envs.naMismatch, " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables."))
       envs.names <- names(envs)
-      envs <- calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
+      envs <- raster::stack(calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x))
       names(envs) <- envs.names
     }
     # if no background points specified, generate random ones
@@ -365,14 +365,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # CLAMPING ####
   ################# #
   if(doClamp == TRUE) {
-    if(is.null(envs)) stop("Cannot clamp without predictor variable rasters.")
-    if(is.null(clamp.directions)) {
-      clamp.envs <- names(envs)[!names(envs) %in% categoricals]
-      clamp.directions <- list(left = clamp.envs, right = clamp.envs)
+    if(is.null(envs)) {
+      message("Warning: Cannot clamp without predictor variable rasters.")
+    }else{
+      if(is.null(clamp.directions)) {
+        clamp.envs <- names(envs)[!names(envs) %in% categoricals]
+        clamp.directions <- list(left = clamp.envs, right = clamp.envs)
+      }
+      envs <- clamp.vars(predictors = envs, p.z = rbind(occs.z, bg.z), 
+                         left = clamp.directions$left, right = clamp.directions$right, 
+                         categoricals = categoricals)  
     }
-    envs <- ENMeval::clamp(predictors = envs, records = rbind(occs.z, bg.z), 
-                  left = clamp.directions$left, right = clamp.directions$right, 
-                  categoricals = categoricals)
   }
   
   
@@ -547,9 +550,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(overlap == TRUE) {
     nr <- raster::nlayers(e@predictions)
     if(nr == 0) {
-      warning("Cannot calculate niche overlap without model prediction rasters.")
+      if(quiet != TRUE) message("Warning: calculate niche overlap without model prediction rasters.")
     }else if(nr == 1) {
-      warning("Only 1 model prediction raster found. Need at least 2 rasters to calculate niche overlap. Increase number of tuning arguments and run again.") 
+      if(quiet != TRUE) message("Warning: only 1 model prediction raster found. Need at least 2 rasters to calculate niche overlap. Increase number of tuning arguments and run again.") 
     }else{
       for(ovStat in overlapStat) {
         if(quiet != TRUE) message(paste0("Calculating niche overlap for statistic ", ovStat, "..."))
