@@ -82,10 +82,10 @@ NULL
 #' @param categoricals character; name or names of categorical environmental variables
 #' @export
 
-clamp <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
+clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
   if(!is.null(categoricals)) {
     p <- predictors[[-which(names(predictors) == categoricals)]]
-    p.z <- p.z[[-which(colnames(p.z) == categoricals)]]
+    p.z <- p.z[,-which(colnames(p.z) == categoricals)]
   }else{
     p <- predictors
   }

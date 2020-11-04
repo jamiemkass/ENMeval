@@ -162,6 +162,7 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
 }
 
 algs <- list(maxnet = list(fc = c("L","LQ"), rm = 2:3),
+             maxent.jar = list(fc = c("L","LQ"), rm = 2:3),
              bioclim = list(tails = c("low", "high", "both")),
              boostedRegressionTrees = list(tc = 2:3, lr = 0.001),
              randomForest = list(ntree = 1000, mtry = 4:5))

@@ -16,7 +16,7 @@ ENMevaluate(
   other.settings = list(abs.auc.diff = TRUE, pred.type = "cloglog", validation.bg =
     "full"),
   categoricals = NULL,
-  doClamp = FALSE,
+  doClamp = TRUE,
   clamp.directions = NULL,
   user.enm = NULL,
   user.grp = NULL,
@@ -75,9 +75,9 @@ with the number specified by argument \code{n.bg}}
 all predictor variables will be treated as continuous unless they are factors (if categorical variables
 are already factors, specifying names of such variables in this argument is not needed)}
 
-\item{doClamp}{boolean; if TRUE, model prediction extrapolations will be restricted to the upper and lower
+\item{doClamp}{boolean; if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
-if extrapolation is a study aim, this should be left at FALSE}
+if extrapolation is a study aim, this should be set to FALSE}
 
 \item{clamp.directions}{named list; specifies the direction ("left" for minimum, "right" for maximum) 
 of clamping for predictor variables -- (e.g.) list(left = c("bio1","bio5"), right = c("bio10","bio15"))}
