@@ -99,8 +99,10 @@ clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals 
       names(newlayer) <- layername
       return(newlayer)
     }))}
-  if(is.null(left)) left <- names(p)
-  if(is.null(right)) right <- names(p)
+  if(is.null(left) & is.null(right)) {
+    left <- names(p)
+    right <- names(p)
+  } 
   out <- adjust(adjust(p, left, "min"), right, "max")
   if(!is.null(categoricals)) out <- raster::addLayer(out, predictors[[categoricals]])
   return(out)
