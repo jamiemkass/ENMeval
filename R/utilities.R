@@ -74,23 +74,46 @@ NULL
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
 #' @param predictors Raster* object; predictor variables in raster form (either Layer or Stack)
-#' @param p.z matrix or data frame; the predictor variables values for the reference records
+#' @param p.z matrix or data frame; the predictor variable values for the reference records
 #' (not including coordinates), used to determine the minimums and maximums -- 
 #' this should ideally be the occurrences + background (can be made with raster::extract())
-#' @param left character; names of variables to get a minimum clamp (i.e. left))
-#' @param right character; names of variables to get a maximum clamp (i.e. right))
+#' @param left character; names of variables to get a minimum clamp; can be "none" to turn
+#' off minimum clamping
+#' @param right character; names of variables to get a maximum clamp, can be "none" to turn
+#' off maximum clamping
 #' @param categoricals character; name or names of categorical environmental variables
+#' @description This function restricts the values of one or more predictor variable rasters
+#' to stay within the bounds of the input occurrence and background data (argument "p.z").
+#' This is termed "clamping", and is mainly used to avoid making extreme extrapolations
+#' when making model predictions to environmental conditions outside the range of the
+#' occurrence / background data used to train the model. Clamping can be done on variables of
+#' choice on one or both tails of their distributions (i.e., arguments "left" and "right" for
+#' minimum and maximum clamps, respectively). If "left" and/or "right" are not specified and 
+#' left at the default NULL, the function will clamp all variables for that tail (thus, the 
+#' function default is to clamp all variables on both sides). To turn off clamping for one side, 
+#' enter "none" for either "left" or "right".
+#' 
+#' Categorical variables need to be declared with the argument "categoricals". These variables
+#' are excluded from the clamping analysis, but are put back into the RasterStack that is returned.
+#' @return The clamped Raster* object.
 #' @export
 
 clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
+  if(left == "none" & right == "none") {
+    warning('Both left and right were set to "none", so clamping was not performed.')
+    return(predictors)
+  }
+  # remove categorical variables from clamping analysis
   if(!is.null(categoricals)) {
     p <- predictors[[-which(names(predictors) == categoricals)]]
     p.z <- p.z[,-which(colnames(p.z) == categoricals)]
   }else{
     p <- predictors
   }
+  # get mins and maxs of input variable values for occs and bg
   minmaxes <- data.frame(min = apply(p.z, 2, min, na.rm = TRUE),
                          max = apply(p.z, 2, max, na.rm = TRUE))
+  # function to clamp the values of the input raster
   adjust <- function(pp, toadjust, mm) {
     raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
       layername <- names(oldlayer)
@@ -99,9 +122,19 @@ clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals 
       names(newlayer) <- layername
       return(newlayer)
     }))}
+  # default to all variables if left and/or right are NULL
   if(is.null(left)) left <- names(p)
   if(is.null(right)) right <- names(p)
-  out <- adjust(adjust(p, left, "min"), right, "max")
+  
+  # clamp both sides unless left or right is "none"
+  if(left == "none") {
+    out <- adjust(p, right, "max")
+  }else if(right == "none") {
+    out <- adjust(p, left, "min")
+  }else{
+    out <- adjust(adjust(p, left, "min"), right, "max")  
+  }
+  # add back the categorical variable to the stack
   if(!is.null(categoricals)) out <- raster::addLayer(out, predictors[[categoricals]])
   return(out)
 }
