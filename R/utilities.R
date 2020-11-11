@@ -99,9 +99,11 @@ NULL
 #' @export
 
 clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
-  if(left == "none" & right == "none") {
-    warning('Both left and right were set to "none", so clamping was not performed.')
-    return(predictors)
+  if(!is.null(left) & !is.null(right)) {
+    if(left == "none" & right == "none") {
+      warning('Both left and right were set to "none", so clamping was not performed.')
+      return(predictors)
+    }
   }
   # remove categorical variables from clamping analysis
   if(!is.null(categoricals)) {
