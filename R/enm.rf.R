@@ -4,7 +4,7 @@
 
 rf.name <- "randomForest"
 
-rf.fun.train <- randomForest::randomForest
+rf.fun.train <- ranger::ranger
 
 rf.fun.val <- rf.fun.train
 
@@ -20,13 +20,15 @@ rf.msgs <- function(tune.args, other.settings) {
 
 rf.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
-  out$x <- rbind(occs.z, bg.z)
-  out$y <- factor(c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))))
-  out$ntree <- tune.i$ntree
+  d <- rbind(occs.z, bg.z)
+  p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
+  out$data <- cbind(p, d)
+  out$formula <- formula(out$data)
+  out$num.trees <- tune.i$num.trees
   out$mtry <- tune.i$mtry
-  # out$sampsize <- tune.i$sampsize
-  # out$nodesize <- tune.i$nodesize
-  out$importance <- TRUE
+  out$sample.fraction <- tune.i$sample.fraction
+  out$importance <- "permutation"
+  out$case.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
   out <- c(out, other.settings$other.args)
   return(out)
 }
@@ -37,9 +39,9 @@ rf.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
 
 rf.predict <- function(mod, envs, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
-    pred <- raster::predict(envs, mod, type = "prob", na.rm = TRUE)
+    pred <- raster::predict(envs, mod, type = "response", fun = function(model, ...) predict(model, ...)$predictions, na.rm = TRUE)
   }else{
-    pred <- dismo::predict(mod, envs, type = "prob", na.rm = TRUE)[,2]
+    pred <- dismo::predict(mod, envs, type = "response", na.rm = TRUE)$predictions
   }
   return(pred)
 }

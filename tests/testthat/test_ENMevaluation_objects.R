@@ -165,7 +165,7 @@ algs <- list(maxnet = list(fc = c("L","LQ"), rm = 2:3),
              maxent.jar = list(fc = c("L","LQ"), rm = 2:3),
              bioclim = list(tails = c("low", "high", "both")),
              boostedRegressionTrees = list(tc = 2:3, lr = 0.001),
-             randomForest = list(ntree = 1000, mtry = 4:5))
+             randomForest = list(num.trees = 1000, mtry = 4:5, sample.fraction = c(0.5, 1)))
 
 no.iter <- 5
 
