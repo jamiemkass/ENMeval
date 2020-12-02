@@ -4,9 +4,7 @@
 
 rf.name <- "randomForest"
 
-rf.fun.train <- ranger::ranger
-
-rf.fun.val <- rf.fun.train
+rf.fun <- ranger::ranger
 
 rf.msgs <- function(tune.args, other.settings) {
   if(!all("ntree" %in% names(tune.args), "mtry" %in% names(tune.args))) {
@@ -18,7 +16,7 @@ rf.msgs <- function(tune.args, other.settings) {
   return(msg)
 }
 
-rf.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
+rf.args <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   d <- rbind(occs.z, bg.z)
   p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
@@ -31,10 +29,6 @@ rf.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out$case.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
   out <- c(out, other.settings$other.args)
   return(out)
-}
-
-rf.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
-  rf.args.train(occs.z, bg.z, tune.i, other.settings)
 }
 
 rf.predict <- function(mod, envs, other.settings) {
@@ -57,6 +51,6 @@ rf.varimp <- function(mod) {
 }
 
 #' @export
-enm.randomForest <- ENMdetails(name = rf.name, fun.train = rf.fun.train, fun.val = rf.fun.val,
-                               msgs = rf.msgs, args.train = rf.args.train, args.val = rf.args.val,
+enm.randomForest <- ENMdetails(name = rf.name, fun = rf.fun,
+                               msgs = rf.msgs, args = rf.args,
                                predict = rf.predict, ncoefs = rf.ncoefs, varimp = rf.varimp)

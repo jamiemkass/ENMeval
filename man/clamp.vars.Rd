@@ -9,18 +9,35 @@ clamp.vars(predictors, p.z, left = NULL, right = NULL, categoricals = NULL)
 \arguments{
 \item{predictors}{Raster* object; predictor variables in raster form (either Layer or Stack)}
 
-\item{p.z}{matrix or data frame; the predictor variables values for the reference records
+\item{p.z}{matrix or data frame; the predictor variable values for the reference records
 (not including coordinates), used to determine the minimums and maximums -- 
 this should ideally be the occurrences + background (can be made with raster::extract())}
 
-\item{left}{character; names of variables to get a minimum clamp (i.e. left))}
+\item{left}{character; names of variables to get a minimum clamp; can be "none" to turn
+off minimum clamping}
 
-\item{right}{character; names of variables to get a maximum clamp (i.e. right))}
+\item{right}{character; names of variables to get a maximum clamp, can be "none" to turn
+off maximum clamping}
 
 \item{categoricals}{character; name or names of categorical environmental variables}
 }
+\value{
+The clamped Raster* object.
+}
 \description{
-Clamp predictor variables
+This function restricts the values of one or more predictor variable rasters
+to stay within the bounds of the input occurrence and background data (argument "p.z").
+This is termed "clamping", and is mainly used to avoid making extreme extrapolations
+when making model predictions to environmental conditions outside the range of the
+occurrence / background data used to train the model. Clamping can be done on variables of
+choice on one or both tails of their distributions (i.e., arguments "left" and "right" for
+minimum and maximum clamps, respectively). If "left" and/or "right" are not specified and 
+left at the default NULL, the function will clamp all variables for that tail (thus, the 
+function default is to clamp all variables on both sides). To turn off clamping for one side, 
+enter "none" for either "left" or "right".
+
+Categorical variables need to be declared with the argument "categoricals". These variables
+are excluded from the clamping analysis, but are put back into the RasterStack that is returned.
 }
 \author{
 Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago

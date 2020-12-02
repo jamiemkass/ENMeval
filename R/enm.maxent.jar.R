@@ -4,9 +4,7 @@
 
 maxent.jar.name <- "maxent.jar"
 
-maxent.jar.fun.train <- dismo::maxent
-
-maxent.jar.fun.val <- maxent.jar.fun.train
+maxent.jar.fun <- dismo::maxent
 
 maxent.jar.msgs <- function(tune.args, other.settings) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -36,7 +34,7 @@ maxent.jar.msgs <- function(tune.args, other.settings) {
   return(msg)
 }
 
-maxent.jar.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
+maxent.jar.args <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   out$x <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
@@ -49,11 +47,6 @@ maxent.jar.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out$args <- c(out$args, paste0("betamultiplier=", tune.i$rm, sep=""))
   out <- c(out, other.settings$other.args)
   return(out)
-}
-
-# same as args.train
-maxent.jar.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod.full = NULL) {
-  maxent.jar.args.train(occs.z, bg.z, tune.i, other.settings)
 }
 
 maxent.jar.predict <- function(mod, envs, other.settings) {
@@ -93,6 +86,6 @@ maxent.jar.varimp <- function(mod) {
 }
 
 #' @export
-enm.maxent.jar <- ENMdetails(name = maxent.jar.name, fun.train = maxent.jar.fun.train, fun.val = maxent.jar.fun.val,
-                             msgs = maxent.jar.msgs, args.train = maxent.jar.args.train, args.val = maxent.jar.args.val,
+enm.maxent.jar <- ENMdetails(name = maxent.jar.name, fun = maxent.jar.fun, 
+                             msgs = maxent.jar.msgs, args = maxent.jar.args,
                              predict = maxent.jar.predict, ncoefs = maxent.jar.ncoefs, varimp = maxent.jar.varimp)

@@ -120,6 +120,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     stop('* Please select a model name (argument "algorithm") or specify a user model (argument "user.enm").')
   }
   
+  if(algorithm == "boostedRegressionTrees" & partitions == "jackknife") {
+    stop('* ENMeval does not implement jackknife (leave-one-out) partitioning for boosted regression trees. See ?enm.brt for details.')
+  }
+  
   # record start time
   start.time <- proc.time()
   
@@ -173,7 +177,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       stop('If performing fully withheld testing, enter occs.testing dataset and assign partitions to "testing".')
     }
   }
-  
   
   if(is.null(tune.args) & overlap == TRUE) {
     if(quiet != TRUE) message('* As no tuning arguments were specified, turning off niche overlap.')
@@ -362,6 +365,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
   
   ################# #
+  # MESSAGE
+  ################# #
+  # print model-specific message
+  if(is.null(taxon.name)) {
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args, other.settings), "***\n"))
+  }else{
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
+  }
+  
+  ################# #
   # CLAMPING ####
   ################# #
   if(doClamp == TRUE) {
@@ -375,21 +388,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       envs <- clamp.vars(predictors = envs, p.z = rbind(occs.z, bg.z), 
                          left = clamp.directions$left, right = clamp.directions$right, 
                          categoricals = categoricals)  
+      if(quiet != TRUE) message("* Clamping predictor variable rasters...")
     }
   }
-  
   
   ################# #
   # MODEL TUNING #### 
   ################# #
-  
-  # print model-specific message
-  clamp.msg <- ifelse(doClamp == TRUE, "with clamping", "with no clamping")
-  if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0", clamp.msg, "with", enm@msgs(tune.args, other.settings), "***\n"))
-  }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, clamp.msg, "with", enm@msgs(tune.args, other.settings), "***\n"))
-  }
   
   # make table for all tuning parameter combinations
   tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE) %>% tibble::as_tibble()
@@ -399,11 +404,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, 
-                             numCores, parallelType, user.eval, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, 
+                             user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, 
-                            updateProgress, user.eval, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings,
+                            user.val.grps, occs.testing.z, updateProgress, user.eval, quiet)
   }
   
   ##################### #

@@ -4,9 +4,7 @@
 
 bioclim.name <- "bioclim"
 
-bioclim.fun.train <- dismo::bioclim
-
-bioclim.fun.val <- bioclim.fun.train
+bioclim.fun <- dismo::bioclim
 
 bioclim.msgs <- function(tune.args, other.settings) {
   if(!is.null(other.settings$categoricals)) {
@@ -16,15 +14,11 @@ bioclim.msgs <- function(tune.args, other.settings) {
   return(msg)
 }
 
-bioclim.args.train <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
+bioclim.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   out <- list()
   out$x <- occs.z 
   out <- c(out, other.settings$other.args)
   return(out)
-}
-
-bioclim.args.val <- function(occs.z, bg.z, tune.tbl.i, other.settings, mod = NULL) {
-  bioclim.args.train(occs.z, bg.z, tune.tbl.i, other.settings)
 }
 
 bioclim.predict <- function(mod, envs, other.settings) {
@@ -44,6 +38,6 @@ bioclim.varimp <- function(mod) {
 }
 
 #' @export
-enm.bioclim <- ENMdetails(name = bioclim.name, fun.train = bioclim.fun.train, fun.val = bioclim.fun.val,
-                          msgs = bioclim.msgs, args.train = bioclim.args.train, args.val = bioclim.args.val,
+enm.bioclim <- ENMdetails(name = bioclim.name, fun = bioclim.fun,
+                          msgs = bioclim.msgs, args = bioclim.args,
                           predict = bioclim.predict, ncoefs = bioclim.ncoefs, varimp = bioclim.varimp)

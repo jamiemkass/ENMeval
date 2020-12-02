@@ -156,18 +156,16 @@ setMethod("show",
 #' @export
 ENMdetails <- setClass("ENMdetails",
                        slots = c(name = 'character',
-                                 fun.train = 'function',
-                                 fun.val = 'function',
+                                 fun = 'function',
                                  msgs = 'function',
-                                 args.train = 'function',
-                                 args.val = 'function',
+                                 args = 'function',
                                  predict = 'function',
                                  ncoefs = 'function',
                                  varimp = 'function'))
 #' @export
-ENMdetails <- function(name, fun.train, fun.val, msgs, args.train, args.val, predict, ncoefs, varimp) {
-  new("ENMdetails", name = name, fun.train = fun.train, fun.val = fun.val, 
-      msgs = msgs, args.train = args.train, args.val = args.val,
+ENMdetails <- function(name, fun, msgs, args, predict, ncoefs, varimp) {
+  new("ENMdetails", name = name, fun = fun,
+      msgs = msgs, args = args,
       predict = predict, ncoefs = ncoefs, varimp = varimp)
 }
 
@@ -182,24 +180,13 @@ setMethod("enm.name<-", "ENMdetails", function(x, value) {
   x
 })
 
-setGeneric("enm.fun.train", function(x) standardGeneric("enm.fun.train"))
-setGeneric("enm.fun.train<-", function(x, value) standardGeneric("enm.fun.train<-"))
+setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
+setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
 #' @export
-setMethod("enm.fun.train", "ENMdetails", function(x) x@fun.train)
+setMethod("enm.fun", "ENMdetails", function(x) x@fun.train)
 #' @export
-setMethod("enm.fun.train<-", "ENMdetails", function(x, value) {
+setMethod("enm.fun<-", "ENMdetails", function(x, value) {
   x@fun.train <- value
-  validObject(x)
-  x
-})
-
-setGeneric("enm.fun.val", function(x) standardGeneric("enm.fun.val"))
-setGeneric("enm.fun.val<-", function(x, value) standardGeneric("enm.fun.val<-"))
-#' @export
-setMethod("enm.fun.val", "ENMdetails", function(x) x@fun.val)
-#' @export
-setMethod("enm.fun.val<-", "ENMdetails", function(x, value) {
-  x@fun.val <- value
   validObject(x)
   x
 })
@@ -215,24 +202,13 @@ setMethod("enm.msgs<-", "ENMdetails", function(x, value) {
   x
 })
 
-setGeneric("enm.args.train", function(x) standardGeneric("enm.args.train"))
-setGeneric("enm.args.train<-", function(x, value) standardGeneric("enm.args.train<-"))
+setGeneric("enm.args", function(x) standardGeneric("enm.args"))
+setGeneric("enm.args<-", function(x, value) standardGeneric("enm.args<-"))
 #' @export
-setMethod("enm.args.train", "ENMdetails", function(x) x@args.train)
+setMethod("enm.args", "ENMdetails", function(x) x@args.train)
 #' @export
-setMethod("enm.args.train<-", "ENMdetails", function(x, value) {
+setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x@args.train <- value
-  validObject(x)
-  x
-})
-
-setGeneric("enm.args.val", function(x) standardGeneric("enm.args.val"))
-setGeneric("enm.args.val<-", function(x, value) standardGeneric("enm.args.val<-"))
-#' @export
-setMethod("enm.args.val", "ENMdetails", function(x) x@args.val)
-#' @export
-setMethod("enm.args.val<-", "ENMdetails", function(x, value) {
-  x@args.val <- value
   validObject(x)
   x
 })

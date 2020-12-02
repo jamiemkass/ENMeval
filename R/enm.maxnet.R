@@ -4,9 +4,7 @@
 
 maxnet.name <- "maxnet"
 
-maxnet.fun.train <- maxnet::maxnet
-
-maxnet.fun.val <- maxnet.fun.train
+maxnet.fun <- maxnet::maxnet
 
 maxnet.msgs <- function(tune.args, other.settings) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -24,7 +22,7 @@ maxnet.msgs <- function(tune.args, other.settings) {
   }
 }
 
-maxnet.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
+maxnet.args <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   out$data <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
@@ -35,10 +33,6 @@ maxnet.args.train <- function(occs.z, bg.z, tune.i, other.settings) {
   out$addsamplestobackground <- TRUE
   out <- c(out, other.settings$other.args)
   return(out)
-}
-
-maxnet.args.val <- function(occs.z, bg.z, tune.i, other.settings, mod = NULL) {
-  maxnet.args.train(occs.z, bg.z, tune.i, other.settings)
 }
 
 maxnet.predict <- function(mod, envs, other.settings) {
@@ -68,6 +62,6 @@ maxnet.varimp <- function(mod) {
 }
 
 #' @export
-enm.maxnet <- ENMdetails(name = maxnet.name, fun.train = maxnet.fun.train, fun.val = maxnet.fun.val,
-                         msgs = maxnet.msgs, args.train = maxnet.args.train, args.val = maxnet.args.val,
+enm.maxnet <- ENMdetails(name = maxnet.name, fun = maxnet.fun, 
+                         msgs = maxnet.msgs, args = maxnet.args,
                          predict = maxnet.predict, ncoefs = maxnet.ncoefs, varimp = maxnet.varimp)

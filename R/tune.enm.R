@@ -123,7 +123,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
 }
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -146,7 +146,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
   if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, user.val.grps, occs.testing.z, user.eval, quiet)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, quiet)
   }
   if(quiet != TRUE) close(pb)
   parallel::stopCluster(cl)
@@ -154,7 +154,7 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, us
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, user.val.grps, occs.testing.z, updateProgress, user.eval, quiet) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, user.val.grps, occs.testing.z, updateProgress, user.eval, quiet) {
   results <- list()
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
@@ -172,7 +172,7 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
     }
     # set the current tune settings
     tune.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, occs.testing.z, user.eval, quiet)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.i, other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, quiet)
   }
   if(quiet != TRUE) close(pb)
   return(results)
@@ -180,20 +180,47 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, use
 
 #' @param tune.i vector of single set of tuning parameters
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.grps, occs.testing.z, user.eval, quiet) {
+cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
   occs.z <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(all_of(envs.names))
   bg.xy <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
   bg.z <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(all_of(envs.names))
+  
+  # define number of grp (the value of "k") for occurrences
+  nk <- length(unique(d[d$pb == 1, "grp"]))
+  
   # build the full model from all the data
-  # set the mod.type to "train" in case training and testing models are
-  # set to run differently
-  mod.full.args <- enm@args.train(occs.z, bg.z, tune.i, other.settings)
+  # BRTs have cross validation done internally, so they need partition group information
+  # for the full model training step, and will avoid ENMeval cross validation below
+  if(enm@name == "boostedRegressionTrees") {
+    other.settings$occs.grp <- d[d$pb == 1, "grp"]
+    other.settings$bg.grp <- d[d$pb == 0, "grp"]
+    # if random k-fold partitioning was selected, dismo::gbm.step() needs the background
+    # to be partitioned as well as the occurrences in order to function
+    # this results in validation models trained with subsets of background data (1/k),
+    # and thus the corresponding evaluations may be slightly different than those based on the full
+    # background with Maxent, for example
+    # however, if a large background sample is used, the differences should be minor
+    if(partitions == "randomkfold") {
+      other.settings$occs.grp <- as.numeric(as.character(other.settings$occs.grp))
+      other.settings$bg.grp <- get.randomkfold(other.settings$bg.grp, other.settings$bg.grp, nk)$occs.grp
+    }else if(partitions == "testing" | partitions == "none") {
+      other.settings$occs.grp <- get.randomkfold(other.settings$occs.grp, other.settings$bg.grp, partition.settings$kfolds)$occs.grp
+      other.settings$bg.grp <- get.randomkfold(other.settings$bg.grp, other.settings$bg.grp, partition.settings$kfolds)$occs.grp
+    }else{
+      if(all(other.settings$bg.grp == 0)) stop("* The function to optimize tree number for boosted regression trees (gbm.step) requires the background records to be partitioned. Please partition the background records in the same way as the occurrence records and try again.")
+    }
+  }
+  
+  # assign arguments
+  mod.full.args <- enm@args(occs.z, bg.z, tune.i, other.settings)
   # run training model with specified arguments
-  mod.full <- do.call(enm@fun.train, mod.full.args)
-  if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters.')
+  mod.full <- do.call(enm@fun, mod.full.args)
+  
+  if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters or inputting more background points.')
+  
   # make full model prediction as raster using raster envs (if raster envs exists) 
   # or full model prediction table using the occs and bg values (if raster envs does not exist)
   if(!is.null(envs)) {
@@ -203,9 +230,8 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
   }
   # if using BIOCLIM, put the current tail specification into other.settings
   # for use in doing evaluations and making predictions
-  if(enm@name == "bioclim") {
-    other.settings$tails <- tune.i
-  }
+  if(enm@name == "bioclim") other.settings$tails <- tune.i
+  
   mod.full.pred <- enm@predict(mod.full, pred.envs, other.settings)
   # get evaluation statistics for training data
   train <- tune.train(enm, occs.z, bg.z, mod.full, mod.full.pred, envs, other.settings, partitions, quiet)
@@ -228,9 +254,6 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
     return(cv.res)
   }
   
-  # define number of grp (the value of "k") for occurrences
-  nk <- length(unique(d[d$pb == 1, "grp"]))
-  
   # list to contain cv statistics
   cv.stats <- list()
   
@@ -247,16 +270,23 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, user.val.gr
       bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     }
     
-    # define model arguments for current model k
-    mod.k.args <- enm@args.val(occs.train.z, bg.train.z, tune.i, other.settings, mod.full)
-    # run model k with specified arguments
-    mod.k <- tryCatch({
-      do.call(enm@fun.val, mod.k.args)  
-    }, error = function(cond) {
-      if(quiet != TRUE) message(paste0("\n", cond, "\n"))
-      # Choose a return value in case of error
-      return(NULL)
-    })
+    if(enm@name != "boostedRegressionTrees") {
+      # define model arguments for current model k
+      mod.k.args <- enm@args(occs.train.z, bg.train.z, tune.i, other.settings)
+      # run model k with specified arguments
+      mod.k <- tryCatch({
+        do.call(enm@fun, mod.k.args)  
+      }, error = function(cond) {
+        if(quiet != TRUE) message(paste0("\n", cond, "\n"))
+        # Choose a return value in case of error
+        return(NULL)
+      })  
+    }else{
+      # for boosted regression trees only, pull the current fold model from the model object,
+      # as the cross validation procedure was done internally
+      # the models are validated in the exact same way as for other algorithms
+      mod.k <- mod.full$fold.models[[k]]
+    }
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {

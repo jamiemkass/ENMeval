@@ -99,8 +99,12 @@ NULL
 #' @export
 
 clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
+  if((("none" %in% left) & length(left) > 1) | (("none" %in% right) & length(right) > 1)) {
+    stop('To turn clamping off, specify the argument left, right or both of them to "none".')
+  }
+  
   if(!is.null(left) & !is.null(right)) {
-    if(left == "none" & right == "none") {
+    if(("none" %in% left) & ("none" %in% right)) {
       warning('Both left and right were set to "none", so clamping was not performed.')
       return(predictors)
     }
@@ -129,9 +133,9 @@ clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals 
   if(is.null(right)) right <- names(p)
   
   # clamp both sides unless left or right is "none"
-  if(left == "none") {
+  if("none" %in% left) {
     out <- adjust(p, right, "max")
-  }else if(right == "none") {
+  }else if("none" %in% right) {
     out <- adjust(p, left, "min")
   }else{
     out <- adjust(adjust(p, left, "min"), right, "max")  
