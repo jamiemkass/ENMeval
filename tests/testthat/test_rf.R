@@ -14,7 +14,7 @@ bg.z <- cbind(bg, raster::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
 
 algorithm <- "randomForest"
-tune.args <- list(num.trees = 1000, mtry = 4:5, sample.fraction = c(0.5, 1))
+tune.args <- list(num.trees = 1000, mtry = 4:6)
 mset <- lapply(tune.args, function(x) x[1])
 no.iter <- 5
 

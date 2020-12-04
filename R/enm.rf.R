@@ -7,12 +7,12 @@ rf.name <- "randomForest"
 rf.fun <- ranger::ranger
 
 rf.msgs <- function(tune.args, other.settings) {
-  if(!all("ntree" %in% names(tune.args), "mtry" %in% names(tune.args))) {
-    stop("Random forest settings must include 'ntree' and 'mtry'. See ?tune.args for details")
+  if(!all("num.trees" %in% names(tune.args), "mtry" %in% names(tune.args))) {
+    stop("Random forest settings must include 'num.trees' and 'mtry'. See ?tune.args for details")
   }
   # construct user message with version info
-  msg <- paste0("Random forest using the randomForest() function from randomForest package v", 
-                packageVersion('randomForest')) 
+  msg <- paste0("Random forest using the ranger() function from ranger package v", 
+                packageVersion('ranger')) 
   return(msg)
 }
 
@@ -24,9 +24,10 @@ rf.args <- function(occs.z, bg.z, tune.i, other.settings) {
   out$formula <- formula(out$data)
   out$num.trees <- tune.i$num.trees
   out$mtry <- tune.i$mtry
-  out$sample.fraction <- tune.i$sample.fraction
+  out$sample.fraction <- nrow(occs.z) / nrow(bg.z)
+  out$case.weights <- ifelse(out$data$p == 1, 1, nrow(occs.z) / nrow(bg.z))
+  out$probability <- TRUE
   out$importance <- "permutation"
-  out$case.weights <- c(rep(1, nrow(occs.z)), rep(nrow(occs.z)/nrow(bg.z), nrow(bg.z)))
   out <- c(out, other.settings$other.args)
   return(out)
 }
@@ -35,7 +36,7 @@ rf.predict <- function(mod, envs, other.settings) {
   if(inherits(envs, "BasicRaster") == TRUE) {
     pred <- raster::predict(envs, mod, type = "response", fun = function(model, ...) predict(model, ...)$predictions, na.rm = TRUE)
   }else{
-    pred <- dismo::predict(mod, envs, type = "response", na.rm = TRUE)$predictions
+    pred <- dismo::predict(mod, envs, type = "response", na.rm = TRUE)$predictions[,1]
   }
   return(pred)
 }
