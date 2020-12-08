@@ -192,28 +192,6 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, partition.s
   nk <- length(unique(d[d$pb == 1, "grp"]))
   
   # build the full model from all the data
-  # BRTs have cross validation done internally, so they need partition group information
-  # for the full model training step, and will avoid ENMeval cross validation below
-  if(enm@name == "boostedRegressionTrees") {
-    other.settings$occs.grp <- d[d$pb == 1, "grp"]
-    other.settings$bg.grp <- d[d$pb == 0, "grp"]
-    # if random k-fold partitioning was selected, dismo::gbm.step() needs the background
-    # to be partitioned as well as the occurrences in order to function
-    # this results in validation models trained with subsets of background data (1/k),
-    # and thus the corresponding evaluations may be slightly different than those based on the full
-    # background with Maxent, for example
-    # however, if a large background sample is used, the differences should be minor
-    if(partitions == "randomkfold") {
-      other.settings$occs.grp <- as.numeric(as.character(other.settings$occs.grp))
-      other.settings$bg.grp <- get.randomkfold(other.settings$bg.grp, other.settings$bg.grp, nk)$occs.grp
-    }else if(partitions == "testing" | partitions == "none") {
-      other.settings$occs.grp <- get.randomkfold(other.settings$occs.grp, other.settings$bg.grp, partition.settings$kfolds)$occs.grp
-      other.settings$bg.grp <- get.randomkfold(other.settings$bg.grp, other.settings$bg.grp, partition.settings$kfolds)$occs.grp
-    }else{
-      if(all(other.settings$bg.grp == 0)) stop("* The function to optimize tree number for boosted regression trees (gbm.step) requires the background records to be partitioned. Please partition the background records in the same way as the occurrence records and try again.")
-    }
-  }
-  
   # assign arguments
   mod.full.args <- enm@args(occs.z, bg.z, tune.i, other.settings)
   # run training model with specified arguments
@@ -228,9 +206,6 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, partition.s
   }else{
     pred.envs <- d %>% dplyr::select(all_of(envs.names))
   }
-  # if using BIOCLIM, put the current tail specification into other.settings
-  # for use in doing evaluations and making predictions
-  if(enm@name == "bioclim") other.settings$tails <- tune.i
   
   mod.full.pred <- enm@predict(mod.full, pred.envs, other.settings)
   # get evaluation statistics for training data
@@ -270,23 +245,16 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, partition.s
       bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     }
     
-    if(enm@name != "boostedRegressionTrees") {
-      # define model arguments for current model k
-      mod.k.args <- enm@args(occs.train.z, bg.train.z, tune.i, other.settings)
-      # run model k with specified arguments
-      mod.k <- tryCatch({
-        do.call(enm@fun, mod.k.args)  
-      }, error = function(cond) {
-        if(quiet != TRUE) message(paste0("\n", cond, "\n"))
-        # Choose a return value in case of error
-        return(NULL)
-      })  
-    }else{
-      # for boosted regression trees only, pull the current fold model from the model object,
-      # as the cross validation procedure was done internally
-      # the models are validated in the exact same way as for other algorithms
-      mod.k <- mod.full$fold.models[[k]]
-    }
+    # define model arguments for current model k
+    mod.k.args <- enm@args(occs.train.z, bg.train.z, tune.i, other.settings)
+    # run model k with specified arguments
+    mod.k <- tryCatch({
+      do.call(enm@fun, mod.k.args)  
+    }, error = function(cond) {
+      if(quiet != TRUE) message(paste0("\n", cond, "\n"))
+      # Choose a return value in case of error
+      return(NULL)
+    })  
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {

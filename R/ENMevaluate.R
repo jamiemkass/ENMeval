@@ -34,8 +34,8 @@
 #' with the number specified by argument \code{n.bg}
 #' @param tune.args named list; model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))
 #' @param partitions character; name of partitioning technique (see \code{?partitions})
-#' @param algorithm character; name of the algorithm used to build models -- one of "maxnet",
-#' "maxent.jar", "boostedRegressionTrees", "bioclim", or "randomForest"
+#' @param algorithm character; name of the algorithm used to build models -- one of "maxnet" or
+#' "maxent.jar", else the name from a custom ENMdetails implementation
 #' @param partition.settings named list; settings specific to certain partitions -- see ?partition.settings
 #' @param other.settings named list; other settings for analysis -- see ?other.settings
 #' @param categoricals character; name or names of categorical environmental variables -- if not specified,
@@ -118,10 +118,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   if(is.null(algorithm) & is.null(user.enm)) {
     stop('* Please select a model name (argument "algorithm") or specify a user model (argument "user.enm").')
-  }
-  
-  if(algorithm == "boostedRegressionTrees" & partitions == "jackknife") {
-    stop('* ENMeval does not implement jackknife (leave-one-out) partitioning for boosted regression trees. See ?enm.brt for details.')
   }
   
   # record start time

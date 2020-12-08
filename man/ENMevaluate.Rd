@@ -64,8 +64,8 @@ with the number specified by argument \code{n.bg}}
 
 \item{partitions}{character; name of partitioning technique (see \code{?partitions})}
 
-\item{algorithm}{character; name of the algorithm used to build models -- one of "maxnet",
-"maxent.jar", "boostedRegressionTrees", "bioclim", or "randomForest"}
+\item{algorithm}{character; name of the algorithm used to build models -- one of "maxnet" or
+"maxent.jar", else the name from a custom ENMdetails implementation}
 
 \item{partition.settings}{named list; settings specific to certain partitions -- see ?partition.settings}
 
