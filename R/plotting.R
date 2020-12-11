@@ -91,18 +91,18 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
   }
   
   if(!is.null(e)) {
-    pts <- rbind(e@occs, e@bg) %>% mutate(type = c(rep(1, nrow(e@occs)), rep(0, nrow(e@bg))),
+    pts.plot <- rbind(e@occs, e@bg) %>% dplyr::mutate(type = c(rep(1, nrow(e@occs)), rep(0, nrow(e@bg))),
                                           partition = c(e@occs.grp, e@bg.grp))
   }else{
     pts <- switch(pts.type, occs = occs, bg = bg)
     pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
     pts.z <- raster::extract(envs, pts)
-    pts.plot <- bind_cols(pts, pts.z, partition = factor(pts.grp))
+    pts.plot <- dplyr::bind_cols(pts, pts.z, partition = factor(pts.grp))
   }
   names(pts.plot)[1:2] <- c("longitude","latitude")
   
   test.sim <- list()
-  nk <- length(unique(pts.grp))
+  nk <- length(unique(pts.plot$partition))
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
@@ -196,11 +196,9 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
 #' @export
 
 evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, occs.grp = NULL, 
-                                bg.grp = NULL, envs.var = NULL, pts.type = c("occs", "bg"), 
+                                bg.grp = NULL, envs.var = NULL, pts.type = "occs", 
                                 pts.size = 1.5, mess.cols = c("red","yellow","blue"), mess.naCol = "white",
-                                sim.palette = NULL,
-                                sim.type = c("mess", "most_diff", "most_sim"), bb.buf = NULL,
-                                return.tbl = FALSE) {
+                                sim.palette = NULL, sim.type = "mess", bb.buf = NULL, return.tbl = FALSE) {
   # remove categorical rasters
   nr <- raster::nlayers(envs)
   cats <- numeric(nr)
@@ -212,19 +210,26 @@ evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, o
   }
   
   if(!is.null(e)) {
-    pts <- rbind(e@occs, e@bg) %>% mutate(type = c(rep(1, nrow(e@occs)), rep(0, nrow(e@bg))),
-                                          partition = c(e@occs.grp, e@bg.grp))
+    pts.plot <- switch(pts.type, occs = e@occs, bg = e@bg)
+    cats <- numeric(ncol(pts.plot))
+    for(n in 1:ncol(pts.plot)) cats[n] <- is.factor(pts.plot[,n])
+    if(sum(cats) > 0) {
+      rem.df <- which(cats == 1)
+      pts.plot <- pts.plot[,-rem.df]
+    }
+    pts.grp <- switch(pts.type, occs = e@occs.grp, bg = e@bg.grp)
+    pts.plot <- dplyr::bind_cols(pts.plot, partition = factor(pts.grp))
   }else{
     pts <- switch(pts.type, occs = occs, bg = bg)
     pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
     pts.z <- raster::extract(envs, pts)
-    pts.plot <- bind_cols(pts, pts.z, partition = factor(pts.grp))
+    pts.plot <- dplyr::bind_cols(pts, pts.z, partition = factor(pts.grp))
   }
   names(pts.plot)[1:2] <- c("longitude","latitude")
   # pts$id <- row.names(pts)
   
   ras.sim <- list()
-  nk <- length(unique(pts.grp))
+  nk <- length(unique(pts.plot$partition))
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
@@ -264,10 +269,8 @@ evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, o
   if(sim.type != "mess") {
     g <- g + ggplot2::scale_fill_brewer(palette = sim.palette, na.value = "white", breaks = levels(plot.df$value))
   }else{
-    g <- g + ggplot2::scale_fill_gradientn(na.value = mess.naCol,
-                                           colors = mess.cols,
-                                           values = scales::rescale(c(min(plot.df$value, na.rm=TRUE), 0, 0.01,
-                                                                      max(plot.df$value, na.rm=TRUE))))
+    g <- g + 
+      ggplot2::scale_fill_gradient2(na.value = mess.naCol)
   }
   g
   
