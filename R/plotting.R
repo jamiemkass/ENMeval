@@ -50,6 +50,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
 }
 
 plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet) {
+  
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
     stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
   }
@@ -80,6 +81,8 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
     occs.grp <- as.numeric(as.character(occs.grp))
     bg.grp <- as.numeric(as.character(bg.grp))
   }
+  
+  if(ref.data == "bg" & length(unique(bg.grp)) == 1) stop('If background is not partitioned (non-spatial), do not assign ref.data to "bg".')
   
   if(any(is.null(occs.z), is.null(occs.grp))) {
     pts.plot <- bg.z %>% dplyr::mutate(type = rep(0, nrow(bg.z)), partition = factor(bg.grp))  
@@ -195,7 +198,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   
   if(nk > 9) {
     theme.custom <- ggplot2::guides(color = FALSE)
-    pt.cols <- rainbow(grp.n)
+    pt.cols <- rainbow(nk)
   }else{
     theme.custom <- NULL
     pt.cols <- RColorBrewer::brewer.pal(nk, "Set1")
@@ -279,7 +282,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 
 evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
                                 bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
-                                categoricals = NULL, envs.var = NULL, bb.buf = 0, 
+                                categoricals = NULL, envs.var = NULL, bb.buf = 0, occs.testing.z = NULL,
                                 pts.size = 1.5, gradient.cols = c("red","white","blue"), na.col = "gray",
                                 return.tbl = FALSE, return.ras = FALSE, bg.pts = FALSE, sim.palette = NULL, quiet = FALSE) {
   
