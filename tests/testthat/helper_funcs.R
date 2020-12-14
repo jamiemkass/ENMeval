@@ -145,3 +145,79 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
     expect_true(all(ns@real.occs.grp == e@occs.grp))
   })
 }
+
+test_evalPlots <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, sel = c("hist", "map")) {
+  
+  
+  
+  test_histPlot <- function(sim.type) {
+    test_i <- function(i) {
+      expect_true(ncol(i) == 2)
+      expect_true(names(i)[1] == "partition")
+      expect_true(names(i)[2] == sim.type)
+    }
+    # with ENMevaluation object
+    hist.tbl1 <- evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl1)
+    hist.tbl2 <- evalplot.envSim.hist(e = e, ref.data = "bg", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl2)
+    hist.tbl3 <- evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = "biome", envs.var = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl3)
+    hist.tbl4 <- evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = "biome", hist.bins = 50, return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl4)
+    # with occs and bg data
+    hist.tbl5 <- evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl5)
+    hist.tbl6 <- evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "bg", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl6)
+    hist.tbl7 <- evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = "biome", envs.var = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl7)
+    hist.tbl8 <- evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = "biome", hist.bins = 50, return.tbl = TRUE, quiet = TRUE)
+    test_i(hist.tbl8)
+  }
+  
+  if("hist" %in% sel) {
+    test_histPlot("mess")
+    test_histPlot("most_diff")
+    test_histPlot("most_sim")  
+  }
+  
+  test_map <- function(sim.type) {
+    test_i <- function(i) {
+      if(inherits(i, "Raster")) {
+        expect_true(length(unique(e@occs.grp)) == raster::nlayers(i))
+      }else{
+        expect_true(ncol(i) == 4)
+        expect_true(names(i)[1] == "x")
+        expect_true(names(i)[2] == "y")
+        expect_true(names(i)[3] == "ras")
+        expect_true(names(i)[4] == sim.type)  
+      }
+    }
+    # with ENMevaluation object
+    map.tbl1 <- evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE)
+    test_i(map.tbl1)
+    map.tbl2 <- evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", return.ras = TRUE, quiet = TRUE)
+    test_i(map.tbl2)
+    map.tbl3 <- evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", envs.var = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE)
+    test_i(map.tbl3)
+    map.tbl4 <- evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", envs.var = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE)
+    test_i(map.tbl4)
+    # with buffer
+    map.tbl5 <- evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", bb.buf = 5, return.tbl = TRUE, quiet = TRUE)
+    test_i(map.tbl5)
+    map.tbl6 <- evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", bb.buf = 5, return.ras = TRUE, quiet = TRUE)
+    test_i(map.tbl6)
+    # with occs and bg data
+    map.tbl6 <- evalplot.envSim.map(occs.z = occs.z, occs.grp = occs.grp, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", bb.buf = 5, return.ras = TRUE, quiet = TRUE)
+    test_i(map.tbl6)
+    map.tbl6 <- evalplot.envSim.map(bg.z = bg.z, bg.grp = bg.grp, envs = envs, ref.data = "bg", sim.type = sim.type, categoricals = "biome", bb.buf = 5, return.ras = TRUE, quiet = TRUE)
+    test_i(map.tbl6)
+  }
+  
+  if("map" %in% sel) {
+    test_map("mess")
+    test_map("most_diff")
+    test_map("most_sim")
+  }
+}

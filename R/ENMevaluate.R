@@ -299,11 +299,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # find factor rasters or columns and identify them as categoricals
   if(!is.null(envs)) {
     categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
-    if(length(categoricals) == 0) categoricals <- NULL
   }else{
     categoricals <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
-    if(length(categoricals) == 0) categoricals <- NULL
   }
+  if(length(categoricals) == 0) categoricals <- NULL
   
   # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {

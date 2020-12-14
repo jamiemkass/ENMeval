@@ -4,15 +4,15 @@
 #' @param envs Raster of an environmental predictor variable used to build the models in "e"
 #' @param pts Matrix or data frame of coordinates for occurrence or background data
 #' @param pts.grp Numeric vector of partition groups corresponding to data in "pts"
-#' @param pts.type Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param ref.data Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
 #' @param pts.size Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
 #' @details This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
 #' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type = "occs", pts.size = 1.5) {
+evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data = "occs", pts.size = 1.5) {
   if(!is.null(e)) {
-    pts.plot <- switch(pts.type, occs = cbind(e@occs, partition = e@occs.grp),
+    pts.plot <- switch(ref.data, occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
@@ -49,8 +49,87 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
   return(g)
 }
 
-#' @title MESS histogram plots for partition groups
-#' @description Plot environmental similarity of predictor variable extent with respect to occurrence partitions
+plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet) {
+  if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
+    stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
+  }
+  
+  if(is.null(envs)) {
+    if(is.null(e) & any(is.null(occs.z), is.null(bg.z), is.null(occs.grp), is.null(bg.grp))) {
+      stop("* If inputting occurrence and background data instead of an ENMevaluation object, please input occs.z, bg.z, occs.grp, and bg.grp.")
+      if(!quiet) message("* Similarity values calculated by contrasting occurrences with background.")
+    }
+  }else{
+    if(is.null(e)) {
+      if(ref.data == "occs") {
+        if(any(is.null(occs.z), is.null(occs.grp))) {stop("* If inputting occurrence data instead of an ENMevaluation object, please input occs.z and occs.grp.")}
+      }else if (ref.data == "bg") {
+        if(any(is.null(bg.z), is.null(bg.grp))) {stop("* If inputting background data instead of an ENMevaluation object, please input bg.z and bg.grp.")}
+      }
+    }
+    if(!quiet) message("* Similarity values calculated by contrasting occurrences with all cell values in raster extent.")
+  }
+  
+  # assign variables from ENMevaluation object
+  if(!is.null(e)) {
+    occs.z <- e@occs
+    bg.z <- e@bg
+    occs.grp <- as.numeric(as.character(e@occs.grp))
+    bg.grp <- as.numeric(as.character(e@bg.grp))
+  }else{
+    occs.grp <- as.numeric(as.character(occs.grp))
+    bg.grp <- as.numeric(as.character(bg.grp))
+  }
+  
+  if(any(is.null(occs.z), is.null(occs.grp))) {
+    pts.plot <- bg.z %>% dplyr::mutate(type = rep(0, nrow(bg.z)), partition = factor(bg.grp))  
+  }else if(any(is.null(bg.z), is.null(bg.grp))) {
+    pts.plot <- occs.z %>% dplyr::mutate(type = rep(1, nrow(occs.z)), partition = factor(occs.grp))  
+  }else{
+    pts.plot <- rbind(occs.z, bg.z) %>% 
+      dplyr::mutate(type = c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))), partition = factor(c(occs.grp, bg.grp)))
+  }
+  names(pts.plot)[1:2] <- c("longitude","latitude")
+  
+  # find factor rasters or columns and identify them as categoricals
+  if(!is.null(envs)) {
+    categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+    if(length(categoricals) == 0) categoricals <- NULL
+  }else{
+    categoricals <- unique(c(categoricals, names(occs.z)[which(sapply(occs.z, is.factor))]))
+    if(length(categoricals) == 0) categoricals <- NULL
+  }
+  
+  # if categoricals argument was specified, convert these columns to factor class
+  if(!is.null(categoricals)) {
+    for(i in 1:length(categoricals)) {
+      if(!quiet) message(paste0("* Ignoring categorical variable ", categoricals[i], "..."))
+      pts.plot[, categoricals[i]] <- NULL
+    }
+  }
+  
+  if(unique(pts.plot$partition) == 0) {
+    if(ref.data == "bg") stop('If using fully withheld testing data, input ref.data as "occs".')
+    if(is.null(e) & is.null(occs.testing.z)) stop("If using fully withheld testing data, input either an ENMevaluation object or occs.testing.z.")
+    if(!is.null(e)) occs.testing.z <- e@occs.testing
+    occs.testing.z[[categoricals]] <- NULL
+    occs.testing.z <- occs.testing.z %>% mutate(type = 1, partition = 2) %>% rename(longitude = lon, latitude = lat)
+    pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
+    pts.plot[pts.plot$type == 1, "partition"] <- 1
+    pts.plot <- dplyr::bind_rows(pts.plot, occs.testing.z) %>% mutate(partition = factor(partition))
+  }
+  
+  return(pts.plot)
+}
+
+#' @title Similarity histogram plots for partition groups
+#' @description Plots environmental similarity of reference partitions (occurrences or background) 
+#' to remaining background (all other partitions). This function does not use raster data, and thus
+#' only calculates similarity values for data used in model training. Further, this function does
+#' not calculate similarity for categorical variables.
+#' @details When fully withheld testing groups are used, make sure to input either an ENMevaluation 
+#' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
+#' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object
 #' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input, as they cannot be used to calculate MESS
@@ -58,7 +137,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 #' with respect to all variables
 #' @param sim.type Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
-#' @param pts.type Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param ref.data Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
 #' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
 #' @param sim.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
 #' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
@@ -76,46 +155,42 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, pts.type =
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, occs.grp = NULL, 
-                                 bg.grp = NULL, envs.var = NULL, pts.type = c("occs", "bg"), 
-                                 sim.type = c("mess", "most_diff", "most_sim"),
-                                 hist.bins = 30, return.tbl = FALSE) {
-  # remove categorical rasters
-  nr <- raster::nlayers(envs)
-  cats <- numeric(nr)
-  for(n in 1:nr) cats[n] <- is.factor(envs[[n]])
-  if(sum(cats) > 0) {
-    rem.ras <- which(cats == 1)
-    message(paste("Ignoring categorical raster", names(envs)[rem.ras], "..."))
-    envs <- envs[[-rem.ras]]
-  }
+evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
+                                 bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
+                                 categoricals = NULL, envs.var = NULL, occs.testing.z = NULL,
+                                 hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
   
-  if(!is.null(e)) {
-    pts.plot <- rbind(e@occs, e@bg) %>% dplyr::mutate(type = c(rep(1, nrow(e@occs)), rep(0, nrow(e@bg))),
-                                          partition = c(e@occs.grp, e@bg.grp))
-  }else{
-    pts <- switch(pts.type, occs = occs, bg = bg)
-    pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
-    pts.z <- raster::extract(envs, pts)
-    pts.plot <- dplyr::bind_cols(pts, pts.z, partition = factor(pts.grp))
+  pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
+
+  envs.names <- pts.plot %>% dplyr::select(-longitude, -latitude, -partition, -type) %>% names()
+  
+  if(!is.null(envs.var)) {
+    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.var, collapse = ", "), "."))
   }
-  names(pts.plot)[1:2] <- c("longitude","latitude")
   
   test.sim <- list()
-  nk <- length(unique(pts.plot$partition))
+  nk <- length(unique(pts.plot$partition[pts.plot$partition != 0]))
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
-    train.z <- pts.plot %>% dplyr::filter(partition != k) %>% dplyr::select(-longitude, -latitude, -partition)
-    if(!is.null(envs.var)) {
-      test.z <- test.z %>% select(all_of(envs.var))
-      train.z <- train.z %>% select(all_of(envs.var))
+    if(ref.data == "occs") {
+      test.z <- test.z %>% dplyr::filter(type == 1) %>% dplyr::select(-type)
+    }else if (ref.data == "bg") {
+      test.z <- test.z %>% dplyr::filter(type == 0) %>% dplyr::select(-type)
     }
-    sim <- rmaxent::similarity(train.z, test.z)
-    mss <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
+    train.z <- pts.plot %>% dplyr::filter(partition != k) %>% dplyr::select(-longitude, -latitude, -partition, -type)
     
-    test.sim[[k]] <- data.frame(mss, partition = k)
-    names(test.sim[[k]])[1] <- sim.type  
+    sim <- tryCatch({
+      rmaxent::similarity(train.z, test.z)
+    }, error = function(cond) {
+      message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
+      # Choose a return value in case of error
+      return(NULL)
+    })
+    sim.sel <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
+    
+    test.sim[[k]] <- data.frame(partition = k, sim.sel)
+    names(test.sim[[k]])[2] <- sim.type  
   }
   
   if(nk > 9) {
@@ -128,36 +203,37 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
   
   plot.df <- dplyr::bind_rows(test.sim)
   plot.df$partition <- factor(plot.df$partition)
+  
+  plot.text <- paste("\n(Values represent environmental similarity between", 
+                     switch(ref.data, occs = "occurrence", bg = "background"),
+                     "partitions and all other background partitions.)")
+  
   if(sim.type != "mess") {
-    envs.tbl <- data.frame(sort(unique(plot.df[,1])), names(envs))
+    envs.tbl <- data.frame(sort(unique(plot.df[,2])), envs.names)
     names(envs.tbl) <- c(sim.type, "env.var")
     envs.tbl$env.var <- factor(envs.tbl$env.var)
     plot.df <- plot.df %>% left_join(envs.tbl, by = sim.type)
-    title <- ifelse(sim.type == "most_diff", "Most different environmental variable\n(Differences based on training groups with respect to validation group)", 
-                    "Most similar environmental variable\n(Differences based on training groups with respect to validation group)")
-    g <- ggplot2::ggplot(plot.df, ggplot2::aes(x = env.var, fill = partition)) + 
+    plot.df[[sim.type]] <- NULL
+    names(plot.df)[2] <- sim.type
+    title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")
+    
+    g <- ggplot2::ggplot(plot.df, ggplot2::aes_string(x = sim.type, fill = "partition")) + 
       ggplot2::stat_count() +
       ggplot2::facet_grid(ggplot2::vars(partition)) + 
       ggplot2::scale_fill_manual(values = pt.cols) +
       ggplot2::theme_classic() +
       ggplot2::geom_vline(xintercept = 0) +
-      ggplot2::ggtitle(title) +
-      ggplot2::theme(
-        strip.background = ggplot2::element_blank(),
-        strip.text.y = ggplot2::element_blank()
-      )
-  }else{
+      ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
+      ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text.y = ggplot2::element_blank())
+  }else if(sim.type == "mess"){
     g <- ggplot2::ggplot(plot.df, ggplot2::aes(x = mess, fill = partition)) + 
       ggplot2::geom_histogram(bins = hist.bins) +
       ggplot2::facet_grid(ggplot2::vars(partition)) + 
       ggplot2::scale_fill_manual(values = pt.cols) +
       ggplot2::theme_classic() +
       ggplot2::geom_vline(xintercept = 0) +
-      ggplot2::ggtitle("Multivariate environmental similarity\n(Differences based on training groups with respect to validation group)") +
-      ggplot2::theme(
-        strip.background = ggplot2::element_blank(),
-        strip.text.y = ggplot2::element_blank()
-      )  
+      ggplot2::ggtitle(paste("Multivariate environmental similarity", plot.text, collapse = "\n")) +
+      ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text.y = ggplot2::element_blank())  
   }
   g
   
@@ -168,8 +244,14 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
   }
 }
 
-#' @title MESS maps for partition groups
-#' @description Plot environmental similarity of predictor variable extent with respect to occurrence partitions
+#' @title Similarity maps for partition groups
+#' @description Maps environmental similarity of reference partitions (occurrences or background) 
+#' to all cells with values in the raster. This function uses raster data, and thus
+#' cannot map similarity values using only tables of environmental values for occurrences or background. 
+#' Further, this function does not calculate similarity for categorical variables.
+#' @details When fully withheld testing groups are used, make sure to input either an ENMevaluation 
+#' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
+#' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object
 #' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input, as they cannot be used to calculate MESS
@@ -177,7 +259,7 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
 #' with respect to all variables
 #' @param sim.type Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
-#' @param pts.type Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param ref.data Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
 #' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
 #' @param sim.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
 #' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
@@ -195,48 +277,53 @@ evalplot.envSim.hist <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, 
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
 #' @export
 
-evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, occs.grp = NULL, 
-                                bg.grp = NULL, envs.var = NULL, pts.type = "occs", 
-                                pts.size = 1.5, mess.cols = c("red","yellow","blue"), mess.naCol = "white",
-                                sim.palette = NULL, sim.type = "mess", bb.buf = NULL, return.tbl = FALSE) {
-  # remove categorical rasters
-  nr <- raster::nlayers(envs)
-  cats <- numeric(nr)
-  for(n in 1:nr) cats[n] <- raster::is.factor(envs[[n]])
-  if(sum(cats) > 0) {
-    rem.ras <- which(cats == 1)
-    message(paste("Ignoring categorical raster", names(envs)[rem.ras], "..."))
-    envs <- envs[[-rem.ras]]
+evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
+                                bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
+                                categoricals = NULL, envs.var = NULL, bb.buf = 0, 
+                                pts.size = 1.5, gradient.cols = c("red","white","blue"), na.col = "gray",
+                                return.tbl = FALSE, return.ras = FALSE, bg.pts = FALSE, sim.palette = NULL, quiet = FALSE) {
+  
+  if(return.tbl == TRUE & return.ras == TRUE) {
+    stop("*Error: please select only one of return.tbl or return.ras.")
   }
   
-  if(!is.null(e)) {
-    pts.plot <- switch(pts.type, occs = e@occs, bg = e@bg)
-    cats <- numeric(ncol(pts.plot))
-    for(n in 1:ncol(pts.plot)) cats[n] <- is.factor(pts.plot[,n])
-    if(sum(cats) > 0) {
-      rem.df <- which(cats == 1)
-      pts.plot <- pts.plot[,-rem.df]
-    }
-    pts.grp <- switch(pts.type, occs = e@occs.grp, bg = e@bg.grp)
-    pts.plot <- dplyr::bind_cols(pts.plot, partition = factor(pts.grp))
-  }else{
-    pts <- switch(pts.type, occs = occs, bg = bg)
-    pts.grp <- switch(pts.type, occs = occs.grp, bg = bg.grp)
-    pts.z <- raster::extract(envs, pts)
-    pts.plot <- dplyr::bind_cols(pts, pts.z, partition = factor(pts.grp))
+  if(is.null(e) & (ref.data == "occs" & any(is.null(occs.z), is.null(occs.grp)))) {
+    stop("* Error: If using occurrences as reference group, ensure you input occs.z and occs.grp") 
   }
-  names(pts.plot)[1:2] <- c("longitude","latitude")
-  # pts$id <- row.names(pts)
+  if(is.null(e) & (ref.data == "bg" & any(is.null(bg.z), is.null(bg.grp)))) {
+    stop("* Error: If using background as reference group, ensure you input bg.z and bg.grp") 
+  }
+  
+  if(!is.numeric(bb.buf)) stop("Please ensure bb.buf is a number.")
+  
+  pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
+  
+  if(!is.null(categoricals) & !is.null(envs)) envs <- dropLayer(envs, categoricals)
+  
+  if(!is.null(envs.var)) {
+    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.var, collapse = ", "), "."))
+    envs <- envs[[envs.var]]
+  }
+  
+  if(ref.data == "occs") {
+    pts.plot <- pts.plot %>% dplyr::filter(type == 1) %>% dplyr::select(-type)
+  }else if (ref.data == "bg") {
+    pts.plot <- pts.plot %>% dplyr::filter(type == 0) %>% dplyr::select(-type)
+  }
   
   ras.sim <- list()
   nk <- length(unique(pts.plot$partition))
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
-    if(!is.null(envs.var)) {
-      test.z <- test.z %>% select(all_of(envs.var))
-    }
-    sim <- rmaxent::similarity(envs, test.z)
+    
+    sim <- tryCatch({
+      rmaxent::similarity(envs, test.z)
+    }, error = function(cond) {
+      message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
+      # Choose a return value in case of error
+      return(NULL)
+    })
     sim.sel <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
     
     ras.sim[[k]] <- sim.sel
@@ -245,37 +332,46 @@ evalplot.envSim.map <- function(e = NULL, envs = NULL, occs = NULL, bg = NULL, o
   rs.sim <- raster::stack(ras.sim)
   names(rs.sim) <- gsub("layer|mess", "partition", names(rs.sim))
   plot.df <- raster::as.data.frame(rs.sim, xy = TRUE) %>%
-    tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = "value")
-  if(!is.null(bb.buf)) {
-    plot.df <- plot.df %>% filter(x > min(pts$longitude) - bb.buf, x < max(pts$longitude) + bb.buf,
-                                  y > min(pts$latitude) - bb.buf, y < max(pts$latitude) + bb.buf)
-  }
+    tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
+  # add buffer
+  plot.df <- plot.df %>% filter(x > min(pts.plot$longitude) - bb.buf, x < max(pts.plot$longitude) + bb.buf,
+                                y > min(pts.plot$latitude) - bb.buf, y < max(pts.plot$latitude) + bb.buf)
+  
   if(sim.type != "mess") {
     if(is.null(sim.palette)) sim.palette <- "Set1"
     plot.df$ras <- gsub("_var", "", plot.df$ras)
-    plot.df$value <- factor(plot.df$value)
-    title.part <- switch(sim.type, most_diff = "Most different", most_sim = "Most similar")
-    title <- paste(title.part, "environmental variable\n(Differences based on entire extent with respect to validation group)")
+    plot.df[[sim.type]] <- factor(plot.df[[sim.type]])
+    title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")
   }
-  if(sim.type == "mess") title <- "Multivariate environmental similarity\n(Differences based on entire extent with respect to validation group)"
+  if(sim.type == "mess") title <- "Multivariate environmental similarity"
+  
+  plot.text <- paste("\n(Values represent environmental similarity between", 
+                     switch(ref.data, occs = "occurrence", bg = "background"),
+                     "partitions and all raster cells with values.)")
   
   g <- ggplot2::ggplot() +
-    ggplot2::geom_raster(data = plot.df, ggplot2::aes(x = x, y = y, fill = value)) +
-    # geom_sf(data=west.shp2,fill="gray40",color=NA) +
-    ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, shape = partition), color = "black", size = pts.size) +
-    ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
-    ggplot2::ggtitle(title) +
-    ggplot2::theme_classic()
-  if(sim.type != "mess") {
-    g <- g + ggplot2::scale_fill_brewer(palette = sim.palette, na.value = "white", breaks = levels(plot.df$value))
+    ggplot2::geom_raster(data = plot.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type))
+  if(ref.data == "bg" & bg.pts == FALSE) {
+    g <- g + ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
+      ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
+      ggplot2::theme_classic()
   }else{
-    g <- g + 
-      ggplot2::scale_fill_gradient2(na.value = mess.naCol)
+    g <- g + ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, shape = partition), color = "black", size = pts.size) +
+      ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
+      ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
+      ggplot2::theme_classic()
+  }
+  if(sim.type != "mess") {
+    g <- g + ggplot2::scale_fill_brewer(palette = sim.palette, na.value = "white", breaks = levels(plot.df[[sim.type]]))
+  }else{
+    g <- g + ggplot2::scale_fill_gradient2(low = gradient.cols[1], mid = gradient.cols[2], high = gradient.cols[3], na.value = na.col)
   }
   g
   
   if(return.tbl == TRUE) {
     return(plot.df)
+  }else if(return.ras == TRUE) {
+    return(rs.sim)
   }else{
     return(g)  
   }

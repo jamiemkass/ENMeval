@@ -99,5 +99,7 @@ context(paste("Testing ENMnullSims for", algorithm, "with random 4-fold partitio
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
 
-
+# test plots
+grps <- get.block(occs, bg)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grp$bg.grp)
 
