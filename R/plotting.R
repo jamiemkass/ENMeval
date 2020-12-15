@@ -173,6 +173,9 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   
   test.sim <- list()
   nk <- length(unique(pts.plot$partition[pts.plot$partition != 0]))
+  if(nk == sum(pts.plot$type)) {
+    stop("This plotting function is not available for jackknife (leave-one-out) partitions.")
+  }
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
@@ -316,6 +319,9 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   ras.sim <- list()
   nk <- length(unique(pts.plot$partition))
+  if(nk == sum(pts.plot$type)) {
+    stop("This plotting function is not available for jackknife (leave-one-out) partitions.")
+  }
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)

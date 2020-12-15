@@ -25,6 +25,9 @@ test_ENMevaluation(e, algorithm, "block", tune.args, 4, 4)
 context(paste("Testing ENMnullSims for", algorithm, "with block partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "block", mset, 4, 4)
+context(paste("Testing plotting functions for", algorithm, "with block partitions..."))
+grps <- get.block(occs, bg)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
 
 # checkerboard1 partitions
 context(paste("Testing ENMevaluate for", algorithm, "with checkerboard1 partitions..."))
@@ -33,6 +36,9 @@ test_ENMevaluation(e, algorithm, "checkerboard1", tune.args, 2, 2)
 context(paste("Testing ENMnullSims for", algorithm, "with checkerboard1 partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "checkerboard1", mset, 2, 2)
+context(paste("Testing plotting functions for", algorithm, "with checkerboard1 partitions..."))
+grps <- get.checkerboard1(occs, envs, bg, aggregation.factor = 2)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
 
 # checkerboard2 partitions
 context(paste("Testing ENMevaluate for", algorithm, "with checkerboard2 partitions..."))
@@ -41,14 +47,20 @@ test_ENMevaluation(e, algorithm, "checkerboard2", tune.args, 4, 4)
 context(paste("Testing ENMnullSims for", algorithm, "with checkerboard2 partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "checkerboard2", mset, 4, 4)
+context(paste("Testing plotting functions for", algorithm, "with checkerboard2 partitions..."))
+grps <- get.checkerboard2(occs, envs, bg, aggregation.factor = 2)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
 
 # random k-fold partitions
-context(paste("Testing ENMevaluate for", algorithm, "with random 4-fold partitions..."))
+context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions..."))
 e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
 test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1)
-context(paste("Testing ENMnullSims for", algorithm, "with random 4-fold partitions..."))
+context(paste("Testing ENMnullSims for", algorithm, "with random 5-fold partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
+context(paste("Testing plotting functions for", algorithm, "with random 5-fold partitions..."))
+grps <- get.randomkfold(occs, bg, kfolds = 5)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
 
 # jackknife partitions
 context(paste("Testing ENMevaluate for", algorithm, "with jackknife partitions..."))
@@ -57,6 +69,7 @@ test_ENMevaluation(e, algorithm, "jackknife", tune.args, nrow(e@occs), 1)
 context(paste("Testing ENMnullSims for", algorithm, "with jackknife partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "jackknife", mset, nrow(e@occs), 1)
+context(paste("Testing plotting functions for", algorithm, "with jackknife partitions..."))
 
 # testing partition
 context(paste("Testing ENMevaluate for", algorithm, "with testing partitions..."))
@@ -65,6 +78,9 @@ test_ENMevaluation(e, algorithm, "testing", tune.args, 1, 1)
 context(paste("Testing ENMnullSims for", algorithm, "with testing partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "testing", mset, 1, 1)
+context(paste("Testing plotting functions for", algorithm, "with testing partitions..."))
+grps <- list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg)))
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
 
 # no partitions
 context(paste("Testing ENMevaluate for", algorithm, "with no partitions..."))
@@ -81,25 +97,28 @@ e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "user", alg
 test_ENMevaluation(e, algorithm, "user", tune.args, 4, 4)
 context(paste("Testing ENMnullSims for", algorithm, "with user partitions..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
+context(paste("Testing plotting functions for", algorithm, "with user partitions..."))
 test_ENMnullSims(e, ns, no.iter, algorithm, "user", mset, 4, 4)
+test_evalPlots(e, envs, occs.z, bg.z, user.grp$occs.grp, user.grp$bg.grp)
 
 # no envs (SWD)
-context(paste("Testing ENMevaluate for", algorithm, "with random 4-fold partitions and no raster environmental variables..."))
+context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
 e <- ENMevaluate(occs.z, bg = bg.z, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", quiet = TRUE)
 test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1, type = "swd")
-context(paste("Testing ENMnullSims for", algorithm, "with random 4-fold partitions and no raster environmental variables..."))
+context(paste("Testing ENMnullSims for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
+context(paste("Testing plotting functions for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+grps <- get.randomkfold(occs, bg, kfolds = 5)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
 
 # no bg
-context(paste("Testing ENMevaluate for", algorithm, "with random 4-fold partitions and no input background data..."))
+context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and no input background data..."))
 e <- ENMevaluate(occs, envs, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, n.bg = 1000, categoricals = "biome", overlap = TRUE, quiet = TRUE)
 test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1) 
-context(paste("Testing ENMnullSims for", algorithm, "with random 4-fold partitions and no input background data..."))
+context(paste("Testing ENMnullSims for", algorithm, "with random 5-fold partitions and no input background data..."))
 ns <- ENMnullSims(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnullSims(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
-
-# test plots
-grps <- get.block(occs, bg)
-test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grp$bg.grp)
-
+context(paste("Testing plotting functions for", algorithm, "with random 5-fold partitions and no input background data..."))
+grps <- get.randomkfold(occs, bg, kfolds = 5)
+test_evalPlots(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)

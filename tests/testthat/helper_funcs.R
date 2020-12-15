@@ -146,6 +146,15 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
   })
 }
 
+#' @title Unit tests for ENMevaluation plotting functions
+#' @description All parameters are self-explanatory except the following.
+#' Anything with the prefix ".z" is a data frame with latitude, longitude,
+#' and the environmental predictor variable values. Argument "plot.sel" controls
+#' whether testing happens for the histogram function, the plotting function, or both
+#' (some implementations do not work with one or the other). Argument "bg.sel" controls
+#' whether tests should be done with ref.data as "bg" or not (non-spatial implementations
+#' cannot be plotted with ref.data as )
+
 test_evalPlots <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, plot.sel = c("hist", "map"), bg.sel = 1, occs.testing.z = NULL) {
   
   test_histPlot <- function(sim.type) {
@@ -187,7 +196,11 @@ test_evalPlots <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, plot.sel = c
   test_map <- function(sim.type) {
     test_i <- function(i) {
       if(inherits(i, "Raster")) {
-        expect_true(length(unique(e@occs.grp)) == raster::nlayers(i))
+        if(is.null(occs.testing.z)) {
+          expect_true(length(unique(e@occs.grp)) == raster::nlayers(i))
+        }else{
+          expect_true(2 == raster::nlayers(i))
+        }
       }else{
         expect_true(ncol(i) == 4)
         expect_true(names(i)[1] == "x")

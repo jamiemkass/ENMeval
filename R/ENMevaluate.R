@@ -524,7 +524,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(is.null(taxon.name)) taxon.name <- ""
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
-  if(is.null(partition.settings)) partition.settings <- list()
+  if(partitions != "block") partition.settings$orientation <- NULL
+  if(partitions != "checkerboard1" | partitions != "checkerboard2") partition.settings$aggregation.factor <- NULL
+  if(partitions != "randomkfold") partition.settings$kfolds <- NULL
+  if(is.null(partition.settings) | length(partition.settings) == 0) partition.settings <- list()
   if(is.null(clamp.directions)) clamp.directions <- list()
   
   # get variable importance for all models
