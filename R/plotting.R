@@ -1,16 +1,17 @@
 #' @title Partition group plots
 #' @description Plot occurrence partition groups over an environmental predictor raster.
 #' @param e ENMevaluation object
-#' @param envs Raster of an environmental predictor variable used to build the models in "e"
-#' @param pts Matrix or data frame of coordinates for occurrence or background data
-#' @param pts.grp Numeric vector of partition groups corresponding to data in "pts"
-#' @param ref.data Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
-#' @param pts.size Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"
+#' @param envs RasterStack: environmental predictor variable used to build the models in "e"
+#' @param pts matrix / data frame: coordinates for occurrence or background data
+#' @param pts.grp numeric vector: partition groups corresponding to data in "pts"
+#' @param ref.data character: plot occurrences ("occs") or background ("bg"), with default "occs"
+#' @param pts.size numeric: custom point size for ggplot
+#' @param return.tbl boolean: if TRUE, return the data frames used to make the ggplot instead of the plot itself
 #' @details This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
-#' It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
+#' It can be run with an existing ENMevaluation object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 #' @export
 
-evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data = "occs", pts.size = 1.5) {
+evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data = "occs", pts.size = 1.5, return.tbl = FALSE) {
   if(!is.null(e)) {
     pts.plot <- switch(ref.data, occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
@@ -46,8 +47,16 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     ggplot2::scale_color_manual(values = pt.cols) +
     ggplot2::scale_fill_distiller(palette = "Greys", na.value = "white") + ggplot2::theme_classic() + 
     ggplot2::coord_equal() + theme.custom
-  return(g)
+  
+  if(return.tbl == TRUE) {
+    return(list(envs.df = envs.df, pts.plot = pts.plot))
+  }else{
+    return(g)  
+  }
 }
+
+
+
 
 plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet) {
   
@@ -134,18 +143,22 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
 #' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object
-#' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
-#' removed before input, as they cannot be used to calculate MESS
-#' @param envs.var Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
-#' with respect to all variables
-#' @param sim.type Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
+#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional)
+#' @param occs.grp numeric vector: partition groups for occurrence records (optional)
+#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional)
+#' @param bg.grp numeric vector: partition groups for background records (optional)
+#' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
+#' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
-#' @param ref.data Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
-#' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
-#' @param sim.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
-#' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
-#' @param palette.dir Numeric: direction for palette plotting; either 1 or -1
-#' @param hist.bins Numeric: number of histogram bins for histogram plots; default is 30
+#' @param categoricals character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+#' these must be specified as this function was intended for use with continuous data only
+#' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
+#' with respect to all variables (optional) 
+#' @param occs.testing.z data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
+#' in that order; this is for use only with the "testing" partition option when an ENMevaluation object is not input (optional)
+#' @param hist.bins numeric: number of histogram bins for histogram plots; default is 30
+#' @param return.tbl boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself
+#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 #' If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 #' With sim.type option "mess", the similarity between environmental values associated with the 
@@ -160,15 +173,15 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 
 evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
                                  bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
-                                 categoricals = NULL, envs.var = NULL, occs.testing.z = NULL,
+                                 categoricals = NULL, envs.vars = NULL, occs.testing.z = NULL,
                                  hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
   
   pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
 
   envs.names <- pts.plot %>% dplyr::select(-longitude, -latitude, -partition, -type) %>% names()
   
-  if(!is.null(envs.var)) {
-    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.var, collapse = ", "), "."))
+  if(!is.null(envs.vars)) {
+    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
   }
   
   test.sim <- list()
@@ -258,19 +271,31 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' @details When fully withheld testing groups are used, make sure to input either an ENMevaluation 
 #' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
 #' while partition 2 refers to the fully withheld testing group.
-#' @param e ENMevaluation object
+#' @param e ENMevaluation object (optional) 
 #' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input, as they cannot be used to calculate MESS
-#' @param envs.var Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
-#' with respect to all variables
-#' @param sim.type Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
+#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional)
+#' @param occs.grp numeric vector: partition groups for occurrence records (optional)
+#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional)
+#' @param bg.grp numeric vector: partition groups for background records (optional)
+#' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
+#' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
-#' @param ref.data Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"
-#' @param plot.type Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram
-#' @param sim.palette Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
-#' "Set1" for discrete variables and reverse "RdYlBu" for continuous variables
-#' @param palette.dir Numeric: direction for palette plotting; either 1 or -1
-#' @param hist.bins Numeric: number of histogram bins for histogram plots; default is 30
+#' @param categoricals character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+#' these must be specified as this function was intended for use with continuous data only
+#' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
+#' with respect to all variables (optional) 
+#' @param bb.buf numeric: distance used to buffer (extend) the mapping extent in map units; for latitude/longitude, this is in degrees (optional)
+#' @param occs.testing.z data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
+#' in that order; this is for use only with the "testing" partition option when an ENMevaluation object is not input (optional)
+#' @param plot.bg.pts boolean: if TRUE, plot background points when using ref.data = "bg"
+#' @param sim.palette character: RColorBrewer palette name to use for plotting discrete variables; if NULL, default is "Set1"
+#' @param pts.size numeric: custom point size for ggplot
+#' @param gradient.colors character vector: colors used for ggplot2::scale_fill_gradient2
+#' @param na.color character: color used for NA values
+#' @param return.tbl boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself
+#' @param return.ras boolean: if TRUE, return the RasterStack of similarity values used to make the ggplot instead of the plot itself
+#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 #' If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 #' With sim.type option "mess", the similarity between environmental values associated with the 
@@ -285,9 +310,10 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 
 evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
                                 bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
-                                categoricals = NULL, envs.var = NULL, bb.buf = 0, occs.testing.z = NULL,
-                                pts.size = 1.5, gradient.cols = c("red","white","blue"), na.col = "gray",
-                                return.tbl = FALSE, return.ras = FALSE, bg.pts = FALSE, sim.palette = NULL, quiet = FALSE) {
+                                categoricals = NULL, envs.vars = NULL, bb.buf = 0, occs.testing.z = NULL,
+                                plot.bg.pts = FALSE, sim.palette = NULL, 
+                                pts.size = 1.5, gradient.colors = c("red","white","blue"), na.color = "gray",
+                                return.tbl = FALSE, return.ras = FALSE, quiet = FALSE) {
   
   if(return.tbl == TRUE & return.ras == TRUE) {
     stop("*Error: please select only one of return.tbl or return.ras.")
@@ -306,9 +332,9 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   if(!is.null(categoricals) & !is.null(envs)) envs <- dropLayer(envs, categoricals)
   
-  if(!is.null(envs.var)) {
-    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.var, collapse = ", "), "."))
-    envs <- envs[[envs.var]]
+  if(!is.null(envs.vars)) {
+    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
+    envs <- envs[[envs.vars]]
   }
   
   if(ref.data == "occs") {
@@ -360,7 +386,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   g <- ggplot2::ggplot() +
     ggplot2::geom_raster(data = plot.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type))
-  if(ref.data == "bg" & bg.pts == FALSE) {
+  if(ref.data == "bg" & plot.bg.pts == FALSE) {
     g <- g + ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
       ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
       ggplot2::theme_classic()
@@ -373,7 +399,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   if(sim.type != "mess") {
     g <- g + ggplot2::scale_fill_brewer(palette = sim.palette, na.value = "white", breaks = levels(plot.df[[sim.type]]))
   }else{
-    g <- g + ggplot2::scale_fill_gradient2(low = gradient.cols[1], mid = gradient.cols[2], high = gradient.cols[3], na.value = na.col)
+    g <- g + ggplot2::scale_fill_gradient2(low = gradient.colors[1], mid = gradient.colors[2], high = gradient.colors[3], na.value = na.color)
   }
   g
   
@@ -390,12 +416,15 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
 #' @title ENMevaluation statistics plot
 #' @description Plot evaluation statistics over tuning parameter ranges to visualize differences in performance
 #' @param e ENMevaluation object
-#' @param stats Character vector of names of statistics from results table to be plotted; if more than
+#' @param stats character vector: names of statistics from results table to be plotted; if more than
 #' one statistic is specified, the plot will be faceted
-#' @param x Character of variable to be plotted on x-axis
-#' @param col Character of variable used to assign symbology colors 
-#' @param dodge (Optional) numeric value specifying the dodge width for points and lines (this improves visibility when there is high overlap) 
-#' @param error.bars (Optional) boolean specifying whether or not to plot error bars (defaults to TRUE)
+#' @param x.var character: variable to be plotted on x-axis
+#' @param color.var character: variable used to assign symbology colors 
+#' @param dodge numeric: dodge width for points and lines; this improves visibility when there is high overlap (optional)
+#' @param error.bars boolean: if TRUE, plot error bars
+#' @param facet.labels character vector: custom names for the metric facets
+#' @param metric.levels character vector: custom factor levels for metrics; this controls the order that metric statistics are plotted
+#' @param return.tbl boolean: if TRUE, return the data frames of results used to make the ggplot instead of the plot itself
 #' @details In this plot, the x-axis represents a tuning parameter range, while the y-axis represents the average of a statistic over all partitions.
 #' Different colors represent the categories or values of another tuning parameter. 
 #' Error bars represent the standard deviation of a statistic around the mean. 
@@ -403,7 +432,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
+evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -427,7 +456,7 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
   
   if(nrow(res.avgs) > 0) {
     if(is.null(dodge)) dodge <- 0.1
-    g <- ggplot2::ggplot(res.avgs, ggplot2::aes_string(x = x.var, y = "avg", color = color, group = color)) + 
+    g <- ggplot2::ggplot(res.avgs, ggplot2::aes_string(x = x.var, y = "avg", color = color.var, group = color.var)) + 
       ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
       ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) +
       ggplot2::theme_bw()
@@ -450,7 +479,7 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
     }
   }else{
     if(is.null(dodge)) dodge <- 0
-    g <- ggplot2::ggplot(res, ggplot2::aes_string(x = x.var, y = "value", color = color, group = color)) + 
+    g <- ggplot2::ggplot(res, ggplot2::aes_string(x = x.var, y = "value", color = color.var, group = color.var)) + 
       ggplot2::geom_point(position=ggplot2::position_dodge(width=dodge)) + 
       ggplot2::geom_line(position=ggplot2::position_dodge(width=dodge)) + 
       ggplot2::theme_bw()
@@ -471,12 +500,12 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
 #' @title ENMnulls statistics plot
 #' @description Plot histogram of evaluation statistics for null ENM simulations
 #' @param e.null ENMnull object
-#' @param stats Character vector: metrics from results table to be plotted; examples are
+#' @param stats character vector: metrics from results table to be plotted; examples are
 #' "auc.val" or "or.10p"; if more than one statistic is specified, the histogram plot will be faceted
-#' @param plot.type Character: either "violin" or "histogram"
-#' @param facet.labels Character vector: custom names for the metric facets
-#' @param metric.levels Character vector: custom factor levels for metrics; this controls
-#' the order that metric statistics are plotted
+#' @param plot.type character: either "violin" or "histogram"
+#' @param facet.labels character vector: custom names for the metric facets
+#' @param metric.levels character vector: custom factor levels for metrics; this controls the order that metric statistics are plotted
+#' @param return.tbl boolean: if TRUE, return the data frames of null results used to make the ggplot instead of the plot itself
 #' @details There are two variations for this plot, but both show null quantiles (0.01, 0.05, 0.5, 0.95, 0.99). 
 #' For violin plots, the null distribution is displayed as a vertical shape (i.e., the violin) with horizontal lines showing 
 #' the quantiles and the empirical value is plotted as a red point along the vertical axis. 

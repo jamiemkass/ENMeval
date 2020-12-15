@@ -104,6 +104,9 @@ context(paste("Testing ENMevaluate for", algorithm, "with jackknife partitions..
 e <- ENMevaluate(occs[1:10,], envs, bg, tune.args = tune.args, partitions = "jackknife", algorithm = algorithm, overlap = TRUE, quiet = TRUE)
 test_ENMevaluation(e, algorithm, "jackknife", tune.args, nrow(e@occs), 1)
 
+context(paste("Testing evalplot.stats for", algorithm, "with testing partition..."))
+test_evalplot.stats(e)
+
 context(paste("Testing ENMnulls for", algorithm, "with jackknife partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
 test_ENMnulls(e, ns, no.iter, algorithm, "jackknife", mset, nrow(e@occs), 1)

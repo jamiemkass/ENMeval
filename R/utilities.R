@@ -17,14 +17,14 @@ NULL
 #' This function has a single argument called "vars", which is a list that includes different data 
 #' that can be used to calculate the metric. Below is the list of data included in vars, which can
 #' be accessed with $, as in vars$occs.train.z. See the vignette for a worked example.
-#' @param enm ENMdetails object containing the algorithm
+#' @param enm ENMdetails object
 #' @param occs.train.z data frame: predictor variable values for training occurrences
 #' @param occs.val.z data frame: predictor variable values for validation occurrences
 #' @param bg.train.z data frame: predictor variable values for training background
 #' @param bg.val.z data frame: predictor variable values for validation background
 #' @param mod.k Model object for current partition (k)
 #' @param nk numeric: number of folds (i.e., partitions)
-#' @param other.settings list: other settings specified in ENMevaluate()
+#' @param other.settings named list: other settings specified in ENMevaluate()
 #' @param partitions character: name of the partition method (e.g., "block")
 #' @param occs.train.pred numeric: predictions made by mod.k for training occurrences
 #' @param occs.val.pred numeric: predictions made by mod.k for validation occurrences
@@ -41,17 +41,20 @@ NULL
 #' @description This is a named list used to specify certain settings for partitioning schema.
 #' It is inserted as an argument to ENMevaluate(). Some partitioning schema require a setting to
 #' be specified. It is helpful to use the evalplot.grps() plotting function to visualize differences in settings.
-#' @param orientation Required for the block partition. Can be one of "lat_lon", "lon_lat", "lat_lat", 
-#' or "lon_lon". These are abbreviations for "latitude" and "longitude", and determine the order 
-#' and orientations with which the block partitioning function creates the partition groups. 
-#' @param aggregation.factor Required for the checkerboard partitions. Can be one or two numbers specifying
-#' the factor with which to aggregate the envs raster to assign partitions. For example, checkerboard1 with 
-#' an aggregation factor value of 2 will make the grid cells 4 times larger and then assign occurrence and 
-#' background records to partition groups based on which cell they are in. The checkerboard2 partition is 
-#' hierarchical, so cells are first aggregated to define groups like checkerboard1, but a second aggregation
-#' is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers can be used
-#' to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used for both levels.
+#' @param orientation character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition)
+#' @param aggregation.factor numeric vector: one or two numbers specifying
+#' the factor with which to aggregate the envs raster to assign partitions (required for the checkerboard partitions)
 #' @param kfolds Required for the random partition. This specifies the number of random partition groups, or folds, to make.
+#' @details For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", and 
+#' they determine the order and orientations with which the block partitioning function creates the partition groups. For example,
+#' "lat_lon" will split the occurrence localities first by latitude, then by longitude.
+#' 
+#' For the checkerboard partitions, the aggregation factor specifies how much to aggregate the existing cells in the envs raster
+#' to make new spatial partitions. For example, checkerboard1 with an aggregation factor value of 2 will make the grid cells 
+#' 4 times larger and then assign occurrence and background records to partition groups based on which cell they are in. 
+#' The checkerboard2 partition is hierarchical, so cells are first aggregated to define groups like checkerboard1, but a 
+#' second aggregation is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers can be used
+#' to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used for both levels.
 NULL
 
 #' @title Other settings
@@ -64,24 +67,24 @@ NULL
 #' @description This is a named list used to specify extra settings for the analysis.
 #' It is inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
 #' so if they are not specified the analysis will be run with default settings.
-#' @param abs.auc.diff boolean; (default: TRUE) if TRUE, take absolute value of AUCdiff
-#' @param validation.bg character; (default: "full") either "full" to calculate AUC and CBI with respect to the full background, or
-#' "partition" to calculate them with respect to the validation partition background 
-#' @param pred.type character; (default: "cloglog")  specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters 
-#' @param other.args named list of any additional model arguments not specified for tuning
+#' @param abs.auc.diff boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)
+#' @param validation.bg character: either "full" to calculate AUC and CBI with respect to the full background, or
+#' "partition" to calculate them with respect to the validation partition background (default: "full")
+#' @param pred.type character: specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters (default: "cloglog")
+#' @param other.args named list: any additional model arguments not specified for tuning
 NULL
 
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
-#' @param predictors Raster* object; predictor variables in raster form (either Layer or Stack)
-#' @param p.z matrix or data frame; the predictor variable values for the reference records
+#' @param predictors RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)
+#' @param p.z matrix / data frame: predictor variable values for the reference records
 #' (not including coordinates), used to determine the minimums and maximums -- 
 #' this should ideally be the occurrences + background (can be made with raster::extract())
-#' @param left character; names of variables to get a minimum clamp; can be "none" to turn
+#' @param left character vector: names of variables to get a minimum clamp; can be "none" to turn
 #' off minimum clamping
-#' @param right character; names of variables to get a maximum clamp, can be "none" to turn
+#' @param right character vector: names of variables to get a maximum clamp, can be "none" to turn
 #' off maximum clamping
-#' @param categoricals character; name or names of categorical environmental variables
+#' @param categoricals character vector: name or names of categorical environmental variables
 #' @description This function restricts the values of one or more predictor variable rasters
 #' to stay within the bounds of the input occurrence and background data (argument "p.z").
 #' This is termed "clamping", and is mainly used to avoid making extreme extrapolations
@@ -149,10 +152,10 @@ clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals 
 #' @title Calculate AICc from Maxent model prediction
 #' @description This function calculates AICc for Maxent models based on Warren 
 #' and Seifert (2011).
-#' @param p.occs data frame of raw (maxent.jar) or exponential (maxnet) predictions for
+#' @param p.occs data frame: raw (maxent.jar) or exponential (maxnet) predictions for
 #' the occurrence localities based on one or more models
-#' @param ncoefs integer; number of non-zero model coefficients
-#' @param p Raster* of raw (maxent.jar) or exponential (maxnet) model predictions;
+#' @param ncoefs numeric: number of non-zero model coefficients
+#' @param p RasterStack: raw (maxent.jar) or exponential (maxnet) model predictions;
 #' if NULL, AICc will be calculated based on the background points, which already
 #' have predictions that sum to 1 and thus need no correction -- this assumes that
 #' the background points represent a good sample of the study extent 
@@ -246,8 +249,8 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
 #' 
 #' where \emph{n} = the number of \emph{k}-fold iterations.
 #'
-#' @param x A numeric vector.
-#' @param nk Number of \emph{k}-fold iterations.
+#' @param x numeric vector: input values
+#' @param nk numeric: number of \emph{k}-fold iterations
 #' @return A numeric value of the corrected variance.
 #' @author Robert Muscarella <bob.muscarella@gmail.com>
 #' @references 
@@ -277,58 +280,6 @@ calc.10p.trainThresh <- function(pred.train) {
   return(pct10.train.thr)
 }
 
-
-#' @title Compute multivariate environmental similarity surfaces (MESS)
-#' @description Compute multivariate environmental similarity surfaces (MESS) (i.e., Elith \emph{et al.} 2010).
-#' @details Repurposed from dismo::mess(), based on .messi3()
-#' @param p Raster object
-#' @param v Matrix with reference values
-#' @return 
-#' A RasterBrick with layers corresponding to the input layers and an additional layer with the mess values (if full=TRUE and nlayers(x) > 1) or a RasterLayer with the MESS values (if full=FALSE).
-#' @references 
-#' Elith J., M. Kearney M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342.
-#' @author 
-#' Based on \pkg{dismo}::\code{mess}
-#' Jean-Pierre Rossi <jean-pierre.rossi@supagro.inra.fr>, Robert Hijmans, Paulo van Breugel
-
-# mess.vec <- function(p, v) {
-#   calc.mess <- function(p, v) {
-#     v <- stats::na.omit(v)
-#     f <- 100*findInterval(p, sort(v)) / length(v)
-#     minv <- min(v)
-#     maxv <- max(v)
-#     res <- 2*f 
-#     f[is.na(f)] <- -99
-#     i <- f>50 & f<100
-#     res[i] <- 200-res[i]
-#     
-#     i <- f==0 
-#     res[i] <- 100*(p[i]-minv)/(maxv-minv)
-#     i <- f==100
-#     res[i] <- 100*(maxv-p[i])/(maxv-minv)
-#     return(res)
-#   }
-#   
-#   x <- sapply(1:ncol(p), function(i) calc.mess(p[,i], v[,i]))
-#   rmess <- apply(x, 1, min, na.rm=TRUE)
-#   return(rmess)
-# }
-# 
-# calc.mess.kstats <- function(occs.train.z, bg.train.z, occs.val.z, bg.test.z) {
-#   p <- rbind(occs.train.z, bg.train.z)
-#   v <- rbind(occs.val.z, bg.test.z)
-#   cat.j <- which(sapply(occs.train.z, is.factor) == 1)
-#   if(length(cat.j) > 0) {
-#     p <- p[,-cat.j]
-#     v <- v[,-cat.j]
-#   }
-#   mss <- mess.vec(p, v)
-#   mess.quant <- quantile(mss)
-#   names(mess.quant) <- paste0("mess.", gsub("%", "p", names(mess.quant)))
-#   return(mess.quant)
-# }
-
-
 #' @title Calculate Similarity of ENMs in Geographic Space
 #' 
 #' @description Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
@@ -336,8 +287,9 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @aliases calc.niche.overlap
 #' @usage 
 #' calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
-#' @param predictors A rasterStack of at least 2 Maxent predictive raster layers.
-#' @param overlapStat The statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package.  Defaults to Schoeners \emph{D} (Schoener 1968) but can also accept \code{"I"} to calculate the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
+#' @param predictors RasterStack: at least 2 Maxent raster predictions
+#' @param overlapStat character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")
+#' @details "D" refers to Schoeners \emph{D} (Schoener 1968), while "I" refers to the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
 #' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
 #' @references 
@@ -398,131 +350,3 @@ maxentJARversion <- function() {
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
   return(v)
 }
-
-# remove.env.na <- function(d) {
-#   d.envs <- d[,3:ncol(d)]
-#   ind.NA <- unique(which(is.na(d.envs), arr.ind = TRUE)[,1])
-#   names(ind.NA) <- NULL
-#   d.envs.NA <- d.envs[ind.NA,]
-#   ind.NA.occs <- ind.NA[which(d.envs.NA$pb == 1)]
-#   ind.NA.bg <- ind.NA[which(d.envs.NA$pb == 0)]
-#   occs.msg <- paste0("occurrences: ", paste(ind.NA.occs, collapse = ","))
-#   bg.msg <- paste0("background: ", paste(ind.NA.bg, collapse = ","))
-#   if(length(ind.NA.occs) > 0 | length(ind.NA.bg) > 0) {
-#     envNA.msg <- dplyr::case_when(length(ind.NA.occs) > 0 & length(ind.NA.bg) > 0 ~ paste(occs.msg, bg.msg, sep = ", "),
-#                             length(ind.NA.occs) > 0 ~ occs.msg,
-#                             length(ind.NA.bg) > 0 ~ bg.msg)
-#     message(paste0("* Records found with NA for at least one predictor variable with the following row numbers: (", envNA.msg, "). Removing from analysis..."))
-#     d.naRem <- d[-c(ind.NA.occs, ind.NA.bg),]
-#     return(d.naRem)    
-#   }
-#   return(d)
-# }
-
-# # Modified version of dismo::mess
-# # This version ignores raster cells with NA for every variable, and it also
-# # removes variables that result in all Inf values (probably because the values for
-# # that variable for "v" are all 0), thus avoiding the generation of -Inf values and the corresponding warnings
-# enmeval.messi3 <- function(p,v) {
-#   # seems 2-3 times faster than messi2
-#   v <- stats::na.omit(v)
-#   f <- 100*findInterval(p, sort(v)) / length(v)
-#   minv <- min(v)
-#   maxv <- max(v)
-#   res <- 2*f 
-#   f[is.na(f)] <- -99
-#   i <- f>50 & f<100
-#   res[i] <- 200-res[i]
-#   
-#   i <- f==0 
-#   res[i] <- 100*(p[i]-minv)/(maxv-minv)
-#   i <- f==100
-#   res[i] <- 100*(maxv-p[i])/(maxv-minv)
-#   res
-# }
-# 
-# enmeval.mess <- function(x, v, full=FALSE, filename='', ...) {
-#   
-#   stopifnot(NCOL(v) == raster::nlayers(x))
-#   out <- raster(x)
-#   nl <- raster::nlayers(x)
-#   filename <- trim(filename)
-#   nms <- paste(names(x), '_mess', sep='')
-#   
-#   if (canProcessInMemory(x)) {
-#     x <- getValues(x)
-#     if (nl == 1) {
-#       rmess <- enmeval.messi3(x, v)
-#       names(out) <- 'mess'
-#       out <- setValues(out, rmess)
-#     } else {
-#       x <- sapply(1:ncol(x), function(i) enmeval.messi3(x[,i], v[,i]))
-#       colRemove <- numeric(ncol(x)) + 1
-#       for(i in 1:ncol(x)) if(sum(is.infinite(x[,i])) == length(na.omit(x[,i]))) colRemove[i] <- 0
-#       x <- x[,colRemove]
-#       rmess <- apply(x, 1, function(x) ifelse(!all(is.na(x)), min(x, na.rm=TRUE), NA))
-#       if (full) {
-#         out <- brick(out, nl=nl+1)
-#         names(out) <- c(nms, "mess")
-#         out <- setValues(out, cbind(x, rmess))
-#       } else {
-#         names(out) <- 'mess'
-#         out <- setValues(out, rmess)
-#       }
-#     }	
-#     if (filename != '') {
-#       out <- writeRaster(out, filename, ...)
-#     }
-#     return(out)
-#     
-#   } else {
-#     
-#     if (nl == 1) {
-#       
-#       names(out) <- "mess"
-#       tr <- blockSize(out)
-#       pb <- pbCreate(tr$n, ...)	
-#       out <- writeStart(out, filename, ...)
-#       for (i in 1:tr$n) {
-#         vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-#         vv <- enmeval.messi3(vv, v)
-#         out <- writeValues(out, vv, tr$row[i])
-#         pbStep(pb) 
-#       }
-#       
-#     } else {
-#       
-#       if (full) {
-#         out <- brick(out, nl=nl+1)
-#         names(out) <- c(nms, "mess")
-#         tr <- blockSize(out)
-#         pb <- pbCreate(tr$n, ...)	
-#         out <- writeStart(out, filename, ...)
-#         for (i in 1:tr$n) {
-#           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-#           vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
-#           m <- apply(vv, 1, min, na.rm=TRUE)
-#           out <- writeValues(out, cbind(vv, m), tr$row[i])
-#           pbStep(pb) 
-#         }
-#         
-#       } else {
-#         
-#         names(out) <- "mess"
-#         tr <- blockSize(out)
-#         pb <- pbCreate(tr$n, ...)	
-#         out <- writeStart(out, filename, ...)
-#         for (i in 1:tr$n) {
-#           vv <- getValues(x, row=tr$row[i], nrows=tr$nrows[i])
-#           vv <- sapply(1:ncol(v), function(i) enmeval.messi3(vv[,i], v[,i]))
-#           m <- apply(vv, 1, min, na.rm=TRUE)
-#           out <- writeValues(out, m, tr$row[i])
-#           pbStep(pb) 
-#         }
-#       }
-#     }
-#     out <- writeStop(out)
-#     pbClose(pb) 
-#   }	
-#   out
-# }

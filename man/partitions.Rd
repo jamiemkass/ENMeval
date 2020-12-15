@@ -20,20 +20,20 @@ get.jackknife(occs, bg)
 get.randomkfold(occs, bg, kfolds)
 }
 \arguments{
-\item{occs}{Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.}
+\item{occs}{matrix / data frame: longitude and latitude (in that order) of occurrence localities}
 
-\item{bg}{Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.}
+\item{bg}{matrix / data frame: longitude and latitude (in that order) of background localities}
 
-\item{orientation}{Character vector describing the order of spatial partitioning for the \code{get.block} method. 
-The first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups. 
-Options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat".}
+\item{orientation}{character vector: the order of spatial partitioning for the \code{get.block} method;
+the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
+options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"}
 
-\item{envs}{RasterStack of environmental predictor variables.}
+\item{envs}{RasterStack: environmental predictor variables}
 
-\item{aggregation.factor}{Numeric vector of describing the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods. 
-If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.}
+\item{aggregation.factor}{numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
+if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation}
 
-\item{kfolds}{Number of random \emph{k}-folds for \code{get.randomkfold} method.}
+\item{kfolds}{numeric: number of random \emph{k}-folds for \code{get.randomkfold} method}
 }
 \value{
 A named list of two items:

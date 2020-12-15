@@ -14,23 +14,19 @@ pre-made ENMdetails object specifications that work with ENMeval out of the box.
 \section{Slots}{
 
 \describe{
-\item{\code{name}}{character of name of algorithm}
+\item{\code{name}}{character: name of algorithm}
 
-\item{\code{fun.train}}{function that runs the training algorithm (can be same as validation algorithm)}
+\item{\code{fun}}{function: function that runs the algorithm}
 
-\item{\code{fun.val}}{function that runs the validation algorithm (can be same as training algorithm)}
+\item{\code{msgs}}{function: prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}}
 
-\item{\code{msgs}}{function that prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}}
+\item{\code{args}}{function: returns the parameters needed to run the algorithm function}
 
-\item{\code{args.train}}{function specifying the parameters needed to run the training model function (can be same as validation algorithm)}
+\item{\code{predict}}{function: specifies how to calculate a model prediction for a Raster* or a data frame}
 
-\item{\code{args.val}}{function specifying the parameters needed to run the validation model function (can be same as training algorithm)}
+\item{\code{ncoefs}}{function: counts the number of non-zero model coefficients}
 
-\item{\code{predict}}{function specifying how to calculate a model prediction for a Raster* or a data frame}
-
-\item{\code{ncoefs}}{function specifying how to measure the number of non-zero model coefficients}
-
-\item{\code{varimp}}{function specifying how to generate a data frame of variable importance from the model object (if possible)}
+\item{\code{varimp}}{function: generates a data frame of variable importance from the model object (if functionality is available)}
 }}
 
 \author{

@@ -14,41 +14,64 @@ evalplot.envSim.map(
   ref.data = "occs",
   sim.type = "mess",
   categoricals = NULL,
-  envs.var = NULL,
+  envs.vars = NULL,
   bb.buf = 0,
   occs.testing.z = NULL,
+  plot.bg.pts = FALSE,
+  sim.palette = NULL,
   pts.size = 1.5,
-  gradient.cols = c("red", "white", "blue"),
-  na.col = "gray",
+  gradient.colors = c("red", "white", "blue"),
+  na.color = "gray",
   return.tbl = FALSE,
   return.ras = FALSE,
-  bg.pts = FALSE,
-  sim.palette = NULL,
   quiet = FALSE
 )
 }
 \arguments{
-\item{e}{ENMevaluation object}
+\item{e}{ENMevaluation object (optional)}
 
 \item{envs}{RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 removed before input, as they cannot be used to calculate MESS}
 
-\item{ref.data}{Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional)}
 
-\item{sim.type}{Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
+\item{bg.z}{data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional)}
+
+\item{occs.grp}{numeric vector: partition groups for occurrence records (optional)}
+
+\item{bg.grp}{numeric vector: partition groups for background records (optional)}
+
+\item{ref.data}{character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"}
+
+\item{sim.type}{character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 or "most_sim" for most similar variable; uses similarity function from package rmaxent}
 
-\item{envs.var}{Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
-with respect to all variables}
+\item{categoricals}{character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+these must be specified as this function was intended for use with continuous data only}
 
-\item{sim.palette}{Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
-"Set1" for discrete variables and reverse "RdYlBu" for continuous variables}
+\item{envs.vars}{character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
+with respect to all variables (optional)}
 
-\item{plot.type}{Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram}
+\item{bb.buf}{numeric: distance used to buffer (extend) the mapping extent in map units; for latitude/longitude, this is in degrees (optional)}
 
-\item{palette.dir}{Numeric: direction for palette plotting; either 1 or -1}
+\item{occs.testing.z}{data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
+in that order; this is for use only with the "testing" partition option when an ENMevaluation object is not input (optional)}
 
-\item{hist.bins}{Numeric: number of histogram bins for histogram plots; default is 30}
+\item{plot.bg.pts}{boolean: if TRUE, plot background points when using ref.data = "bg"}
+
+\item{sim.palette}{character: RColorBrewer palette name to use for plotting discrete variables; if NULL, default is "Set1"}
+
+\item{pts.size}{numeric: custom point size for ggplot}
+
+\item{gradient.colors}{character vector: colors used for ggplot2::scale_fill_gradient2}
+
+\item{na.color}{character: color used for NA values}
+
+\item{return.tbl}{boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself}
+
+\item{return.ras}{boolean: if TRUE, return the RasterStack of similarity values used to make the ggplot instead of the plot itself}
+
+\item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
 }
 \value{
 A ggplot of MESS calculations for data partitions.

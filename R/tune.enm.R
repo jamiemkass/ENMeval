@@ -2,14 +2,14 @@
 #' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
 #' Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and validation evaluation statistics for one set of specified tuning parameters.
 #' @aliases tune.parallel tune.regular cv.enm
-#' @param d data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
-#' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
-#' @param enm Object of class \link{ENMdetails}.
-#' @param partitions character of name of partitioning technique (see \code{?partitions})
-#' @param tune.tbl Data frame of tuning parameter combinations.
-#' @param other.settings list of settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg
-#' @param numCores boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing
-#' @param parallelType character of either "doParallel" or "doSNOW" to conduct parallelization
+#' @param d data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
+#' @param envs RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)
+#' @param enm \link{ENMdetails} object
+#' @param partitions character: name of partitioning technique (see \code{?partitions})
+#' @param tune.tbl data frame: tuning parameter combinations
+#' @param other.settings named list: settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg
+#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
+#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
 
 #' @name tune.enm
 NULL

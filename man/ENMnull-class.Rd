@@ -11,31 +11,31 @@ An S4 class that contains the ENMnulls results.
 \section{Slots}{
 
 \describe{
-\item{\code{null.algorithm}}{character of algorithm used}
+\item{\code{null.algorithm}}{character: algorithm used}
 
-\item{\code{null.mod.settings}}{data.frame of model settings used}
+\item{\code{null.mod.settings}}{data frame: model settings used}
 
-\item{\code{null.partition.method}}{character of partition method used}
+\item{\code{null.partition.method}}{character: partition method used}
 
-\item{\code{null.partition.settings}}{list of partition settings used (i.e., value of *k* or aggregation factor)}
+\item{\code{null.partition.settings}}{list: partition settings used (i.e., value of *k* or aggregation factor)}
 
-\item{\code{null.other.settings}}{list of other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
+\item{\code{null.other.settings}}{list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
 
-\item{\code{no.iter}}{numeric of number of null model iterations}
+\item{\code{no.iter}}{numeric: number of null model iterations}
 
-\item{\code{null.results}}{data.frame of evaluation summary statistics for null models}
+\item{\code{null.results}}{data frame: evaluation summary statistics for null models}
 
-\item{\code{null.results.partitions}}{data.frame of evaluation k-fold statistics for null models}
+\item{\code{null.results.partitions}}{data frame: evaluation k-fold statistics for null models}
 
-\item{\code{emp.vs.null.results}}{data.frame of evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values}
+\item{\code{emp.vs.null.results}}{data frame: evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values}
 
-\item{\code{emp.occs}}{data.frame of occurrence coordinates and predictor variable values used for model training (empirical model)}
+\item{\code{emp.occs}}{data frame: occurrence coordinates and predictor variable values used for model training (empirical model)}
 
-\item{\code{emp.occs.grp}}{vector of partition groups for occurrence points}
+\item{\code{emp.occs.grp}}{vector: partition groups for occurrence points (empirical model)}
 
-\item{\code{emp.bg}}{data.frame of background coordinates and predictor variable values used for model training}
+\item{\code{emp.bg}}{data frame: background coordinates and predictor variable values used for model training (empirical model)}
 
-\item{\code{emp.bg.grp}}{vector of partition groups for background points}
+\item{\code{emp.bg.grp}}{vector: partition groups for background points (empirical model)}
 }}
 
 \author{

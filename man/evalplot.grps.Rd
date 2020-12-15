@@ -10,26 +10,29 @@ evalplot.grps(
   pts = NULL,
   pts.grp = NULL,
   ref.data = "occs",
-  pts.size = 1.5
+  pts.size = 1.5,
+  return.tbl = FALSE
 )
 }
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{envs}{Raster of an environmental predictor variable used to build the models in "e"}
+\item{envs}{RasterStack: environmental predictor variable used to build the models in "e"}
 
-\item{pts}{Matrix or data frame of coordinates for occurrence or background data}
+\item{pts}{matrix / data frame: coordinates for occurrence or background data}
 
-\item{pts.grp}{Numeric vector of partition groups corresponding to data in "pts"}
+\item{pts.grp}{numeric vector: partition groups corresponding to data in "pts"}
 
-\item{ref.data}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{ref.data}{character: plot occurrences ("occs") or background ("bg"), with default "occs"}
 
-\item{pts.size}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{pts.size}{numeric: custom point size for ggplot}
+
+\item{return.tbl}{boolean: if TRUE, return the data frames used to make the ggplot instead of the plot itself}
 }
 \description{
 Plot occurrence partition groups over an environmental predictor raster.
 }
 \details{
 This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
-It can be run with an existing ENMevaluate object, or alternatively with occurrence or background coordinates and the corresponding partitions.
+It can be run with an existing ENMevaluation object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 }

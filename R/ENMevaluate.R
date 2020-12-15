@@ -22,54 +22,54 @@
 #' delineating the study extent. This decision was made for similar reasons to that for CBI, and as above,
 #' there should be little difference as long as the background records represent the study extent well.
 #' 
-#' @param occs matrix or data frame; occurrence records with two columns for longitude and latitude 
+#' @param occs matrix / data frame: occurrence records with two columns for longitude and latitude 
 #' of occurrence localities, in that order -- if specifying predictor variable values
 #' assigned to presence/background localities (species with data "SWD" form), this table will also have 
 #' one column for each predictor variable
-#' @param envs Raster* object of environmental variables (must be in same geographic projection as occurrence data)
-#' @param bg matrix or data frame; background records with two columns for longitude and latitude of 
-#' background (or pseudo-absence) localities, in that order -- if specifying predictor variable values
+#' @param envs RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)
+#' @param bg matrix / data frame: background records with two columns for longitude and latitude of 
+#' background (or pseudo-absence) localities, in that order; if specifying predictor variable values
 #' assigned to presence/background localities (species with data "SWD" form), this table will also have 
 #' one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
 #' with the number specified by argument \code{n.bg}
-#' @param tune.args named list; model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))
-#' @param partitions character; name of partitioning technique (see \code{?partitions})
-#' @param algorithm character; name of the algorithm used to build models -- one of "maxnet" or
+#' @param tune.args named list: model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))
+#' @param partitions character: name of partitioning technique (see \code{?partitions})
+#' @param algorithm character: name of the algorithm used to build models -- one of "maxnet" or
 #' "maxent.jar", else the name from a custom ENMdetails implementation
-#' @param partition.settings named list; settings specific to certain partitions -- see ?partition.settings
-#' @param other.settings named list; other settings for analysis -- see ?other.settings
-#' @param categoricals character; name or names of categorical environmental variables -- if not specified,
+#' @param partition.settings named list: settings specific to certain partitions -- see ?partition.settings
+#' @param other.settings named list: other settings for analysis -- see ?other.settings
+#' @param categoricals character vector: name or names of categorical environmental variables -- if not specified,
 #' all predictor variables will be treated as continuous unless they are factors (if categorical variables
 #' are already factors, specifying names of such variables in this argument is not needed)
-#' @param doClamp boolean; if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
+#' @param doClamp boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 #' bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
 #' if extrapolation is a study aim, this should be set to FALSE
-#' @param clamp.directions named list; specifies the direction ("left" for minimum, "right" for maximum) 
+#' @param clamp.directions named list: specifies the direction ("left" for minimum, "right" for maximum) 
 #' of clamping for predictor variables -- (e.g.) list(left = c("bio1","bio5"), right = c("bio10","bio15"))
-#' @param user.enm ENMdetails object; an alternative to specifying an algorithm, users can insert a custom
+#' @param user.enm ENMdetails object: an alternative to specifying an algorithm, users can insert a custom
 #' ENMdetails object to build models with
-#' @param user.grp named list; specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
+#' @param user.grp named list: specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
 #' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for background (or pseudo-absence) localities
-#' @param occs.testing matrix or data frame; a full withheld testing dataset with two columns for longitude and latitude 
+#' @param occs.testing matrix / data frame: a full withheld testing dataset with two columns for longitude and latitude 
 #' of occurrence localities, in that order -- when \code{partitions = "testing"}; these occurrences will be used only 
 #' for evaluation but not for model training, and thus no cross validation will be performed
-#' @param taxon.name character; name of the focal species or taxon -- used primarily for annotating
+#' @param taxon.name character: name of the focal species or taxon -- used primarily for annotating
 #' the ENMevaluation object and output metadata (rmm), but not necessary
-#' @param n.bg numeric; (default: 10000) if background records not already provided, this specifies the 
-#' number of background (or pseudo-absence) points to randomly sample over envs raster
-#' @param overlap boolean; if TRUE, calculate niche overlap statistics
-#' @param overlapStat character; niche overlap statistics to be calculated -- 
+#' @param n.bg numeric: if background records not already provided, this specifies the 
+#' number of background (or pseudo-absence) points to randomly sample over envs raster (default: 10000)
+#' @param overlap boolean: if TRUE, calculate niche overlap statistics
+#' @param overlapStat character: niche overlap statistics to be calculated -- 
 #' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details
-#' @param user.val.grps matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
+#' @param user.val.grps matrix / data frame: user-defined validation record coordinates and predictor variable values -- 
 #' this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data
-#' @param user.eval function; specify custom validation evaluation (see vignette for example)
-#' @param rmm rangeModelMetadata object; if specified, ENMevaluate() will write metadata details for the analysis into
+#' @param user.eval function: specify custom validation evaluation (see vignette for example)
+#' @param rmm rangeModelMetadata object: if specified, ENMevaluate() will write metadata details for the analysis into
 #' this object, but if not, a new rangeModelMetadata object will be generated and written to
-#' @param parallel boolean (TRUE or FALSE) which if TRUE, run with parallel processing
-#' @param numCores numeric for number of cores to use for parallel processing
-#' @param parallelType character (default: "doSNOW") specifying either "doParallel" or "doSNOW"
-#' @param updateProgress boolean (TRUE or FALSE) which if TRUE, use shiny progress bar; only for use in shiny apps
-#' @param quiet boolean; if TRUE, no messages will be printed to the console
+#' @param parallel boolean: if TRUE, run with parallel processing
+#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
+#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
+#' @param updateProgress boolean: if TRUE, use shiny progress bar; only for use in shiny apps
+#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @param legacy.arguments these are included to avoid unnecessary errors for older scripts, but in a later version
 #' these arguments will be permanently deprecated
 #' 

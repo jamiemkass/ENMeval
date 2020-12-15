@@ -8,7 +8,7 @@ evalplot.stats(
   e,
   stats,
   x.var,
-  color,
+  color.var,
   dodge = NULL,
   error.bars = TRUE,
   facet.labels = NULL,
@@ -19,16 +19,22 @@ evalplot.stats(
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{stats}{Character vector of names of statistics from results table to be plotted; if more than
+\item{stats}{character vector: names of statistics from results table to be plotted; if more than
 one statistic is specified, the plot will be faceted}
 
-\item{dodge}{(Optional) numeric value specifying the dodge width for points and lines (this improves visibility when there is high overlap)}
+\item{x.var}{character: variable to be plotted on x-axis}
 
-\item{error.bars}{(Optional) boolean specifying whether or not to plot error bars (defaults to TRUE)}
+\item{color.var}{character: variable used to assign symbology colors}
 
-\item{x}{Character of variable to be plotted on x-axis}
+\item{dodge}{numeric: dodge width for points and lines; this improves visibility when there is high overlap (optional)}
 
-\item{col}{Character of variable used to assign symbology colors}
+\item{error.bars}{boolean: if TRUE, plot error bars}
+
+\item{facet.labels}{character vector: custom names for the metric facets}
+
+\item{metric.levels}{character vector: custom factor levels for metrics; this controls the order that metric statistics are plotted}
+
+\item{return.tbl}{boolean: if TRUE, return the data frames of results used to make the ggplot instead of the plot itself}
 }
 \value{
 A ggplot of evaluation statistics.

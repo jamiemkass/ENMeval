@@ -148,7 +148,7 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
 
 #' @title Unit tests for ENMevaluation plotting functions
 #' @description All parameters are self-explanatory except the following.
-#' Anything with the prefix ".z" is a data frame with latitude, longitude,
+#' Anything with the prefix ".z" is a data frame with longitude, latitude, 
 #' and the environmental predictor variable values. Argument "plot.sel" controls
 #' whether testing happens for the histogram function, the plotting function, or both
 #' (some implementations do not work with one or the other). Argument "bg.sel" controls

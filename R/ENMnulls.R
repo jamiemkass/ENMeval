@@ -34,11 +34,11 @@
 #' @param userStats.signs named list: user-defined evaluation statistics attributed with
 #' either 1 or -1 to designate whether the expected difference between empirical and null models is 
 #' positive or negative; this is used to calculate the p-value of the z-score
-#' @param removeMxTemp boolean: if TRUE delete all temporary data generated when using maxent.jar for modeling
-#' @param parallel boolean: if TRUE use parallel processing
-#' @param numCores numeric: number of cores to use for parallel processing -- if left NULL, all available cores will be used
-#' @param parallelType character: type of parallel processing to use -- either "doSNOW" or "doParallel"
-#' @param quiet boolean: if TRUE, no messages will be printed to the console
+#' @param removeMxTemp boolean: if TRUE, delete all temporary data generated when using maxent.jar for modeling
+#' @param parallel boolean: if TRUE, use parallel processing
+#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
+#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
+#' @param quiet boolean: if TRUE, silence all function messages (but not errors)e
 #' @export
 #'
 

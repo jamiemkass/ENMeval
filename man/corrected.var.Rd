@@ -7,9 +7,9 @@
 corrected.var(x, nk)
 }
 \arguments{
-\item{x}{A numeric vector.}
+\item{x}{numeric vector: input values}
 
-\item{nk}{Number of \emph{k}-fold iterations.}
+\item{nk}{numeric: number of \emph{k}-fold iterations}
 }
 \value{
 A numeric value of the corrected variance.

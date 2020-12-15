@@ -11,14 +11,14 @@ os <- list(pred.type = "logistic",
 ENMevaluate(..., other.settings = os)
 }
 \arguments{
-\item{abs.auc.diff}{boolean; (default: TRUE) if TRUE, take absolute value of AUCdiff}
+\item{abs.auc.diff}{boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)}
 
-\item{validation.bg}{character; (default: "full") either "full" to calculate AUC and CBI with respect to the full background, or
-"partition" to calculate them with respect to the validation partition background}
+\item{validation.bg}{character: either "full" to calculate AUC and CBI with respect to the full background, or
+"partition" to calculate them with respect to the validation partition background (default: "full")}
 
-\item{pred.type}{character; (default: "cloglog")  specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters}
+\item{pred.type}{character: specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters (default: "cloglog")}
 
-\item{other.args}{named list of any additional model arguments not specified for tuning}
+\item{other.args}{named list: any additional model arguments not specified for tuning}
 }
 \description{
 This is a named list used to specify extra settings for the analysis.

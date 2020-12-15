@@ -9,7 +9,8 @@ buildRMM(e, envs, rmm = NULL)
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{envs}{RasterStack of environmental predictor variables used in analysis}
+\item{envs}{RasterStack: environmental predictor variables used in analysis; needed to pull information on the predictor variables
+not included in the ENMevaluation object}
 }
 \description{
 Builds a \code{rangeModelMetadata} object from the output of \code{ENMevaluate}.

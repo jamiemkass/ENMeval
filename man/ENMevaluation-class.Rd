@@ -11,33 +11,33 @@ An S4 class that contains the ENMevaluate results.
 \section{Slots}{
 
 \describe{
-\item{\code{algorithm}}{character of algorithm used}
+\item{\code{algorithm}}{character: algorithm used}
 
-\item{\code{tune.settings}}{data.frame of settings that were tuned}
+\item{\code{tune.settings}}{data frame: settings that were tuned}
 
-\item{\code{partition.method}}{character of partition method used}
+\item{\code{partition.method}}{character: partition method used}
 
-\item{\code{partition.settings}}{list of partition settings used (i.e., value of *k* or aggregation factor)}
+\item{\code{partition.settings}}{list: partition settings used (i.e., value of *k* or aggregation factor)}
 
-\item{\code{other.settings}}{list of other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
+\item{\code{other.settings}}{list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
 
-\item{\code{results}}{data.frame of evaluation summary statistics}
+\item{\code{results}}{data frame: evaluation summary statistics}
 
-\item{\code{results.partitions}}{data.frame of evaluation k-fold statistics}
+\item{\code{results.partitions}}{data frame: evaluation k-fold statistics}
 
-\item{\code{models}}{list of model objects}
+\item{\code{models}}{list: model objects}
 
-\item{\code{predictions}}{RasterStack of model predictions}
+\item{\code{predictions}}{RasterStack: model predictions}
 
-\item{\code{occs}}{data.frame of occurrence coordinates and predictor variable values used for model training}
+\item{\code{occs}}{data frame: occurrence coordinates and predictor variable values used for model training}
 
-\item{\code{occs.grp}}{vector of partition groups for occurrence points}
+\item{\code{occs.grp}}{vector: partition groups for occurrence points}
 
-\item{\code{bg}}{data.frame of background coordinates and predictor variable values used for model training}
+\item{\code{bg}}{data frame: background coordinates and predictor variable values used for model training}
 
-\item{\code{bg.grp}}{vector of partition groups for background points}
+\item{\code{bg.grp}}{vector: partition groups for background points}
 
-\item{\code{overlap}}{list of matrices of pairwise niche overlap statistics}
+\item{\code{overlap}}{list: matrices of pairwise niche overlap statistics}
 }}
 
 \author{

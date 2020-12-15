@@ -28,15 +28,15 @@
 #' 
 #' Users can also define custom partitions for occurrence and background data in the call to `ENMevaluate` with the "user.grp" parameter. 
 #' 
-#' @param occs Two-column matrix or data.frame of longitude and latitude (in that order) of occurrence localities.
-#' @param bg Two-column matrix or data.frame of longitude and latitude (in that order) of background localities.
-#' @param envs RasterStack of environmental predictor variables.
-#' @param orientation Character vector describing the order of spatial partitioning for the \code{get.block} method. 
-#' The first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups. 
-#' Options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat".
-#' @param aggregation.factor Numeric vector of describing the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods. 
-#' If a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation.
-#' @param kfolds Number of random \emph{k}-folds for \code{get.randomkfold} method.
+#' @param occs matrix / data frame: longitude and latitude (in that order) of occurrence localities
+#' @param bg matrix / data frame: longitude and latitude (in that order) of background localities
+#' @param envs RasterStack: environmental predictor variables
+#' @param orientation character vector: the order of spatial partitioning for the \code{get.block} method;
+#' the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
+#' options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"
+#' @param aggregation.factor numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
+#' if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation
+#' @param kfolds numeric: number of random \emph{k}-folds for \code{get.randomkfold} method
 #' 
 #' @return
 #' A named list of two items:

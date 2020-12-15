@@ -81,21 +81,21 @@ cv.enm(
 )
 }
 \arguments{
-\item{enm}{Object of class \link{ENMdetails}.}
+\item{enm}{\link{ENMdetails} object}
 
-\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
+\item{envs}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
 
-\item{other.settings}{list of settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg}
+\item{other.settings}{named list: settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg}
 
-\item{partitions}{character of name of partitioning technique (see \code{?partitions})}
+\item{partitions}{character: name of partitioning technique (see \code{?partitions})}
 
-\item{d}{data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
+\item{d}{data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 
-\item{tune.tbl}{Data frame of tuning parameter combinations.}
+\item{tune.tbl}{data frame: tuning parameter combinations}
 
-\item{numCores}{boolean (TRUE or FALSE); if TRUE, use specifed number of cores for parallel processing}
+\item{numCores}{numeric: number of cores to use for parallel processing; if NULL, all available cores will be used}
 
-\item{parallelType}{character of either "doParallel" or "doSNOW" to conduct parallelization}
+\item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW")}
 
 \item{tune.i}{vector of single set of tuning parameters}
 }

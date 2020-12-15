@@ -7,19 +7,19 @@
 clamp.vars(predictors, p.z, left = NULL, right = NULL, categoricals = NULL)
 }
 \arguments{
-\item{predictors}{Raster* object; predictor variables in raster form (either Layer or Stack)}
+\item{predictors}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
 
-\item{p.z}{matrix or data frame; the predictor variable values for the reference records
+\item{p.z}{matrix / data frame: predictor variable values for the reference records
 (not including coordinates), used to determine the minimums and maximums -- 
 this should ideally be the occurrences + background (can be made with raster::extract())}
 
-\item{left}{character; names of variables to get a minimum clamp; can be "none" to turn
+\item{left}{character vector: names of variables to get a minimum clamp; can be "none" to turn
 off minimum clamping}
 
-\item{right}{character; names of variables to get a maximum clamp, can be "none" to turn
+\item{right}{character vector: names of variables to get a maximum clamp, can be "none" to turn
 off maximum clamping}
 
-\item{categoricals}{character; name or names of categorical environmental variables}
+\item{categoricals}{character vector: name or names of categorical environmental variables}
 }
 \value{
 The clamped Raster* object.

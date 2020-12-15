@@ -16,15 +16,16 @@ evalplot.nulls(
 \arguments{
 \item{e.null}{ENMnull object}
 
-\item{stats}{Character vector: metrics from results table to be plotted; examples are
+\item{stats}{character vector: metrics from results table to be plotted; examples are
 "auc.val" or "or.10p"; if more than one statistic is specified, the histogram plot will be faceted}
 
-\item{plot.type}{Character: either "violin" or "histogram"}
+\item{plot.type}{character: either "violin" or "histogram"}
 
-\item{facet.labels}{Character vector: custom names for the metric facets}
+\item{facet.labels}{character vector: custom names for the metric facets}
 
-\item{metric.levels}{Character vector: custom factor levels for metrics; this controls
-the order that metric statistics are plotted}
+\item{metric.levels}{character vector: custom factor levels for metrics; this controls the order that metric statistics are plotted}
+
+\item{return.tbl}{boolean: if TRUE, return the data frames of null results used to make the ggplot instead of the plot itself}
 }
 \value{
 A ggplot of null model statistics.

@@ -8,7 +8,7 @@ my.user.eval <- myFunc(vars)
 ENMevaluate(..., user.eval = my.user.eval)
 }
 \arguments{
-\item{enm}{ENMdetails object containing the algorithm}
+\item{enm}{ENMdetails object}
 
 \item{occs.train.z}{data frame: predictor variable values for training occurrences}
 
@@ -22,7 +22,7 @@ ENMevaluate(..., user.eval = my.user.eval)
 
 \item{nk}{numeric: number of folds (i.e., partitions)}
 
-\item{other.settings}{list: other settings specified in ENMevaluate()}
+\item{other.settings}{named list: other settings specified in ENMevaluate()}
 
 \item{partitions}{character: name of the partition method (e.g., "block")}
 

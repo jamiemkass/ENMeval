@@ -47,79 +47,79 @@ ENMevaluate(
 )
 }
 \arguments{
-\item{occs}{matrix or data frame; occurrence records with two columns for longitude and latitude 
+\item{occs}{matrix / data frame: occurrence records with two columns for longitude and latitude 
 of occurrence localities, in that order -- if specifying predictor variable values
 assigned to presence/background localities (species with data "SWD" form), this table will also have 
 one column for each predictor variable}
 
-\item{envs}{Raster* object of environmental variables (must be in same geographic projection as occurrence data)}
+\item{envs}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
 
-\item{bg}{matrix or data frame; background records with two columns for longitude and latitude of 
-background (or pseudo-absence) localities, in that order -- if specifying predictor variable values
+\item{bg}{matrix / data frame: background records with two columns for longitude and latitude of 
+background (or pseudo-absence) localities, in that order; if specifying predictor variable values
 assigned to presence/background localities (species with data "SWD" form), this table will also have 
 one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
 with the number specified by argument \code{n.bg}}
 
-\item{tune.args}{named list; model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))}
+\item{tune.args}{named list: model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))}
 
-\item{partitions}{character; name of partitioning technique (see \code{?partitions})}
+\item{partitions}{character: name of partitioning technique (see \code{?partitions})}
 
-\item{algorithm}{character; name of the algorithm used to build models -- one of "maxnet" or
+\item{algorithm}{character: name of the algorithm used to build models -- one of "maxnet" or
 "maxent.jar", else the name from a custom ENMdetails implementation}
 
-\item{partition.settings}{named list; settings specific to certain partitions -- see ?partition.settings}
+\item{partition.settings}{named list: settings specific to certain partitions -- see ?partition.settings}
 
-\item{other.settings}{named list; other settings for analysis -- see ?other.settings}
+\item{other.settings}{named list: other settings for analysis -- see ?other.settings}
 
-\item{categoricals}{character; name or names of categorical environmental variables -- if not specified,
+\item{categoricals}{character vector: name or names of categorical environmental variables -- if not specified,
 all predictor variables will be treated as continuous unless they are factors (if categorical variables
 are already factors, specifying names of such variables in this argument is not needed)}
 
-\item{doClamp}{boolean; if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
+\item{doClamp}{boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
 if extrapolation is a study aim, this should be set to FALSE}
 
-\item{clamp.directions}{named list; specifies the direction ("left" for minimum, "right" for maximum) 
+\item{clamp.directions}{named list: specifies the direction ("left" for minimum, "right" for maximum) 
 of clamping for predictor variables -- (e.g.) list(left = c("bio1","bio5"), right = c("bio10","bio15"))}
 
-\item{user.enm}{ENMdetails object; an alternative to specifying an algorithm, users can insert a custom
+\item{user.enm}{ENMdetails object: an alternative to specifying an algorithm, users can insert a custom
 ENMdetails object to build models with}
 
-\item{user.grp}{named list; specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
+\item{user.grp}{named list: specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
 occurrence locality, intended for user-defined partitions, and bg.grp = same vector for background (or pseudo-absence) localities}
 
-\item{occs.testing}{matrix or data frame; a full withheld testing dataset with two columns for longitude and latitude 
+\item{occs.testing}{matrix / data frame: a full withheld testing dataset with two columns for longitude and latitude 
 of occurrence localities, in that order -- when \code{partitions = "testing"}; these occurrences will be used only 
 for evaluation but not for model training, and thus no cross validation will be performed}
 
-\item{taxon.name}{character; name of the focal species or taxon -- used primarily for annotating
+\item{taxon.name}{character: name of the focal species or taxon -- used primarily for annotating
 the ENMevaluation object and output metadata (rmm), but not necessary}
 
-\item{n.bg}{numeric; (default: 10000) if background records not already provided, this specifies the 
-number of background (or pseudo-absence) points to randomly sample over envs raster}
+\item{n.bg}{numeric: if background records not already provided, this specifies the 
+number of background (or pseudo-absence) points to randomly sample over envs raster (default: 10000)}
 
-\item{overlap}{boolean; if TRUE, calculate niche overlap statistics}
+\item{overlap}{boolean: if TRUE, calculate niche overlap statistics}
 
-\item{overlapStat}{character; niche overlap statistics to be calculated -- 
+\item{overlapStat}{character: niche overlap statistics to be calculated -- 
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details}
 
-\item{user.val.grps}{matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
+\item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values -- 
 this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data}
 
-\item{user.eval}{function; specify custom validation evaluation (see vignette for example)}
+\item{user.eval}{function: specify custom validation evaluation (see vignette for example)}
 
-\item{rmm}{rangeModelMetadata object; if specified, ENMevaluate() will write metadata details for the analysis into
+\item{rmm}{rangeModelMetadata object: if specified, ENMevaluate() will write metadata details for the analysis into
 this object, but if not, a new rangeModelMetadata object will be generated and written to}
 
-\item{parallel}{boolean (TRUE or FALSE) which if TRUE, run with parallel processing}
+\item{parallel}{boolean: if TRUE, run with parallel processing}
 
-\item{numCores}{numeric for number of cores to use for parallel processing}
+\item{numCores}{numeric: number of cores to use for parallel processing; if NULL, all available cores will be used}
 
-\item{parallelType}{character (default: "doSNOW") specifying either "doParallel" or "doSNOW"}
+\item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW")}
 
-\item{updateProgress}{boolean (TRUE or FALSE) which if TRUE, use shiny progress bar; only for use in shiny apps}
+\item{updateProgress}{boolean: if TRUE, use shiny progress bar; only for use in shiny apps}
 
-\item{quiet}{boolean; if TRUE, no messages will be printed to the console}
+\item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
 
 \item{legacy.arguments}{these are included to avoid unnecessary errors for older scripts, but in a later version
 these arguments will be permanently deprecated}

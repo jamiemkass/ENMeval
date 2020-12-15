@@ -4,7 +4,8 @@
 #' See Merow et al. (2019) for more details on the nature of the metadata and the \code{rangeModelMetadata} package.
 #' To improve reproducibility of the study, this metadata object can be used as supplemental information for a manuscript, shared with collaborators, etc.
 #' @param e ENMevaluation object
-#' @param envs RasterStack of environmental predictor variables used in analysis
+#' @param envs RasterStack: environmental predictor variables used in analysis; needed to pull information on the predictor variables
+#' not included in the ENMevaluation object
 #' @export
 
 buildRMM <- function(e, envs, rmm = NULL) {
