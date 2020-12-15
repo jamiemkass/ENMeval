@@ -6,7 +6,7 @@
 \alias{ENMnull}
 \title{ENMnull class}
 \description{
-An S4 class that contains the ENMnullSims results.
+An S4 class that contains the ENMnulls results.
 }
 \section{Slots}{
 

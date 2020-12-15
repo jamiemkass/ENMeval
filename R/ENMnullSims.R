@@ -1,5 +1,5 @@
 #' @title Generate null ecological niche models (ENMs) and compare null with empirical performance metrics
-#' @description \code{ENMnullSims()} iteratively builds null ENMs for a single set of 
+#' @description \code{ENMnulls()} iteratively builds null ENMs for a single set of 
 #' user-specified model settings based on an input ENMevaluation object, from which all other analysis 
 #' settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
 #' (averages and standard deviations) and effect sizes and p-values are calculated by comparing these 
@@ -43,7 +43,7 @@
 #'
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
-ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
+ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
                         user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL, 
                         removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
 
@@ -318,7 +318,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  if(quiet == FALSE) message(paste("\nENMnullSims completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  if(quiet == FALSE) message(paste("\nENMnulls completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
   return(e.n)
 }

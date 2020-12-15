@@ -85,4 +85,4 @@
 # # run parallel
 # # e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", tune.args = tune.args, categoricals = "biome", partitions = "block", overlap = TRUE, parallel = TRUE)
 # # null models
-# ns <- ENMnullSims(e, mod.settings = list(fc = "L", rm = 2), no.iter = 10)
+# ns <- ENMnulls(e, mod.settings = list(fc = "L", rm = 2), no.iter = 10)

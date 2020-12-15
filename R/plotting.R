@@ -403,7 +403,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TRUE, facet.labs = NULL, metric.levels = NULL, return.tbl = FALSE) {
+evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -421,7 +421,7 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
   res.avgs <- dplyr::left_join(avgs, sds, by = join.names) %>%
     dplyr::mutate(lower = avg - sd, upper = avg + sd,
                   metric = factor(metric, levels = stats))
-  if(!is.null(facet.labs)) labeller <- as_labeller(facet.labs) else labeller <- NULL
+  if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
   if(!is.null(metric.levels)) res$metric <- factor(res$metric, levels = metric.levels)
   if(!is.null(metric.levels)) res.avgs$metric <- factor(res.avgs$metric, levels = metric.levels)
   
@@ -468,7 +468,7 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
   }
 }
 
-#' @title ENMnullSims statistics plot
+#' @title ENMnulls statistics plot
 #' @description Plot histogram of evaluation statistics for null ENM simulations
 #' @param e.null ENMnull object
 #' @param stats Character vector: metrics from results table to be plotted; examples are
@@ -485,7 +485,7 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
 #' @return A ggplot of null model statistics. 
 #' @export
 
-evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.levels = NULL, return.tbl = FALSE) {
+evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -502,14 +502,14 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
   #   dplyr::mutate(metric = gsub(".sd", "", metric))
   # null.res.avgs <- dplyr::bind_cols(null.avgs, null.sds %>% dplyr::select(sd))
   
-  emp.res <- e.null@empirical.vs.null.results %>% 
+  emp.res <- e.null@emp.vs.null.results %>% 
     dplyr::slice(1) %>%
     tidyr::pivot_longer(cols = stats, names_to = "metric", values_to = "value") %>%
     dplyr::select(statistic, metric, value) %>%
     tidyr::pivot_wider(names_from = statistic, values_from = value) %>%
     dplyr::rename(avg = emp.mean)
   
-  if(!is.null(facet.labs)) labeller <- as_labeller(facet.labs) else labeller <- NULL
+  if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
   
   if(plot.type == "violin") {
     ggplot2::ggplot(null.avgs, ggplot2::aes(x = metric, y = avg)) + 
@@ -549,10 +549,10 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
     }else{
       g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1)
     }
-    if(return.tbl == TRUE) {
-      return(list(null.avgs = null.avgs, emp.avgs = emp.avgs))
-    }else{
-      return(g)  
-    }
+  }
+  if(return.tbl == TRUE) {
+    return(list(null.avgs = null.avgs, empirical.results = emp.res))
+  }else{
+    return(g)  
   }
 }

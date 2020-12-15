@@ -597,7 +597,7 @@ plot(eval.predictions(e.mx)[['fc.LQH_rm.1']], ylim=c(-30,20), xlim=c(-90,-30), l
 
 ```{r}
 # We first run the null simulations with 100 iterations to get a reasonable null distribution for comparisons with the empirical values
-mod.null <- ENMnullSims(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
+mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
 # We can inspect the results of each null simulation
 null.results(mod.null)
 # And even inspect the results of each partition of each null simulation

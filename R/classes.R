@@ -258,7 +258,7 @@ setMethod("show",
 
 
 #' @title ENMnull class
-#' @description An S4 class that contains the ENMnullSims results. 
+#' @description An S4 class that contains the ENMnulls results. 
 #' @author Jamie M. Kass, \email{jamie.m.kass@@gmail.com}, Corentin Bohl, \email{corentinbohl@@gmail.com}
 #' @slot null.algorithm character of algorithm used
 #' @slot null.mod.settings data.frame of model settings used

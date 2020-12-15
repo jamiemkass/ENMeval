@@ -6,7 +6,7 @@
 #' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 #' results table should aid users in identifying model settings that balance fit and predictive ability.
 #' @details There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
-#' They are also discussed briefly in ?other.settings and ?ENMnullSims.
+#' They are also discussed briefly in ?other.settings and ?ENMnulls.
 #' 
 #' 1. By default, validation AUC is calculated with respect to the full background (training + validation).
 #' This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
@@ -61,7 +61,7 @@
 #' @param overlapStat character; niche overlap statistics to be calculated -- 
 #' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details
 #' @param user.val.grps matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
-#' this is used internally by ENMnullSims() to force each null model to evaluate with empirical validation data
+#' this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data
 #' @param user.eval function; specify custom validation evaluation (see vignette for example)
 #' @param rmm rangeModelMetadata object; if specified, ENMevaluate() will write metadata details for the analysis into
 #' this object, but if not, a new rangeModelMetadata object will be generated and written to

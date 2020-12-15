@@ -2,13 +2,13 @@
 % Please edit documentation in R/plotting.R
 \name{evalplot.nulls}
 \alias{evalplot.nulls}
-\title{ENMnullSims statistics plot}
+\title{ENMnulls statistics plot}
 \usage{
 evalplot.nulls(
   e.null,
   stats,
   plot.type,
-  facet.labs = NULL,
+  facet.labels = NULL,
   metric.levels = NULL,
   return.tbl = FALSE
 )
@@ -21,10 +21,10 @@ evalplot.nulls(
 
 \item{plot.type}{Character: either "violin" or "histogram"}
 
+\item{facet.labels}{Character vector: custom names for the metric facets}
+
 \item{metric.levels}{Character vector: custom factor levels for metrics; this controls
 the order that metric statistics are plotted}
-
-\item{facet.labels}{Character vector: custom names for the metric facets}
 }
 \value{
 A ggplot of null model statistics.

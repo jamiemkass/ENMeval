@@ -11,7 +11,7 @@ evalplot.stats(
   color,
   dodge = NULL,
   error.bars = TRUE,
-  facet.labs = NULL,
+  facet.labels = NULL,
   metric.levels = NULL,
   return.tbl = FALSE
 )

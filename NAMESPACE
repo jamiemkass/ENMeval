@@ -3,7 +3,7 @@
 export("%>%")
 export(ENMdetails)
 export(ENMevaluate)
-export(ENMnullSims)
+export(ENMnulls)
 export(aic.maxent)
 export(buildRMM)
 export(calc.10p.trainThresh)

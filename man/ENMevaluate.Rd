@@ -104,7 +104,7 @@ number of background (or pseudo-absence) points to randomly sample over envs ras
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details}
 
 \item{user.val.grps}{matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
-this is used internally by ENMnullSims() to force each null model to evaluate with empirical validation data}
+this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data}
 
 \item{user.eval}{function; specify custom validation evaluation (see vignette for example)}
 
@@ -137,7 +137,7 @@ results table should aid users in identifying model settings that balance fit an
 }
 \details{
 There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
-They are also discussed briefly in ?other.settings and ?ENMnullSims.
+They are also discussed briefly in ?other.settings and ?ENMnulls.
 
 1. By default, validation AUC is calculated with respect to the full background (training + validation).
 This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
