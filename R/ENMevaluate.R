@@ -61,7 +61,7 @@
 #' @param overlapStat character; niche overlap statistics to be calculated -- 
 #' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details
 #' @param user.val.grps matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
-#' this is used internally by ENMnullSims() to force each null model to evaluate with real test data
+#' this is used internally by ENMnullSims() to force each null model to evaluate with empirical validation data
 #' @param user.eval function; specify custom validation evaluation (see vignette for example)
 #' @param rmm rangeModelMetadata object; if specified, ENMevaluate() will write metadata details for the analysis into
 #' this object, but if not, a new rangeModelMetadata object will be generated and written to
@@ -374,7 +374,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ################# #
   if(doClamp == TRUE) {
     if(is.null(envs)) {
-      message("Warning: Cannot clamp without predictor variable rasters.")
+      if(!quiet) message("Warning: cannot make model extrapolations (and therefore clamp) without predictor variable rasters.")
     }else{
       if(is.null(clamp.directions)) {
         clamp.envs <- names(envs)[!names(envs) %in% categoricals]

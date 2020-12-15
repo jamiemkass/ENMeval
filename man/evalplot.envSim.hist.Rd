@@ -2,37 +2,39 @@
 % Please edit documentation in R/plotting.R
 \name{evalplot.envSim.hist}
 \alias{evalplot.envSim.hist}
-\title{MESS histogram plots for partition groups}
+\title{Similarity histogram plots for partition groups}
 \usage{
 evalplot.envSim.hist(
   e = NULL,
-  envs = NULL,
-  occs = NULL,
-  bg = NULL,
+  occs.z = NULL,
+  bg.z = NULL,
   occs.grp = NULL,
   bg.grp = NULL,
+  ref.data = "occs",
+  sim.type = "mess",
+  categoricals = NULL,
   envs.var = NULL,
-  pts.type = c("occs", "bg"),
-  sim.type = c("mess", "most_diff", "most_sim"),
+  occs.testing.z = NULL,
   hist.bins = 30,
-  return.tbl = FALSE
+  return.tbl = FALSE,
+  quiet = FALSE
 )
 }
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{envs}{RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
-removed before input, as they cannot be used to calculate MESS}
-
-\item{envs.var}{Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
-with respect to all variables}
-
-\item{pts.type}{Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{ref.data}{Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"}
 
 \item{sim.type}{Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 or "most_sim" for most similar variable; uses similarity function from package rmaxent}
 
+\item{envs.var}{Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
+with respect to all variables}
+
 \item{hist.bins}{Numeric: number of histogram bins for histogram plots; default is 30}
+
+\item{envs}{RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
+removed before input, as they cannot be used to calculate MESS}
 
 \item{plot.type}{Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram}
 
@@ -45,9 +47,16 @@ or "most_sim" for most similar variable; uses similarity function from package r
 A ggplot of MESS calculations for data partitions.
 }
 \description{
-Plot environmental similarity of predictor variable extent with respect to occurrence partitions
+Plots environmental similarity of reference partitions (occurrences or background) 
+to remaining background (all other partitions). This function does not use raster data, and thus
+only calculates similarity values for data used in model training. Further, this function does
+not calculate similarity for categorical variables.
 }
 \details{
+When fully withheld testing groups are used, make sure to input either an ENMevaluation 
+object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
+while partition 2 refers to the fully withheld testing group.
+
 There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 With sim.type option "mess", the similarity between environmental values associated with the 

@@ -12,7 +12,7 @@ evalplot.stats(
   dodge = NULL,
   error.bars = TRUE,
   facet.labs = NULL,
-  metric.levs = NULL,
+  metric.levels = NULL,
   return.tbl = FALSE
 )
 }

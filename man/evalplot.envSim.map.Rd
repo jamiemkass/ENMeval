@@ -2,24 +2,29 @@
 % Please edit documentation in R/plotting.R
 \name{evalplot.envSim.map}
 \alias{evalplot.envSim.map}
-\title{MESS maps for partition groups}
+\title{Similarity maps for partition groups}
 \usage{
 evalplot.envSim.map(
   e = NULL,
-  envs = NULL,
-  occs = NULL,
-  bg = NULL,
+  envs,
+  occs.z = NULL,
+  bg.z = NULL,
   occs.grp = NULL,
   bg.grp = NULL,
+  ref.data = "occs",
+  sim.type = "mess",
+  categoricals = NULL,
   envs.var = NULL,
-  pts.type = c("occs", "bg"),
+  bb.buf = 0,
+  occs.testing.z = NULL,
   pts.size = 1.5,
-  mess.cols = c("red", "yellow", "blue"),
-  mess.naCol = "white",
+  gradient.cols = c("red", "white", "blue"),
+  na.col = "gray",
+  return.tbl = FALSE,
+  return.ras = FALSE,
+  bg.pts = FALSE,
   sim.palette = NULL,
-  sim.type = c("mess", "most_diff", "most_sim"),
-  bb.buf = NULL,
-  return.tbl = FALSE
+  quiet = FALSE
 )
 }
 \arguments{
@@ -28,16 +33,16 @@ evalplot.envSim.map(
 \item{envs}{RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 removed before input, as they cannot be used to calculate MESS}
 
-\item{envs.var}{Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
-with respect to all variables}
-
-\item{pts.type}{Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"}
-
-\item{sim.palette}{Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
-"Set1" for discrete variables and reverse "RdYlBu" for continuous variables}
+\item{ref.data}{Character: the reference to calculate MESS based on: occurrences ("occs") or background ("bg"), with default "occs"}
 
 \item{sim.type}{Character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 or "most_sim" for most similar variable; uses similarity function from package rmaxent}
+
+\item{envs.var}{Character: the name of a predictor variable to plot similarities for; if left NULL, calculations are done
+with respect to all variables}
+
+\item{sim.palette}{Character: the RColorBrewer palette name to use for plotting; if left NULL, the defaults are
+"Set1" for discrete variables and reverse "RdYlBu" for continuous variables}
 
 \item{plot.type}{Character specifying which to plot: MESS histograms ("histogram") or MESS rasters ("raster"); default is histogram}
 
@@ -49,9 +54,16 @@ or "most_sim" for most similar variable; uses similarity function from package r
 A ggplot of MESS calculations for data partitions.
 }
 \description{
-Plot environmental similarity of predictor variable extent with respect to occurrence partitions
+Maps environmental similarity of reference partitions (occurrences or background) 
+to all cells with values in the raster. This function uses raster data, and thus
+cannot map similarity values using only tables of environmental values for occurrences or background. 
+Further, this function does not calculate similarity for categorical variables.
 }
 \details{
+When fully withheld testing groups are used, make sure to input either an ENMevaluation 
+object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
+while partition 2 refers to the fully withheld testing group.
+
 There are two variations for this plot. If "histogram", histograms are plotted showing the MESS estimates for each partition group. 
 If "raster", rasters are plotted showing the geographical MESS estimates for each partition group. 
 With sim.type option "mess", the similarity between environmental values associated with the 

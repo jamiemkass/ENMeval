@@ -104,7 +104,7 @@ number of background (or pseudo-absence) points to randomly sample over envs ras
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details}
 
 \item{user.val.grps}{matrix or data frame; user-defined validation record coordinates and predictor variable values -- 
-this is used internally by ENMnullSims() to force each null model to evaluate with real test data}
+this is used internally by ENMnullSims() to force each null model to evaluate with empirical validation data}
 
 \item{user.eval}{function; specify custom validation evaluation (see vignette for example)}
 

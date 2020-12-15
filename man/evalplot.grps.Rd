@@ -9,7 +9,7 @@ evalplot.grps(
   envs,
   pts = NULL,
   pts.grp = NULL,
-  pts.type = "occs",
+  ref.data = "occs",
   pts.size = 1.5
 )
 }
@@ -22,7 +22,7 @@ evalplot.grps(
 
 \item{pts.grp}{Numeric vector of partition groups corresponding to data in "pts"}
 
-\item{pts.type}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
+\item{ref.data}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
 
 \item{pts.size}{Character specifying which to plot: occurrences ("occs") or background ("bg"), with default "occs"}
 }

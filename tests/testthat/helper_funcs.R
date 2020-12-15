@@ -99,11 +99,11 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
     expect_true(!is.null(ns@no.iter))
     expect_true(!is.null(ns@null.results))
     expect_true(!is.null(ns@null.results.partitions))
-    expect_true(!is.null(ns@real.vs.null.results))
-    expect_true(!is.null(ns@real.occs))
-    expect_true(!is.null(ns@real.occs.grp))
-    expect_true(!is.null(ns@real.bg))
-    expect_true(!is.null(ns@real.bg.grp))
+    expect_true(!is.null(ns@emp.vs.null.results))
+    expect_true(!is.null(ns@emp.occs))
+    expect_true(!is.null(ns@emp.occs.grp))
+    expect_true(!is.null(ns@emp.bg))
+    expect_true(!is.null(ns@emp.bg.grp))
   })  
   
   test_that("Data in ENMnullSims object slots have correct form", {
@@ -128,21 +128,21 @@ test_ENMnullSims <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.oc
       expect_true(nrow(ns@null.results.partitions) == no.iter * nparts.occs)  
     }
     
-    # number of rows in real vs null results table
-    expect_true(nrow(ns@real.vs.null.results) == 6)
+    # number of rows in empirical vs null results table
+    expect_true(nrow(ns@emp.vs.null.results) == 6)
     # there should only be two NA values for this table: read.sd for auc.train and cbi.train
     if(parts == "jackknife") {
-      expect_true(sum(is.na(ns@real.vs.null.results[2,])) == 3)
-      expect_true(sum(is.na(ns@real.vs.null.results[,6])) == 6) 
+      expect_true(sum(is.na(ns@emp.vs.null.results[2,])) == 3)
+      expect_true(sum(is.na(ns@emp.vs.null.results[,6])) == 6) 
     }else if(parts == "testing") {
-      expect_true(sum(is.na(ns@real.vs.null.results[2,])) == 7) 
+      expect_true(sum(is.na(ns@emp.vs.null.results[2,])) == 7) 
     }else{
-      expect_true(sum(is.na(ns@real.vs.null.results[2,])) == 2)  
+      expect_true(sum(is.na(ns@emp.vs.null.results[2,])) == 2)  
     }
     # check that tables match
-    expect_true(all(ns@real.occs == e@occs))
-    expect_true(all(ns@real.bg == e@bg))
-    expect_true(all(ns@real.occs.grp == e@occs.grp))
+    expect_true(all(ns@emp.occs == e@occs))
+    expect_true(all(ns@emp.bg == e@bg))
+    expect_true(all(ns@emp.occs.grp == e@occs.grp))
   })
 }
 
@@ -237,4 +237,8 @@ test_evalPlots <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, plot.sel = c
     test_map("most_diff")
     test_map("most_sim")
   }
+}
+
+test_nullPlots <- function(ns) {
+  null.tbl1 <- evalplot.nulls()
 }

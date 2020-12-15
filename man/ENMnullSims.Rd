@@ -22,30 +22,30 @@ ENMnullSims(
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{mod.settings}{named list; one set of model settings with which to build null ENMs}
+\item{mod.settings}{named list: one set of model settings with which to build null ENMs}
 
-\item{no.iter}{numeric; number of null model iterations}
+\item{no.iter}{numeric: number of null model iterations}
 
-\item{eval.stats}{character vector; the performance metrics that will be used to calculate null model statistics}
+\item{eval.stats}{character vector: the performance metrics that will be used to calculate null model statistics}
 
-\item{user.enm}{ENMdetails object; if implementing a user-specified model}
+\item{user.enm}{ENMdetails object: if implementing a user-specified model}
 
-\item{user.eval.type}{character; if implementing a user-specified model, specify here which
+\item{user.eval.type}{character: if implementing a user-specified model, specify here which
 evaluation type to use -- either "knonspatial", "kspatial", "testing", or "none"}
 
-\item{userStats.signs}{named list; user-defined evaluation statistics attributed with
-either 1 or -1 to designate whether the expected difference between real and null models is 
+\item{userStats.signs}{named list: user-defined evaluation statistics attributed with
+either 1 or -1 to designate whether the expected difference between empirical and null models is 
 positive or negative; this is used to calculate the p-value of the z-score}
 
-\item{removeMxTemp}{boolean; if TRUE delete all temporary data generated when using maxent.jar for modeling}
+\item{removeMxTemp}{boolean: if TRUE delete all temporary data generated when using maxent.jar for modeling}
 
-\item{parallel}{boolean; if TRUE use parallel processing}
+\item{parallel}{boolean: if TRUE use parallel processing}
 
-\item{numCores}{numeric; number of cores to use for parallel processing -- if left NULL, all available cores will be used}
+\item{numCores}{numeric: number of cores to use for parallel processing -- if left NULL, all available cores will be used}
 
-\item{parallelType}{character; type of parallel processing to use -- either "doSNOW" or "doParallel"}
+\item{parallelType}{character: type of parallel processing to use -- either "doSNOW" or "doParallel"}
 
-\item{quiet}{boolean; if TRUE, no messages will be printed to the console}
+\item{quiet}{boolean: if TRUE, no messages will be printed to the console}
 }
 \value{
 An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
@@ -59,7 +59,7 @@ user-specified model settings based on an input ENMevaluation object, from which
 settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
 (averages and standard deviations) and effect sizes and p-values are calculated by comparing these 
 summary statistics to the empirical values of the performance metrics (i.e., from the model built with
-the real data). See the references below for more details on this method.
+the empirical data). See the references below for more details on this method.
 }
 \details{
 This null ENM technique is based on the implementation in Bohl et al. (2019),

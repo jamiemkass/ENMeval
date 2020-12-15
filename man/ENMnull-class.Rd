@@ -27,15 +27,15 @@ An S4 class that contains the ENMnullSims results.
 
 \item{\code{null.results.partitions}}{data.frame of evaluation k-fold statistics for null models}
 
-\item{\code{real.vs.null.results}}{data.frame of evaluation summary statistics for the real model, means for all null models, z-scores, and p-values}
+\item{\code{emp.vs.null.results}}{data.frame of evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values}
 
-\item{\code{real.occs}}{data.frame of occurrence coordinates and predictor variable values used for model training (real model)}
+\item{\code{emp.occs}}{data.frame of occurrence coordinates and predictor variable values used for model training (empirical model)}
 
-\item{\code{real.occs.grp}}{vector of partition groups for occurrence points}
+\item{\code{emp.occs.grp}}{vector of partition groups for occurrence points}
 
-\item{\code{real.bg}}{data.frame of background coordinates and predictor variable values used for model training}
+\item{\code{emp.bg}}{data.frame of background coordinates and predictor variable values used for model training}
 
-\item{\code{real.bg.grp}}{vector of partition groups for background points}
+\item{\code{emp.bg.grp}}{vector of partition groups for background points}
 }}
 
 \author{

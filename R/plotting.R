@@ -403,7 +403,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
 #' @return A ggplot of evaluation statistics. 
 #' @export
 
-evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TRUE, facet.labs = NULL, metric.levs = NULL, return.tbl = FALSE) {
+evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TRUE, facet.labs = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   res <- e@results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -422,8 +422,8 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
     dplyr::mutate(lower = avg - sd, upper = avg + sd,
                   metric = factor(metric, levels = stats))
   if(!is.null(facet.labs)) labeller <- as_labeller(facet.labs) else labeller <- NULL
-  if(!is.null(metric.levs)) res$metric <- factor(res$metric, levels = metric.levs)
-  if(!is.null(metric.levs)) res.avgs$metric <- factor(res.avgs$metric, levels = metric.levs)
+  if(!is.null(metric.levels)) res$metric <- factor(res$metric, levels = metric.levels)
+  if(!is.null(metric.levels)) res.avgs$metric <- factor(res.avgs$metric, levels = metric.levels)
   
   if(nrow(res.avgs) > 0) {
     if(is.null(dodge)) dodge <- 0.1
@@ -471,18 +471,21 @@ evalplot.stats <- function(e, stats, x.var, color, dodge = NULL, error.bars = TR
 #' @title ENMnullSims statistics plot
 #' @description Plot histogram of evaluation statistics for null ENM simulations
 #' @param e.null ENMnull object
-#' @param stats Character vector of statistics from results table to be plotted; if more than
-#' one statistic is specified, the histogram plot will be faceted
-#' @param plot.type Character specifying the plot type: either "violin" or "histogram"
+#' @param stats Character vector: metrics from results table to be plotted; examples are
+#' "auc.val" or "or.10p"; if more than one statistic is specified, the histogram plot will be faceted
+#' @param plot.type Character: either "violin" or "histogram"
+#' @param facet.labels Character vector: custom names for the metric facets
+#' @param metric.levels Character vector: custom factor levels for metrics; this controls
+#' the order that metric statistics are plotted
 #' @details There are two variations for this plot, but both show null quantiles (0.01, 0.05, 0.5, 0.95, 0.99). 
 #' For violin plots, the null distribution is displayed as a vertical shape (i.e., the violin) with horizontal lines showing 
-#' the quantiles and the real value is plotted as a red point along the vertical axis. 
+#' the quantiles and the empirical value is plotted as a red point along the vertical axis. 
 #' For histogram plots, the null distribution is displayed as a histogram with vertical lines showing the quantiles 
-#' and the real value as a vertical red line on the distribution.
+#' and the empirical value as a vertical red line on the distribution.
 #' @return A ggplot of null model statistics. 
 #' @export
 
-evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.levs = NULL) {
+evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
   null.res <- e.null@null.results %>% 
     tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
@@ -492,40 +495,29 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
     dplyr::filter(grepl("avg", metric) | metric %in% stats) %>%
     dplyr::rename(avg = value) %>%
     dplyr::mutate(metric = gsub(".avg", "", metric))
-  if(!is.null(metric.levs)) null.avgs$metric <- factor(null.avgs$metric, levels = metric.levs)
+  if(!is.null(metric.levels)) null.avgs$metric <- factor(null.avgs$metric, levels = metric.levels)
   # null.sds <- null.res %>% 
   #   dplyr::filter(grepl("sd", metric)) %>%
   #   dplyr::rename(sd = value) %>%
   #   dplyr::mutate(metric = gsub(".sd", "", metric))
   # null.res.avgs <- dplyr::bind_cols(null.avgs, null.sds %>% dplyr::select(sd))
   
-  real.res <- e.null@real.vs.null.results %>% 
+  emp.res <- e.null@empirical.vs.null.results %>% 
     dplyr::slice(1) %>%
     tidyr::pivot_longer(cols = stats, names_to = "metric", values_to = "value") %>%
     dplyr::select(statistic, metric, value) %>%
     tidyr::pivot_wider(names_from = statistic, values_from = value) %>%
-    dplyr::rename(avg = real.mean)
+    dplyr::rename(avg = emp.mean)
   
   if(!is.null(facet.labs)) labeller <- as_labeller(facet.labs) else labeller <- NULL
   
-  # stat.nullResults.name <- ifelse(stat == "auc.train", "auc.train", paste0(stat, ".avg"))
-  # null.stats <- round(e.null@null.results[,stat.nullResults.name, drop = FALSE], 3)
-  # real.stat <- round(e.null@real.vs.null.results %>% 
-  # dplyr::filter(statistic == "real.mean") %>% 
-  # dplyr::pull(stat), 3)
-  # stat.max <- ifelse(real.stat < max(null.stats), max(null.stats), real.stat)
-  # all.stats <- rbind(null.stats, real.stat)
-  # vlines <- data.frame(name = c("95 quantile", "99 quantile", "real value"),
-  # value = c(quantile(null.stats[[stat.nullResults.name]], 0.95),
-  # quantile(null.stats[[stat.nullResults.name]], 0.99),
-  # real.stat))
   if(plot.type == "violin") {
     ggplot2::ggplot(null.avgs, ggplot2::aes(x = metric, y = avg)) + 
       ggplot2::geom_violin(draw_quantiles = c(0.01, 0.05, 0.5, 0.95, 0.99)) +
-      ggplot2::geom_point(data = real.res, ggplot2::aes(y = avg), color = "red") +
+      ggplot2::geom_point(data = emp.res, ggplot2::aes(y = avg), color = "red") +
       ggplot2::theme_bw()  
   }else if(plot.type == "histogram") {
-    stats.all <- rbind(null.avgs, real.res)
+    stats.all <- rbind(null.avgs, emp.res)
     vlines <- null.avgs %>% dplyr::group_by(metric) %>% 
       dplyr::summarize(`0.01 quantile` = quantile(avg, 0.01),
                        `0.05 quantile` = quantile(avg, 0.05),
@@ -533,7 +525,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
                        `0.95 quantile` = quantile(avg, 0.95),
                        `0.99 quantile` = quantile(avg, 0.99)) %>%
       tidyr::pivot_longer(cols = `0.01 quantile`:`0.99 quantile`, names_to = "quantile", values_to = "value")
-    vlines <- rbind(vlines, real.res %>% dplyr::mutate(quantile = "empirical value") %>% dplyr::rename(value = avg))
+    vlines <- rbind(vlines, emp.res %>% dplyr::mutate(quantile = "empirical value") %>% dplyr::rename(value = avg))
     g <- ggplot2::ggplot(mapping = ggplot2::aes(x = avg)) + 
       ggplot2::geom_histogram(data = null.avgs, fill = "gray80") +
       ggplot2::geom_vline(data = vlines, ggplot2::aes(xintercept = value, color = quantile, linetype = quantile)) +
@@ -557,6 +549,10 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labs = NULL, metric.l
     }else{
       g <- g + ggplot2::facet_wrap(ggplot2::vars(metric), scales = "free_x", ncol = 1)
     }
-    g
+    if(return.tbl == TRUE) {
+      return(list(null.avgs = null.avgs, emp.avgs = emp.avgs))
+    }else{
+      return(g)  
+    }
   }
 }

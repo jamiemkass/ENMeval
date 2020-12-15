@@ -268,11 +268,11 @@ setMethod("show",
 #' @slot no.iter numeric of number of null model iterations
 #' @slot null.results data.frame of evaluation summary statistics for null models
 #' @slot null.results.partitions data.frame of evaluation k-fold statistics for null models
-#' @slot real.vs.null.results data.frame of evaluation summary statistics for the real model, means for all null models, z-scores, and p-values
-#' @slot real.occs data.frame of occurrence coordinates and predictor variable values used for model training (real model)
-#' @slot real.occs.grp vector of partition groups for occurrence points
-#' @slot real.bg data.frame of background coordinates and predictor variable values used for model training
-#' @slot real.bg.grp vector of partition groups for background points
+#' @slot emp.vs.null.results data.frame of evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values
+#' @slot emp.occs data.frame of occurrence coordinates and predictor variable values used for model training (empirical model)
+#' @slot emp.occs.grp vector of partition groups for occurrence points
+#' @slot emp.bg data.frame of background coordinates and predictor variable values used for model training
+#' @slot emp.bg.grp vector of partition groups for background points
 #' @export
 
 # class slots match older ENMeval versions
@@ -285,11 +285,11 @@ ENMnull <- setClass("ENMnull",
                               no.iter = 'numeric',
                               null.results = 'data.frame',
                               null.results.partitions = 'data.frame',
-                              real.vs.null.results = 'data.frame',
-                              real.occs = 'data.frame',
-                              real.occs.grp = 'factor',
-                              real.bg = 'data.frame',
-                              real.bg.grp = 'factor'))
+                              emp.vs.null.results = 'data.frame',
+                              emp.occs = 'data.frame',
+                              emp.occs.grp = 'factor',
+                              emp.bg = 'data.frame',
+                              emp.bg.grp = 'factor'))
 
 setGeneric("null.algorithm", function(x) standardGeneric("null.algorithm"))
 #' @export
@@ -323,25 +323,25 @@ setGeneric("null.results.partitions", function(x) standardGeneric("null.results.
 #' @export
 setMethod("null.results.partitions", "ENMnull", function(x) x@null.results.partitions)
 
-setGeneric("real.vs.null.results", function(x) standardGeneric("real.vs.null.results"))
+setGeneric("emp.vs.null.results", function(x) standardGeneric("emp.vs.null.results"))
 #' @export
-setMethod("real.vs.null.results", "ENMnull", function(x) x@real.vs.null.results)
+setMethod("emp.vs.null.results", "ENMnull", function(x) x@emp.vs.null.results)
 
-setGeneric("real.occs", function(x) standardGeneric("real.occs"))
+setGeneric("emp.occs", function(x) standardGeneric("emp.occs"))
 #' @export
-setMethod("real.occs", "ENMnull", function(x) x@real.occs)
+setMethod("emp.occs", "ENMnull", function(x) x@emp.occs)
 
-setGeneric("real.occs.grp", function(x) standardGeneric("real.occs.grp"))
+setGeneric("emp.occs.grp", function(x) standardGeneric("emp.occs.grp"))
 #' @export
-setMethod("real.occs.grp", "ENMnull", function(x) x@real.occs.grp)
+setMethod("emp.occs.grp", "ENMnull", function(x) x@emp.occs.grp)
 
-setGeneric("real.bg", function(x) standardGeneric("real.bg"))
+setGeneric("emp.bg", function(x) standardGeneric("emp.bg"))
 #' @export
-setMethod("real.bg", "ENMnull", function(x) x@real.bg)
+setMethod("emp.bg", "ENMnull", function(x) x@emp.bg)
 
-setGeneric("real.bg.grp", function(x) standardGeneric("real.bg.grp"))
+setGeneric("emp.bg.grp", function(x) standardGeneric("emp.bg.grp"))
 #' @export
-setMethod("real.bg.grp", "ENMnull", function(x) x@real.bg.grp)
+setMethod("emp.bg.grp", "ENMnull", function(x) x@emp.bg.grp)
 
 
 #' @export
@@ -350,7 +350,7 @@ setMethod("show",
           definition = function(object) {
             cat("An object of class: ", class(object), "\n")
             cat(" no. iterations: ", object@no.iter, "\n")
-            cat(" real occurrence/background points: ", nrow(object@real.occs), '/', nrow(object@real.bg), "\n")
+            cat(" empirical occurrence/background points: ", nrow(object@emp.occs), '/', nrow(object@emp.bg), "\n")
             cat(" partition method: ", object@null.partition.method, "\n")
             cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")
             cat(" other settings: ", paste(names(object@null.other.settings), unlist(object@null.other.settings), sep = " = ", collapse = ", "), "\n")

@@ -4,7 +4,7 @@
 #' settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
 #' (averages and standard deviations) and effect sizes and p-values are calculated by comparing these 
 #' summary statistics to the empirical values of the performance metrics (i.e., from the model built with
-#' the real data). See the references below for more details on this method.
+#' the empirical data). See the references below for more details on this method.
 #' @details This null ENM technique is based on the implementation in Bohl et al. (2019),
 #' This technique follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
 #' instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
@@ -25,20 +25,20 @@
 #' See ?ENMnull for more details.
 #' 
 #' @param e ENMevaluation object
-#' @param mod.settings named list; one set of model settings with which to build null ENMs
-#' @param no.iter numeric; number of null model iterations
-#' @param eval.stats character vector; the performance metrics that will be used to calculate null model statistics
-#' @param user.enm ENMdetails object; if implementing a user-specified model
-#' @param user.eval.type character; if implementing a user-specified model, specify here which
+#' @param mod.settings named list: one set of model settings with which to build null ENMs
+#' @param no.iter numeric: number of null model iterations
+#' @param eval.stats character vector: the performance metrics that will be used to calculate null model statistics
+#' @param user.enm ENMdetails object: if implementing a user-specified model
+#' @param user.eval.type character: if implementing a user-specified model, specify here which
 #' evaluation type to use -- either "knonspatial", "kspatial", "testing", or "none"
-#' @param userStats.signs named list; user-defined evaluation statistics attributed with
-#' either 1 or -1 to designate whether the expected difference between real and null models is 
+#' @param userStats.signs named list: user-defined evaluation statistics attributed with
+#' either 1 or -1 to designate whether the expected difference between empirical and null models is 
 #' positive or negative; this is used to calculate the p-value of the z-score
-#' @param removeMxTemp boolean; if TRUE delete all temporary data generated when using maxent.jar for modeling
-#' @param parallel boolean; if TRUE use parallel processing
-#' @param numCores numeric; number of cores to use for parallel processing -- if left NULL, all available cores will be used
-#' @param parallelType character; type of parallel processing to use -- either "doSNOW" or "doParallel"
-#' @param quiet boolean; if TRUE, no messages will be printed to the console
+#' @param removeMxTemp boolean: if TRUE delete all temporary data generated when using maxent.jar for modeling
+#' @param parallel boolean: if TRUE use parallel processing
+#' @param numCores numeric: number of cores to use for parallel processing -- if left NULL, all available cores will be used
+#' @param parallelType character: type of parallel processing to use -- either "doSNOW" or "doParallel"
+#' @param quiet boolean: if TRUE, no messages will be printed to the console
 #' @export
 #'
 
@@ -94,12 +94,12 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
   }
 
   ############################## #
-  # specify real model statistics ####
+  # specify empirical model statistics ####
   ############################## #
 
   mod.tune.args  <- paste(names(mod.settings), mod.settings, collapse = "_", sep = ".")
-  real.mod <- e@models[[mod.tune.args]]
-  real.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
+  emp.mod <- e@models[[mod.tune.args]]
+  emp.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
 
   ############################## #
   # build null models ####
@@ -144,14 +144,14 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
         # the records in partition group k
         null.samps.k <- null.samps %>% dplyr::filter(grp == k)
         # randomly sample n null occurrences, where n equals the number
-        # of real occurrence in partition group k
+        # of empirical occurrence in partition group k
         samp.k <- sample(1:nrow(null.samps.k), occs.grp.tbl[k])
         null.occs.ik[[k]] <- null.samps.k[samp.k, ]
       }
     }else if(eval.type == "knonspatial") {
       for(k in 1:nk) {
         # randomly sample n null occurrences, where n equals the number
-        # of real occurrence in partition group k
+        # of empirical occurrence in partition group k
         samp.k <- sample(1:nrow(null.samps), occs.grp.tbl[k])
         null.occs.ik[[k]] <- null.samps[samp.k, ]
       }
@@ -177,9 +177,9 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
       user.val.grps <- NULL
     }else{
       # assign the null occurrence partitions as user partition settings, but
-      # keep the real model background partitions
+      # keep the empirical model background partitions
       user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
-      # assign user validation partitions to those used in the real model
+      # assign user validation partitions to those used in the empirical model
       user.val.grps <- cbind(e@occs, grp = e@occs.grp)
       partitions <- "user"
     }
@@ -251,38 +251,38 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
   if(eval.type %in% c("testing", "none")) {
     nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats)) %>% dplyr::summarize_all(mean, na.rm = TRUE)
     nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats)) %>% dplyr::summarise_all(sd, na.rm = TRUE)
-    # get real model evaluation statistics for comparison
-    real.avgs <- real.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats))
+    # get empirical model evaluation statistics for comparison
+    emp.avgs <- emp.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats))
   }else{
     nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
     nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
-    # get real model evaluation statistics for comparison
-    real.avgs <- real.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg"))  
+    # get empirical model evaluation statistics for comparison
+    emp.avgs <- emp.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg"))  
   }
-  real.sds <- real.mod.res %>% dplyr::select(dplyr::ends_with("sd"))
-  if(ncol(real.sds) == 0) real.sds <- NULL
+  emp.sds <- emp.mod.res %>% dplyr::select(dplyr::ends_with("sd"))
+  if(ncol(emp.sds) == 0) emp.sds <- NULL
   
-  realNull.stats <- as.data.frame(matrix(nrow = 6, ncol = ncol(real.avgs)+1))
-  names(realNull.stats)[1] <- "statistic"
-  realNull.stats$statistic <- c("real.mean", "real.sd", "null.mean", "null.sd", "zscore", "pvalue")
-  names(realNull.stats)[-1] <- gsub(".avg", replacement = "", names(real.avgs))
+  empNull.stats <- as.data.frame(matrix(nrow = 6, ncol = ncol(emp.avgs)+1))
+  names(empNull.stats)[1] <- "statistic"
+  empNull.stats$statistic <- c("emp.mean", "emp.sd", "null.mean", "null.sd", "zscore", "pvalue")
+  names(empNull.stats)[-1] <- gsub(".avg", replacement = "", names(emp.avgs))
   
-  # populate real and null means and standard deviations
-  realNull.stats[1, -1] <- real.avgs
-  real.sds.nameStrip <- gsub(".sd", "", names(real.sds))
-  if(length(real.sds.nameStrip) > 0) realNull.stats[2, which(names(realNull.stats) %in% real.sds.nameStrip)] <- real.sds
-  realNull.stats[3,-1] <- nulls.avgs
-  realNull.stats[4,-1] <- nulls.sds
+  # populate empirical and null means and standard deviations
+  empNull.stats[1, -1] <- emp.avgs
+  emp.sds.nameStrip <- gsub(".sd", "", names(emp.sds))
+  if(length(emp.sds.nameStrip) > 0) empNull.stats[2, which(names(empNull.stats) %in% emp.sds.nameStrip)] <- emp.sds
+  empNull.stats[3,-1] <- nulls.avgs
+  empNull.stats[4,-1] <- nulls.sds
   # calculate z-scores
-  realNull.stats[5,-1] <- (real.avgs - nulls.avgs) / nulls.sds
+  empNull.stats[5,-1] <- (emp.avgs - nulls.avgs) / nulls.sds
   # find statistics that need a positive pnorm, and those that need a negative pnorm
   p.pos <- names(signs[sapply(signs, function(x) x == 1)])
   p.neg <- names(signs[sapply(signs, function(x) x == -1)])
-  p.pos.inds <- which(grepl(paste(p.pos, collapse = "|"), names(realNull.stats)))
-  p.neg.inds <- which(grepl(paste(p.neg, collapse = "|"), names(realNull.stats)))
+  p.pos.inds <- which(grepl(paste(p.pos, collapse = "|"), names(empNull.stats)))
+  p.neg.inds <- which(grepl(paste(p.neg, collapse = "|"), names(empNull.stats)))
   # calculate p-values
-  realNull.stats[6, p.pos.inds] <- sapply(realNull.stats[5, p.pos.inds], function(x) pnorm(x, lower.tail = FALSE))
-  realNull.stats[6, p.neg.inds] <- sapply(realNull.stats[5, p.neg.inds], pnorm)
+  empNull.stats[6, p.pos.inds] <- sapply(empNull.stats[5, p.pos.inds], function(x) pnorm(x, lower.tail = FALSE))
+  empNull.stats[6, p.neg.inds] <- sapply(empNull.stats[5, p.neg.inds], pnorm)
   
   mod.settings.tbl <- expand.grid(mod.settings)
   mod.settings.tbl$tune.args <- apply(mod.settings.tbl, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
@@ -290,7 +290,7 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
   
   # make cbi.val column NA for jackknife partitions
   if(e@partition.method == "jackknife") {
-    realNull.stats$cbi.val <- NA
+    empNull.stats$cbi.val <- NA
     nulls$cbi.val.avg <- NA
     nulls$cbi.val.sd <- NA
     nulls.grp$cbi.val <- NA
@@ -305,11 +305,11 @@ ENMnullSims <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.
                  no.iter = no.iter,
                  null.results = nulls,
                  null.results.partitions = nulls.grp,
-                 real.vs.null.results = realNull.stats,
-                 real.occs = e@occs,
-                 real.occs.grp = e@occs.grp,
-                 real.bg = e@bg,
-                 real.bg.grp = e@bg.grp)
+                 emp.vs.null.results = empNull.stats,
+                 emp.occs = e@occs,
+                 emp.occs.grp = e@occs.grp,
+                 emp.bg = e@bg,
+                 emp.bg.grp = e@bg.grp)
 
   # optionally remove temp directory for maxent.jar
   if(e@algorithm == "maxent.jar" & removeMxTemp == TRUE) unlink(tmpdir, recursive = TRUE, force = TRUE)
