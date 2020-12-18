@@ -8,7 +8,7 @@
 #' @details This null ENM technique is based on the implementation in Bohl et al. (2019),
 #' This technique follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
 #' instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
-#' validation data used to evaluae the empirical model. Bohl et al. (2019) demonstrates this approach using a single
+#' validation data used to evaluate the empirical model. Bohl et al. (2019) demonstrates this approach using a single
 #' defined withheld partition group, but Kass et al. (2020) extended it to use spatial partitions by drawing null occurrences
 #' from the area of the predictor raster data defining each partition. This function avoids using raster data to speed up each
 #' iteration, and instead draws null occurrences from the partitioned background records. Thus, you should avoid running this
@@ -44,9 +44,9 @@
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
 ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
-                        user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL, 
-                        removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
-
+                     user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL, 
+                     removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
+  
   # assign evaluation type based on partition method
   if(is.null(user.eval.type)) {
     eval.type <- switch(e@partition.method,
@@ -67,14 +67,14 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   
   # assign directionality of sign for evaluation stats
   signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
-                   "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
+                  "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
   
   # record start time
   start.time <- proc.time()
-
+  
   # assign the number of cross validation iterations
   nk <- max(as.numeric(as.character(e@occs.grp)))
-
+  
   # get number of occurrence points by partition
   occs.grp.tbl <- table(e@occs.grp)
   
@@ -92,21 +92,22 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   if(!is.null(user.enm)) {
     e@algorithm <- user.enm
   }
-
+  
   ############################## #
   # specify empirical model statistics ####
   ############################## #
-
+  
   mod.tune.args  <- paste(names(mod.settings), mod.settings, collapse = "_", sep = ".")
   emp.mod <- e@models[[mod.tune.args]]
   emp.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
-
+  
   ############################## #
   # build null models ####
   ############################## #
-
+  
   if(quiet == FALSE) message(paste("Building and evaluating null ENMs with", no.iter, "iterations..."))
-
+  if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
+  
   # set up parallel processing functionality
   if(parallel == TRUE) {
     allCores <- parallel::detectCores()
@@ -126,8 +127,6 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     numCoresUsed <- foreach::getDoParWorkers()
     if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
     if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))  
-  }else{
-    if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
   }
   
   if(length(e@clamp.directions) == 0) clamp.directions.i <- NULL else clamp.directions.i <- e@clamp.directions
@@ -224,12 +223,12 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
         }  
       }
     }
-
+    
     return(out)
   }
   
   if(parallel == TRUE) {
-    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .export = "null_i", .packages = c("dplyr", "ENMeval")) %dopar% {
+    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .packages = c("dplyr", "ENMeval")) %dopar% {
       null_i(i)
     }
   }else{
@@ -242,7 +241,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   
   if(quiet != TRUE) close(pb)
   if(parallel == TRUE) parallel::stopCluster(cl)
-
+  
   # assemble null evaluation statistics and take summaries
   nulls.ls <- lapply(outs, function(x) x$results)
   nulls.grp.ls <- lapply(outs, function(x) x$results.partitions)
@@ -310,10 +309,10 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
                  emp.occs.grp = e@occs.grp,
                  emp.bg = e@bg,
                  emp.bg.grp = e@bg.grp)
-
+  
   # optionally remove temp directory for maxent.jar
   if(e@algorithm == "maxent.jar" & removeMxTemp == TRUE) unlink(tmpdir, recursive = TRUE, force = TRUE)
-
+  
   
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)

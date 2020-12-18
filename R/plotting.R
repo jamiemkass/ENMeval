@@ -120,12 +120,12 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
     }
   }
   
-  if(unique(pts.plot$partition) == 0) {
+  if(all(unique(pts.plot$partition) == 0)) {
     if(ref.data == "bg") stop('If using fully withheld testing data, input ref.data as "occs".')
     if(is.null(e) & is.null(occs.testing.z)) stop("If using fully withheld testing data, input either an ENMevaluation object or occs.testing.z.")
     if(!is.null(e)) occs.testing.z <- e@occs.testing
     occs.testing.z[[categoricals]] <- NULL
-    occs.testing.z <- occs.testing.z %>% mutate(type = 1, partition = 2) %>% rename(longitude = lon, latitude = lat)
+    occs.testing.z <- occs.testing.z %>% mutate(type = 1, partition = 2)
     pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
     pts.plot[pts.plot$type == 1, "partition"] <- 1
     pts.plot <- dplyr::bind_rows(pts.plot, occs.testing.z) %>% mutate(partition = factor(partition))
@@ -143,9 +143,11 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
 #' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object
-#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional)
+#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
+#' the first two columns must be named "longitude" and "latitude"
 #' @param occs.grp numeric vector: partition groups for occurrence records (optional)
-#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional)
+#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
+#' the first two columns must be named "longitude" and "latitude"
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 #' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
@@ -182,6 +184,8 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   
   if(!is.null(envs.vars)) {
     if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
+    envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
+    pts.plot <- pts.plot %>% dplyr::select(-dplyr::all_of(envs.rem))
   }
   
   test.sim <- list()
@@ -274,9 +278,11 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' @param e ENMevaluation object (optional) 
 #' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input, as they cannot be used to calculate MESS
-#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional)
+#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
+#' the first two columns must be named "longitude" and "latitude"
 #' @param occs.grp numeric vector: partition groups for occurrence records (optional)
-#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional)
+#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
+#' the first two columns must be named "longitude" and "latitude"
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 #' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
@@ -334,6 +340,9 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   if(!is.null(envs.vars)) {
     if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
+    envs.names <- names(envs)
+    envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
+    pts.plot <- pts.plot %>% dplyr::select(-dplyr::all_of(envs.rem))
     envs <- envs[[envs.vars]]
   }
   
@@ -369,7 +378,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   plot.df <- raster::as.data.frame(rs.sim, xy = TRUE) %>%
     tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
   # add buffer
-  plot.df <- plot.df %>% filter(x > min(pts.plot$longitude) - bb.buf, x < max(pts.plot$longitude) + bb.buf,
+  plot.df <- plot.df %>% dplyr::filter(x > min(pts.plot$longitude) - bb.buf, x < max(pts.plot$longitude) + bb.buf,
                                 y > min(pts.plot$latitude) - bb.buf, y < max(pts.plot$latitude) + bb.buf)
   
   if(sim.type != "mess") {
@@ -377,8 +386,9 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
     plot.df$ras <- gsub("_var", "", plot.df$ras)
     plot.df[[sim.type]] <- factor(plot.df[[sim.type]])
     title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")
+  }else{
+    title <- "Multivariate environmental similarity" 
   }
-  if(sim.type == "mess") title <- "Multivariate environmental similarity"
   
   plot.text <- paste("\n(Values represent environmental similarity between", 
                      switch(ref.data, occs = "occurrence", bg = "background"),
@@ -503,7 +513,7 @@ evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars 
 #' @param stats character vector: metrics from results table to be plotted; examples are
 #' "auc.val" or "or.10p"; if more than one statistic is specified, the histogram plot will be faceted
 #' @param plot.type character: either "violin" or "histogram"
-#' @param facet.labels character vector: custom names for the metric facets
+#' @param facet.labels named list: custom names for the metric facets, in the form list(old_name = "new_name", ...)
 #' @param metric.levels character vector: custom factor levels for metrics; this controls the order that metric statistics are plotted
 #' @param return.tbl boolean: if TRUE, return the data frames of null results used to make the ggplot instead of the plot itself
 #' @details There are two variations for this plot, but both show null quantiles (0.01, 0.05, 0.5, 0.95, 0.99). 
@@ -557,7 +567,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
     vlines <- rbind(vlines, emp.res %>% dplyr::mutate(quantile = "empirical value") %>% dplyr::rename(value = avg))
     g <- ggplot2::ggplot(mapping = ggplot2::aes(x = avg)) + 
       ggplot2::geom_histogram(data = null.avgs, fill = "gray80") +
-      ggplot2::geom_vline(data = vlines, ggplot2::aes(xintercept = value, color = quantile, linetype = quantile)) +
+      ggplot2::geom_vline(data = vlines, ggplot2::aes(xintercept = value, color = quantile, linetype = quantile, size = quantile)) +
       ggplot2::scale_color_manual(values = c(`0.01 quantile` = "purple", 
                                              `0.05 quantile` = "blue",
                                              `0.50 quantile` = "blue",
@@ -570,6 +580,12 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
                                                 `0.95 quantile` = "dashed", 
                                                 `0.99 quantile` = "dotted",
                                                 `empirical value` = "solid")) +
+      ggplot2::scale_size_manual(values = c(`0.01 quantile` = 1, 
+                                                `0.05 quantile` = 1,
+                                                `0.50 quantile` = 1,
+                                                `0.95 quantile` = 1, 
+                                                `0.99 quantile` = 1,
+                                                `empirical value` = 0.5)) +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.title=ggplot2::element_blank(), 
                      legend.position="bottom")

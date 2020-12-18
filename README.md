@@ -11,6 +11,4 @@ For a more detailed description of the original package (version 0.3.0 and below
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Also see the vignette for examples of implementation.
-
 Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet).  The output from this differs from that of the original java program and so some features are not compatible (e.g., variable importance, the old html output).  Our team has done some fairly extensive testing to ensure this implementation gives the expected results but the maxnet implementation is relatively new (at the time of writing this) and we encourage users to scrutinize their results.

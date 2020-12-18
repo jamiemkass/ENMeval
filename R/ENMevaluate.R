@@ -92,7 +92,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
                         parallel = FALSE, numCores = NULL, parallelType = "doSNOW", updateProgress = FALSE, quiet = FALSE, 
                         # legacy arguments
                         occ = NULL, env = NULL, bg.coords = NULL, RMvalues = NULL, fc = NULL, occ.grp = NULL, bg.grp = NULL,
-                        method = NULL, bin.output = NULL, rasterPreds = NULL, progbar = NULL) {
+                        method = NULL, bin.output = NULL, rasterPreds = NULL, clamp = NULL, progbar = NULL) {
   
   # legacy argument handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds)
@@ -103,6 +103,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(env)) envs <- env
   if(!is.null(bg.coords)) bg <- bg.coords
   if(!is.null(method)) partitions <- method
+  if(!is.null(clamp)) doClamp <- clamp
   if(!is.null(rasterPreds)) {
     stop("This argument was deprecated. If you want to avoid generating model prediction rasters, include predictor variable values in the occurrence and background data frames (SWD format). See Details in ?ENMevaluate for more information.")
   }
