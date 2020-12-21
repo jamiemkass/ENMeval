@@ -203,6 +203,24 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     enm <- user.enm
   }
   
+  ################# #
+  # CLAMPING ####
+  ################# #
+  if(doClamp == TRUE) {
+    if(is.null(envs)) {
+      if(!quiet) message("Warning: cannot make model extrapolations (and therefore clamp) without predictor variable rasters.")
+    }else{
+      if(is.null(clamp.directions)) {
+        clamp.envs <- names(envs)[!names(envs) %in% categoricals]
+        clamp.directions <- list(left = clamp.envs, right = clamp.envs)
+      }
+      envs <- clamp.vars(predictors = envs, p.z = rbind(occs.z, bg.z), 
+                         left = clamp.directions$left, right = clamp.directions$right, 
+                         categoricals = categoricals)  
+      if(quiet != TRUE) message("* Clamping predictor variable rasters...")
+    }
+  }
+  
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
   ########################################################### #
@@ -368,24 +386,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args, other.settings), "***\n"))
   }else{
     if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
-  }
-  
-  ################# #
-  # CLAMPING ####
-  ################# #
-  if(doClamp == TRUE) {
-    if(is.null(envs)) {
-      if(!quiet) message("Warning: cannot make model extrapolations (and therefore clamp) without predictor variable rasters.")
-    }else{
-      if(is.null(clamp.directions)) {
-        clamp.envs <- names(envs)[!names(envs) %in% categoricals]
-        clamp.directions <- list(left = clamp.envs, right = clamp.envs)
-      }
-      envs <- clamp.vars(predictors = envs, p.z = rbind(occs.z, bg.z), 
-                         left = clamp.directions$left, right = clamp.directions$right, 
-                         categoricals = categoricals)  
-      if(quiet != TRUE) message("* Clamping predictor variable rasters...")
-    }
   }
   
   ################# #
