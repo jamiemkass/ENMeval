@@ -21,7 +21,7 @@ evalplot.nulls(
 
 \item{plot.type}{character: either "violin" or "histogram"}
 
-\item{facet.labels}{character vector: custom names for the metric facets}
+\item{facet.labels}{named list: custom names for the metric facets, in the form list(old_name = "new_name", ...)}
 
 \item{metric.levels}{character vector: custom factor levels for metrics; this controls the order that metric statistics are plotted}
 

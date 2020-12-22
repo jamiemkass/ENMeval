@@ -207,18 +207,23 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # CLAMPING ####
   ################# #
   if(doClamp == TRUE) {
-    if(is.null(envs)) {
-      if(!quiet) message("Warning: cannot make model extrapolations (and therefore clamp) without predictor variable rasters.")
-    }else{
+    # record in other.settings
+    other.settings$doClamp <- TRUE
+    
+    if(!is.null(envs)) {
       if(is.null(clamp.directions)) {
-        clamp.envs <- names(envs)[!names(envs) %in% categoricals]
-        clamp.directions <- list(left = clamp.envs, right = clamp.envs)
+        clamp.directions$left <- names(envs)
+        clamp.directions$right <- names(envs)
       }
-      envs <- clamp.vars(predictors = envs, p.z = rbind(occs.z, bg.z), 
+      # record in other.settings
+      other.settings$clamp.directions <- clamp.directions
+      envs <- clamp.vars(orig.vals = envs, ref.vals = rbind(occs.z, bg.z)[,-1:-2], 
                          left = clamp.directions$left, right = clamp.directions$right, 
-                         categoricals = categoricals)  
+                         categoricals = categoricals)
       if(quiet != TRUE) message("* Clamping predictor variable rasters...")
     }
+  }else{
+    other.settings$doClamp <- FALSE
   }
   
   ########################################################### #

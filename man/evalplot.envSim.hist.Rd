@@ -23,9 +23,11 @@ evalplot.envSim.hist(
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional)}
+\item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
+the first two columns must be named "longitude" and "latitude"}
 
-\item{bg.z}{data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional)}
+\item{bg.z}{data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
+the first two columns must be named "longitude" and "latitude"}
 
 \item{occs.grp}{numeric vector: partition groups for occurrence records (optional)}
 

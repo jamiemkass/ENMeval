@@ -65,7 +65,7 @@ the empirical data). See the references below for more details on this method.
 This null ENM technique is based on the implementation in Bohl et al. (2019),
 This technique follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
 instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
-validation data used to evaluae the empirical model. Bohl et al. (2019) demonstrates this approach using a single
+validation data used to evaluate the empirical model. Bohl et al. (2019) demonstrates this approach using a single
 defined withheld partition group, but Kass et al. (2020) extended it to use spatial partitions by drawing null occurrences
 from the area of the predictor raster data defining each partition. This function avoids using raster data to speed up each
 iteration, and instead draws null occurrences from the partitioned background records. Thus, you should avoid running this

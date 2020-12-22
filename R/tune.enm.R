@@ -245,6 +245,16 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, partition.s
       bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     }
     
+    # if doClamp is on, make sure that the validation data for each validation model is also clamped
+    # this means for each partition, making sure no values in validation data are more extreme than those in training data
+    if(other.settings$doClamp == TRUE) {
+      val.z <- clamp.vars(orig.vals = rbind(occs.val.z, bg.val.z), ref.vals = rbind(occs.train.z, bg.train.z), 
+                 left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
+                 categoricals = other.settings$categoricals)
+      occs.val.z <- val.z[1:nrow(occs.val.z),]
+      bg.val.z <- val.z[(nrow(occs.val.z)+1):nrow(val.z),]
+    }
+    
     # define model arguments for current model k
     mod.k.args <- enm@args(occs.train.z, bg.train.z, tune.i, other.settings)
     # run model k with specified arguments

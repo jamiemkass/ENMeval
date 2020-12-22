@@ -76,8 +76,9 @@ NULL
 
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
-#' @param predictors RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)
-#' @param p.z matrix / data frame: predictor variable values for the reference records
+#' @param orig.vals RasterStack / matrix / data frame: environmental predictor variables (must be in same geographic 
+#' projection as occurrence data), or predictor variables values for the original records
+#' @param ref.vals matrix / data frame: predictor variable values for the reference records
 #' (not including coordinates), used to determine the minimums and maximums -- 
 #' this should ideally be the occurrences + background (can be made with raster::extract())
 #' @param left character vector: names of variables to get a minimum clamp; can be "none" to turn
@@ -86,7 +87,7 @@ NULL
 #' off maximum clamping
 #' @param categoricals character vector: name or names of categorical environmental variables
 #' @description This function restricts the values of one or more predictor variable rasters
-#' to stay within the bounds of the input occurrence and background data (argument "p.z").
+#' to stay within the bounds of the input occurrence and background data (argument "ref.vals").
 #' This is termed "clamping", and is mainly used to avoid making extreme extrapolations
 #' when making model predictions to environmental conditions outside the range of the
 #' occurrence / background data used to train the model. Clamping can be done on variables of
@@ -101,7 +102,7 @@ NULL
 #' @return The clamped Raster* object.
 #' @export
 
-clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals = NULL) {
+clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL) {
   if((("none" %in% left) & length(left) > 1) | (("none" %in% right) & length(right) > 1)) {
     stop('To turn clamping off, specify the argument left, right or both of them to "none".')
   }
@@ -109,42 +110,65 @@ clamp.vars <- function(predictors, p.z, left = NULL, right = NULL, categoricals 
   if(!is.null(left) & !is.null(right)) {
     if(("none" %in% left) & ("none" %in% right)) {
       warning('Both left and right were set to "none", so clamping was not performed.')
-      return(predictors)
+      return(orig.vals)
     }
   }
   # remove categorical variables from clamping analysis
   if(!is.null(categoricals)) {
-    p <- predictors[[-which(names(predictors) == categoricals)]]
-    p.z <- p.z[,-which(colnames(p.z) == categoricals)]
+    if(inherits(orig.vals, "BasicRaster") == TRUE) {
+      p <- orig.vals[[-which(names(orig.vals) == categoricals)]]
+    }else{
+      p <- orig.vals[,-which(names(orig.vals) == categoricals)]
+    }
+    ref.vals <- ref.vals[,-which(colnames(ref.vals) == categoricals)]
   }else{
-    p <- predictors
+    p <- orig.vals
   }
   # get mins and maxs of input variable values for occs and bg
-  minmaxes <- data.frame(min = apply(p.z, 2, min, na.rm = TRUE),
-                         max = apply(p.z, 2, max, na.rm = TRUE))
+  minmaxes <- data.frame(min = apply(ref.vals, 2, min, na.rm = TRUE),
+                         max = apply(ref.vals, 2, max, na.rm = TRUE))
   # function to clamp the values of the input raster
-  adjust <- function(pp, toadjust, mm) {
+  adjustRas <- function(pp, toadjust, mm) {
     raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
       layername <- names(oldlayer)
       if (!(layername %in% toadjust)) return(oldlayer)
       newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
       names(newlayer) <- layername
       return(newlayer)
-    }))}
+    }))
+  }
+  adjustDF <- function(pp, toadjust, mm) {
+    inds <- which(names(pp) %in% toadjust)
+    for(i in 1:ncol(pp)) {
+      if(i %in% inds) {
+        if(mm == "min") pp[,i] <- ifelse(pp[,i] < minmaxes[i,"min"], minmaxes[i,"min"], pp[,i]) 
+        if(mm == "max") pp[,i] <- ifelse(pp[,i] > minmaxes[i,"max"], minmaxes[i,"max"], pp[,i]) 
+      }
+    }
+    return(pp)
+  }
   # default to all variables if left and/or right are NULL
   if(is.null(left)) left <- names(p)
   if(is.null(right)) right <- names(p)
   
+  f <- ifelse(inherits(orig.vals, "BasicRaster") == TRUE, adjustRas, adjustDF)
   # clamp both sides unless left or right is "none"
   if("none" %in% left) {
-    out <- adjust(p, right, "max")
+    out <- f(p, right, "max")
   }else if("none" %in% right) {
-    out <- adjust(p, left, "min")
+    out <- f(p, left, "min")
   }else{
-    out <- adjust(adjust(p, left, "min"), right, "max")  
+    out <- f(f(p, left, "min"), right, "max")  
   }
   # add back the categorical variable to the stack
-  if(!is.null(categoricals)) out <- raster::addLayer(out, predictors[[categoricals]])
+  if(!is.null(categoricals)) {
+    if(inherits(orig.vals, "BasicRaster") == TRUE) {
+      out <- raster::addLayer(out, orig.vals[[categoricals]])
+    }else{
+      out <- cbind(out, orig.vals[,categoricals])
+      names(out)[which(names(orig.vals) %in% categoricals)] <- categoricals
+    }
+  }
   return(out)
 }
 

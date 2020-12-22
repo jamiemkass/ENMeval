@@ -43,6 +43,7 @@ ENMevaluate(
   method = NULL,
   bin.output = NULL,
   rasterPreds = NULL,
+  clamp = NULL,
   progbar = NULL
 )
 }

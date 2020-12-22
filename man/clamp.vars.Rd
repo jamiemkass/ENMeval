@@ -4,12 +4,13 @@
 \alias{clamp.vars}
 \title{Clamp predictor variables}
 \usage{
-clamp.vars(predictors, p.z, left = NULL, right = NULL, categoricals = NULL)
+clamp.vars(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL)
 }
 \arguments{
-\item{predictors}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
+\item{orig.vals}{RasterStack / matrix / data frame: environmental predictor variables (must be in same geographic 
+projection as occurrence data), or predictor variables values for the original records}
 
-\item{p.z}{matrix / data frame: predictor variable values for the reference records
+\item{ref.vals}{matrix / data frame: predictor variable values for the reference records
 (not including coordinates), used to determine the minimums and maximums -- 
 this should ideally be the occurrences + background (can be made with raster::extract())}
 
@@ -26,7 +27,7 @@ The clamped Raster* object.
 }
 \description{
 This function restricts the values of one or more predictor variable rasters
-to stay within the bounds of the input occurrence and background data (argument "p.z").
+to stay within the bounds of the input occurrence and background data (argument "ref.vals").
 This is termed "clamping", and is mainly used to avoid making extreme extrapolations
 when making model predictions to environmental conditions outside the range of the
 occurrence / background data used to train the model. Clamping can be done on variables of
