@@ -15,6 +15,11 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
   if(!is.null(e)) {
     pts.plot <- switch(ref.data, occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
+    if(e@partition.method == "testing") {
+      pts.plot <- pts.plot %>% mutate(partition = as.numeric(as.character(partition))) %>% 
+        bind_rows(e@occs.testing %>% mutate(partition = 1)) %>%
+        mutate(partition = factor(partition))
+    } 
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
@@ -124,6 +129,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
     if(ref.data == "bg") stop('If using fully withheld testing data, input ref.data as "occs".')
     if(is.null(e) & is.null(occs.testing.z)) stop("If using fully withheld testing data, input either an ENMevaluation object or occs.testing.z.")
     if(!is.null(e)) occs.testing.z <- e@occs.testing
+    names(occs.testing.z)[1:2] <- c("longitude","latitude")
     occs.testing.z[[categoricals]] <- NULL
     occs.testing.z <- occs.testing.z %>% mutate(type = 1, partition = 2)
     pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
@@ -336,7 +342,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
   
-  if(!is.null(categoricals) & !is.null(envs)) envs <- dropLayer(envs, categoricals)
+  if(!is.null(categoricals) & !is.null(envs)) envs <- raster::dropLayer(envs, categoricals)
   
   if(!is.null(envs.vars)) {
     if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))

@@ -223,6 +223,11 @@ cv.enm <- function(d, envs, enm, partitions, tune.i, other.settings, partition.s
   if(partitions == "testing") {
     bg.val.z <- data.frame()
     occs.testing.zEnvs <- occs.testing.z %>% dplyr::select(all_of(envs.names))
+    if(other.settings$doClamp == TRUE) {
+      occs.testing.zEnvs <- clamp.vars(orig.vals = occs.testing.zEnvs, ref.vals = rbind(occs.z, bg.z), 
+                          left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
+                          categoricals = other.settings$categoricals)
+    }
     validate <- tune.validate(enm, occs.z, occs.testing.zEnvs, bg.z, bg.val.z, mod.full, 0, other.settings, partitions, user.eval, quiet)
     test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, stringsAsFactors = FALSE) %>% cbind(validate)
     cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = test.stats.df) 

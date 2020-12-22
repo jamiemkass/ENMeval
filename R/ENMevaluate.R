@@ -203,29 +203,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     enm <- user.enm
   }
   
-  ################# #
-  # CLAMPING ####
-  ################# #
-  if(doClamp == TRUE) {
-    # record in other.settings
-    other.settings$doClamp <- TRUE
-    
-    if(!is.null(envs)) {
-      if(is.null(clamp.directions)) {
-        clamp.directions$left <- names(envs)
-        clamp.directions$right <- names(envs)
-      }
-      # record in other.settings
-      other.settings$clamp.directions <- clamp.directions
-      envs <- clamp.vars(orig.vals = envs, ref.vals = rbind(occs.z, bg.z)[,-1:-2], 
-                         left = clamp.directions$left, right = clamp.directions$right, 
-                         categoricals = categoricals)
-      if(quiet != TRUE) message("* Clamping predictor variable rasters...")
-    }
-  }else{
-    other.settings$doClamp <- FALSE
-  }
-  
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
   ########################################################### #
@@ -340,6 +317,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   # drop categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
+  
+  ################# #
+  # CLAMPING ####
+  ################# #
+  if(doClamp == TRUE) {
+    # record in other.settings
+    other.settings$doClamp <- TRUE
+    
+    if(!is.null(envs)) {
+      if(is.null(clamp.directions)) {
+        clamp.directions$left <- names(envs)
+        clamp.directions$right <- names(envs)
+      }
+      # record in other.settings
+      other.settings$clamp.directions <- clamp.directions
+      envs <- clamp.vars(orig.vals = envs, ref.vals = rbind(occs.z, bg.z), 
+                         left = clamp.directions$left, right = clamp.directions$right, 
+                         categoricals = categoricals)
+      if(quiet != TRUE) message("* Clamping predictor variable rasters...")
+    }
+  }else{
+    other.settings$doClamp <- FALSE
+  }
   
   ###################### #
   # ASSIGN PARTITIONS ####

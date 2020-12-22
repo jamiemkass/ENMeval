@@ -289,7 +289,7 @@ The 'testing' method evaluates the model on a testing dataset that is not used t
 
 ```{r part.ind, fig.width = 5, fig.height = 5}
 # First, let's plot the testing points with the rest of our data
-evalplot.grps(pts = occs.test, pts.grp = occs.test.grp, envs = envs.bg)
+evalplot.grps(pts = rbind(occs, occs.testing), pts.grp = c(rep(1, nrow(occs)), rep(2, nrow(occs.testing))), envs = envs.bg)
 # Next, let's extract the predictor variable values for our testing points
 occs.testing.z <- cbind(occs.testing, raster::extract(envs, occs.testing))
 # We use the same background groups as random partitions here because the background used for testing data 
