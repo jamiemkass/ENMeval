@@ -67,9 +67,14 @@ NULL
 #' @description This is a named list used to specify extra settings for the analysis.
 #' It is inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
 #' so if they are not specified the analysis will be run with default settings.
+#' @details The "partition" option for the argument validation.bg should only be used for
+#' evaluations on spatial partitions.
 #' @param abs.auc.diff boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)
-#' @param validation.bg character: either "full" to calculate AUC and CBI with respect to the full background, or
-#' "partition" to calculate them with respect to the validation partition background (default: "full")
+#' @param validation.bg character: either "full" to calculate training and validation AUC and CBI 
+#' for cross-validation with respect to the full background (default), or "partition" (meant for 
+#' spatial partitions only; see Details) to calculate each with respect to the partitioned background only 
+#' (i.e., training occurrences are compared to training background, and validation occurrences 
+#' compared to validation background)
 #' @param pred.type character: specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters (default: "cloglog")
 #' @param other.args named list: any additional model arguments not specified for tuning
 NULL

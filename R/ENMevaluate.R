@@ -144,23 +144,23 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
                       "checkerboard2", "user", "testing", "none")
   
   if(!(partitions %in% all.partitions)) {
-    stop("* Please enter an accepted partition method.")
+    stop("Please enter an accepted partition method.")
   }
   
   if(partitions == "testing" & is.null(occs.testing)) {
-    stop("* If doing testing evaluations, please provide testing data (occs.testing).")
+    stop("If doing testing evaluations, please provide testing data (occs.testing).")
   }
   
   if((partitions == "checkerboard1" | partitions == "checkerboard2") & is.null(envs)) {
-    stop('* For checkerboard partitioning, predictor variable rasters "envs" are required.')
+    stop('For checkerboard partitioning, predictor variable rasters "envs" are required.')
   }
   
   if(partitions == "randomkfold") {
     if(is.null(partition.settings$kfolds)) {
-      stop('* For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
+      stop('For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
     }else{
       if(partition.settings$kfolds == 0) {
-        stop('* For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
+        stop('For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
       }
     }
   }
@@ -182,7 +182,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   # make sure occs and bg are data frames with identical column names
   if(all(names(occs) != names(bg)) & !is.null(bg)) {
-    stop('* Datasets "occs" and "bg" have different column names. Please make them identical and try again.')
+    stop('Datasets "occs" and "bg" have different column names. Please make them identical and try again.')
   }
   
   if(doClamp == FALSE & !is.null(clamp.directions)) {
@@ -193,6 +193,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   tune.args.num <- which((sapply(tune.args, class) %in% c("numeric", "integer")) & sapply(tune.args, length) > 1)
   for(i in tune.args.num) {
     tune.args[[i]] <- sort(tune.args[[i]])
+  }
+  
+  # make sure that validation.bg is only "bg" if the partitions are spatial
+  if(!(partitions %in% c("block","checkerboard1","checkerboard2","user")) & other.settings$validation.bg == "partition") {
+    stop('If using non-spatial partitions, please set validation.bg to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?other.settings for details.')
+  }else if(partitions == "user" & other.settings$validation.bg == "partition") {
+    message('* Please make sure that the user-specified partitions are spatial, else validation.bg should be set to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?other.settings for details.')
   }
   
   # choose a built-in ENMdetails object matching the input model name

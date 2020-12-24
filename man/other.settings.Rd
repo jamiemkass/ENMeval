@@ -13,8 +13,11 @@ ENMevaluate(..., other.settings = os)
 \arguments{
 \item{abs.auc.diff}{boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)}
 
-\item{validation.bg}{character: either "full" to calculate AUC and CBI with respect to the full background, or
-"partition" to calculate them with respect to the validation partition background (default: "full")}
+\item{validation.bg}{character: either "full" to calculate training and validation AUC and CBI 
+for cross-validation with respect to the full background (default), or "partition" (meant for 
+spatial partitions only; see Details) to calculate each with respect to the partitioned background only 
+(i.e., training occurrences are compared to training background, and validation occurrences 
+compared to validation background)}
 
 \item{pred.type}{character: specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters (default: "cloglog")}
 
@@ -24,4 +27,8 @@ ENMevaluate(..., other.settings = os)
 This is a named list used to specify extra settings for the analysis.
 It is inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
 so if they are not specified the analysis will be run with default settings.
+}
+\details{
+The "partition" option for the argument validation.bg should only be used for
+evaluations on spatial partitions.
 }
