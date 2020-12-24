@@ -38,7 +38,7 @@ maxent.jar.args <- function(occs.z, bg.z, tune.i, other.settings) {
   out <- list()
   out$x <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
-  out$args <- c("noaddsamplestobackground", "noremoveDuplicates", "noautofeature")
+  out$args <- c("noremoveDuplicates", "noautofeature")
   if(!grepl("L", tune.i$fc)) out$args <- c(out$args, "nolinear")
   if(!grepl("Q", tune.i$fc)) out$args <- c(out$args, "noquadratic")
   if(!grepl("H", tune.i$fc)) out$args <- c(out$args, "nohinge")
