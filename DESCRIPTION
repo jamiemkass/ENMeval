@@ -1,29 +1,33 @@
 Package: ENMeval
 Type: Package
-Title: Automated Runs and Evaluations of Ecological Niche Models
-Version: 0.3.1
-Date: 2020-09-08
-Author: Robert Muscarella, Peter J. Galante, Mariano Soley-Guardia, Robert A. Boria, Jamie M. Kass, Maria Uriarte and Robert P. Anderson
-Maintainer: Robert Muscarella <bob.muscarella@gmail.com>
-Description: Automatically partitions data into evaluation bins, executes ecological niche models across a range of settings, and calculates a variety of evaluation statistics.  Current version only implements ENMs with Maxent (Phillips et al. 2006) or maxnet (Phillips et al. 2017).
+Title: Automated Tuning and Evaluations of Ecological Niche Models
+Version: 2.0.0
+Date: 2020-12-25
+Author: Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert A. Boria, Mariano Soley-Guardia, and Robert P. Anderson
+Maintainer: Jamie M. Kass <jamie.m.kass@gmail.com>
+Description: Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate niche overlap between model predictions, among others. Originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but current version allows possible extensions for any modeling algorithm.
 License: GPL
 Encoding: UTF-8
-Depends: methods, R (>= 3.4), dismo
-Imports: doParallel, 
+Depends: methods, R (>= 3.5.0), magrittr, raster, sp
+Imports: 
+  dismo,
+  doSNOW, 
+  doParallel,
+  parallel,
 	foreach, 
 	utils, 
 	graphics, 
 	stats, 
 	grDevices, 
-	raster,
-	maxnet
-Suggests: rJava (>= 0.5-0),
-	parallel, 
-	knitr, 
-	rmarkdown, 
-	spocc, 
-	maptools, 
-	rgeos,
-	sp
+	maxnet,
+	gbm,
+	ranger
+Suggests: 
+  rJava (>= 0.5-0),
+  knitr,
+  rmarkdown,
+  spocc,
+  testthat
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1
+Remotes: johnbaums/rmaxent
