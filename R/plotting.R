@@ -185,7 +185,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
                                  hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
   
   pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
-
+  
   envs.names <- pts.plot %>% dplyr::select(-longitude, -latitude, -partition, -type) %>% names()
   
   if(!is.null(envs.vars)) {
@@ -385,7 +385,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
     tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
   # add buffer
   plot.df <- plot.df %>% dplyr::filter(x > min(pts.plot$longitude) - bb.buf, x < max(pts.plot$longitude) + bb.buf,
-                                y > min(pts.plot$latitude) - bb.buf, y < max(pts.plot$latitude) + bb.buf)
+                                       y > min(pts.plot$latitude) - bb.buf, y < max(pts.plot$latitude) + bb.buf)
   
   if(sim.type != "mess") {
     if(is.null(sim.palette)) sim.palette <- "Set1"
@@ -557,7 +557,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
   if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
   
   if(plot.type == "violin") {
-    ggplot2::ggplot(null.avgs, ggplot2::aes(x = metric, y = avg)) + 
+    g <- ggplot2::ggplot(null.avgs, ggplot2::aes(x = metric, y = avg)) + 
       ggplot2::geom_violin(draw_quantiles = c(0.01, 0.05, 0.5, 0.95, 0.99)) +
       ggplot2::geom_point(data = emp.res, ggplot2::aes(y = avg), color = "red") +
       ggplot2::theme_bw()  
@@ -587,11 +587,11 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
                                                 `0.99 quantile` = "dotted",
                                                 `empirical value` = "solid")) +
       ggplot2::scale_size_manual(values = c(`0.01 quantile` = 1, 
-                                                `0.05 quantile` = 1,
-                                                `0.50 quantile` = 1,
-                                                `0.95 quantile` = 1, 
-                                                `0.99 quantile` = 1,
-                                                `empirical value` = 0.5)) +
+                                            `0.05 quantile` = 1,
+                                            `0.50 quantile` = 1,
+                                            `0.95 quantile` = 1, 
+                                            `0.99 quantile` = 1,
+                                            `empirical value` = 0.5)) +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.title=ggplot2::element_blank(), 
                      legend.position="bottom")
