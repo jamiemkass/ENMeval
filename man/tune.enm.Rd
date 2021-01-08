@@ -16,6 +16,7 @@ tune.train(
   mod.full,
   mod.full.pred,
   envs,
+  tune.tbl.i,
   other.settings,
   partitions,
   quiet
@@ -29,6 +30,7 @@ tune.validate(
   bg.val.z,
   mod.k,
   nk,
+  tune.tbl.i,
   other.settings,
   partitions,
   user.eval,
@@ -71,7 +73,7 @@ cv.enm(
   envs,
   enm,
   partitions,
-  tune.i,
+  tune.tbl.i,
   other.settings,
   partition.settings,
   user.val.grps,
@@ -85,6 +87,8 @@ cv.enm(
 
 \item{envs}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
 
+\item{tune.tbl.i}{vector of single set of tuning parameters}
+
 \item{other.settings}{named list: settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg}
 
 \item{partitions}{character: name of partitioning technique (see \code{?partitions})}
@@ -96,8 +100,6 @@ cv.enm(
 \item{numCores}{numeric: number of cores to use for parallel processing; if NULL, all available cores will be used}
 
 \item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW")}
-
-\item{tune.i}{vector of single set of tuning parameters}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 

@@ -6,7 +6,9 @@ maxent.jar.name <- "maxent.jar"
 
 maxent.jar.fun <- dismo::maxent
 
-maxent.jar.msgs <- function(tune.args, other.settings) {
+maxent.jar.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
+                          partition.settings, other.settings, 
+                          categoricals, doClamp, clamp.directions) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
     stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
   }else{
@@ -25,9 +27,12 @@ maxent.jar.msgs <- function(tune.args, other.settings) {
       rJava::.jpackage('dismo')
       options(dismo_rJavaLoaded=TRUE)
     } else {
-      stop('rJava cannot be loaded')
+      stop('rJava cannot be loaded.')
     }
   }
+}
+
+maxent.jar.msgs <- function(tune.args, other.settings) {
   mxe <- rJava::.jnew("meversion") 
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
   msg <- paste0("maxent.jar v", v, " from dismo package v", packageVersion('dismo'))
@@ -49,7 +54,7 @@ maxent.jar.args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-maxent.jar.predict <- function(mod, envs, other.settings) {
+maxent.jar.predict <- function(mod, envs, tune.tbl.i, other.settings) {
   output.format <- paste0("outputformat=", other.settings$pred.type)
   pred <- dismo::predict(mod, envs, args = c(output.format, "doclamp=false"), na.rm = TRUE)
   return(pred)
@@ -93,6 +98,6 @@ maxent.jar.varimp <- function(mod) {
 #' had turned this off. Specifically, previous versions ran maxent() with "noaddsamplestobackground"
 #' in the "args" vector argument, while this version does not.
 #' @export
-enm.maxent.jar <- ENMdetails(name = maxent.jar.name, fun = maxent.jar.fun, 
+enm.maxent.jar <- ENMdetails(name = maxent.jar.name, fun = maxent.jar.fun, errors = maxent.jar.errors,
                              msgs = maxent.jar.msgs, args = maxent.jar.args,
                              predict = maxent.jar.predict, ncoefs = maxent.jar.ncoefs, varimp = maxent.jar.varimp)

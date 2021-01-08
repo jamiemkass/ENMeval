@@ -210,6 +210,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     enm <- user.enm
   }
   
+  # algorithm-specific errors
+  enm@errors(occs, envs, bg, tune.args, partitions, algorithm, partition.settings, other.settings, 
+             categoricals, doClamp, clamp.directions)
+  
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
   ########################################################### #
@@ -395,9 +399,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ################# #
   # print model-specific message
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(), "***\n"))
   }
   
   ################# #
@@ -522,11 +526,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
     if(!is.null(envs)) {
-      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, aic.settings))
+      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, NULL, aic.settings))
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], NULL, aic.settings))
     aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }

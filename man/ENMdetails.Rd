@@ -4,7 +4,7 @@
 \alias{ENMdetails}
 \title{ENMdetails class}
 \usage{
-ENMdetails(name, fun, msgs, args, predict, ncoefs, varimp)
+ENMdetails(name, fun, errors, msgs, args, predict, ncoefs, varimp)
 }
 \description{
 An S4 class that details packages, functions, messages associated with a specific species distribution model (SDM) or ecological niche model (ENM). 

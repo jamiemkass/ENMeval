@@ -155,16 +155,16 @@ setMethod("show",
 ENMdetails <- setClass("ENMdetails",
                        slots = c(name = 'character',
                                  fun = 'function',
+                                 errors = 'function',
                                  msgs = 'function',
                                  args = 'function',
                                  predict = 'function',
                                  ncoefs = 'function',
                                  varimp = 'function'))
 #' @export
-ENMdetails <- function(name, fun, msgs, args, predict, ncoefs, varimp) {
-  new("ENMdetails", name = name, fun = fun,
-      msgs = msgs, args = args,
-      predict = predict, ncoefs = ncoefs, varimp = varimp)
+ENMdetails <- function(name, fun, errors, msgs, args, predict, ncoefs, varimp) {
+  new("ENMdetails", name = name, fun = fun, errors = errors, msgs = msgs, 
+      args = args, predict = predict, ncoefs = ncoefs, varimp = varimp)
 }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
@@ -185,6 +185,17 @@ setMethod("enm.fun", "ENMdetails", function(x) x@fun)
 #' @export
 setMethod("enm.fun<-", "ENMdetails", function(x, value) {
   x@fun <- value
+  validObject(x)
+  x
+})
+
+setGeneric("enm.errors", function(x) standardGeneric("enm.errors"))
+setGeneric("enm.errors<-", function(x, value) standardGeneric("enm.errors<-"))
+#' @export
+setMethod("enm.errors", "ENMdetails", function(x) x@errors)
+#' @export
+setMethod("enm.errors<-", "ENMdetails", function(x, value) {
+  x@errors <- value
   validObject(x)
   x
 })
