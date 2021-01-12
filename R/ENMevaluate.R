@@ -222,14 +222,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(envs)) {
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
     envs <- raster::stack(envs)
-    envs.z <- raster::values(envs)
-    envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
-    if(envs.naMismatch > 0) {
-      if(quiet != TRUE) message(paste0("* Found ", envs.naMismatch, " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables."))
-      envs.names <- names(envs)
-      envs <- raster::stack(calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x))
-      names(envs) <- envs.names
-    }
+    # if NA exists for one variable in rasterStack but not others, make all other NA too
+    envs <- rasStackNAs(envs)
     # if no background points specified, generate random ones
     if(is.null(bg)) {
       if(quiet != TRUE) message(paste0("* Randomly sampling ", n.bg, " background points ..."))
@@ -577,7 +571,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       for(ovStat in overlapStat) {
         if(quiet != TRUE) message(paste0("Calculating niche overlap for statistic ", ovStat, "..."))
         # turn negative values to 0 for niche overlap calculations
-        predictions.noNegs <- calc(e@predictions, function(x) {x[x<0] <- 0; x})
+        predictions.noNegs <- raster::calc(e@predictions, function(x) {x[x<0] <- 0; x})
         overlap.mat <- calc.niche.overlap(predictions.noNegs, ovStat, quiet)
         e@overlap[[ovStat]] <- overlap.mat
       }

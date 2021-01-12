@@ -205,3 +205,7 @@ test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
 
 context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions and no input background data..."))
 test_evalplot.nulls(ns)
+
+# clamping
+context(paste("Testing clamping function for", algorithm, "..."))
+test_clamp(e, envs, occs.z, bg.z, categoricals = NULL, canExtrapolate = FALSE)

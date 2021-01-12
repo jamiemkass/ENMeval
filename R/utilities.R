@@ -79,6 +79,19 @@ NULL
 #' @param other.args named list: any additional model arguments not specified for tuning
 NULL
 
+#' @export
+rasStackNAs <- function(envs) {
+  envs.z <- raster::values(envs)
+  envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
+  if(envs.naMismatch > 0) {
+    message(paste0("* Found ", envs.naMismatch, " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables."))
+    envs.names <- names(envs)
+    envs <- raster::stack(raster::calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x))
+    names(envs) <- envs.names
+  }
+  return(envs)
+}
+
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
 #' @param orig.vals RasterStack / matrix / data frame: environmental predictor variables (must be in same geographic 
@@ -108,16 +121,29 @@ NULL
 #' @export
 
 clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL) {
+  # find if orig.vals is a raster or not
+  isRas <- inherits(orig.vals, "BasicRaster") == TRUE
+  # error if "none" is included in left or right alongside variable names
   if((("none" %in% left) & length(left) > 1) | (("none" %in% right) & length(right) > 1)) {
     stop('To turn clamping off, specify the argument left, right or both of them to "none".')
   }
-  
+  # error if both sides are set to "none"
   if(!is.null(left) & !is.null(right)) {
     if(("none" %in% left) & ("none" %in% right)) {
       warning('Both left and right were set to "none", so clamping was not performed.')
       return(orig.vals)
     }
   }
+  # convert grid cells or rows to NA exist in input data frames
+  if(isRas == TRUE) {
+    orig.vals <- rasStackNAs(orig.vals)
+  }else{
+    orig.na <- sum(rowSums(is.na(orig.vals)))
+    ref.na <- sum(rowSums(is.na(ref.vals)))
+    if(orig.na > 0) stop("There are one or more NAs in the orig.vals table. Please remove them and rerun.")
+    if(ref.na > 0) stop("There are one or more NAs in the ref.vals table. Please remove them and rerun.")  
+  }
+  
   # remove categorical variables from clamping analysis
   if(!is.null(categoricals)) {
     if(inherits(orig.vals, "BasicRaster") == TRUE) {
