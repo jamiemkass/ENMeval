@@ -161,11 +161,11 @@ ENMdetails <- setClass("ENMdetails",
                                  predict = 'function',
                                  ncoefs = 'function',
                                  varimp = 'function'))
-#' @export
-ENMdetails <- function(name, fun, errors, msgs, args, predict, ncoefs, varimp) {
-  new("ENMdetails", name = name, fun = fun, errors = errors, msgs = msgs, 
-      args = args, predict = predict, ncoefs = ncoefs, varimp = varimp)
-}
+
+#' ENMdetails <- function(name, fun, errors, msgs, args, predict, ncoefs, varimp) {
+#'   new("ENMdetails", name = name, fun = fun, errors = errors, msgs = msgs, 
+#'       args = args, predict = predict, ncoefs = ncoefs, varimp = varimp)
+#' }
 
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
 setGeneric("enm.name<-", function(x, value) standardGeneric("enm.name<-"))

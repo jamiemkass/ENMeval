@@ -79,8 +79,8 @@
 #'
 #' @importFrom magrittr %>%
 #' @importFrom foreach %dopar%
-#' @export 
 #' 
+#' @export 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitions = NULL, algorithm = NULL, 
                         partition.settings = list(orientation = "lat_lon", aggregation.factor = 2, kfolds = 5), 
@@ -210,6 +210,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     enm <- user.enm
   }
   
+  # get unique values of user partition groups to make sure they all remain after occurrence data processing
+  if(!is.null(user.grp)) {
+    user.grp.uniq <- unique(c(user.grp$occs.grp, user.grp$bg.grp))
+  }
+  
   # algorithm-specific errors
   enm@errors(occs, envs, bg, tune.args, partitions, algorithm, partition.settings, other.settings, 
              categoricals, doClamp, clamp.directions)
@@ -280,6 +285,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(user.grp)) {
     d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occs.grp))
     d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
+    if(!all(user.grp.uniq %in% d$grp)) stop("Removal of cell duplicates caused one or more user partition groups to be missing. Please make sure all partition groups are represented by at least one non-duplicate occurrence record.")
+    d$grp <- factor(d$grp)
   }
   
   ############################################ #
@@ -378,12 +385,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
                           none = "* Skipping model evaluations (only calculating full model statistics)...")
   if(quiet != TRUE) message(parts.message)
   
-  # record user partition settings
-  if(partitions == "user") partition.settings <- c(partition.settings, kfolds = length(unique(user.grp$occs.grp)))
-  
   # if jackknife partitioning, do not calculate CBI because there are too few validation occurrences
   # per partition (n=1) to have a meaningful result
   if(partitions == "jackknife") other.settings$cbi.cv <- FALSE else other.settings$cbi.cv <- TRUE
+  
+  # record user partition settings and do same check as above if partitions are identical to jackknife
+  if(partitions == "user") {
+    user.nk <- length(unique(user.grp$occs.grp))
+    partition.settings$kfolds <- user.nk
+    if(user.nk == nrow(d[d$pb==1,])) other.settings$cbi.cv <- FALSE else other.settings$cbi.cv <- TRUE
+  }
   
   # add these values as the 'grp' column
   if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))

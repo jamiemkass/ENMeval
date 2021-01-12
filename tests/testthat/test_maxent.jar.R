@@ -204,4 +204,5 @@ context(paste("Testing ENMnulls plotting function for", algorithm, "with random 
 test_evalplot.nulls(ns)
 
 # clamping
+context(paste("Testing clamping function for", algorithm, "..."))
 test_clamp(e, envs, occs.z, bg.z, categoricals = "biome")
