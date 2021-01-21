@@ -1,7 +1,7 @@
 Package: ENMeval
 Type: Package
 Title: Automated Tuning and Evaluations of Ecological Niche Models
-Version: 2.0.0
+Version: 1.9.0
 Date: 2020-12-25
 Author: Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert A. Boria, Mariano Soley-Guardia, and Robert P. Anderson
 Maintainer: Jamie M. Kass <jamie.m.kass@gmail.com>
