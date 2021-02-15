@@ -21,13 +21,19 @@ Imports:
 	grDevices, 
 	maxnet,
 	gbm,
-	ranger
+	ranger,
+	dplyr,
+	ggplot2
 Suggests: 
   rJava (>= 0.5-0),
   knitr,
   rmarkdown,
   spocc,
-  testthat
+  testthat,
+  RColorBrewer,
+	rasterVis,
+	sf,
+	blockCV
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1
 Remotes: johnbaums/rmaxent
