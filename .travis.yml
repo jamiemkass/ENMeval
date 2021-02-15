@@ -1,3 +1,5 @@
 language: r
-apt_packages:
-  - r-cran-rjava
+addons:
+  apt:
+    packages:
+      - r-cran-rjava
