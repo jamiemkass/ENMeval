@@ -3,3 +3,4 @@ addons:
   apt:
     packages:
       - r-cran-rjava
+      - libudunits2-dev
