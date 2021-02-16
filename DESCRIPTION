@@ -36,6 +36,7 @@ Suggests:
   RColorBrewer,
 	rasterVis,
 	sf,
-	blockCV
+	blockCV,
+	devtools
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1
