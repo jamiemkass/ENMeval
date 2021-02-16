@@ -73,7 +73,7 @@ With sim.type option "mess", the similarity between environmental values associa
 validation occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
 of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
 Higher negative values indicate greater environmental difference between the validation occurrences
-and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
+and the study extent, and higher positive values indicate greater similarity. This function uses the `similarity()` function 
 to calculate the similarities. See the below reference for details on MESS.
 }
 \references{

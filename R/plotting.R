@@ -173,7 +173,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' validation occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
 #' of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
 #' Higher negative values indicate greater environmental difference between the validation occurrences
-#' and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
+#' and the study extent, and higher positive values indicate greater similarity. This function uses the `similarity()` function 
 #' to calculate the similarities. See the below reference for details on MESS. 
 #' @return A ggplot of MESS calculations for data partitions.
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
@@ -210,7 +210,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
     train.z <- pts.plot %>% dplyr::filter(partition != k) %>% dplyr::select(-longitude, -latitude, -partition, -type)
     
     sim <- tryCatch({
-      rmaxent::similarity(train.z, test.z)
+      similarity(train.z, test.z)
     }, error = function(cond) {
       message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
       # Choose a return value in case of error
@@ -314,7 +314,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' validation occurrences (per partition group) and those associated with the entire study extent (specified by the extent 
 #' of the input RasterStack "envs") are calculated, and the minimum similarity per grid is returned. 
 #' Higher negative values indicate greater environmental difference between the validation occurrences
-#' and the study extent, and higher positive values indicate greater similarity. This function uses the `rmaxent::similarity()` function 
+#' and the study extent, and higher positive values indicate greater similarity. This function uses the `similarity()` function 
 #' to calculate the similarities. See the below reference for details on MESS. 
 #' @return A ggplot of MESS calculations for data partitions.
 #' @references Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
@@ -368,7 +368,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
     
     sim <- tryCatch({
-      rmaxent::similarity(envs, test.z)
+      similarity(envs, test.z)
     }, error = function(cond) {
       message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
       # Choose a return value in case of error

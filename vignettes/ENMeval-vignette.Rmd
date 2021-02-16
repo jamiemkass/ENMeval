@@ -115,8 +115,8 @@ Now let's take a look at which areas of this extent are climatically different a
 occs.z <- raster::extract(envs[[-9]], occs)
 # Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
 # Just as a note, you cannot input categorical variables into this function or it won't work
-# occs.sim <- rmaxent::similarity(envs[[-9]], occs.z)
-# occs.mess <- occs.sim$similarity_min
+occs.sim <- similarity(envs[[-9]], occs.z)
+occs.mess <- occs.sim$similarity_min
 # This is the MESS plot -- increasingly negative values represent increasingly different climatic
 # conditions from the reference (our occurrences), while increasingly positive values are more similar
 # First, we'll make a SpatialPoints object for our occurrences for plotting with levelplot from the rasterVis package
