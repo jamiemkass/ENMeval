@@ -46,9 +46,8 @@ We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](htt
 ```{r occDownload}
 # Load packages -- the order here is important because some pkg functions overwrite others
 library(ENMeval)
-library(dismo)
+library(raster)
 library(dplyr)
-library(ggplot2)
 
 # Set a random seed in order to be able to reproduce this analysis
 set.seed(48)
@@ -78,9 +77,9 @@ envs <- raster::stack(envs.files)
 # ENMeval will do this automatically, but let's do it here to avoid the warning message later
 # We change back from a RasterBrick to RasterStack because of issues with assigning factor rasters
 # for RasterBricks
-envs <- raster::mask(envs, envs[[9]]) %>% stack()
+envs <- raster::mask(envs, envs[[9]]) %>% raster::stack()
 # Make sure to declare the categorical variable as a factor
-envs$biome <- as.factor(envs$biome)
+envs$biome <- raster::as.factor(envs$biome)
 # Let's now remove occurrences that are cell duplicates
 # ALthough Maxent does this by default, keep in mind that for other algorithms you may
 # or may not want to do this based on the aims of your study
@@ -152,7 +151,7 @@ crs(envs) <- raster::crs(occs.sf)
 # We choose 7 degrees here to avoid sampling the Caribbean islands
 # For simplicity, this vignette does not involve coordinate reference system (CRS) transformations,
 # but for a real analysis, transforming to a projected CRS before buffering is best practice
-occs.buf <- sf::st_buffer(occs.sf, dist = 7) %>% st_union() %>% st_sf()
+occs.buf <- sf::st_buffer(occs.sf, dist = 7) %>% sf::st_union() %>% sf::st_sf()
 plot(envs[[1]], main = names(envs)[1])
 points(occs)
 # To add sf objects to a plot, use add = TRUE
@@ -202,10 +201,10 @@ table(block$occs.grp)
 # We can plot our partitions on one of our predictor variable rasters to visualize where they fall in space
 # The ENMeval plotting functions use ggplot2, a widely popular plotting package for R with many online resources
 # We can add to the ggplots with other ggplot functions in an additive way, making these plots easily customizable
-evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg) + ggtitle("Spatial block partitions: occurrences")
+evalplot.grps(pts = occs, pts.grp = block$occs.grp, envs = envs.bg) + ggplot2::ggtitle("Spatial block partitions: occurrences")
 # PLotting the background shows that the background extent is partitioned in a way that maximizes evenness
 # of points across the four bins, not to maximize evenness of area
-evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg) + ggtitle("Spatial block partitions: background")
+evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg) + ggplot2::ggtitle("Spatial block partitions: background")
 # If we are curious how different the environment associated with each partition is from that of all the others,
 # we can use this function to plot histograms or rasters of MESS predictions with each partition as the reference
 # It is clear that the block method results in partitions that can differ widely in their environmental representation

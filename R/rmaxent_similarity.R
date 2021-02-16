@@ -1,9 +1,8 @@
-# NOTICE: This function is from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/)
-# As rmaxent is not on CRAN currently, ENMeval is including this function internally with John's permission
-# to make ENMeval CRAN-compatible (dependencies on Github-only packages are not allowed for CRAN)
-
 #' Calculate Multivariate Environmental Similarity
 #'
+#' NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
+#  It is included here with John's permission to make ENMeval CRAN-compatible (dependencies on Github-only packages are not allowed for CRAN).
+#' 
 #' Calculate Multivariate Environmental Similarity and most dissimilar/similar 
 #' variables with respect to a reference dataset, for a set of environmental 
 #' variables.
@@ -40,7 +39,6 @@
 #' @importFrom raster stack nlayers init as.data.frame raster
 #' @importFrom methods is
 #' @importFrom stats na.omit
-#' @export
 #' @examples
 #' library(dismo)
 #' library(raster)
@@ -57,6 +55,7 @@
 #' levelplot(mess$mod, col.regions=brewer.pal(8, 'Set1'))
 #' levelplot(mess$mos, col.regions=brewer.pal(8, 'Set1'))
 #' }
+#' @export
 
 similarity <- function(x, ref, full=FALSE) {
   if(!methods::is(ref, 'data.frame')) {
@@ -101,12 +100,12 @@ similarity <- function(x, ref, full=FALSE) {
     
     most_dissimilar <- raster::raster(out)
     most_dissimilar[] <- most_dissimilar_vec
-    most_dissimilar <- as.factor(most_dissimilar)
+    most_dissimilar <- raster::as.factor(most_dissimilar)
     levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)), 
                                                var=colnames(sim))
     most_similar <- raster::raster(out)
     most_similar[] <- most_similar_vec
-    most_similar <- as.factor(most_similar)
+    most_similar <- raster::as.factor(most_similar)
     levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)), 
                                             var=colnames(sim))  
     
