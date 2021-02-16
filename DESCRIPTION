@@ -22,8 +22,6 @@ Imports:
 	stats, 
 	grDevices, 
 	maxnet,
-	gbm,
-	ranger,
 	dplyr,
 	tidyr,
 	ggplot2,

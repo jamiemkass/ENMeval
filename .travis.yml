@@ -9,4 +9,3 @@ before_install:
   - sudo apt-get --yes --force-yes update -qq
   - sudo apt-get install --yes libudunits2-dev libproj-dev libgeos-dev libgdal-dev
   - sudo $(which R) CMD javareconf
-install: travis_wait 30
