@@ -35,7 +35,7 @@ buildRMM <- function(e, envs, rmm = NULL) {
   # partition metadata ####
   rmm$model$partition$numberFolds <- length(unique(e@occs.grp))
 
-  if(e@partition.method == "randonkfold") {
+  if(e@partition.method == "randomkfold") {
     rmm$model$partition$partitionSet <- "random k-fold"
     rmm$model$partition$partitionRule <- "random partition assignment with user-specified number of partitions"
     rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
@@ -83,7 +83,7 @@ buildRMM <- function(e, envs, rmm = NULL) {
   # model metadata ####
   if(e@algorithm == "maxent.jar") {
     rmm$model$algorithms <- paste(e@algorithm, maxentJARversion())
-    rmm$model$algorithmCitation <- "Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E., & Blair, M. E. (2017). Opening the black box: An open‐source release of Maxent. Ecography, 40(7), 887-893."
+    rmm$model$algorithmCitation <- "Phillips, S. J., Anderson, R. P., Dud\u161k, M., Schapire, R. E., & Blair, M. E. (2017). Opening the black box: An open-source release of Maxent. Ecography, 40(7), 887-893."
   }
   if(e@algorithm == "maxnet") {
     rmm$model$algorithms <- paste(e@algorithm, packageVersion("maxnet"))
