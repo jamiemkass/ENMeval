@@ -4,6 +4,7 @@ addons:
     packages:
       - r-cran-rjava
       - libudunits2-dev
+      - libgit2-dev
 before_install:
   - sudo add-apt-repository ppa:ubuntugis/ppa --yes
   - sudo apt-get --yes --force-yes update -qq
