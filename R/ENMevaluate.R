@@ -79,8 +79,12 @@
 #'
 #' @importFrom magrittr %>%
 #' @importFrom foreach %dopar%
+#' @importFrom grDevices rainbow
+#' @importFrom methods new slot validObject
+#' @importFrom stats pnorm predict quantile runif sd quantile
+#' @importFrom utils citation combn packageVersion setTxtProgressBar txtProgressBar
+#'
 #' @export 
-#' 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitions = NULL, algorithm = NULL, 
                         partition.settings = list(orientation = "lat_lon", aggregation.factor = 2, kfolds = 5), 

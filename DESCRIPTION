@@ -37,6 +37,8 @@ Suggests:
 	blockCV,
 	devtools,
 	ecospat,
-	rangeModelMetadata
+	rangeModelMetadata,
+	tibble,
+	latticeExtra
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1

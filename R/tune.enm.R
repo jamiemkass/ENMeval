@@ -10,7 +10,6 @@
 #' @param other.settings named list: settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg
 #' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
 #' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
-#' @importFrom ecospat ecospat.boyce
 #' @name tune.enm
 NULL
 
