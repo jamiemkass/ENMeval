@@ -14,7 +14,7 @@ bioclim.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
   }
 }
 
-bioclim.msgs <- function() {
+bioclim.msgs <- function(tune.args, other.settings) {
   msg <- paste0("BIOCLIM from dismo v", packageVersion('dismo'))
   return(msg)
 }

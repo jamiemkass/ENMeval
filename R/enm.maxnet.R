@@ -22,7 +22,7 @@ maxnet.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
   }
 }
 
-maxnet.msgs <- function() {
+maxnet.msgs <- function(tune.args, other.settings) {
   msg <- paste0("maxnet from maxnet package v", packageVersion('maxnet'))
   return(msg)
 }
