@@ -6,7 +6,9 @@ maxnet.name <- "maxnet"
 
 maxnet.fun <- maxnet::maxnet
 
-maxnet.msgs <- function(tune.args, other.settings) {
+maxnet.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
+                          partition.settings, other.settings, 
+                          categoricals, doClamp, clamp.directions) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
     stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
   }else{
@@ -17,9 +19,12 @@ maxnet.msgs <- function(tune.args, other.settings) {
     if(any(!tune.args[["fc"]] %in% all.fc)) {
       stop("Please input accepted values for 'fc' settings for Maxent.")
     }
-    msg <- paste0("maxnet from maxnet package v", packageVersion('maxnet'))
-    return(msg)
   }
+}
+
+maxnet.msgs <- function() {
+  msg <- paste0("maxnet from maxnet package v", packageVersion('maxnet'))
+  return(msg)
 }
 
 maxnet.args <- function(occs.z, bg.z, tune.i, other.settings) {
@@ -35,14 +40,14 @@ maxnet.args <- function(occs.z, bg.z, tune.i, other.settings) {
   return(out)
 }
 
-maxnet.predict <- function(mod, envs, other.settings) {
+maxnet.predict <- function(mod, envs, tune.tbl.i, other.settings) {
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "BasicRaster") == TRUE) {
     envs.n <- raster::nlayers(envs)
     envs.pts <- raster::getValues(envs) %>% as.data.frame()
     mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
-                              clamp = FALSE,  other.settings$other.args)
+                       clamp = FALSE,  other.settings$other.args)
     envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
     pred <- raster::rasterFromXYZ(cbind(raster::coordinates(envs), envs.pts$pred), res=raster::res(envs), crs = raster::crs(envs)) 
   }else{
@@ -67,6 +72,6 @@ maxnet.varimp <- function(mod) {
 #' which explicitly adds presences to the background for model training, though as the current 
 #' version of maxnet has this set to TRUE as default, behavior between ENMeval versions should not differ.
 #' @export
-enm.maxnet <- ENMdetails(name = maxnet.name, fun = maxnet.fun, 
+enm.maxnet <- ENMdetails(name = maxnet.name, fun = maxnet.fun, errors = maxnet.errors,
                          msgs = maxnet.msgs, args = maxnet.args,
                          predict = maxnet.predict, ncoefs = maxnet.ncoefs, varimp = maxnet.varimp)

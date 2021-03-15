@@ -4,7 +4,7 @@ author: "Jamie M. Kass, Robert Muscarella, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ENMeval v1.0.0 Vignette}
+  %\VignetteIndexEntry{ENMeval v1.9.0 Vignette}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 

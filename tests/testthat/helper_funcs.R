@@ -87,6 +87,54 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
   })
 }
 
+test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRUE) {
+  
+  p.z <- dplyr::bind_rows(occs.z, bg.z)[,-1:-2]
+  
+  none <- envs
+  all <- clamp.vars(orig.vals = envs, ref.vals = p.z, categoricals = categoricals)
+  left <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", categoricals = categoricals)
+  right <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", categoricals = categoricals)
+  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[c(7:8)], 
+                                right = names(envs)[c(4:6)], categoricals = categoricals)
+  subleft <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", 
+                                 left = names(envs)[c(4:6)], categoricals = categoricals)
+  subright <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", 
+                                  right = names(envs)[c(4:6)], categoricals = categoricals)
+  clamps.envs <- list(none=none, all=all, left=left, right=right, subboth=subboth, subleft=subleft, subright=subright)
+  
+  enm <- lookup.enm(e@algorithm)
+  m <- e@models[[1]]
+  
+  clamp.envs.p <- lapply(clamps.envs, function(x) enm@predict(m, x, NULL, list(pred.type = "cloglog")))
+  
+  combs <- expand.grid(x=names(clamp.envs.p), y=names(clamp.envs.p), stringsAsFactors = FALSE) %>% dplyr::filter(x != y)
+  
+  test_that("Clamped rasters are different from each other", {
+    for(i in 1:nrow(combs)) {
+      if(canExtrapolate == TRUE) {
+        expect_false(raster::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)  
+      }else{
+        expect_true(raster::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)
+      }
+      
+    }
+  })
+  
+  clamps.df <- lapply(clamps.envs, function(x) raster::getValues(x))
+  clamp.df.p <- lapply(clamps.df, function(x) enm@predict(m, x, NULL, list(pred.type = "cloglog")))
+  
+  test_that("Clamped data frames are different from each other", {
+    for(i in 1:nrow(combs)) {
+      if(canExtrapolate == TRUE) {
+        expect_false(isTRUE(all.equal(clamp.df.p[[combs[i,1]]], clamp.df.p[[combs[i,2]]])))
+      }else{
+        expect_true(isTRUE(all.equal(clamp.df.p[[combs[i,1]]], clamp.df.p[[combs[i,2]]])))
+      }
+    }
+  })
+}
+
 test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs, nparts.bg, n.sims, type = "") {
   mod.settings.tbl <- expand.grid(mod.settings)
   test_that("ENMnulls object and slots exist", {
