@@ -13,12 +13,15 @@ maxnet.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
     stop("Maxent settings must include 'rm' (regularization multiplier) and 'fc' (feature class) settings. See ?tune.args for details.")
   }else{
     if(!is.numeric(tune.args[["rm"]])) {
-      stop("Please input numeric values for 'rm' settings for Maxent.")
+      stop("Please input numeric values for 'rm' settings for maxnet.")
     }
     all.fc <- unlist(sapply(1:5, function(x) apply(combn(c("L","Q","H","P","T"), x), 2, function(y) paste(y, collapse = ""))))
     if(any(!tune.args[["fc"]] %in% all.fc)) {
-      stop("Please input accepted values for 'fc' settings for Maxent.")
+      stop("Please input accepted values for 'fc' settings for maxnet.")
     }
+  }
+  if(tune.args$rm <= 0) {
+    stop("Please input a positive value for 'rm' settings for maxnet.")
   }
 }
 
