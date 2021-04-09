@@ -11,7 +11,7 @@
 \usage{
 get.block(occs, bg, orientation = "lat_lon")
 
-get.checkerboard1(occs, envs, bg, aggregation.factor)
+get.checkerboard1(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
 
 get.checkerboard2(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
 
@@ -32,6 +32,8 @@ options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"}
 
 \item{aggregation.factor}{numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
 if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation}
+
+\item{gridSampleN}{numeric: the number of points sampled from the input raster using gridSample() by the checkerboard partitioning functions}
 
 \item{kfolds}{numeric: number of random \emph{k}-folds for \code{get.randomkfold} method}
 }

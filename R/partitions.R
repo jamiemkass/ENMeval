@@ -36,6 +36,7 @@
 #' options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"
 #' @param aggregation.factor numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
 #' if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation
+#' @param gridSampleN numeric: the number of points sampled from the input raster using gridSample() by the checkerboard partitioning functions
 #' @param kfolds numeric: number of random \emph{k}-folds for \code{get.randomkfold} method
 #' 
 #' @return
@@ -229,7 +230,7 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
 #' 
 #' @export
 
-get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
+get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   occs <- as.data.frame(occs)
   rownames(occs) <- 1:nrow(occs)
@@ -237,10 +238,10 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor){
   rownames(bg) <- 1:nrow(bg)
   
   grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
-  w <- dismo::gridSample(occs, grid, n=1e6, chess='white')
-  b <- dismo::gridSample(occs, grid, n=1e6, chess='black')
-  bgw <- dismo::gridSample(bg, grid, n=1e6, chess='white')
-  bgb <- dismo::gridSample(bg, grid, n=1e6, chess='black')
+  w <- dismo::gridSample(occs, grid, n=gridSampleN, chess='white')
+  b <- dismo::gridSample(occs, grid, n=gridSampleN, chess='black')
+  bgw <- dismo::gridSample(bg, grid, n=gridSampleN, chess='white')
+  bgb <- dismo::gridSample(bg, grid, n=gridSampleN, chess='black')
   
   if(nrow(w) > 0) { w$grp <- 1 }
   if(nrow(b) > 0) { b$grp <- 2 }

@@ -70,7 +70,7 @@
 #' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
 #' @param updateProgress boolean: if TRUE, use shiny progress bar; only for use in shiny apps
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
-#' @param legacy.arguments these are included to avoid unnecessary errors for older scripts, but in a later version
+#' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar these are included to avoid unnecessary errors for older scripts, but in a later version
 #' these arguments will be permanently deprecated
 #' 
 #' @return An ENMevaluation object. See ?ENMevaluation for details.
@@ -529,7 +529,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     # if no partitions assigned, eval.stats is the join of tune.tbl to training stats
     eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args") 
     if(nrow(val.stats.all) > 0) eval.stats <- dplyr::left_join(eval.stats, val.stats.all, by = "tune.args")
-    if("fold" %in% names(eval.stats)) eval.stats <- eval.stats %>% select(-fold)
+    if("fold" %in% names(eval.stats)) eval.stats <- eval.stats %>% dplyr::select(-fold)
   }
   
   # calculate number of non-zero parameters in model

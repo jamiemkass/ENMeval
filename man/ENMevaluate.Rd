@@ -122,7 +122,7 @@ this object, but if not, a new rangeModelMetadata object will be generated and w
 
 \item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
 
-\item{legacy.arguments}{these are included to avoid unnecessary errors for older scripts, but in a later version
+\item{occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds, clamp, progbar}{these are included to avoid unnecessary errors for older scripts, but in a later version
 these arguments will be permanently deprecated}
 }
 \value{

@@ -4,15 +4,17 @@
 \alias{calc.niche.overlap}
 \title{Calculate Similarity of ENMs in Geographic Space}
 \usage{
-calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
+calc.niche.overlap(predictors, overlapStat, quiet = FALSE)
 }
 \arguments{
 \item{predictors}{RasterStack: at least 2 Maxent raster predictions}
 
 \item{overlapStat}{character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")}
+
+\item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
 }
 \value{
-A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
+A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names correspond to the results table output by \code{\link{ENMevaluate}()}.
 }
 \description{
 Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).

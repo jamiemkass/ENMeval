@@ -18,6 +18,9 @@ NULL
 #' @slot bg data frame: background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector: partition groups for background points
 #' @slot overlap list: matrices of pairwise niche overlap statistics
+#' 
+#' @importFrom methods show
+#' 
 #' @export
 
 # class slots match older ENMeval versions
@@ -301,6 +304,7 @@ ENMnull <- setClass("ENMnull",
                               emp.bg.grp = 'factor'))
 
 setGeneric("null.algorithm", function(x) standardGeneric("null.algorithm"))
+
 #' @export
 setMethod("null.algorithm", "ENMnull", function(x) x@null.algorithm)
 

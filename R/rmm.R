@@ -6,6 +6,7 @@
 #' @param e ENMevaluation object
 #' @param envs RasterStack: environmental predictor variables used in analysis; needed to pull information on the predictor variables
 #' not included in the ENMevaluation object
+#' @param rmm rangeModelMetadata object: if included, fields are appended to this RMM object as opposed to returning a new RMM object
 #' @export
 
 buildRMM <- function(e, envs, rmm = NULL) {

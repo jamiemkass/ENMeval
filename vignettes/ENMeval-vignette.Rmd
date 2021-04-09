@@ -498,7 +498,7 @@ You can also specify your own custom validation statistics for `ENMevaluate()` t
 devtools::install_github("marlonecobos/kuenm")
 library(kuenm)
 proc <- function(vars) {
-  proc <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
+  proc <- kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
   out <- data.frame(proc_auc_ratio = proc$pROC_summary[1], 
                     proc_pval = proc$pROC_summary[2], row.names = NULL)
   return(out)

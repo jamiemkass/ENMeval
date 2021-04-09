@@ -2,7 +2,7 @@
 % Please edit documentation in R/utilities.R
 \name{corrected.var}
 \alias{corrected.var}
-\title{Calculate variance corrected for non-independence of \emph{k}-fold iterations}
+\title{Corrected variance function}
 \usage{
 corrected.var(x, nk)
 }
@@ -15,10 +15,13 @@ corrected.var(x, nk)
 A numeric value of the corrected variance.
 }
 \description{
-`corrected.var` calculates variance corrected for non-independence of \emph{k}-fold iterations.  See Appendix of Shcheglovitova & Anderson (2013) and other references (Miller 1974; Parr 1985; Shao and Wu 1989) for additional details.
+Calculate variance corrected for non-independence of \emph{k}-fold iterations
 }
 \details{
-This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  Following Shao and Wu (1989): 
+`corrected.var` calculates variance corrected for non-independence of \emph{k}-fold iterations.  
+See Appendix of Shcheglovitova & Anderson (2013) and other references (Miller 1974; Parr 1985; Shao and Wu 1989) for additional details. 
+This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  
+Following Shao and Wu (1989): 
 
 \deqn{Sum Of Squares * ((n-1)/n)} 
 

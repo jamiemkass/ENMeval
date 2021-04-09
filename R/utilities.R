@@ -79,7 +79,9 @@ NULL
 #' @param other.args named list: any additional model arguments not specified for tuning
 NULL
 
-#' @export
+#' @title Find NA cells in a RasterStack
+#' @description Finds cells that are NA for at least one raster in a RasterStack.
+#' 
 rasStackNAs <- function(envs) {
   envs.z <- raster::values(envs)
   envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
@@ -269,7 +271,6 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' Incorporating model complexity and sampling bias into ecological niche
 #' models of climate change risks faced by 90 California vertebrate species of
 #' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
-
 #' @export
 aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   # differential behavior for summing if p is Raster* or data frame
@@ -293,12 +294,13 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   return(out)
 }
 
-# Define a corrected variance function
-#' Calculate variance corrected for non-independence of \emph{k}-fold iterations
+#' @title Corrected variance function
+#' @description Calculate variance corrected for non-independence of \emph{k}-fold iterations
 #'
-#' `corrected.var` calculates variance corrected for non-independence of \emph{k}-fold iterations.  See Appendix of Shcheglovitova & Anderson (2013) and other references (Miller 1974; Parr 1985; Shao and Wu 1989) for additional details. 
-#' 
-#' This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  Following Shao and Wu (1989): 
+#' @details `corrected.var` calculates variance corrected for non-independence of \emph{k}-fold iterations.  
+#' See Appendix of Shcheglovitova & Anderson (2013) and other references (Miller 1974; Parr 1985; Shao and Wu 1989) for additional details. 
+#' This function calculates variance that is corrected for the non-independence of \emph{k} cross-validation iterations.  
+#' Following Shao and Wu (1989): 
 #' 
 #' \deqn{Sum Of Squares * ((n-1)/n)} 
 #' 
@@ -317,13 +319,13 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
 #'   
 #'   Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17.
 #'   
-#' @export
 corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
 }
 
-# function to calculate the 10 percentile threshold from training predictions
-#' @export
+#' @title Calculate 10 percentile threshold
+#' @description Function to calculate the 10 percentile threshold from training predictions
+#' 
 calc.10p.trainThresh <- function(pred.train) {
   n <- length(pred.train)
   if(n < 10) {
@@ -336,17 +338,13 @@ calc.10p.trainThresh <- function(pred.train) {
 }
 
 #' @title Calculate Similarity of ENMs in Geographic Space
-#' 
 #' @description Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
-#' 
-#' @aliases calc.niche.overlap
-#' @usage 
-#' calc.niche.overlap(predictive.maps, overlapStat = "D", maxent.args)
 #' @param predictors RasterStack: at least 2 Maxent raster predictions
 #' @param overlapStat character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")
+#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details "D" refers to Schoeners \emph{D} (Schoener 1968), while "I" refers to the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
-#' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names are given by the \code{\link{make.args}} argument when run by the \code{\link{ENMevaluate}} function.
+#' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names correspond to the results table output by \code{\link{ENMevaluate}()}.
 #' @references 
 #' Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 #' Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726.
@@ -374,8 +372,9 @@ calc.niche.overlap <- function(predictors, overlapStat, quiet=FALSE){
   return(ov)
 }
 
-# function to look up the corresponding ENMdetails abject
-#' @export
+#' @title Look up ENMdetails abject
+#' @description Internal function to look up ENMdetails objects.
+#' 
 lookup.enm <- function(algorithm) {
   x <- switch(algorithm, 
               maxent.jar = enm.maxent.jar,
@@ -388,8 +387,9 @@ lookup.enm <- function(algorithm) {
 }
 
 
-# function to look up the version of maxent.jar
-#' @export
+#' @title Look up version of maxent.jar
+#' @description Internal function to look up the version of the maxent.jar being used.
+#' 
 maxentJARversion <- function() {
   if (is.null(getOption('dismo_rJavaLoaded'))) {
     # to avoid trouble on macs

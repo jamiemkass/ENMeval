@@ -217,9 +217,9 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
           newrow <- out$results.partitions[1,]
           newrow[,4:ncol(newrow)] <- NA
           for(ind in inds) {
-            out$results.partitions <- bind_rows(out$results.partitions, newrow %>% dplyr::mutate(fold = ind))  
+            out$results.partitions <- dplyr::bind_rows(out$results.partitions, newrow %>% dplyr::mutate(fold = ind))  
           }
-          out$results.partitions <- arrange(out$results.partitions, fold)
+          out$results.partitions <- dplyr::arrange(out$results.partitions, fold)
         }  
       }
     }

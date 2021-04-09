@@ -16,9 +16,9 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     pts.plot <- switch(ref.data, occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
     if(e@partition.method == "testing") {
-      pts.plot <- pts.plot %>% mutate(partition = as.numeric(as.character(partition))) %>% 
-        bind_rows(e@occs.testing %>% mutate(partition = 1)) %>%
-        mutate(partition = factor(partition))
+      pts.plot <- pts.plot %>% dplyr::mutate(partition = as.numeric(as.character(partition))) %>% 
+        dplyr::bind_rows(e@occs.testing %>% dplyr::mutate(partition = 1)) %>%
+        dplyr::mutate(partition = factor(partition))
     } 
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
@@ -131,10 +131,10 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
     if(!is.null(e)) occs.testing.z <- e@occs.testing
     names(occs.testing.z)[1:2] <- c("longitude","latitude")
     occs.testing.z[[categoricals]] <- NULL
-    occs.testing.z <- occs.testing.z %>% mutate(type = 1, partition = 2)
+    occs.testing.z <- occs.testing.z %>% dplyr::mutate(type = 1, partition = 2)
     pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
     pts.plot[pts.plot$type == 1, "partition"] <- 1
-    pts.plot <- dplyr::bind_rows(pts.plot, occs.testing.z) %>% mutate(partition = factor(partition))
+    pts.plot <- dplyr::bind_rows(pts.plot, occs.testing.z) %>% dplyr::mutate(partition = factor(partition))
   }
   
   return(pts.plot)
@@ -241,7 +241,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
     envs.tbl <- data.frame(sort(unique(plot.df[,2])), envs.names)
     names(envs.tbl) <- c(sim.type, "env.var")
     envs.tbl$env.var <- factor(envs.tbl$env.var)
-    plot.df <- plot.df %>% left_join(envs.tbl, by = sim.type)
+    plot.df <- plot.df %>% dplyr::left_join(envs.tbl, by = sim.type)
     plot.df[[sim.type]] <- NULL
     names(plot.df)[2] <- sim.type
     title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")

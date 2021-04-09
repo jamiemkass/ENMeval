@@ -183,9 +183,9 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
-  occs.z <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(all_of(envs.names))
+  occs.z <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(dplyr::all_of(envs.names))
   bg.xy <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
-  bg.z <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(all_of(envs.names))
+  bg.z <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(dplyr::all_of(envs.names))
   
   # define number of grp (the value of "k") for occurrences
   nk <- length(unique(d[d$pb == 1, "grp"]))
@@ -203,7 +203,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
   if(!is.null(envs)) {
     pred.envs <- envs
   }else{
-    pred.envs <- d %>% dplyr::select(all_of(envs.names))
+    pred.envs <- d %>% dplyr::select(dplyr::all_of(envs.names))
   }
   
   mod.full.pred <- enm@predict(mod.full, pred.envs, tune.tbl.i, other.settings)
@@ -221,7 +221,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
   
   if(partitions == "testing") {
     bg.val.z <- data.frame()
-    occs.testing.zEnvs <- occs.testing.z %>% dplyr::select(all_of(envs.names))
+    occs.testing.zEnvs <- occs.testing.z %>% dplyr::select(dplyr::all_of(envs.names))
     if(other.settings$doClamp == TRUE) {
       occs.testing.zEnvs <- clamp.vars(orig.vals = occs.testing.zEnvs, ref.vals = rbind(occs.z, bg.z), 
                           left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
@@ -238,14 +238,14 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
   
   for(k in 1:nk) {
     # assign partitions for training and validation occurrence data and for background data
-    occs.train.z <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(all_of(envs.names))
-    bg.train.z <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(all_of(envs.names))
+    occs.train.z <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(dplyr::all_of(envs.names))
+    bg.train.z <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(dplyr::all_of(envs.names))
     if(is.null(user.val.grps)) {
-      occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(all_of(envs.names))
-      bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(all_of(envs.names))
+      occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(dplyr::all_of(envs.names))
+      bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(dplyr::all_of(envs.names))
     }else{
       # assign partitions for training and validation occurrence data and for background data based on user data
-      occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(all_of(envs.names))
+      occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(dplyr::all_of(envs.names))
       bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
     }
     
