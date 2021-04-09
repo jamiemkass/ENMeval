@@ -1,4 +1,4 @@
-#' @importFrom methods setClass setGeneric setMethod setRefClass
+#' @importFrom methods setClass setGeneric setMethod setRefClass show
 NULL
 
 #' @title ENMevaluation class
@@ -18,8 +18,6 @@ NULL
 #' @slot bg data frame: background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector: partition groups for background points
 #' @slot overlap list: matrices of pairwise niche overlap statistics
-#' 
-#' @importFrom methods show
 #' 
 #' @export
 
@@ -46,80 +44,175 @@ ENMevaluation <- setClass("ENMevaluation",
                                     overlap = 'list',
                                     rmm = 'list'))
 
-setGeneric("eval.algorithm", function(x) standardGeneric("eval.algorithm"))
+#' @title eval.algorithm generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.algorithm
 #' @export
+setGeneric("eval.algorithm", function(x) standardGeneric("eval.algorithm"))
+
+#' @rdname eval.algorithm
 setMethod("eval.algorithm", "ENMevaluation", function(x) x@algorithm)
 
-setGeneric("eval.tune.settings", function(x) standardGeneric("eval.tune.settings"))
+#' @title eval.tune.settings generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.tune.settings
 #' @export
+setGeneric("eval.tune.settings", function(x) standardGeneric("eval.tune.settings"))
+
+#' @rdname eval.tune.settings
 setMethod("eval.tune.settings", "ENMevaluation", function(x) x@tune.settings)
 
-setGeneric("eval.results", function(x) standardGeneric("eval.results"))
+#' @title eval.results generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.results
 #' @export
+setGeneric("eval.results", function(x) standardGeneric("eval.results"))
+
+#' @rdname eval.results
 setMethod("eval.results", "ENMevaluation", function(x) x@results)
 
-setGeneric("eval.results.partitions", function(x) standardGeneric("eval.results.partitions"))
+#' @title eval.results.partitions generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.results.partitions
 #' @export
+setGeneric("eval.results.partitions", function(x) standardGeneric("eval.results.partitions"))
+
+#' @rdname eval.results.partitions
 setMethod("eval.results.partitions", "ENMevaluation", function(x) x@results.partitions)
 
-setGeneric("eval.predictions", function(x) standardGeneric("eval.predictions"))
+#' @title eval.predictions generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.predictions
 #' @export
+setGeneric("eval.predictions", function(x) standardGeneric("eval.predictions"))
+
+#' @rdname eval.predictions
 setMethod("eval.predictions", "ENMevaluation", function(x) x@predictions)
 
-setGeneric("eval.models", function(x) standardGeneric("eval.models"))
+#' @title eval.models generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.models
 #' @export
+setGeneric("eval.models", function(x) standardGeneric("eval.models"))
+
+#' @rdname eval.models
 setMethod("eval.models", "ENMevaluation", function(x) x@models)
 
-setGeneric("eval.partition.method", function(x) standardGeneric("eval.partition.method"))
+#' @title eval.partition.method generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.partition.method
 #' @export
+setGeneric("eval.partition.method", function(x) standardGeneric("eval.partition.method"))
+
+#' @rdname eval.partition.method
 setMethod("eval.partition.method", "ENMevaluation", function(x) x@partition.method)
 
-setGeneric("eval.partition.settings", function(x) standardGeneric("eval.partition.settings"))
+#' @title eval.partition.settings generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.partition.settings
 #' @export
+setGeneric("eval.partition.settings", function(x) standardGeneric("eval.partition.settings"))
+
+#' @rdname eval.partition.settings
 setMethod("eval.partition.settings", "ENMevaluation", function(x) x@partition.settings)
 
-setGeneric("eval.other.settings", function(x) standardGeneric("eval.other.settings"))
+#' @title eval.other.settings generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.other.settings
 #' @export
+setGeneric("eval.other.settings", function(x) standardGeneric("eval.other.settings"))
+
+#' @rdname eval.other.settings
 setMethod("eval.other.settings", "ENMevaluation", function(x) x@other.settings)
 
-setGeneric("eval.doClamp", function(x) standardGeneric("eval.doClamp"))
+#' @title eval.doClamp generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.doClamp
 #' @export
+setGeneric("eval.doClamp", function(x) standardGeneric("eval.doClamp"))
+
+#' @rdname eval.doClamp
 setMethod("eval.doClamp", "ENMevaluation", function(x) x@other.settings)
 
-setGeneric("eval.clamp.directions", function(x) standardGeneric("eval.clamp.directions"))
+#' @title eval.clamp.directions generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.clamp.directions
 #' @export
+setGeneric("eval.clamp.directions", function(x) standardGeneric("eval.clamp.directions"))
+
+#' @rdname eval.clamp.directions
 setMethod("eval.clamp.directions", "ENMevaluation", function(x) x@other.settings)
 
-setGeneric("eval.taxon.name", function(x) standardGeneric("eval.taxon.name"))
+#' @title eval.taxon.name generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.taxon.name
 #' @export
+setGeneric("eval.taxon.name", function(x) standardGeneric("eval.taxon.name"))
+
+#' @rdname eval.taxon.name
 setMethod("eval.taxon.name", "ENMevaluation", function(x) x@taxon.name)
 
-setGeneric("eval.occs", function(x) standardGeneric("eval.occs"))
+#' @title eval.occs generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.occs
 #' @export
+setGeneric("eval.occs", function(x) standardGeneric("eval.occs"))
+
+#' @rdname eval.occs
 setMethod("eval.occs", "ENMevaluation", function(x) x@occs)
 
-setGeneric("eval.occs.testing", function(x) standardGeneric("eval.occs.testing"))
+#' @title eval.occs.testing generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.occs.testing
 #' @export
+setGeneric("eval.occs.testing", function(x) standardGeneric("eval.occs.testing"))
+
+#' @rdname eval.occs.testing
 setMethod("eval.occs.testing", "ENMevaluation", function(x) x@occs.testing)
 
-setGeneric("eval.occs.grp", function(x) standardGeneric("eval.occs.grp"))
+#' @title eval.occs.grp generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.occs.grp
 #' @export
+setGeneric("eval.occs.grp", function(x) standardGeneric("eval.occs.grp"))
+
+#' @rdname eval.occs.grp
 setMethod("eval.occs.grp", "ENMevaluation", function(x) x@occs.grp)
 
-setGeneric("eval.bg", function(x) standardGeneric("eval.bg"))
+#' @title eval.bg generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.bg
 #' @export
+setGeneric("eval.bg", function(x) standardGeneric("eval.bg"))
+
+#' @rdname eval.bg
 setMethod("eval.bg", "ENMevaluation", function(x) x@bg)
 
-setGeneric("eval.bg.grp", function(x) standardGeneric("eval.bg.grp"))
+#' @title eval.bg.grp generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.bg.grp
 #' @export
+setGeneric("eval.bg.grp", function(x) standardGeneric("eval.bg.grp"))
+
+#' @rdname eval.bg.grp
 setMethod("eval.bg.grp", "ENMevaluation", function(x) x@bg.grp)
 
-setGeneric("eval.overlap", function(x) standardGeneric("eval.overlap"))
+#' @title eval.overlap generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.overlap
 #' @export
+setGeneric("eval.overlap", function(x) standardGeneric("eval.overlap"))
+
+#' @rdname eval.overlap
 setMethod("eval.overlap", "ENMevaluation", function(x) x@overlap)
 
-setGeneric("eval.rmm", function(x) standardGeneric("eval.rmm"))
+#' @title eval.rmm generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.rmm
 #' @export
+setGeneric("eval.rmm", function(x) standardGeneric("eval.rmm"))
+
+#' @rdname eval.rmm
 setMethod("eval.rmm", "ENMevaluation", function(x) x@rmm)
 
 #' @export
