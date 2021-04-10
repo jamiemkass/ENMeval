@@ -144,10 +144,10 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
     expect_true(!is.null(ns@null.partition.method))
     expect_true(!is.null(ns@null.partition.settings))
     expect_true(!is.null(ns@null.other.settings))
-    expect_true(!is.null(ns@no.iter))
+    expect_true(!is.null(ns@null.no.iter))
     expect_true(!is.null(ns@null.results))
     expect_true(!is.null(ns@null.results.partitions))
-    expect_true(!is.null(ns@emp.vs.null.results))
+    expect_true(!is.null(ns@null.emp.results))
     expect_true(!is.null(ns@emp.occs))
     expect_true(!is.null(ns@emp.occs.grp))
     expect_true(!is.null(ns@emp.bg))
@@ -166,7 +166,7 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
       expect_true(as.character(ns@null.mod.settings[,1]) == mod.settings.tbl)  
     }
     # no. of iterations
-    expect_true(ns@no.iter == no.iter)
+    expect_true(ns@null.no.iter == no.iter)
     # number of rows in results table
     expect_true(nrow(ns@null.results) == no.iter)
     # number of rows in results table for partitions
@@ -177,15 +177,15 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
     }
     
     # number of rows in empirical vs null results table
-    expect_true(nrow(ns@emp.vs.null.results) == 6)
+    expect_true(nrow(ns@null.emp.results) == 6)
     # there should only be two NA values for this table: read.sd for auc.train and cbi.train
     if(parts == "jackknife") {
-      expect_true(sum(is.na(ns@emp.vs.null.results[2,])) == 3)
-      expect_true(sum(is.na(ns@emp.vs.null.results[,6])) == 6) 
+      expect_true(sum(is.na(ns@null.emp.results[2,])) == 3)
+      expect_true(sum(is.na(ns@null.emp.results[,6])) == 6) 
     }else if(parts == "testing") {
-      expect_true(sum(is.na(ns@emp.vs.null.results[2,])) == 7) 
+      expect_true(sum(is.na(ns@null.emp.results[2,])) == 7) 
     }else{
-      expect_true(sum(is.na(ns@emp.vs.null.results[2,])) == 2)  
+      expect_true(sum(is.na(ns@null.emp.results[2,])) == 2)  
     }
     # check that tables match
     expect_true(all(ns@emp.occs == e@occs))
@@ -318,7 +318,7 @@ test_evalplot.nulls <- function(ns) {
     expect_true(ncol(x[[2]]) == 2)
     expect_true(all(names(x[[1]]) == c("metric", "avg")))
     expect_true(all(names(x[[2]]) == c("metric", "avg")))
-    expect_true(nrow(x[[1]]) == ns@no.iter * length(stats))
+    expect_true(nrow(x[[1]]) == ns@null.no.iter * length(stats))
     expect_true(all(unique(x[[1]]$metric) == stats))
     expect_true(all(unique(x[[2]]$metric) == stats))
   }

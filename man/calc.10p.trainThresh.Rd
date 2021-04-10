@@ -6,6 +6,9 @@
 \usage{
 calc.10p.trainThresh(pred.train)
 }
+\arguments{
+\item{pred.train}{numeric vector: training occurrence predictions}
+}
 \description{
 Function to calculate the 10 percentile threshold from training predictions
 }

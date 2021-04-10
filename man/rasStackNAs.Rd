@@ -6,6 +6,9 @@
 \usage{
 rasStackNAs(envs)
 }
+\arguments{
+\item{envs}{RasterStack}
+}
 \description{
 Finds cells that are NA for at least one raster in a RasterStack.
 }

@@ -9,16 +9,22 @@ NULL
 #' @slot partition.method character: partition method used
 #' @slot partition.settings list: partition settings used (i.e., value of *k* or aggregation factor)
 #' @slot other.settings list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
+#' @slot doClamp boolean: whether or not clamping was used 
+#' @slot clamp.directions list: the clamping directions specified 
 #' @slot results data frame: evaluation summary statistics
 #' @slot results.partitions data frame: evaluation k-fold statistics
 #' @slot models list: model objects
+#' @slot variable.importance list: variable importance data frames (when available)
 #' @slot predictions RasterStack: model predictions
+#' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
+#' @slot occs.testing data frame: when provided, the coordinates of the fully withheld testing records
 #' @slot occs.grp vector: partition groups for occurrence points
 #' @slot bg data frame: background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector: partition groups for background points
 #' @slot overlap list: matrices of pairwise niche overlap statistics
-#' 
+#' @slot rmm list: the rangeModelMetadata objects for each model
+#' @rdname ENMevaluation
 #' @export
 
 # class slots match older ENMeval versions
@@ -80,15 +86,6 @@ setGeneric("eval.results.partitions", function(x) standardGeneric("eval.results.
 #' @rdname eval.results.partitions
 setMethod("eval.results.partitions", "ENMevaluation", function(x) x@results.partitions)
 
-#' @title eval.predictions generic for ENMevaluation object
-#' @param x ENMevaluation object
-#' @rdname eval.predictions
-#' @export
-setGeneric("eval.predictions", function(x) standardGeneric("eval.predictions"))
-
-#' @rdname eval.predictions
-setMethod("eval.predictions", "ENMevaluation", function(x) x@predictions)
-
 #' @title eval.models generic for ENMevaluation object
 #' @param x ENMevaluation object
 #' @rdname eval.models
@@ -97,6 +94,24 @@ setGeneric("eval.models", function(x) standardGeneric("eval.models"))
 
 #' @rdname eval.models
 setMethod("eval.models", "ENMevaluation", function(x) x@models)
+
+#' @title eval.variable.importance generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.variable.importance
+#' @export
+setGeneric("eval.variable.importance", function(x) standardGeneric("eval.variable.importance"))
+
+#' @rdname eval.models
+setMethod("eval.models", "ENMevaluation", function(x) x@models)
+
+#' @title eval.predictions generic for ENMevaluation object
+#' @param x ENMevaluation object
+#' @rdname eval.predictions
+#' @export
+setGeneric("eval.predictions", function(x) standardGeneric("eval.predictions"))
+
+#' @rdname eval.predictions
+setMethod("eval.predictions", "ENMevaluation", function(x) x@predictions)
 
 #' @title eval.partition.method generic for ENMevaluation object
 #' @param x ENMevaluation object
@@ -215,7 +230,8 @@ setGeneric("eval.rmm", function(x) standardGeneric("eval.rmm"))
 #' @rdname eval.rmm
 setMethod("eval.rmm", "ENMevaluation", function(x) x@rmm)
 
-#' @export
+#' @param object ENMevaluation object
+#' @rdname ENMevaluation
 setMethod("show",
           signature = "ENMevaluation",
           definition = function(object) {
@@ -240,14 +256,23 @@ setMethod("show",
 #' @author Jamie M. Kass, \email{jamie.m.kass@@gmail.com}
 #' @slot name character: name of algorithm
 #' @slot fun function: function that runs the algorithm
-#' @slot msgs function: prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}
-#' @slot args function: returns the parameters needed to run the algorithm function
-#' @slot predict function: specifies how to calculate a model prediction for a Raster* or a data frame
-#' @slot ncoefs function: counts the number of non-zero model coefficients
-#' @slot varimp function: generates a data frame of variable importance from the model object (if functionality is available)
+#' @slot errors function: returns errors chosen by the user to prevent any malfunction in the analysis.
+#' The available arguments are: occs, envs, bg, tune.args, partitions, algorithm, partition.settings, other.settings, 
+#' categoricals, doClamp, clamp.directions.
+#' @slot msgs function: prints messages showing the package version number, etc., and those related to the input tuning parameters \code{tune.args}.
+#' The available arguments are: tune.args, other.settings.
+#' @slot args function: returns the parameters needed to run the algorithm function.
+#' The available arguments are: occs.z, bg.z, tune.tbl.i, other.settings (where x.z is a data.frame of the envs values at
+#' coordinates of x, and tune.tbl.i is a single set of tuning parameters).
+#' @slot predict function: specifies how to calculate a model prediction for a Raster* or a data frame.
+#' The available arguments are: mod, envs, tune.tbl.i, other.settings.
+#' @slot ncoefs function: counts the number of non-zero model coefficients.
+#' The available arguments are: mod.
+#' @slot varimp function: generates a data frame of variable importance from the model object (if functionality is available).
+#' The available arguments are: mod.
+#' @rdname ENMdetails
 #' @export
 
-#' @export
 ENMdetails <- setClass("ENMdetails",
                        slots = c(name = 'character',
                                  fun = 'function',
@@ -258,100 +283,162 @@ ENMdetails <- setClass("ENMdetails",
                                  ncoefs = 'function',
                                  varimp = 'function'))
 
-#' ENMdetails <- function(name, fun, errors, msgs, args, predict, ncoefs, varimp) {
-#'   new("ENMdetails", name = name, fun = fun, errors = errors, msgs = msgs, 
-#'       args = args, predict = predict, ncoefs = ncoefs, varimp = varimp)
-#' }
-
+#' @title eval.name generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.name
+#' @export
 setGeneric("enm.name", function(x) standardGeneric("enm.name"))
+
+#' @rdname enm.name
+#' @export
 setGeneric("enm.name<-", function(x, value) standardGeneric("enm.name<-"))
-#' @export
+
+#' @rdname enm.name
 setMethod("enm.name", "ENMdetails", function(x) x@name)
-#' @export
+
+#' @rdname enm.name
 setMethod("enm.name<-", "ENMdetails", function(x, value) {
   x@name <- value
   validObject(x)
   x
 })
 
+#' @title enm.fun generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.fun
 setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
+
+#' @rdname enm.fun
 setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
-#' @export
+
+#' @rdname enm.fun
 setMethod("enm.fun", "ENMdetails", function(x) x@fun)
-#' @export
+
+#' @rdname enm.fun
 setMethod("enm.fun<-", "ENMdetails", function(x, value) {
   x@fun <- value
   validObject(x)
   x
 })
 
+#' @title enm.errors generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.errors
 setGeneric("enm.errors", function(x) standardGeneric("enm.errors"))
+
+#' @rdname enm.errors
 setGeneric("enm.errors<-", function(x, value) standardGeneric("enm.errors<-"))
-#' @export
+
+#' @rdname enm.errors
 setMethod("enm.errors", "ENMdetails", function(x) x@errors)
-#' @export
+
+#' @rdname enm.errors
 setMethod("enm.errors<-", "ENMdetails", function(x, value) {
   x@errors <- value
   validObject(x)
   x
 })
 
+#' @title enm.msgs generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.msgs
 setGeneric("enm.msgs", function(x) standardGeneric("enm.msgs"))
+
+#' @rdname enm.msgs
 setGeneric("enm.msgs<-", function(x, value) standardGeneric("enm.msgs<-"))
-#' @export
+
+#' @rdname enm.msgs
 setMethod("enm.msgs", "ENMdetails", function(x) x@msgs)
-#' @export
+
+#' @rdname enm.msgs
 setMethod("enm.msgs<-", "ENMdetails", function(x, value) {
   x@msgs <- value
   validObject(x)
   x
 })
 
+#' @title enm.args generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.args
 setGeneric("enm.args", function(x) standardGeneric("enm.args"))
+
+#' @rdname enm.args
 setGeneric("enm.args<-", function(x, value) standardGeneric("enm.args<-"))
-#' @export
+
+#' @rdname enm.args
 setMethod("enm.args", "ENMdetails", function(x) x@args)
-#' @export
+
+#' @rdname enm.args
 setMethod("enm.args<-", "ENMdetails", function(x, value) {
   x@args <- value
   validObject(x)
   x
 })
 
+#' @title enm.predict generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.predict
 setGeneric("enm.predict", function(x) standardGeneric("enm.predict"))
+
+#' @rdname enm.predict
 setGeneric("enm.predict<-", function(x, value) standardGeneric("enm.predict<-"))
-#' @export
+
+#' @rdname enm.predict
 setMethod("enm.predict", "ENMdetails", function(x) x@predict)
-#' @export
+
+#' @rdname enm.predict
 setMethod("enm.predict<-", "ENMdetails", function(x, value) {
   x@predict <- value
   validObject(x)
   x
 })
 
+#' @title enm.ncoefs generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.ncoefs
 setGeneric("enm.ncoefs", function(x) standardGeneric("enm.ncoefs"))
+
+#' @rdname enm.ncoefs
 setGeneric("enm.ncoefs<-", function(x, value) standardGeneric("enm.ncoefs<-"))
-#' @export
+
+#' @rdname enm.ncoefs
 setMethod("enm.ncoefs", "ENMdetails", function(x) x@ncoefs)
-#' @export
+
+#' @rdname enm.ncoefs
 setMethod("enm.ncoefs<-", "ENMdetails", function(x, value) {
   x@ncoefs <- value
   validObject(x)
   x
 })
 
+#' @title enm.varimp generic for ENMdetails object
+#' @param x ENMdetails object
+#' @param value input value
+#' @rdname enm.varimp
 setGeneric("enm.varimp", function(x) standardGeneric("enm.varimp"))
+
+#' @rdname enm.varimp
 setGeneric("enm.varimp<-", function(x, value) standardGeneric("enm.varimp<-"))
-#' @export
+
+#' @rdname enm.varimp
 setMethod("enm.varimp", "ENMdetails", function(x) x@varimp)
-#' @export
+
+#' @rdname enm.varimp
 setMethod("enm.varimp<-", "ENMdetails", function(x, value) {
   x@varimp <- value
   validObject(x)
   x
 })
 
-#' @export
+#' @param object ENMdetails object
+#' @rdname ENMdetails
 setMethod("show",
           signature = "ENMdetails",
           definition = function(object) {
@@ -373,11 +460,12 @@ setMethod("show",
 #' @slot no.iter numeric: number of null model iterations
 #' @slot null.results data frame: evaluation summary statistics for null models
 #' @slot null.results.partitions data frame: evaluation k-fold statistics for null models
-#' @slot emp.vs.null.results data frame: evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values
+#' @slot null.emp.results data frame: evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values
 #' @slot emp.occs data frame: occurrence coordinates and predictor variable values used for model training (empirical model)
 #' @slot emp.occs.grp vector: partition groups for occurrence points (empirical model)
 #' @slot emp.bg data frame: background coordinates and predictor variable values used for model training (empirical model)
 #' @slot emp.bg.grp vector: partition groups for background points (empirical model)
+#' @rdname ENMnull
 #' @export
 
 # class slots match older ENMeval versions
@@ -390,72 +478,123 @@ ENMnull <- setClass("ENMnull",
                               no.iter = 'numeric',
                               null.results = 'data.frame',
                               null.results.partitions = 'data.frame',
-                              emp.vs.null.results = 'data.frame',
+                              null.emp.results = 'data.frame',
                               emp.occs = 'data.frame',
                               emp.occs.grp = 'factor',
                               emp.bg = 'data.frame',
                               emp.bg.grp = 'factor'))
 
+#' @title null.algorithm generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.algorithm
 setGeneric("null.algorithm", function(x) standardGeneric("null.algorithm"))
 
-#' @export
+#' @rdname null.algorithm
 setMethod("null.algorithm", "ENMnull", function(x) x@null.algorithm)
 
+#' @title null.mod.settings generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.mod.settings
 setGeneric("null.mod.settings", function(x) standardGeneric("null.mod.settings"))
-#' @export
+
+#' @rdname null.mod.settings
 setMethod("null.mod.settings", "ENMnull", function(x) x@null.mod.settings)
 
+#' @title null.partition.method generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.partition.method
 setGeneric("null.partition.method", function(x) standardGeneric("null.partition.method"))
-#' @export
+
+#' @rdname null.partition.method
 setMethod("null.partition.method", "ENMnull", function(x) x@null.partition.method)
 
+#' @title null.partition.settings generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.partition.settings
 setGeneric("null.partition.settings", function(x) standardGeneric("null.partition.settings"))
-#' @export
+
+#' @rdname null.partition.settings
 setMethod("null.partition.settings", "ENMnull", function(x) x@null.partition.settings)
 
+#' @title null.other.settings generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.other.settings
 setGeneric("null.other.settings", function(x) standardGeneric("null.other.settings"))
-#' @export
+
+#' @rdname null.other.settings
 setMethod("null.other.settings", "ENMnull", function(x) x@null.other.settings)
 
-setGeneric("no.iter", function(x) standardGeneric("no.iter"))
-#' @export
-setMethod("no.iter", "ENMnull", function(x) x@no.iter)
+#' @title null.no.iter generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.no.iter
+setGeneric("null.no.iter", function(x) standardGeneric("null.no.iter"))
 
+#' @rdname null.no.iter
+setMethod("null.no.iter", "ENMnull", function(x) x@null.no.iter)
+
+#' @title null.results generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.results
 setGeneric("null.results", function(x) standardGeneric("null.results"))
-#' @export
+
+#' @rdname null.results
 setMethod("null.results", "ENMnull", function(x) x@null.results)
 
+#' @title null.results.partitions generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.results.partitions
 setGeneric("null.results.partitions", function(x) standardGeneric("null.results.partitions"))
-#' @export
+
+#' @rdname null.results.partitions
 setMethod("null.results.partitions", "ENMnull", function(x) x@null.results.partitions)
 
-setGeneric("emp.vs.null.results", function(x) standardGeneric("emp.vs.null.results"))
-#' @export
-setMethod("emp.vs.null.results", "ENMnull", function(x) x@emp.vs.null.results)
+#' @title null.emp.results generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.emp.results
+setGeneric("null.emp.results", function(x) standardGeneric("null.emp.results"))
 
+#' @rdname null.emp.results
+setMethod("null.emp.results", "ENMnull", function(x) x@null.emp.results)
+
+#' @title emp.occs generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname emp.occs
 setGeneric("emp.occs", function(x) standardGeneric("emp.occs"))
-#' @export
+
+#' @rdname emp.occs
 setMethod("emp.occs", "ENMnull", function(x) x@emp.occs)
 
+#' @title emp.occs.grp generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname emp.occs.grp
 setGeneric("emp.occs.grp", function(x) standardGeneric("emp.occs.grp"))
-#' @export
+
+#' @rdname emp.occs.grp
 setMethod("emp.occs.grp", "ENMnull", function(x) x@emp.occs.grp)
 
+#' @title emp.bg generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname emp.bg
 setGeneric("emp.bg", function(x) standardGeneric("emp.bg"))
-#' @export
+
+#' @rdname emp.bg
 setMethod("emp.bg", "ENMnull", function(x) x@emp.bg)
 
+#' @title emp.bg.grp generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname emp.bg.grp
 setGeneric("emp.bg.grp", function(x) standardGeneric("emp.bg.grp"))
-#' @export
+
+#' @rdname emp.bg.grp
 setMethod("emp.bg.grp", "ENMnull", function(x) x@emp.bg.grp)
 
-
-#' @export
+#' @param object ENMnull object
+#' @rdname ENMnull
 setMethod("show",
           signature = "ENMnull",
           definition = function(object) {
             cat("An object of class: ", class(object), "\n")
-            cat(" no. iterations: ", object@no.iter, "\n")
+            cat(" no. iterations: ", object@null.no.iter, "\n")
             cat(" empirical occurrence/background points: ", nrow(object@emp.occs), '/', nrow(object@emp.bg), "\n")
             cat(" partition method: ", object@null.partition.method, "\n")
             cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")

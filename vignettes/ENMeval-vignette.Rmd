@@ -686,7 +686,7 @@ null.results(mod.null) %>% head()
 # And even inspect the results of each partition of each null simulation
 null.results.partitions(mod.null) %>% head()
 # For a summary, we can look at a comparison between the empirical and simulated results
-emp.vs.null.results(mod.null)
+null.emp.results(mod.null)
 # Finally, we can make plots of the null model results as a histogram
 evalplot.nulls(mod.null, stats = c("or.10p", "auc.val"), plot.type = "histogram")
 # Or a violin plot

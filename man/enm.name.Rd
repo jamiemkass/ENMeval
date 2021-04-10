@@ -2,16 +2,24 @@
 % Please edit documentation in R/classes.R
 \name{enm.name}
 \alias{enm.name}
-\title{ENMdetails <- function(name, fun, errors, msgs, args, predict, ncoefs, varimp) {
-  new("ENMdetails", name = name, fun = fun, errors = errors, msgs = msgs, 
-      args = args, predict = predict, ncoefs = ncoefs, varimp = varimp)
-}}
+\alias{enm.name<-}
+\alias{enm.name,ENMdetails-method}
+\alias{enm.name<-,ENMdetails-method}
+\title{eval.name generic for ENMdetails object}
 \usage{
 enm.name(x)
+
+enm.name(x) <- value
+
+\S4method{enm.name}{ENMdetails}(x)
+
+\S4method{enm.name}{ENMdetails}(x) <- value
+}
+\arguments{
+\item{x}{ENMdetails object}
+
+\item{value}{input value}
 }
 \description{
-ENMdetails <- function(name, fun, errors, msgs, args, predict, ncoefs, varimp) {
-  new("ENMdetails", name = name, fun = fun, errors = errors, msgs = msgs, 
-      args = args, predict = predict, ncoefs = ncoefs, varimp = varimp)
-}
+eval.name generic for ENMdetails object
 }

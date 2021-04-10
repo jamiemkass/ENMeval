@@ -14,7 +14,6 @@ tune.train(
   occs.z,
   bg.z,
   mod.full,
-  mod.full.pred,
   envs,
   tune.tbl.i,
   other.settings,
@@ -85,25 +84,69 @@ cv.enm(
 \arguments{
 \item{enm}{\link{ENMdetails} object}
 
+\item{occs.z}{data.frame: the envs values for the coordinates at the full dataset occurrence records}
+
+\item{bg.z}{data.frame: the envs values for the coordinates at the full dataset background records}
+
+\item{mod.full}{model object: the model trained on the full dataset}
+
 \item{envs}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
 
-\item{tune.tbl.i}{vector of single set of tuning parameters}
+\item{tune.tbl.i}{vector: single set of tuning parameters}
 
-\item{other.settings}{named list: settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg}
+\item{other.settings}{named list: used to specify extra settings for the analysis,
+inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
+so if they are not specified the analysis will be run with default settings.}
 
 \item{partitions}{character: name of partitioning technique (see \code{?partitions})}
 
+\item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
+
+\item{occs.train.z}{data.frame: the envs values for the coordinates at the training occurrence records}
+
+\item{occs.val.z}{data.frame: the envs values for the coordinates at the validation occurrence records}
+
+\item{bg.train.z}{data.frame: the envs values for the coordinates at the training background records}
+
+\item{bg.val.z}{data.frame: the envs values for the coordinates at the validation background records}
+
+\item{mod.k}{model object: the model trained on the training dataset that becomes evaluated on the validation data}
+
+\item{nk}{numeric: the number of folds (i.e., partitions) -- will be equal to \code{kfolds} for random partitions}
+
+\item{user.eval}{function: custom function for specifying performance metrics not included in ENMeval.
+The function must be first defined and then input as the argument "user.eval" into ENMevaluate(). 
+This function has a single argument called "vars", which is a list that includes different data 
+that can be used to calculate the metric. See Details below and the vignette for a worked example.}
+
 \item{d}{data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 
-\item{tune.tbl}{data frame: tuning parameter combinations}
+\item{tune.tbl}{data frame: all combinations of tuning parameters}
+
+\item{partition.settings}{named list: used to specify certain settings for partitioning schema.
+The options are:}
+
+\item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values -- 
+this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data}
+
+\item{occs.testing.z}{data.frame: when fully withheld testing data is provided, the envs values for the 
+coordinates at the testing occurrence records}
 
 \item{numCores}{numeric: number of cores to use for parallel processing; if NULL, all available cores will be used}
 
 \item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW")}
+
+\item{updateProgress}{boolean: if TRUE, use shiny progress bar; only for use in shiny apps}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
+See \link{ENMevaluate} for descriptions of shared arguments.
 Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and validation evaluation statistics for one set of specified tuning parameters.
 
 Validation CBI is calculated here with background values, not raster data, in order
+to standardize the methodology for both training and validation data for spatial partitions, as ENMeval
+does not mask rasters to partition areas and hence does not have partitioned raster data. Further, 
+predictions for occurrence and background localities are combined as input for the parameter "fit" in 
+\code{ecospat::ecospat_boyce()} because the interval is determined from "fit" only, and if test occurrences 
+all have higher predictions than the background, the interval will be cut short.
 }

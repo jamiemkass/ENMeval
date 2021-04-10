@@ -8,6 +8,8 @@
 eval.models(x)
 
 \S4method{eval.models}{ENMevaluation}(x)
+
+\S4method{eval.models}{ENMevaluation}(x)
 }
 \arguments{
 \item{x}{ENMevaluation object}

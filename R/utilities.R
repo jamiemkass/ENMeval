@@ -8,79 +8,10 @@
 #' @usage lhs \%>\% rhs
 NULL
 
-#' @title User-specified evaluation function for model validation
-#' @name user.eval
-#' @usage my.user.eval <- myFunc(vars)
-#' ENMevaluate(..., user.eval = my.user.eval)
-#' @description This is a custom function for specifying performance metrics not included in ENMeval.
-#' The function must be first defined and then input as the argument "user.eval" into ENMevaluate(). 
-#' This function has a single argument called "vars", which is a list that includes different data 
-#' that can be used to calculate the metric. Below is the list of data included in vars, which can
-#' be accessed with $, as in vars$occs.train.z. See the vignette for a worked example.
-#' @param enm ENMdetails object
-#' @param occs.train.z data frame: predictor variable values for training occurrences
-#' @param occs.val.z data frame: predictor variable values for validation occurrences
-#' @param bg.train.z data frame: predictor variable values for training background
-#' @param bg.val.z data frame: predictor variable values for validation background
-#' @param mod.k Model object for current partition (k)
-#' @param nk numeric: number of folds (i.e., partitions)
-#' @param other.settings named list: other settings specified in ENMevaluate()
-#' @param partitions character: name of the partition method (e.g., "block")
-#' @param occs.train.pred numeric: predictions made by mod.k for training occurrences
-#' @param occs.val.pred numeric: predictions made by mod.k for validation occurrences
-#' @param bg.train.pred numeric: predictions made by mod.k for training background
-#' @param bg.val.pred numeric: predictions made by mod.k for validation background
-NULL
-
-#' @title Partition settings
-#' @name partition.settings
-#' @usage ps <- list(kfolds = 5)
-#' ps <- list(orientation = "lat_lat")
-#' ps <- list(aggregation.factor = c(4,4))
-#' ENMevaluate(..., partition.settings = ps)
-#' @description This is a named list used to specify certain settings for partitioning schema.
-#' It is inserted as an argument to ENMevaluate(). Some partitioning schema require a setting to
-#' be specified. It is helpful to use the evalplot.grps() plotting function to visualize differences in settings.
-#' @param orientation character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition)
-#' @param aggregation.factor numeric vector: one or two numbers specifying
-#' the factor with which to aggregate the envs raster to assign partitions (required for the checkerboard partitions)
-#' @param kfolds Required for the random partition. This specifies the number of random partition groups, or folds, to make.
-#' @details For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", and 
-#' they determine the order and orientations with which the block partitioning function creates the partition groups. For example,
-#' "lat_lon" will split the occurrence localities first by latitude, then by longitude.
-#' 
-#' For the checkerboard partitions, the aggregation factor specifies how much to aggregate the existing cells in the envs raster
-#' to make new spatial partitions. For example, checkerboard1 with an aggregation factor value of 2 will make the grid cells 
-#' 4 times larger and then assign occurrence and background records to partition groups based on which cell they are in. 
-#' The checkerboard2 partition is hierarchical, so cells are first aggregated to define groups like checkerboard1, but a 
-#' second aggregation is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers can be used
-#' to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used for both levels.
-NULL
-
-#' @title Other settings
-#' @name other.settings
-#' @usage # an example of specifying settings different from default
-#' os <- list(pred.type = "logistic", 
-#'   abs.auc.diff = FALSE, 
-#'   validation.bg = "partition")
-#' ENMevaluate(..., other.settings = os)
-#' @description This is a named list used to specify extra settings for the analysis.
-#' It is inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
-#' so if they are not specified the analysis will be run with default settings.
-#' @details The "partition" option for the argument validation.bg should only be used for
-#' evaluations on spatial partitions.
-#' @param abs.auc.diff boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)
-#' @param validation.bg character: either "full" to calculate training and validation AUC and CBI 
-#' for cross-validation with respect to the full background (default), or "partition" (meant for 
-#' spatial partitions only; see Details) to calculate each with respect to the partitioned background only 
-#' (i.e., training occurrences are compared to training background, and validation occurrences 
-#' compared to validation background)
-#' @param pred.type character: specifies which prediction type should be used to generate maxnet or maxent.jar prediction rasters (default: "cloglog")
-#' @param other.args named list: any additional model arguments not specified for tuning
-NULL
 
 #' @title Find NA cells in a RasterStack
 #' @description Finds cells that are NA for at least one raster in a RasterStack.
+#' @param envs RasterStack
 #' 
 rasStackNAs <- function(envs) {
   envs.z <- raster::values(envs)
@@ -325,6 +256,7 @@ corrected.var <- function(x, nk){
 
 #' @title Calculate 10 percentile threshold
 #' @description Function to calculate the 10 percentile threshold from training predictions
+#' @param pred.train numeric vector: training occurrence predictions
 #' 
 calc.10p.trainThresh <- function(pred.train) {
   n <- length(pred.train)
@@ -374,6 +306,7 @@ calc.niche.overlap <- function(predictors, overlapStat, quiet=FALSE){
 
 #' @title Look up ENMdetails abject
 #' @description Internal function to look up ENMdetails objects.
+#' @param algorithm character: algorithm name (must be implemented as ENMdetails object)
 #' 
 lookup.enm <- function(algorithm) {
   x <- switch(algorithm, 

@@ -42,6 +42,8 @@ bioclim.varimp <- function(mod) {
   NULL
 }
 
+#' @title ENMdetails bioclim
+#' @description This is the ENMdetails implementation for bioclim, implemented by dismo.
 #' @export
 enm.bioclim <- ENMdetails(name = bioclim.name, fun = bioclim.fun, errors = bioclim.errors,
                           msgs = bioclim.msgs, args = bioclim.args,

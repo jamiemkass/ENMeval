@@ -20,7 +20,7 @@ maxnet.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
       stop("Please input accepted values for 'fc' settings for maxnet.")
     }
   }
-  if(tune.args$rm <= 0) {
+  if(any(tune.args$rm <= 0)) {
     stop("Please input a positive value for 'rm' settings for maxnet.")
   }
 }
@@ -30,12 +30,12 @@ maxnet.msgs <- function(tune.args, other.settings) {
   return(msg)
 }
 
-maxnet.args <- function(occs.z, bg.z, tune.i, other.settings) {
+maxnet.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   out <- list()
   out$data <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
-  out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.i$fc))
-  out$regmult <- tune.i$rm
+  out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
+  out$regmult <- tune.tbl.i$rm
   # some models fail to converge if this parameter is not set to TRUE
   # usually the case with sparse datasets
   out$addsamplestobackground <- TRUE

@@ -1,20 +1,36 @@
 #' @title Iterate tuning of ENMs
 #' @description Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 
+#' See \link{ENMevaluate} for descriptions of shared arguments.
 #' Function \code{tune.parallel()} tunes ENMs with parallelization. Function \code{cv.enm()} calculates training and validation evaluation statistics for one set of specified tuning parameters.
 #' @aliases tune.parallel tune.regular cv.enm
-#' @param d data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
-#' @param envs RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)
 #' @param enm \link{ENMdetails} object
+#' @param occs.z data.frame: the envs values for the coordinates at the full dataset occurrence records
+#' @param bg.z data.frame: the envs values for the coordinates at the full dataset background records
+#' @param mod.full model object: the model trained on the full dataset
+#' @param tune.tbl data frame: all combinations of tuning parameters
+#' @param tune.tbl.i vector: single set of tuning parameters
 #' @param partitions character: name of partitioning technique (see \code{?partitions})
-#' @param tune.tbl data frame: tuning parameter combinations
-#' @param other.settings named list: settings from \code{ENMevaluate()} containing other.args, pred.type, abs.auc.diff, validation.bg
-#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
-#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
+#' @param occs.train.z data.frame: the envs values for the coordinates at the training occurrence records
+#' @param occs.val.z data.frame: the envs values for the coordinates at the validation occurrence records
+#' @param occs.testing.z data.frame: when fully withheld testing data is provided, the envs values for the 
+#' coordinates at the testing occurrence records
+#' @param bg.train.z data.frame: the envs values for the coordinates at the training background records
+#' @param bg.val.z data.frame: the envs values for the coordinates at the validation background records
+#' @param mod.k model object: the model trained on the training dataset that becomes evaluated on the validation data
+#' @param nk numeric: the number of folds (i.e., partitions) -- will be equal to \code{kfolds} for random partitions
+#' @param d data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values
+#' @description Validation CBI is calculated here with background values, not raster data, in order
+#' to standardize the methodology for both training and validation data for spatial partitions, as ENMeval
+#' does not mask rasters to partition areas and hence does not have partitioned raster data. Further, 
+#' predictions for occurrence and background localities are combined as input for the parameter "fit" in 
+#' \code{ecospat::ecospat_boyce()} because the interval is determined from "fit" only, and if test occurrences 
+#' all have higher predictions than the background, the interval will be cut short.
+#' @inheritParams ENMevaluate
 #' @name tune.enm
 NULL
 
 #' @rdname tune.enm
-tune.train <- function(enm, occs.z, bg.z, mod.full, mod.full.pred, envs, tune.tbl.i, other.settings, partitions, quiet) {
+tune.train <- function(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.settings, partitions, quiet) {
   # get model predictions for training data
   occs.pred <- enm@predict(mod.full, occs.z, tune.tbl.i, other.settings)
   bg.pred <- enm@predict(mod.full, bg.z, tune.tbl.i, other.settings)
@@ -37,13 +53,6 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, mod.full.pred, envs, tune.tb
 }
 
 #' @rdname tune.enm
-#' @description Validation CBI is calculated here with background values, not raster data, in order
-# to standardize the methodology for both training and validation data for 
-# spatial partitions, as ENMeval does not mask rasters to partition areas and hence 
-# does not have partitioned raster data. Further, predictions for occurrence and background localities 
-# are combined as input for the parameter "fit" in \code{ecospat::ecospat_boyce()} because the interval
-# is determined from "fit" only, and if test occurrences all have higher predictions than the background, 
-# the interval will be cut short.
 tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, tune.tbl.i, other.settings, partitions, user.eval, quiet) {
   # get model predictions for training and validation data for partition k
   occs.train.pred <- enm@predict(mod.k, occs.train.z, tune.tbl.i, other.settings)
@@ -177,7 +186,6 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, par
   return(results)
 }
 
-#' @param tune.tbl.i vector of single set of tuning parameters
 #' @rdname tune.enm
 cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
@@ -208,7 +216,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
   
   mod.full.pred <- enm@predict(mod.full, pred.envs, tune.tbl.i, other.settings)
   # get evaluation statistics for training data
-  train <- tune.train(enm, occs.z, bg.z, mod.full, mod.full.pred, envs, tune.tbl.i, other.settings, partitions, quiet)
+  train <- tune.train(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.settings, partitions, quiet)
   # make training stats table
   tune.args.col <- paste(names(tune.tbl.i), tune.tbl.i, collapse = "_", sep = ".")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)

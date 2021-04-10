@@ -547,7 +547,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
   #   dplyr::mutate(metric = gsub(".sd", "", metric))
   # null.res.avgs <- dplyr::bind_cols(null.avgs, null.sds %>% dplyr::select(sd))
   
-  emp.res <- e.null@emp.vs.null.results %>% 
+  emp.res <- e.null@null.emp.results %>% 
     dplyr::slice(1) %>%
     tidyr::pivot_longer(cols = stats, names_to = "metric", values_to = "value") %>%
     dplyr::select(statistic, metric, value) %>%

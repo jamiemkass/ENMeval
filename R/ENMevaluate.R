@@ -36,8 +36,11 @@
 #' @param partitions character: name of partitioning technique (see \code{?partitions})
 #' @param algorithm character: name of the algorithm used to build models -- one of "maxnet" or
 #' "maxent.jar", else the name from a custom ENMdetails implementation
-#' @param partition.settings named list: settings specific to certain partitions -- see ?partition.settings
-#' @param other.settings named list: other settings for analysis -- see ?other.settings
+#' @param partition.settings named list: used to specify certain settings for partitioning schema.
+#' The options are: 
+#' @param other.settings named list: used to specify extra settings for the analysis,
+#' inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
+#' so if they are not specified the analysis will be run with default settings.
 #' @param categoricals character vector: name or names of categorical environmental variables -- if not specified,
 #' all predictor variables will be treated as continuous unless they are factors (if categorical variables
 #' are already factors, specifying names of such variables in this argument is not needed)
@@ -62,7 +65,10 @@
 #' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details
 #' @param user.val.grps matrix / data frame: user-defined validation record coordinates and predictor variable values -- 
 #' this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data
-#' @param user.eval function: specify custom validation evaluation (see vignette for example)
+#' @param user.eval function: custom function for specifying performance metrics not included in ENMeval.
+#' The function must be first defined and then input as the argument "user.eval" into ENMevaluate(). 
+#' This function has a single argument called "vars", which is a list that includes different data 
+#' that can be used to calculate the metric. See Details below and the vignette for a worked example.
 #' @param rmm rangeModelMetadata object: if specified, ENMevaluate() will write metadata details for the analysis into
 #' this object, but if not, a new rangeModelMetadata object will be generated and written to
 #' @param parallel boolean: if TRUE, run with parallel processing
@@ -73,9 +79,50 @@
 #' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar these are included to avoid unnecessary errors for older scripts, but in a later version
 #' these arguments will be permanently deprecated
 #' 
+#' @details For other.settings, the options are:
+#' abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)
+#' validation.bg - character: either "full" to calculate training and validation AUC and CBI 
+#' for cross-validation with respect to the full background (default), or "partition" (meant for 
+#' spatial partitions only) to calculate each with respect to the partitioned background only 
+#' (i.e., training occurrences are compared to training background, and validation occurrences 
+#' compared to validation background)
+#' pred.type - character: specifies which prediction type should be used to generate maxnet or 
+#' maxent.jar prediction rasters (default: "cloglog")
+#' other.args - named list: any additional model arguments not specified for tuning.
+#' 
+#' For partition.settings, the options are: 
+#' orientation - character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition), 
+#' aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs 
+#' raster to assign partitions (required for the checkerboard partitions)
+#' kfolds - numeric: the number of folds (i.e., partitions) for random partitions. 
+#' 
+#' For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", 
+#' and they determine the order and orientations with which the block partitioning function creates the partition groups. 
+#' For example, "lat_lon" will split the occurrence localities first by latitude, then by longitude. For the checkerboard 
+#' partitions, the aggregation factor specifies how much to aggregate the existing cells in the envs raster
+#' to make new spatial partitions. For example, checkerboard1 with an aggregation factor value of 2 will make the grid cells 
+#' 4 times larger and then assign occurrence and background records to partition groups based on which cell they are in. 
+#' The checkerboard2 partition is hierarchical, so cells are first aggregated to define groups like checkerboard1, but a 
+#' second aggregation is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers 
+#' can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
+#' for both levels.
+#' 
+#' For user.eval, the accessible variables you have access to in order to run your custom function are: 
+#' enm - ENMdetails object,
+#' occs.train.z - data frame: predictor variable values for training occurrences
+#' occs.val.z - data frame: predictor variable values for validation occurrences
+#' bg.train.z - data frame: predictor variable values for training background
+#' bg.val.z - data frame: predictor variable values for validation background
+#' mod.k - Model object for current partition (k)
+#' nk - numeric: number of folds (i.e., partitions)
+#' other.settings - named list: other settings specified in ENMevaluate()
+#' partitions - character: name of the partition method (e.g., "block")
+#' occs.train.pred - numeric: predictions made by mod.k for training occurrences
+#' occs.val.pred - numeric: predictions made by mod.k for validation occurrences
+#' bg.train.pred - numeric: predictions made by mod.k for training background
+#' bg.val.pred - numeric: predictions made by mod.k for validation background
+#' 
 #' @return An ENMevaluation object. See ?ENMevaluation for details.
-#'
-#' @examples
 #'
 #' @importFrom magrittr %>%
 #' @importFrom foreach %dopar%
@@ -84,6 +131,27 @@
 #' @importFrom stats pnorm predict quantile runif sd quantile
 #' @importFrom utils citation combn packageVersion setTxtProgressBar txtProgressBar
 #'
+#'
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- raster::stack(list.files(path=paste(system.file(package="dismo"), "/ex", sep=""), 
+#'                                  pattern="grd", full.names=TRUE))
+#' occs.z <- cbind(occs, raster::extract(envs, occs))
+#' occs.z$biome <- factor(occs.z$biome)
+#' bg <- as.data.frame(dismo::randomPoints(envs, 1000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, raster::extract(envs, bg))
+#' bg.z$biome <- factor(bg.z$biome)
+#' tune.args <- list(fc = c("L","LQ","LQH","H"), rm = 1:5)
+#' os <- list(abs.auc.diff = FALSE, pred.type = "logistic", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' 
+#' e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
+#' other.settings = os, partition.settings = ps,
+#' algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
+#' }
+#' 
 #' @export 
 
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitions = NULL, algorithm = NULL, 

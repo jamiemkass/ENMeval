@@ -4,7 +4,14 @@
 \name{ENMnull-class}
 \alias{ENMnull-class}
 \alias{ENMnull}
+\alias{show,ENMnull-method}
 \title{ENMnull class}
+\usage{
+\S4method{show}{ENMnull}(object)
+}
+\arguments{
+\item{object}{ENMnull object}
+}
 \description{
 An S4 class that contains the ENMnulls results.
 }
@@ -27,7 +34,7 @@ An S4 class that contains the ENMnulls results.
 
 \item{\code{null.results.partitions}}{data frame: evaluation k-fold statistics for null models}
 
-\item{\code{emp.vs.null.results}}{data frame: evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values}
+\item{\code{null.emp.results}}{data frame: evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values}
 
 \item{\code{emp.occs}}{data frame: occurrence coordinates and predictor variable values used for model training (empirical model)}
 

@@ -4,7 +4,14 @@
 \name{ENMevaluation-class}
 \alias{ENMevaluation-class}
 \alias{ENMevaluation}
+\alias{show,ENMevaluation-method}
 \title{ENMevaluation class}
+\usage{
+\S4method{show}{ENMevaluation}(object)
+}
+\arguments{
+\item{object}{ENMevaluation object}
+}
 \description{
 An S4 class that contains the ENMevaluate results.
 }
@@ -21,15 +28,25 @@ An S4 class that contains the ENMevaluate results.
 
 \item{\code{other.settings}}{list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
 
+\item{\code{doClamp}}{boolean: whether or not clamping was used}
+
+\item{\code{clamp.directions}}{list: the clamping directions specified}
+
 \item{\code{results}}{data frame: evaluation summary statistics}
 
 \item{\code{results.partitions}}{data frame: evaluation k-fold statistics}
 
 \item{\code{models}}{list: model objects}
 
+\item{\code{variable.importance}}{list: variable importance data frames (when available)}
+
 \item{\code{predictions}}{RasterStack: model predictions}
 
+\item{\code{taxon.name}}{character: the name of the focal taxon (optional)}
+
 \item{\code{occs}}{data frame: occurrence coordinates and predictor variable values used for model training}
+
+\item{\code{occs.testing}}{data frame: when provided, the coordinates of the fully withheld testing records}
 
 \item{\code{occs.grp}}{vector: partition groups for occurrence points}
 
@@ -38,6 +55,8 @@ An S4 class that contains the ENMevaluate results.
 \item{\code{bg.grp}}{vector: partition groups for background points}
 
 \item{\code{overlap}}{list: matrices of pairwise niche overlap statistics}
+
+\item{\code{rmm}}{list: the rangeModelMetadata objects for each model}
 }}
 
 \author{

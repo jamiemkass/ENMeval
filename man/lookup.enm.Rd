@@ -6,6 +6,9 @@
 \usage{
 lookup.enm(algorithm)
 }
+\arguments{
+\item{algorithm}{character: algorithm name (must be implemented as ENMdetails object)}
+}
 \description{
 Internal function to look up ENMdetails objects.
 }
