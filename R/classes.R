@@ -308,9 +308,11 @@ setMethod("enm.name<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.fun
+#' @export
 setGeneric("enm.fun", function(x) standardGeneric("enm.fun"))
 
 #' @rdname enm.fun
+#' @export
 setGeneric("enm.fun<-", function(x, value) standardGeneric("enm.fun<-"))
 
 #' @rdname enm.fun
@@ -327,9 +329,11 @@ setMethod("enm.fun<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.errors
+#' @export
 setGeneric("enm.errors", function(x) standardGeneric("enm.errors"))
 
 #' @rdname enm.errors
+#' @export
 setGeneric("enm.errors<-", function(x, value) standardGeneric("enm.errors<-"))
 
 #' @rdname enm.errors
@@ -346,9 +350,11 @@ setMethod("enm.errors<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.msgs
+#' @export
 setGeneric("enm.msgs", function(x) standardGeneric("enm.msgs"))
 
 #' @rdname enm.msgs
+#' @export
 setGeneric("enm.msgs<-", function(x, value) standardGeneric("enm.msgs<-"))
 
 #' @rdname enm.msgs
@@ -365,9 +371,11 @@ setMethod("enm.msgs<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.args
+#' @export
 setGeneric("enm.args", function(x) standardGeneric("enm.args"))
 
 #' @rdname enm.args
+#' @export
 setGeneric("enm.args<-", function(x, value) standardGeneric("enm.args<-"))
 
 #' @rdname enm.args
@@ -384,9 +392,11 @@ setMethod("enm.args<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.predict
+#' @export
 setGeneric("enm.predict", function(x) standardGeneric("enm.predict"))
 
 #' @rdname enm.predict
+#' @export
 setGeneric("enm.predict<-", function(x, value) standardGeneric("enm.predict<-"))
 
 #' @rdname enm.predict
@@ -403,9 +413,11 @@ setMethod("enm.predict<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.ncoefs
+#' @export
 setGeneric("enm.ncoefs", function(x) standardGeneric("enm.ncoefs"))
 
 #' @rdname enm.ncoefs
+#' @export
 setGeneric("enm.ncoefs<-", function(x, value) standardGeneric("enm.ncoefs<-"))
 
 #' @rdname enm.ncoefs
@@ -422,9 +434,11 @@ setMethod("enm.ncoefs<-", "ENMdetails", function(x, value) {
 #' @param x ENMdetails object
 #' @param value input value
 #' @rdname enm.varimp
+#' @export
 setGeneric("enm.varimp", function(x) standardGeneric("enm.varimp"))
 
 #' @rdname enm.varimp
+#' @export
 setGeneric("enm.varimp<-", function(x, value) standardGeneric("enm.varimp<-"))
 
 #' @rdname enm.varimp
@@ -487,6 +501,7 @@ ENMnull <- setClass("ENMnull",
 #' @title null.algorithm generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.algorithm
+#' @export
 setGeneric("null.algorithm", function(x) standardGeneric("null.algorithm"))
 
 #' @rdname null.algorithm
@@ -495,6 +510,7 @@ setMethod("null.algorithm", "ENMnull", function(x) x@null.algorithm)
 #' @title null.mod.settings generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.mod.settings
+#' @export
 setGeneric("null.mod.settings", function(x) standardGeneric("null.mod.settings"))
 
 #' @rdname null.mod.settings
@@ -503,6 +519,7 @@ setMethod("null.mod.settings", "ENMnull", function(x) x@null.mod.settings)
 #' @title null.partition.method generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.partition.method
+#' @export
 setGeneric("null.partition.method", function(x) standardGeneric("null.partition.method"))
 
 #' @rdname null.partition.method
@@ -511,6 +528,7 @@ setMethod("null.partition.method", "ENMnull", function(x) x@null.partition.metho
 #' @title null.partition.settings generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.partition.settings
+#' @export
 setGeneric("null.partition.settings", function(x) standardGeneric("null.partition.settings"))
 
 #' @rdname null.partition.settings
@@ -519,6 +537,7 @@ setMethod("null.partition.settings", "ENMnull", function(x) x@null.partition.set
 #' @title null.other.settings generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.other.settings
+#' @export
 setGeneric("null.other.settings", function(x) standardGeneric("null.other.settings"))
 
 #' @rdname null.other.settings
@@ -527,6 +546,7 @@ setMethod("null.other.settings", "ENMnull", function(x) x@null.other.settings)
 #' @title null.no.iter generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.no.iter
+#' @export
 setGeneric("null.no.iter", function(x) standardGeneric("null.no.iter"))
 
 #' @rdname null.no.iter
@@ -535,6 +555,7 @@ setMethod("null.no.iter", "ENMnull", function(x) x@null.no.iter)
 #' @title null.results generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.results
+#' @export
 setGeneric("null.results", function(x) standardGeneric("null.results"))
 
 #' @rdname null.results
@@ -543,6 +564,7 @@ setMethod("null.results", "ENMnull", function(x) x@null.results)
 #' @title null.results.partitions generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.results.partitions
+#' @export
 setGeneric("null.results.partitions", function(x) standardGeneric("null.results.partitions"))
 
 #' @rdname null.results.partitions
@@ -551,6 +573,7 @@ setMethod("null.results.partitions", "ENMnull", function(x) x@null.results.parti
 #' @title null.emp.results generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname null.emp.results
+#' @export
 setGeneric("null.emp.results", function(x) standardGeneric("null.emp.results"))
 
 #' @rdname null.emp.results
@@ -559,6 +582,7 @@ setMethod("null.emp.results", "ENMnull", function(x) x@null.emp.results)
 #' @title emp.occs generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname emp.occs
+#' @export
 setGeneric("emp.occs", function(x) standardGeneric("emp.occs"))
 
 #' @rdname emp.occs
@@ -567,6 +591,7 @@ setMethod("emp.occs", "ENMnull", function(x) x@emp.occs)
 #' @title emp.occs.grp generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname emp.occs.grp
+#' @export
 setGeneric("emp.occs.grp", function(x) standardGeneric("emp.occs.grp"))
 
 #' @rdname emp.occs.grp
@@ -575,6 +600,7 @@ setMethod("emp.occs.grp", "ENMnull", function(x) x@emp.occs.grp)
 #' @title emp.bg generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname emp.bg
+#' @export
 setGeneric("emp.bg", function(x) standardGeneric("emp.bg"))
 
 #' @rdname emp.bg
@@ -583,6 +609,7 @@ setMethod("emp.bg", "ENMnull", function(x) x@emp.bg)
 #' @title emp.bg.grp generic for ENMnull object
 #' @param x ENMnull object
 #' @rdname emp.bg.grp
+#' @export
 setGeneric("emp.bg.grp", function(x) standardGeneric("emp.bg.grp"))
 
 #' @rdname emp.bg.grp
