@@ -1,10 +1,10 @@
 ---
-title: "ENMeval v1.9.0 Vignette"
+title: "ENMeval v2.0.0 Vignette"
 author: "Jamie M. Kass, Robert Muscarella, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ENMeval v1.9.0 Vignette}
+  %\VignetteIndexEntry{ENMeval v2.0.0 Vignette}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -36,7 +36,7 @@ The primary function `ENMevaluate` runs the full analysis and returns an `ENMeva
 For a detailed description of the original `ENMeval` 0.1.0, check out the open-access publication:
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Although older versions (0.3.0 and earlier) implemented only the ENM presence-only algorithm Maxent through the [Java software](http://biodiversityinformatics.amnh.org/open_source/maxent/) and R with the package  [`maxnet`](https://cran.r-project.org/package=maxnet), this new version 1.9.0 can implement any ENM algorithm by specifying its settings in a *ENMdetails* object (see below for an example). 
+Although older versions (0.3.0 and earlier) implemented only the ENM presence-only algorithm Maxent through the [Java software](http://biodiversityinformatics.amnh.org/open_source/maxent/) and R with the package  [`maxnet`](https://cran.r-project.org/package=maxnet), this new version 2.0.0 can implement any ENM algorithm by specifying its settings in a *ENMdetails* object (see below for an example). 
 
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
