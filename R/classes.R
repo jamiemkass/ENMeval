@@ -471,7 +471,7 @@ setMethod("show",
 #' @slot null.partition.method character: partition method used
 #' @slot null.partition.settings list: partition settings used (i.e., value of *k* or aggregation factor)
 #' @slot null.other.settings list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
-#' @slot no.iter numeric: number of null model iterations
+#' @slot null.no.iter numeric: number of null model iterations
 #' @slot null.results data frame: evaluation summary statistics for null models
 #' @slot null.results.partitions data frame: evaluation k-fold statistics for null models
 #' @slot null.emp.results data frame: evaluation summary statistics for the empirical model, means for all null models, z-scores, and p-values
@@ -489,7 +489,7 @@ ENMnull <- setClass("ENMnull",
                               null.partition.method = 'character',
                               null.partition.settings = 'list',
                               null.other.settings = 'list',
-                              no.iter = 'numeric',
+                              null.no.iter = 'numeric',
                               null.results = 'data.frame',
                               null.results.partitions = 'data.frame',
                               null.emp.results = 'data.frame',

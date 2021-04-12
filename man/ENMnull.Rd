@@ -28,7 +28,7 @@ An S4 class that contains the ENMnulls results.
 
 \item{\code{null.other.settings}}{list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
 
-\item{\code{no.iter}}{numeric: number of null model iterations}
+\item{\code{null.no.iter}}{numeric: number of null model iterations}
 
 \item{\code{null.results}}{data frame: evaluation summary statistics for null models}
 
