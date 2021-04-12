@@ -236,14 +236,17 @@ setMethod("show",
           signature = "ENMevaluation",
           definition = function(object) {
             cat("An object of class: ", class(object), "\n")
-            cat(" taxon name: ", object@taxon.name, "\n")
+            if(nchar(object@taxon.name)>0) cat(" taxon name: ", object@taxon.name, "\n")
             cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
             cat(" partition method: ", object@partition.method, "\n")
             cat(" partition settings: ", ifelse(length(object@partition.settings) > 0, paste(names(object@partition.settings), unlist(object@partition.settings), sep = " = ", collapse = ", "), "none"), "\n")
             cat(" clamp: ", object@doClamp, "\n")
-            cat("clamp directions: ", ifelse(length(object@clamp.directions) > 0, paste(sapply(1:2, function(x) paste0(names(object@clamp.directions[x]), ": ", paste(object@clamp.directions[[x]], collapse = ", "))), collapse = "\n"), "none"), "\n")
+            clamp.dir.spacing <- "\n                    "
+            cat(" clamp directions: ", ifelse(length(object@clamp.directions) > 0, paste(sapply(1:2, function(x) paste0(names(object@clamp.directions[x]), ": ", paste(object@clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "none"), "\n")
             cat(" algorithm: ", object@algorithm, "\n")
-            cat(" tune settings (", paste0(names(object@tune.settings)[-ncol(object@tune.settings)], collapse = "_"), "): ", paste0(object@tune.settings[,ncol(object@tune.settings)], collapse = ", "), "\n")
+            tune.args.df <- object@tune.settings[,-which(names(object@tune.settings)=="tune.args")]
+            tune.spacing <- "\n                 "
+            cat(" tune settings: ", paste0(names(tune.args.df), ": ", apply(tune.args.df, 2, function(x) paste(unique(x), collapse = ",")), collapse = tune.spacing), "\n")
             cat(" overlap: ", !is.null(object@overlap), "\n")
             cat("Refer to ?ENMevaluation for information on slots.", sep = "")
             invisible(NULL)
