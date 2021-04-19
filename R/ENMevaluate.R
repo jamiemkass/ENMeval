@@ -5,22 +5,6 @@
 #' evaluation statistics for each combination of settings and for each cross validation fold therein, as
 #' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 #' results table should aid users in identifying model settings that balance fit and predictive ability.
-#' @details There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
-#' They are also discussed briefly in ?other.settings and ?ENMnulls.
-#' 
-#' 1. By default, validation AUC is calculated with respect to the full background (training + validation).
-#' This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
-#' other.settings$validation.bg to "partition", which will calculate AUC with respect 
-#' to the validation background only. The default value for other.settings$validation.bg is "full".
-#' 
-#' 2. The continuous Boyce index is not calculated with respect to the RasterStack delineating the study extent,
-#' but instead to the background records. This decision was made to simplify the code and improve running time. 
-#' If the background records are a good representation of the study extent, there should not be much difference
-#' between this and the raster approach.
-#' 
-#' 3. Null occurrences for null ENMs are sample randomly from the background records, not the RasterStack
-#' delineating the study extent. This decision was made for similar reasons to that for CBI, and as above,
-#' there should be little difference as long as the background records represent the study extent well.
 #' 
 #' @param occs matrix / data frame: occurrence records with two columns for longitude and latitude 
 #' of occurrence localities, in that order -- if specifying predictor variable values
@@ -79,22 +63,41 @@
 #' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar these are included to avoid unnecessary errors for older scripts, but in a later version
 #' these arguments will be permanently deprecated
 #' 
-#' @details For other.settings, the options are:
-#' abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)
+#' @details There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
+#' They are also discussed briefly in ?ENMnulls.
+#' 
+#' 1. By default, validation AUC is calculated with respect to the full background (training + validation).
+#' This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
+#' other.settings$validation.bg to "partition", which will calculate AUC with respect 
+#' to the validation background only. The default value for other.settings$validation.bg is "full".
+#' 
+#' 2. The continuous Boyce index is not calculated with respect to the RasterStack delineating the study extent,
+#' but instead to the background records. This decision was made to simplify the code and improve running time. 
+#' If the background records are a good representation of the study extent, there should not be much difference
+#' between this and the raster approach.
+#' 
+#' 3. Null occurrences for null ENMs are sample randomly from the background records, not the RasterStack
+#' delineating the study extent. This decision was made for similar reasons to that for CBI, and as above,
+#' there should be little difference as long as the background records represent the study extent well.
+#' 
+#' Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.
+#' 
+#' For other.settings, the options are:\cr
+#' abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr
 #' validation.bg - character: either "full" to calculate training and validation AUC and CBI 
 #' for cross-validation with respect to the full background (default), or "partition" (meant for 
 #' spatial partitions only) to calculate each with respect to the partitioned background only 
 #' (i.e., training occurrences are compared to training background, and validation occurrences 
-#' compared to validation background)
+#' compared to validation background)\cr
 #' pred.type - character: specifies which prediction type should be used to generate maxnet or 
-#' maxent.jar prediction rasters (default: "cloglog")
-#' other.args - named list: any additional model arguments not specified for tuning.
+#' maxent.jar prediction rasters (default: "cloglog")\cr
+#' other.args - named list: any additional model arguments not specified for tuning.\cr
 #' 
-#' For partition.settings, the options are: 
+#' For partition.settings, the current options are:\cr
 #' orientation - character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition), 
-#' aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs 
-#' raster to assign partitions (required for the checkerboard partitions)
-#' kfolds - numeric: the number of folds (i.e., partitions) for random partitions. 
+#' aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs
+#' raster to assign partitions (required for the checkerboard partitions)\cr
+#' kfolds - numeric: the number of folds (i.e., partitions) for random partitions.\cr
 #' 
 #' For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", 
 #' and they determine the order and orientations with which the block partitioning function creates the partition groups. 
@@ -107,19 +110,19 @@
 #' can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
 #' for both levels.
 #' 
-#' For user.eval, the accessible variables you have access to in order to run your custom function are: 
-#' enm - ENMdetails object,
-#' occs.train.z - data frame: predictor variable values for training occurrences
-#' occs.val.z - data frame: predictor variable values for validation occurrences
-#' bg.train.z - data frame: predictor variable values for training background
-#' bg.val.z - data frame: predictor variable values for validation background
-#' mod.k - Model object for current partition (k)
-#' nk - numeric: number of folds (i.e., partitions)
-#' other.settings - named list: other settings specified in ENMevaluate()
-#' partitions - character: name of the partition method (e.g., "block")
-#' occs.train.pred - numeric: predictions made by mod.k for training occurrences
-#' occs.val.pred - numeric: predictions made by mod.k for validation occurrences
-#' bg.train.pred - numeric: predictions made by mod.k for training background
+#' For user.eval, the accessible variables you have access to in order to run your custom function are:\cr
+#' enm - ENMdetails object\cr
+#' occs.train.z - data frame: predictor variable values for training occurrences\cr
+#' occs.val.z - data frame: predictor variable values for validation occurrences\cr
+#' bg.train.z - data frame: predictor variable values for training background\cr
+#' bg.val.z - data frame: predictor variable values for validation background\cr
+#' mod.k - Model object for current partition (k)\cr
+#' nk - numeric: number of folds (i.e., partitions)\cr
+#' other.settings - named list: other settings specified in ENMevaluate()\cr
+#' partitions - character: name of the partition method (e.g., "block")\cr
+#' occs.train.pred - numeric: predictions made by mod.k for training occurrences\cr
+#' occs.val.pred - numeric: predictions made by mod.k for validation occurrences\cr
+#' bg.train.pred - numeric: predictions made by mod.k for training background\cr
 #' bg.val.pred - numeric: predictions made by mod.k for validation background
 #' 
 #' @return An ENMevaluation object. See ?ENMevaluation for details.
@@ -169,7 +172,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # legacy argument handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
-    if(quiet != TRUE) message("* Running ENMeval v1.9.0 with legacy arguments. These will be phased out in the next version.")
+    if(quiet != TRUE) message("* Running ENMeval v2.0.0 with legacy arguments. These will be phased out in the next version.")
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
@@ -269,9 +272,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   # make sure that validation.bg is only "bg" if the partitions are spatial
   if(!(partitions %in% c("block","checkerboard1","checkerboard2","user")) & other.settings$validation.bg == "partition") {
-    stop('If using non-spatial partitions, please set validation.bg to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?other.settings for details.')
+    stop('If using non-spatial partitions, please set validation.bg to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?ENMevaluate for details.')
   }else if(partitions == "user" & other.settings$validation.bg == "partition") {
-    message('* Please make sure that the user-specified partitions are spatial, else validation.bg should be set to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?other.settings for details.')
+    message('* Please make sure that the user-specified partitions are spatial, else validation.bg should be set to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?ENMevaluate for details.')
   }
   
   # choose a built-in ENMdetails object matching the input model name
@@ -482,9 +485,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ################# #
   # print model-specific message
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v1.9.0 with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 with", enm@msgs(tune.args, other.settings), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v1.9.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.0 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
   }
   
   ################# #

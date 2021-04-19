@@ -1,11 +1,17 @@
 [![CRAN version](https://www.r-pkg.org/badges/version/ENMeval)](https://CRAN.R-project.org/package=ENMeval) [![downloads](https://cranlogs.r-pkg.org:443/badges/grand-total/ENMeval?color=orange)](https://cranlogs.r-pkg.org:443/badges/grand-total/ENMeval?color=orange) [![Build Status](https://travis-ci.com/jamiemkass/ENMeval.svg?branch=master)](https://travis-ci.com/jamiemkass/ENMeval)
 
-# ENMeval version 1.9.0
+# ENMeval version 2.0.0
 R package for automated tuning and evaluations of ecological niche models
 
+<<<<<<< HEAD
 [`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models. Version 1.9.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, and more flexibility for different analyses and data types. Most of these new features were created in response to user requests -- thank you for your input!
+=======
+* IMPORTANT: Please use dismo v1.1-4 or lower with ENMeval, as an issue was discovered in the new version 1.3-3. Install this older version if you've already installed the new one with `devtools::install_version("dismo", version = "1.1-4")`.
 
-`ENMeval` 1.9.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) from the ['maxnet' R package](https://cran.r-project.org/package=maxnet) and maxent.jar [(Phillips *et al.* 2006)](https://doi.org/10.1016/j.ecolmodel.2005.03.026), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/). 
+[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models. Version 2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, and more flexibility for different analyses and data types. Most of these new features were created in response to user requests -- thank you for your input!
+>>>>>>> b50dc7a37c727983bea92c0a81a8621700738b47
+
+`ENMeval` 2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) from the ['maxnet' R package](https://cran.r-project.org/package=maxnet) and maxent.jar [(Phillips *et al.* 2006)](https://doi.org/10.1016/j.ecolmodel.2005.03.026), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/). 
 
 Model tuning refers to the process of building models with varying complexity settings, then choosing optimal settings based on some criteria. As it is difficult to predict in advance what level of complexity best fits your data and results in the most ecologically realistic response for your species, model tuning and evaluations are essential for ENM studies. This process helps researchers maximize predictive ability and avoid overfitting with models that are too complex. 
 

@@ -1,10 +1,10 @@
 ---
-title: "ENMeval v1.9.0 Vignette"
+title: "ENMeval v2.0.0 Vignette"
 author: "Jamie M. Kass, Robert Muscarella, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ENMeval v1.9.0 Vignette}
+  %\VignetteIndexEntry{ENMeval v2.0.0 Vignette}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -36,7 +36,7 @@ The primary function `ENMevaluate` runs the full analysis and returns an `ENMeva
 For a detailed description of the original `ENMeval` 0.1.0, check out the open-access publication:
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](http://onlinelibrary.wiley.com/doi/10.1111/2041-210X.12261/full)
 
-Although older versions (0.3.0 and earlier) implemented only the ENM presence-only algorithm Maxent through the [Java software](http://biodiversityinformatics.amnh.org/open_source/maxent/) and R with the package  [`maxnet`](https://cran.r-project.org/package=maxnet), this new version 1.9.0 can implement any ENM algorithm by specifying its settings in a *ENMdetails* object (see below for an example). 
+Although older versions (0.3.0 and earlier) implemented only the ENM presence-only algorithm Maxent through the [Java software](http://biodiversityinformatics.amnh.org/open_source/maxent/) and R with the package  [`maxnet`](https://cran.r-project.org/package=maxnet), this new version 2.0.0 can implement any ENM algorithm by specifying its settings in a *ENMdetails* object (see below for an example). 
 
 ## Data Acquisition & Pre-processing {#data}
 In this vignette, we briefly demonstrate acquisition and pre-processing of input data for `ENMeval`. There are a number of other excellent tutorials on these steps, some of which we compiled in the [Resources](#resources) section.
@@ -250,12 +250,15 @@ evalplot.envSim.hist(sim.type = "most_sim", ref.data = "occs", occs.z = occs.z, 
 # Here we plot environmental similarity values for the entire extent with respect 
 # to each validation group.
 # We use the bb.buf (bounding box buffer) parameter to zoom in to our study extent.
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = block$occs.grp, bg.grp = block$bg.grp, categoricals = "biome", bb.buf = 7)
-evalplot.envSim.map(sim.type = "most_diff", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = block$occs.grp, bg.grp = block$bg.grp, categoricals = "biome", bb.buf = 7)
-evalplot.envSim.map(sim.type = "most_sim", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = block$occs.grp, bg.grp = block$bg.grp, categoricals = "biome", bb.buf = 7)
+evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = block$occs.grp, bg.grp = block$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
+evalplot.envSim.map(sim.type = "most_diff", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = block$occs.grp, bg.grp = block$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
+evalplot.envSim.map(sim.type = "most_sim", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = block$occs.grp, bg.grp = block$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
 ```
 
 #### 2. Checkerboard1 {#cb1}
@@ -272,17 +275,20 @@ evalplot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
 # environmental representation between the partitions.
 evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
                      occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, categoricals = "biome")
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, categoricals = "biome", bb.buf = 7)
+evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
 # We can increase the aggregation factor to give the groups bigger boxes.
 # This can result in groups that are more environmentally different from each other.
 cb1.large <- get.checkerboard1(occs, envs.bg, bg, aggregation.factor=30)
 evalplot.grps(pts = occs, pts.grp = cb1.large$occs.grp, envs = envs.bg)
 evalplot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp, categoricals = "biome")
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp, categoricals = "biome", bb.buf = 7)
+evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
+                     bg.z = bg.z, occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp, 
+                     categoricals = "biome")
+evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
 ```
 
 #### 3. Checkerboard2 {#cb2}
@@ -295,10 +301,12 @@ evalplot.grps(pts = occs, pts.grp = cb2$occs.grp, envs = envs.bg)
 evalplot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 # Different from checkerboard1, some partitions here do show some difference
 # in environmental representation, but not as consistently different as with block.
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, categoricals = "biome")
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, categoricals = "biome", bb.buf = 7)
+evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
+                     bg.z = bg.z, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, 
+                     categoricals = "biome")
+evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
@@ -319,10 +327,12 @@ rand <- get.randomkfold(occs, bg, k = 5)
 evalplot.grps(pts = occs, pts.grp = rand$occs.grp, envs = envs.bg)
 # As the partitions are random, there is no large environmental difference 
 # between them.
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, categoricals = "biome")
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, bg.z = bg.z, 
-                    occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, categoricals = "biome", bb.buf = 7)
+evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
+                     bg.z = bg.z, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, 
+                     categoricals = "biome")
+evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, 
+                    categoricals = "biome", bb.buf = 7)
 ```
 
 #### 6. Fully Withheld Testing Data {#testing}: 
@@ -414,23 +424,18 @@ Unless you supply the function with background points (which is recommended in m
 
 ENMevaluate builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
-```{r, echo = FALSE}
-e.mx.l <- readRDS("e_mx_l.rds")
-```
-
-```{r enmeval1, eval = FALSE}
+```{r enmeval1, results='hide'}
 e.mx.l <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'block', 
                       tune.args = list(fc = "L", rm = 1:2))
+e.mx.l
 ```
 
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
-```{r, echo = FALSE}
-e.mx.lqh <- readRDS("e_mx_lqh.rds")
-```
 
-```{r maxnet2, eval = FALSE}
-e.mx.lqh <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'block', 
-                        tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3))
+```{r maxnet2, results='hide'}
+e.mx <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'block', 
+                        tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5))
+e.mx
 ```
 
 When building many models, the command may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel=TRUE`) can be considerably faster. Note that running parallel can also be slower when working on small datasets.
@@ -438,24 +443,14 @@ When building many models, the command may take a long time to run. Of course th
 We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap=TRUE` and `overlapStat`, which support Moran's I or Schoener's D (see [Warren et al. (2008)](https://dx.doi.org/10.1111/j.1558-5646.2008.00482.x)). Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap()` function.
 
 ```{r maxnet2.overlap, results='hide'}
-overlap <- calc.niche.overlap(e.mx.lqh@predictions, overlapStat = "D")
+overlap <- calc.niche.overlap(e.mx@predictions, overlapStat = "D")
 overlap
 ```
 
 #### Different parameterizations {#eval.parameterizations}
 There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
-```{r, echo = FALSE}
-e.mx <- readRDS("e_mx.rds")
-```
 
 ```{r evalExamples, eval = FALSE}
-# This example is for Maxent models, and so we will specify the tune.tbl with ranges of 
-# feature classes and regularization multipliers.
-tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
-
-# 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
-e.mx <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", 
-                    tune.args = tune.args, partitions = "block")
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with 
 # the original Java software.
 e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", 
@@ -490,15 +485,16 @@ e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.a
 
 You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the ENMeval internal function `tune.validate()`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in [Peterson et al. (2008)](http://dx.doi.org/10.1016/j.ecolmodel.2007.11.008) and implemented by the package [kuenm](http://dx.doi.org/10.7717/peerj.6281).
 
-```{r include=FALSE}
-# Define a custom function that implements a performance metric not included in ENMeval.
-# The function should have a single argument "vars", which is a list that includes the data
-# most performance metrics should require -- the total list of these data can be found here: ?user.eval.
-# Make sure you return a data frame that specifies the names you want to see in the results tables.
+```{r eval = FALSE}
+# First, make sure you install kuenm from Github
 devtools::install_github("marlonecobos/kuenm")
-library(kuenm)
+# Define a custom function that implements a performance metric not included in ENMeval.
+# The function should have a single argument "vars", which is a list that includes the 
+# data most performance metrics should require -- the total list of these data can be found 
+# here: ?ENMevaluate. Make sure you return a data frame that specifies the names you want to 
+# see in the results tables.
 proc <- function(vars) {
-  proc <- kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
+  proc <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
   out <- data.frame(proc_auc_ratio = proc$pROC_summary[1], 
                     proc_pval = proc$pROC_summary[2], row.names = NULL)
   return(out)
@@ -507,6 +503,13 @@ proc <- function(vars) {
 # Now we can run ENMevaluate() with the argument "user.eval", and simply give it the custom function.
 e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", 
                          tune.args = list(fc = "L", rm = 1:2), partitions = "block", user.eval = proc)
+```
+
+```{r include = FALSE}
+e.mx.proc <- readRDS("e_mx_proc.rds")
+```
+
+```{r}
 # We can see the new performance statistic averages in the results and results.partitions tables.
 e.mx.proc@results
 e.mx.proc@results.partitions

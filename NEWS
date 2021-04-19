@@ -1,13 +1,14 @@
-ENMeval 1.9.0
+ENMeval 2.0.0
 ===========
-o  Complete redesign of nearly all functionality. Code is now much tidier and readable thanks to dplyr, and commented documentation is more prevalent throughout.
-o  New object-oriented algorithm specification for using any algorithm with ENMeval. Implementations of the new ENMdetails object exist for maxent.jar and maxnet as examples of what is possible.
-o  Automated output metadata for tuning analyses which uses the Range Model Metadata Standards.
-o  New function for running null ENM simulations and calculating significance and effect sizes for empirical model performance metrics.
+o  Complete redesign of nearly all functionality. Code is now much tidier and readable thanks to dplyr and tidyr, and commented documentation is more prevalent throughout.
+o  New object-oriented algorithm specification for using any algorithm with ENMeval. Implementations of the new ENMdetails object exist for maxent.jar, maxnet, and BIOCLIM as examples of what is possible.
+o  Automated output metadata for tuning analyses which uses the Range Model Metadata Standards (R package rangeModelMetadata).
+o  New function for running null ENM simulations and calculating significance and effect sizes for empirical model performance metrics (Bohl et al. 2019 -- check ?ENMnulls).
 o  New partition schema for fully withheld testing data and evaluation without partitions. Also includes a new option for spatial block partitions to customize the spatial orientation of the blocks.
-o  A suite of new visualization functions using ggplot that map partition groups, plot environmental similarity histograms for partition groups, map environmental similarity for partition groups, and plot histograms or violins for null ENM results. The original evaluation plots were also redone and now use ggplot.
+o  Now implements continuous Boyce Index for training, validation, and full withheld testing data (via R package ecospat), and allows use of custom evaluation functions with the user.eval argument (see ?ENMevaluate).
+o  A suite of new visualization functions using ggplot2 that map partition groups, plot environmental similarity histograms for partition groups, map environmental similarity for partition groups, and plot histograms or violins for null ENM results. The original evaluation plots were also redone and now use ggplot.
 o  New analysis options for more flexibility (see ?ENMevaluate).
-o  Fully updated and extensive vignette that walks through a full analysis while describing all the new functionality.
+o  Fully updated and extensive vignette (https://github.com/jamiemkass/ENMeval/tree/master/vignettes/ENMeval-2.0.0-vignette.html) that walks through a full analysis while describing all the new functionality.
 o  Now supports doSNOW parallelization as well as doParallel. The doSNOW option has a functioning progress bar for parallel processes.
 
 ENMeval 0.3.1
@@ -27,7 +28,7 @@ o  Changed some column names in the @results table to be more intuitive and comp
 
 ENMeval 0.2.2
 ===========
-o  Added a vignette. Type: vignette('ENMeval-vignette', package='ENMeval')
+o  Added a vignette. Type: vignette('ENMeval-2.0.0-vignette', package='ENMeval')
 o  Added an option to pass additional arguments to maxent (e.g., prevalence)
 o  Added a function to extract variable importance for maxent models
 o  Fixed an inconsistency with the AICc columns of the results table when rasterPreds=F

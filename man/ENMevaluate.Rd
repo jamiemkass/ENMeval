@@ -144,7 +144,7 @@ results table should aid users in identifying model settings that balance fit an
 }
 \details{
 There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
-They are also discussed briefly in ?other.settings and ?ENMnulls.
+They are also discussed briefly in ?ENMnulls.
 
 1. By default, validation AUC is calculated with respect to the full background (training + validation).
 This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
@@ -160,22 +160,24 @@ between this and the raster approach.
 delineating the study extent. This decision was made for similar reasons to that for CBI, and as above,
 there should be little difference as long as the background records represent the study extent well.
 
-For other.settings, the options are:
-abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)
+Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.
+
+For other.settings, the options are:\cr
+abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr
 validation.bg - character: either "full" to calculate training and validation AUC and CBI 
 for cross-validation with respect to the full background (default), or "partition" (meant for 
 spatial partitions only) to calculate each with respect to the partitioned background only 
 (i.e., training occurrences are compared to training background, and validation occurrences 
-compared to validation background)
+compared to validation background)\cr
 pred.type - character: specifies which prediction type should be used to generate maxnet or 
-maxent.jar prediction rasters (default: "cloglog")
-other.args - named list: any additional model arguments not specified for tuning.
+maxent.jar prediction rasters (default: "cloglog")\cr
+other.args - named list: any additional model arguments not specified for tuning.\cr
 
-For partition.settings, the options are: 
+For partition.settings, the current options are:\cr
 orientation - character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition), 
-aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs 
-raster to assign partitions (required for the checkerboard partitions)
-kfolds - numeric: the number of folds (i.e., partitions) for random partitions. 
+aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs
+raster to assign partitions (required for the checkerboard partitions)\cr
+kfolds - numeric: the number of folds (i.e., partitions) for random partitions.\cr
 
 For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", 
 and they determine the order and orientations with which the block partitioning function creates the partition groups. 
@@ -188,19 +190,19 @@ second aggregation is then made to separate the resulting 2 bins into 4 bins. Fo
 can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
 for both levels.
 
-For user.eval, the accessible variables you have access to in order to run your custom function are: 
-enm - ENMdetails object,
-occs.train.z - data frame: predictor variable values for training occurrences
-occs.val.z - data frame: predictor variable values for validation occurrences
-bg.train.z - data frame: predictor variable values for training background
-bg.val.z - data frame: predictor variable values for validation background
-mod.k - Model object for current partition (k)
-nk - numeric: number of folds (i.e., partitions)
-other.settings - named list: other settings specified in ENMevaluate()
-partitions - character: name of the partition method (e.g., "block")
-occs.train.pred - numeric: predictions made by mod.k for training occurrences
-occs.val.pred - numeric: predictions made by mod.k for validation occurrences
-bg.train.pred - numeric: predictions made by mod.k for training background
+For user.eval, the accessible variables you have access to in order to run your custom function are:\cr
+enm - ENMdetails object\cr
+occs.train.z - data frame: predictor variable values for training occurrences\cr
+occs.val.z - data frame: predictor variable values for validation occurrences\cr
+bg.train.z - data frame: predictor variable values for training background\cr
+bg.val.z - data frame: predictor variable values for validation background\cr
+mod.k - Model object for current partition (k)\cr
+nk - numeric: number of folds (i.e., partitions)\cr
+other.settings - named list: other settings specified in ENMevaluate()\cr
+partitions - character: name of the partition method (e.g., "block")\cr
+occs.train.pred - numeric: predictions made by mod.k for training occurrences\cr
+occs.val.pred - numeric: predictions made by mod.k for validation occurrences\cr
+bg.train.pred - numeric: predictions made by mod.k for training background\cr
 bg.val.pred - numeric: predictions made by mod.k for validation background
 }
 \examples{
