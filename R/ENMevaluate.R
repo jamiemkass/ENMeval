@@ -208,6 +208,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(!is.null(bg)) bg <- as.data.frame(bg)
   # extract species name and coordinates
   
+  # make sure taxon name column is not included
+  if(class(occs[,1]) == "character" | bg[,1] == "character") stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
+  
   if(is.null(taxon.name)) {
     if(quiet != TRUE) message(paste0("*** Running initial checks... ***\n"))
   }else{
@@ -643,7 +646,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
                      variable.importance = varimp.all,
                      partition.method = partitions, partition.settings = partition.settings,
                      other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
-                     taxon.name = taxon.name,
+                     taxon.name = as.character(taxon.name),
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.testing = occs.testing.z, occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
                      rmm = list())
