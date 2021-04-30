@@ -1,7 +1,8 @@
 [![CRAN version](https://www.r-pkg.org/badges/version/ENMeval)](https://CRAN.R-project.org/package=ENMeval) [![downloads](https://cranlogs.r-pkg.org:443/badges/grand-total/ENMeval?color=orange)](https://cranlogs.r-pkg.org:443/badges/grand-total/ENMeval?color=orange) [![Build Status](https://travis-ci.com/jamiemkass/ENMeval.svg?branch=master)](https://travis-ci.com/jamiemkass/ENMeval)
 
 # ENMeval version 2.0.0
-R package for automated tuning and evaluations of ecological niche models
+
+## R package for automated tuning and evaluations of ecological niche models
 
 [`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version 2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive vignette, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests -- thank you for your input!
 
