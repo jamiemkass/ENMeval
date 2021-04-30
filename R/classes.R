@@ -18,7 +18,7 @@ NULL
 #' @slot predictions RasterStack: model predictions
 #' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
-#' @slot occs.testing data frame: when provided, the coordinates of the fully withheld testing records
+#' @slot occs.testing data frame: when provided, the coordinates of the fully-withheld testing records
 #' @slot occs.grp vector: partition groups for occurrence points
 #' @slot bg data frame: background coordinates and predictor variable values used for model training
 #' @slot bg.grp vector: partition groups for background points
