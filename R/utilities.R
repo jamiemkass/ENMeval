@@ -67,7 +67,8 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
       return(orig.vals)
     }
   }
-  # convert grid cells or rows to NA exist in input data frames
+  # convert all RasterStack grid cells to NA that are NA for any one raster
+  # if NAs exist in an input data frame, stop the function and request user to remove manually
   if(isRas == TRUE) {
     orig.vals <- rasStackNAs(orig.vals)
   }else{
@@ -128,9 +129,11 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   if(!is.null(categoricals)) {
     if(inherits(orig.vals, "BasicRaster") == TRUE) {
       out <- raster::addLayer(out, orig.vals[[categoricals]])
+      out <- out[[names(orig.vals)]]
     }else{
       out <- cbind(out, orig.vals[,categoricals])
-      names(out)[which(names(orig.vals) %in% categoricals)] <- categoricals
+      names(out)[ncol(out)] <- categoricals
+      out <- out[,names(orig.vals)]
     }
   }
   return(out)
