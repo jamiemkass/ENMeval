@@ -154,7 +154,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' where \emph{K} is the number of non-zero coefficients in the model and \emph{n} is the number of
 #' occurrence localities.  The \emph{logLikelihood} is calculated as:
 #' \deqn{ sum(log(vals))}
-#' where \emph{vals} is a vector of Maxent raw/expontential values at occurrence localities
+#' where \emph{vals} is a vector of Maxent raw/exponential values at occurrence localities
 #' and the sum of these values across the study extent is equal to 1.
 #' \code{delta.AICc} is the difference between the AICc of a given model and
 #' the AICc of the model with the lowest AICc.
@@ -163,51 +163,57 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' values of all models included in a run.  These can be used for model
 #' averaging (Burnham and Anderson 2002).
 #' @aliases calc.aicc get.params
-#' @details As motivated by Warren and Seifert (2011) and implemented in 
-#' ENMTools (Warren  \emph{et al.} 2010), this function calculates the small 
-#' sample size version of Akaike Information Criterion for ENMs (Akaike 1974).  
-#' We use AICc (instead of AIC) regardless of sample size based on the 
-#' recommendation of Burnham and Anderson (1998, 2004).  The number of 
-#' coefficients is determined by counting the number of non-zero coefficients in 
-#' the \code{maxent} lambda file (\code{m@lambdas} for maxent.jar and \code{m$betas} for maxnet.  
-#' See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of non-zero coefficients is an 
-#' estimate of the true degrees of freedom.  For Maxent ENMs, AICc is 
-#' calculated by standardizing the raw output such that all cells in the study 
-#' extent sum to 1. The likelihood of the data for a given model is then 
-#' calculated by taking the product of the raw output values (or the sum of their logs, as is implemented here)
-#' for all grid cells that contain an occurrence locality (Warren and Seifert 2011).
+#' @details As motivated by Warren and Seifert (2011) and implemented in ENMTools (Warren 
+#' \emph{et al.} 2010), this function calculates the small sample size version of Akaike 
+#' Information Criterion for ENMs (Akaike 1974). We use AICc (instead of AIC) regardless of 
+#' sample size based on the recommendation of Burnham and Anderson (1998, 2004).  The number of 
+#' coefficients is determined by counting the number of non-zero coefficients in the 
+#' \code{maxent} lambda file (\code{m@lambdas} for maxent.jar and \code{m$betas} for maxnet.  
+#' See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of 
+#' non-zero coefficients is an estimate of the true degrees of freedom. For Maxent ENMs, AICc 
+#' is calculated by first standardizing the raw predictions such that all cells in the study 
+#' extent sum to 1, then extracting the occurrence record predictions. The predictions of the
+#' study extent may not sum to 1 if the background does not cover every grid cell -- as the 
+#' background predictions sum to 1 by definition, extra predictions for grid cells not in 
+#' the training data will add to this sum. When no raster data is provided, the raw predictions 
+#' of the occurrence records are used to calculate AICc without standardization, with the 
+#' assumption that the background records have adequately represented the occurrence records. 
+#' The standardization is not necessary here because the background predictions sum to 1 
+#' already, and the occurrence data is a subset of the background. This will not be true if 
+#' the background does not adequately represent the occurrence records, in which case the 
+#' occurrences are not a subset of the background and the raster approach should be used 
+#' instead. The likelihood of the data for a given model is then calculated by taking the 
+#' product of the raw occurrence predictions (Warren and Seifert 2011), or the sum of their 
+#' logs, as is implemented here.
+#' 
 #' @seealso \code{maxent} in the \pkg{dismo} package.
+#' 
 #' @note Returns all \code{NA}s if the number of non-zero coefficients is larger than the
 #' number of observations (occurrence localities).
-#' @references Akaike, H. (1974) A new look at the statistical model
-#' identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}:
-#' 716-723.
 #' 
-#' Burnham, K. P. and Anderson, D. R. (1998) Model selection and multimodel
-#' inference: a practical information-theoretic approach. Springer, New York.
+#' @references 
+#' Akaike, H. (1974) A new look at the statistical model identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}: 716-723. \url{https://doi.org/10.1109/TAC.1974.1100705}
 #' 
-#' Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference:
-#' understanding AIC and BIC in model selection. \emph{Sociological Methods and
-#' Research}, \bold{33}: 261-304.
+#' Burnham, K. P. and Anderson, D. R. (1998) Model selection and multimodel inference: a practical information-theoretic approach. Springer, New York.
 #' 
-#' Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for
-#' comparative studies of environmental niche models. \emph{Ecography},
-#' \bold{33}: 607-611.
+#' Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. \emph{Sociological Methods and Research}, \bold{33}: 261-304. \url{https://doi.org/10.1177/0049124104268644}
 #' 
-#' Warren, D. L. and Seifert, S. N. (2011) Ecological niche modeling in Maxent:
-#' the importance of model complexity and the performance of model selection
-#' criteria. \emph{Ecological Applications}, \bold{21}: 335-342.
+#' Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. \emph{Ecography}, \bold{33}: 607-611. \url{https://doi.org/10.1111/j.1600-0587.2009.06142.x}
 #' 
-#' Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014)
-#' Incorporating model complexity and sampling bias into ecological niche
-#' models of climate change risks faced by 90 California vertebrate species of
-#' concern. \emph{Diversity and Distributions}, \bold{20}: 334-343.
+#' Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \url{https://doi.org/10.1890/10-1171.1}
+#' 
+#' Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. \emph{Diversity and Distributions}, \bold{20}: 334-343. \url{https://doi.org/10.1111/ddi.12160}
+#' 
 #' @export
 aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   # differential behavior for summing if p is Raster* or data frame
   if(!is.null(p)) {
     p.sum <- raster::cellStats(p, sum)  
-    # if total does not sum to 1, standardize so that the sum is 1
+    # if total does not sum to 1 (this happens when the background does not fully
+    # cover the study extent), standardize the study extent predictions so that they sum to 1
+    # and use these corrected occurrence predictions as likelihoods
+    # (dividing the occurrence predictions by the sum of the study extent predictions
+    # achieves the above)
     for(i in 1:raster::nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
   }
   # if more model coefficients than data points, determine AIC to be invalid:
@@ -242,13 +248,13 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
 #' @return A numeric value of the corrected variance.
 #' @author Robert Muscarella <bob.muscarella@gmail.com>
 #' @references 
-#'   Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15.
+#' Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15. \url{https://doi.org/10.1093/biomet/61.1.1}
 #'   
-#'   Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66.
+#' Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66. \url{https://doi.org/10.1111/j.2517-6161.1985.tb01330.x}
 #'   
-#'   Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197.
+#' Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197. \url{https://www.jstor.org/stable/2241717}
 #'   
-#'   Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17.
+#' Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \url{https://doi.org/10.1016/j.ecolmodel.2013.08.011}
 #'   
 corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
@@ -278,9 +284,12 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @return 
 #' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names correspond to the results table output by \code{\link{ENMevaluate}()}.
 #' @references 
-#' Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
-#' Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726.
-#' Warren, D. L., Glor, R. E., Turelli, M. and Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883.
+#' Hijmans, R. J., Phillips, S., Leathwick, J. & Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
+#' 
+#' Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726. \url{https://doi.org/10.2307/1935534}
+#' 
+#' Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
+#' 
 #' @author 
 #' Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}
 #' Robert Muscarella <bob.muscarella@gmail.com>

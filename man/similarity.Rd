@@ -65,7 +65,7 @@ levelplot(mess$mos, col.regions=brewer.pal(8, 'Set1'))
 }
 }
 \references{
-* Elith, J., Kearney, M., and Phillips, S. (2010) [The art of modelling range-shifting species](https://doi.org/10.1111/j.2041-210X.2010.00036.x). _Methods in Ecology and Evolution_, 1: 330-342. doi:10.1111/j.2041-210X.2010.00036.x
+Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \url{doi:10.1111/j.2041-210X.2010.00036.x}
 }
 \keyword{environment}
 \keyword{maxent,}

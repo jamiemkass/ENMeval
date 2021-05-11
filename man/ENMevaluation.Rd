@@ -46,7 +46,7 @@ An S4 class that contains the ENMevaluate results.
 
 \item{\code{occs}}{data frame: occurrence coordinates and predictor variable values used for model training}
 
-\item{\code{occs.testing}}{data frame: when provided, the coordinates of the fully withheld testing records}
+\item{\code{occs.testing}}{data frame: when provided, the coordinates of the fully-withheld testing records}
 
 \item{\code{occs.grp}}{vector: partition groups for occurrence points}
 
