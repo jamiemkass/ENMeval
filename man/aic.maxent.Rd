@@ -49,15 +49,20 @@ coefficients is determined by counting the number of non-zero coefficients in th
 \code{maxent} lambda file (\code{m@lambdas} for maxent.jar and \code{m$betas} for maxnet.  
 See Warren \emph{et al.} (2014) for limitations of this approach, namely that the number of 
 non-zero coefficients is an estimate of the true degrees of freedom. For Maxent ENMs, AICc 
-is calculated by standardizing the raw predictions such that all cells in the study extent 
-sum to 1. When no raster data is provided, the raw predictions of the occurrence records
-are used to calculate AICc without standardization, with the assumption that the background 
-records have adequately represented the occurrence records. The standardization is not 
-necessary here because the background predictions sum to 1 already. This may not be true
-if the background does not adequately represent the occurrence records, in which case the
-raster approach should be used instead. The likelihood of the data for a given model is 
-then calculated by taking the product of the raw occurrence predictions (Warren and Seifert 
-2011), or the sum of their logs, as is implemented here.
+is calculated by first standardizing the raw predictions such that all cells in the study 
+extent sum to 1, then extracting the occurrence record predictions. The predictions of the
+study extent may not sum to 1 if the background does not cover every grid cell -- as the 
+background predictions sum to 1 by definition, extra predictions for grid cells not in 
+the training data will add to this sum. When no raster data is provided, the raw predictions 
+of the occurrence records are used to calculate AICc without standardization, with the 
+assumption that the background records have adequately represented the occurrence records. 
+The standardization is not necessary here because the background predictions sum to 1 
+already, and the occurrence data is a subset of the background. This will not be true if 
+the background does not adequately represent the occurrence records, in which case the 
+occurrences are not a subset of the background and the raster approach should be used 
+instead. The likelihood of the data for a given model is then calculated by taking the 
+product of the raw occurrence predictions (Warren and Seifert 2011), or the sum of their 
+logs, as is implemented here.
 }
 \note{
 Returns all \code{NA}s if the number of non-zero coefficients is larger than the
