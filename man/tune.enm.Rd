@@ -90,17 +90,17 @@ cv.enm(
 
 \item{mod.full}{model object: the model trained on the full dataset}
 
-\item{envs}{RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)}
+\item{envs}{RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.}
 
 \item{tune.tbl.i}{vector: single set of tuning parameters}
 
-\item{other.settings}{named list: used to specify extra settings for the analysis,
-inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
-so if they are not specified the analysis will be run with default settings.}
+\item{other.settings}{named list: used to specify extra settings for the analysis. 
+All of these settings have internal defaults, so if they are not specified the analysis will be run 
+with default settings. See Details for descriptions of these settings.}
 
 \item{partitions}{character: name of partitioning technique (see \code{?partitions})}
 
-\item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
+\item{quiet}{boolean: if TRUE, silence all function messages (but not errors).}
 
 \item{occs.train.z}{data.frame: the envs values for the coordinates at the training occurrence records}
 
@@ -114,9 +114,9 @@ so if they are not specified the analysis will be run with default settings.}
 
 \item{nk}{numeric: the number of folds (i.e., partitions) -- will be equal to \code{kfolds} for random partitions}
 
-\item{user.eval}{function: custom function for specifying performance metrics not included in ENMeval.
-The function must be first defined and then input as the argument "user.eval" into ENMevaluate(). 
-This function has a single argument called "vars", which is a list that includes different data 
+\item{user.eval}{function: custom function for specifying performance metrics not included in \code{ENMeval}.
+The function must first be defined and then input as the argument \code{user.eval}. 
+This function should have a single argument called \code{vars}, which is a list that includes different data 
 that can be used to calculate the metric. See Details below and the vignette for a worked example.}
 
 \item{d}{data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
@@ -124,19 +124,20 @@ that can be used to calculate the metric. See Details below and the vignette for
 \item{tune.tbl}{data frame: all combinations of tuning parameters}
 
 \item{partition.settings}{named list: used to specify certain settings for partitioning schema.
-The options are:}
+See Details and ?partitions for descriptions of these settings.}
 
-\item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values -- 
-this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data}
+\item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values. 
+This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
+and does not have any current use when running \code{ENMevaluate()} independently.}
 
 \item{occs.testing.z}{data.frame: when fully withheld testing data is provided, the envs values for the 
 coordinates at the testing occurrence records}
 
-\item{numCores}{numeric: number of cores to use for parallel processing; if NULL, all available cores will be used}
+\item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
-\item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW")}
+\item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW") .}
 
-\item{updateProgress}{boolean: if TRUE, use shiny progress bar; only for use in shiny apps}
+\item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 

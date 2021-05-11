@@ -7,78 +7,93 @@
 #' results table should aid users in identifying model settings that balance fit and predictive ability.
 #' 
 #' @param occs matrix / data frame: occurrence records with two columns for longitude and latitude 
-#' of occurrence localities, in that order -- if specifying predictor variable values
-#' assigned to presence/background localities (species with data "SWD" form), this table will also have 
-#' one column for each predictor variable
-#' @param envs RasterStack: environmental predictor variables (must be in same geographic projection as occurrence data)
+#' of occurrence localities, in that order. If specifying predictor variable values
+#' assigned to presence/background localities (without inputting raster data), this table should also have 
+#' one column for each predictor variable. See Note for important distinctions between running the function
+#' with and without rasters.
+#' @param envs RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.
 #' @param bg matrix / data frame: background records with two columns for longitude and latitude of 
-#' background (or pseudo-absence) localities, in that order; if specifying predictor variable values
-#' assigned to presence/background localities (species with data "SWD" form), this table will also have 
-#' one column for each predictor variable; if NULL, points will be randomly sampled across \code{envs} 
-#' with the number specified by argument \code{n.bg}
-#' @param tune.args named list: model settings to be tuned (i.e., list(fc = c("L","Q"), rm = 1:3))
-#' @param partitions character: name of partitioning technique (see \code{?partitions})
-#' @param algorithm character: name of the algorithm used to build models -- one of "maxnet" or
-#' "maxent.jar", else the name from a custom ENMdetails implementation
+#' background (or pseudo-absence) localities, in that order. If NULL, points will be randomly sampled across \code{envs} 
+#' with the number specified by argument \code{n.bg}. If specifying predictor variable values
+#' assigned to presence/background localities (without inputting raster data), this table should also have 
+#' one column for each predictor variable. See Details for important distinctions between running the function
+#' with and without rasters.
+#' @param tune.args named list: model settings to be tuned (i.e., for Maxent models:  \code{list(fc = c("L","Q"), rm = 1:3)})
+#' @param partitions character: name of partitioning technique (see \code{?partitions}).
+#' @param algorithm character: name of the algorithm used to build models. Currently one of "maxnet",
+#' "maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.
 #' @param partition.settings named list: used to specify certain settings for partitioning schema.
-#' The options are: 
-#' @param other.settings named list: used to specify extra settings for the analysis,
-#' inserted as an argument to ENMevaluate(). All of these settings have internal defaults,
-#' so if they are not specified the analysis will be run with default settings.
-#' @param categoricals character vector: name or names of categorical environmental variables -- if not specified,
-#' all predictor variables will be treated as continuous unless they are factors (if categorical variables
-#' are already factors, specifying names of such variables in this argument is not needed)
+#' See Details and ?partitions for descriptions of these settings.
+#' @param other.settings named list: used to specify extra settings for the analysis. 
+#' All of these settings have internal defaults, so if they are not specified the analysis will be run 
+#' with default settings. See Details for descriptions of these settings.
+#' @param categoricals character vector: name or names of categorical environmental variables. If not specified,
+#' all predictor variables will be treated as continuous unless they are factors. If categorical variables
+#' are already factors, specifying names of such variables in this argument is not needed.
 #' @param doClamp boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
-#' bounds of the predictor variables -- this avoids extreme predictions for non-analog environments, but
-#' if extrapolation is a study aim, this should be set to FALSE
+#' bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
+#' the range of the training data. If extrapolation is a study aim, this should be set to FALSE.
 #' @param clamp.directions named list: specifies the direction ("left" for minimum, "right" for maximum) 
-#' of clamping for predictor variables -- (e.g.) list(left = c("bio1","bio5"), right = c("bio10","bio15"))
-#' @param user.enm ENMdetails object: an alternative to specifying an algorithm, users can insert a custom
-#' ENMdetails object to build models with
-#' @param user.grp named list: specifies user-defined partition groups, where occs.grp = vector of partition group (fold) for each
-#' occurrence locality, intended for user-defined partitions, and bg.grp = same vector for background (or pseudo-absence) localities
-#' @param occs.testing matrix / data frame: a full withheld testing dataset with two columns for longitude and latitude 
-#' of occurrence localities, in that order -- when \code{partitions = "testing"}; these occurrences will be used only 
-#' for evaluation but not for model training, and thus no cross validation will be performed
-#' @param taxon.name character: name of the focal species or taxon -- used primarily for annotating
-#' the ENMevaluation object and output metadata (rmm), but not necessary
-#' @param n.bg numeric: if background records not already provided, this specifies the 
-#' number of background (or pseudo-absence) points to randomly sample over envs raster (default: 10000)
-#' @param overlap boolean: if TRUE, calculate niche overlap statistics
+#' of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).
+#' @param user.enm ENMdetails object: a custom ENMdetails object used to build models. 
+#' This is an alternative to specifying \code{algorithm} with a character string.
+#' @param user.grp named list: specifies user-defined partition groups, where \code{occs.grp} = vector of partition group 
+#' (fold) for each occurrence locality, intended for user-defined partitions, and \code{bg.grp} = same vector for 
+#' background (or pseudo-absence) localities.
+#' @param occs.testing matrix / data frame: a fully withheld testing dataset with two columns for longitude and latitude 
+#' of occurrence localities, in that order when \code{partitions = "testing"}. These occurrences will be used only 
+#' for evaluation but not for model training, and thus no cross validation will be performed.
+#' @param taxon.name character: name of the focal species or taxon. This is used primarily for annotating
+#' the ENMevaluation object and output metadata (rmm), but not necessary for analysis.
+#' @param n.bg numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental  
+#' raster data (default: 10000) if background records were not already provided.
+#' @param overlap boolean: if TRUE, calculate niche overlap statistics (Warren et al. 2008).
 #' @param overlapStat character: niche overlap statistics to be calculated -- 
-#' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details
-#' @param user.val.grps matrix / data frame: user-defined validation record coordinates and predictor variable values -- 
-#' this is used internally by ENMnulls() to force each null model to evaluate with empirical validation data
-#' @param user.eval function: custom function for specifying performance metrics not included in ENMeval.
-#' The function must be first defined and then input as the argument "user.eval" into ENMevaluate(). 
-#' This function has a single argument called "vars", which is a list that includes different data 
+#' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.
+#' @param user.val.grps matrix / data frame: user-defined validation record coordinates and predictor variable values. 
+#' This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
+#' and does not have any current use when running \code{ENMevaluate()} independently.
+#' @param user.eval function: custom function for specifying performance metrics not included in \code{ENMeval}.
+#' The function must first be defined and then input as the argument \code{user.eval}. 
+#' This function should have a single argument called \code{vars}, which is a list that includes different data 
 #' that can be used to calculate the metric. See Details below and the vignette for a worked example.
-#' @param rmm rangeModelMetadata object: if specified, ENMevaluate() will write metadata details for the analysis into
-#' this object, but if not, a new rangeModelMetadata object will be generated and written to
-#' @param parallel boolean: if TRUE, run with parallel processing
-#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
-#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
-#' @param updateProgress boolean: if TRUE, use shiny progress bar; only for use in shiny apps
-#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
-#' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar these are included to avoid unnecessary errors for older scripts, but in a later version
-#' these arguments will be permanently deprecated
+#' @param rmm rangeModelMetadata object: if specified, \code{ENMevaluate()} will write metadata details for the analysis into
+#' this object, but if not, a new \code{rangeModelMetadata} object will be generated and included in the output
+#' \code{ENMevaluation} object.
+#' @param parallel boolean: if TRUE, run with parallel processing.
+#' @param numCores numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.
+#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") .
+#' @param updateProgress boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.
+#' @param quiet boolean: if TRUE, silence all function messages (but not errors).
+#' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar These arguments from previous versions are backward-compatible to avoid unnecessary errors for older scripts, but in a later version
+#' these arguments will be permanently deprecated.
 #' 
-#' @details There are a few methodological details in the implementation of ENMeval 2.0 that are important to mention.
-#' They are also discussed briefly in ?ENMnulls.
+#' @details There are a few methodological details in the implementation of ENMeval 2.0.0 that are important to mention.
+#' There is also a brief discussion of some points relevant to null models in ?ENMnulls.
 #' 
 #' 1. By default, validation AUC is calculated with respect to the full background (training + validation).
 #' This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
 #' other.settings$validation.bg to "partition", which will calculate AUC with respect 
 #' to the validation background only. The default value for other.settings$validation.bg is "full".
 #' 
-#' 2. The continuous Boyce index is not calculated with respect to the RasterStack delineating the study extent,
-#' but instead to the background records. This decision was made to simplify the code and improve running time. 
-#' If the background records are a good representation of the study extent, there should not be much difference
-#' between this and the raster approach.
+#' 2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using 
+#' the predicted values of the RasterStack delineating the full study extent, but instead using the predicted
+#' values for the background records. This decision to use the background only for calculating the continuous 
+#' Boyce index was made to simplify the code and improve running time. The decision for AICc was made in order
+#' to allow AICc calculations for datasets that do not include raster data. See ?calc.aicc for more details,
+#' and for caveats when calculating AICc without raster data (mainly, that if the background does not 
+#' adequately represent the occurrence records, users should use the raster approach, for reasons explained
+#' in the calc.aicc documentation). For both metrics, if the background records are a good representation 
+#' of the study extent, there should not be much difference between this approach using the background 
+#' data and the approach that uses rasters.
 #' 
-#' 3. Null occurrences for null ENMs are sample randomly from the background records, not the RasterStack
-#' delineating the study extent. This decision was made for similar reasons to that for CBI, and as above,
-#' there should be little difference as long as the background records represent the study extent well.
+#' 3. When running \code{ENMevaluate()} without raster data, and instead adding the environmental predictor values
+#' to the occurrence and background data tables, users may notice some differences in the results. Occurrence records
+#' that share a raster grid cell are automatically removed when raster data is provided, but without raster data
+#' this functionality cannot operate, and thus any such duplicate occurrence records can remain in the training data.
+#' The Java implementation of Maxent (maxent.jar) should automatically remove these records, but the R implementation 
+#' \code{maxnet} does not, and the \code{bioclim()} function from the R package \code{dismo} does not as well. Therefore,  
+#' it is up to the user to remove such records before running \code{ENMevaluate()} when raster data are not included.
 #' 
 #' Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.
 #' 
@@ -124,6 +139,10 @@
 #' occs.val.pred - numeric: predictions made by mod.k for validation occurrences\cr
 #' bg.train.pred - numeric: predictions made by mod.k for training background\cr
 #' bg.val.pred - numeric: predictions made by mod.k for validation background
+#' 
+#' @references 
+#' 
+#' Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \url{https://doi.org/10.1890/10-1171.1}
 #' 
 #' @return An ENMevaluation object. See ?ENMevaluation for details.
 #'
@@ -323,7 +342,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     # remove cell duplicates
     occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
     occs.dups <- duplicated(occs.cellNo[,1])
-    if(sum(occs.dups) > 0) if(quiet != TRUE) message(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell as another."))
+    if(sum(occs.dups) > 0) if(quiet != TRUE) message(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell."))
     occs <- occs[!occs.dups,]
     if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
     

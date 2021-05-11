@@ -23,9 +23,11 @@ Compute pairwise "niche overlap" in geographic space for Maxent predictions. The
 "D" refers to Schoeners \emph{D} (Schoener 1968), while "I" refers to the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 }
 \references{
-Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
-Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726.
-Warren, D. L., Glor, R. E., Turelli, M. and Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883.
+Hijmans, R. J., Phillips, S., Leathwick, J. & Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
+
+Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726. \url{https://doi.org/10.2307/1935534}
+
+Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
 }
 \seealso{
 `nicheOverlap` in the \pkg{dismo} package

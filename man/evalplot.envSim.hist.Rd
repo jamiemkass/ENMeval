@@ -77,5 +77,5 @@ and the study extent, and higher positive values indicate greater similarity. Th
 to calculate the similarities. See the below reference for details on MESS.
 }
 \references{
-Elith J., M. Kearney M., and S. Phillips, 2010. The art of modelling range-shifting species. Methods in Ecology and Evolution 1:330-342.
+Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \url{doi:10.1111/j.2041-210X.2010.00036.x}
 }
