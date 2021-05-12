@@ -38,12 +38,12 @@ If `x` is a `Raster*` object, this function returns a list
 }
 \description{
 NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
-}
-\details{
+
 Calculate Multivariate Environmental Similarity and most dissimilar/similar 
 variables with respect to a reference dataset, for a set of environmental 
 variables.
-
+}
+\details{
 `similarity` uses the MESS algorithm described in Appendix S3
   of Elith \emph{et al.} 2010.
 }

@@ -206,7 +206,8 @@ second aggregation is then made to separate the resulting 2 bins into 4 bins. Fo
 can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
 for both levels.
 
-For user.eval, the accessible variables you have access to in order to run your custom function are:\cr*
+For user.eval, the accessible variables you have access to in order to run your custom function are below. 
+See the vignette for a worked example.\cr*
 enm - ENMdetails object\cr*
 occs.train.z - data frame: predictor variable values for training occurrences\cr*
 occs.val.z - data frame: predictor variable values for validation occurrences\cr*
