@@ -4,9 +4,9 @@
 
 ## R package for automated tuning and evaluations of ecological niche models
 
-[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version 2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive [vignette](https://github.com/jamiemkass/ENMeval/blob/master/vignettes/ENMeval-2.0.0-Vignette.html.zip) with a complete analysis walkthrough, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests -- thank you for your input!
+[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version 2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive [vignette](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) with a complete analysis walkthrough, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests -- thank you for your input!
 
-`ENMeval` 2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) from the [maxnet R package](https://cran.r-project.org/package=maxnet) and the Java software maxent.jar [(Phillips *et al.* 2006)](https://doi.org/10.1016/j.ecolmodel.2005.03.026), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/), as well as BIOCLIM implemented with the [dismo R package](https://cran.r-project.org/package=dismo). The 
+`ENMeval` 2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) from the [maxnet R package](https://cran.r-project.org/package=maxnet) and the Java software maxent.jar [(Phillips *et al.* 2006)](https://doi.org/10.1016/j.ecolmodel.2005.03.026), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/), as well as BIOCLIM implemented with the [dismo R package](https://cran.r-project.org/package=dismo). 
 
 Model tuning refers to the process of building models with varying complexity settings, then choosing optimal settings based on some criteria. As it is difficult to predict in advance what level of complexity best fits your data and results in the most ecologically realistic response for your species, model tuning and evaluations are essential for ENM studies. This process helps researchers maximize predictive ability and avoid overfitting with models that are too complex. 
 
@@ -20,7 +20,7 @@ For the original package version, please reference the new open-access publicati
 
 NOTES:
 
-1. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://github.com/jamiemkass/ENMeval/blob/master/vignettes/ENMeval-2.0.0-Vignette.html.zip) from this Github repository. 
+1. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) on the package's Github Pages website. 
 
 2. Please make sure to use the most recent version of [maxent.jar](https://biodiversityinformatics.amnh.org/open_source/maxent/) (currently 3.4.4), as recent bug fixes were made.
 
