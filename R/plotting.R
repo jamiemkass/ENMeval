@@ -177,7 +177,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' to calculate the similarities. See the below reference for details on MESS. 
 #' @return A ggplot of MESS calculations for data partitions.
 #' @references 
-#' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \url{doi:10.1111/j.2041-210X.2010.00036.x}
+#' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \doi{doi:10.1111/j.2041-210X.2010.00036.x}
 #' 
 #' @export
 
@@ -320,7 +320,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' to calculate the similarities. See the below reference for details on MESS. 
 #' @return A ggplot of MESS calculations for data partitions.
 #' @references 
-#' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \url{doi:10.1111/j.2041-210X.2010.00036.x}
+#' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \doi{doi:10.1111/j.2041-210X.2010.00036.x}
 #' 
 #' @export
 
