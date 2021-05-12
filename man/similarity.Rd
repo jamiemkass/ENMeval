@@ -27,7 +27,7 @@ If `x` is a `Raster*` object, this function returns a list
   - `similarity_min`: a `Raster` layer giving the minimum similarity value 
   across all variables for each location (i.e. the MESS);
   - `mod`: a factor `Raster` layer indicating which variable was most 
-  dissimilar to its reference range (i.e. the MoD map, Elith et al. 2010); 
+  dissimilar to its reference range (i.e. the MoD map, Elith \emph{et al.} 2010); 
   and
   - `mos`: a factor `Raster` layer indicating which variable was most 
   similar to its reference range.
@@ -45,7 +45,7 @@ variables with respect to a reference dataset, for a set of environmental
 variables.
 
 `similarity` uses the MESS algorithm described in Appendix S3
-  of Elith et al. 2010.
+  of Elith \emph{et al.} 2010.
 }
 \examples{
 library(dismo)
@@ -65,9 +65,5 @@ levelplot(mess$mos, col.regions=brewer.pal(8, 'Set1'))
 }
 }
 \references{
-Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \url{doi:10.1111/j.2041-210X.2010.00036.x}
+Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \doi{doi:10.1111/j.2041-210X.2010.00036.x}
 }
-\keyword{environment}
-\keyword{maxent,}
-\keyword{mess,}
-\keyword{similarity,}

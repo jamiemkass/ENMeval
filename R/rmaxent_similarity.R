@@ -1,6 +1,6 @@
-#' Calculate Multivariate Environmental Similarity
+#' @title Calculate Multivariate Environmental Similarity
 #'
-#' NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
+#' @description NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
 #  It is included here with John's permission to make ENMeval CRAN-compatible (dependencies on Github-only packages are not allowed for CRAN).
 #' 
 #' Calculate Multivariate Environmental Similarity and most dissimilar/similar 
@@ -23,7 +23,7 @@
 #'   - `similarity_min`: a `Raster` layer giving the minimum similarity value 
 #'   across all variables for each location (i.e. the MESS);
 #'   - `mod`: a factor `Raster` layer indicating which variable was most 
-#'   dissimilar to its reference range (i.e. the MoD map, Elith et al. 2010); 
+#'   dissimilar to its reference range (i.e. the MoD map, Elith \emph{et al.} 2010); 
 #'   and
 #'   - `mos`: a factor `Raster` layer indicating which variable was most 
 #'   similar to its reference range.
@@ -32,10 +32,9 @@
 #'   a list as above, but with `RasterStack` and `Raster` objects replaced by 
 #'   matrix and vectors.
 #' @details `similarity` uses the MESS algorithm described in Appendix S3
-#'   of Elith et al. 2010.
-#' @keywords maxent, mess, similarity, environment
+#'   of Elith \emph{et al.} 2010.
 #' @references 
-#' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \url{doi:10.1111/j.2041-210X.2010.00036.x}
+#' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \doi{doi:10.1111/j.2041-210X.2010.00036.x}
 #' 
 #' @importFrom raster stack nlayers init as.data.frame raster
 #' @importFrom methods is

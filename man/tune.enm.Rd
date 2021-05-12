@@ -114,7 +114,7 @@ with default settings. See Details for descriptions of these settings.}
 
 \item{nk}{numeric: the number of folds (i.e., partitions) -- will be equal to \code{kfolds} for random partitions}
 
-\item{user.eval}{function: custom function for specifying performance metrics not included in \code{ENMeval}.
+\item{user.eval}{function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
 The function must first be defined and then input as the argument \code{user.eval}. 
 This function should have a single argument called \code{vars}, which is a list that includes different data 
 that can be used to calculate the metric. See Details below and the vignette for a worked example.}
@@ -135,7 +135,7 @@ coordinates at the testing occurrence records}
 
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
-\item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW") .}
+\item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
 }
