@@ -6,10 +6,29 @@
 \alias{ENMeval-package}
 \title{Automated runs and evaluations of ecological niche models}
 \description{
-Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate niche overlap between model predictions, among others. The package was originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but the current version allows possible extensions for any modeling algorithm. The extensive vignette, which guides users through most package functionality but unfortunately has a file size too big for CRAN, can be found here: <https://github.com/jamiemkass/ENMeval/blob/master/vignettes/ENMeval-2.0.0-Vignette.html.zip>.
+Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate niche overlap between model predictions, among others. The package was originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but the current version allows possible extensions for any modeling algorithm. The extensive vignette, which guides users through most package functionality but unfortunately has a file size too big for CRAN, can be found here: <https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html>.
 }
 \details{
 See README for details.
+}
+\author{
+\strong{Maintainer}: Jamie M. Kass \email{jamie.m.kass@gmail.com}
+
+Authors:
+\itemize{
+  \item Robert Muscarella
+  \item Peter J. Galante
+  \item Corentin Bohl
+  \item Gonzalo E. Buitrago-Pinilla
+  \item Robert P. Anderson
+}
+
+Other contributors:
+\itemize{
+  \item Robert A. Boria [contributor]
+  \item Mariano Soley-Guardia [contributor]
+}
+
 }
 \keyword{ENM}
 \keyword{NULL}

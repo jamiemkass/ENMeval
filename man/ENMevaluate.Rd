@@ -146,7 +146,7 @@ evaluation statistics for each combination of settings and for each cross valida
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 results table should aid users in identifying model settings that balance fit and predictive ability. See
 the extensive vignette for fully worked examples: 
-<https://github.com/jamiemkass/ENMeval/blob/master/vignettes/ENMeval-2.0.0-Vignette.html.zip>.
+<https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html>.
 }
 \details{
 There are a few methodological details in the implementation of ENMeval 2.0.0 that are important to mention.
