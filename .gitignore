@@ -12,3 +12,5 @@
 vignettes/*.pdf
 inst/doc
 .Rproj.user
+doc
+Meta

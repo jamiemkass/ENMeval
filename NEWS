@@ -28,7 +28,7 @@ o  Changed some column names in the @results table to be more intuitive and comp
 
 ENMeval 0.2.2
 ===========
-o  Added a vignette. Type: vignette('ENMeval-2.0.0-vignette', package='ENMeval')
+o  Added a vignette. Type: vignette('ENMeval-vignette', package='ENMeval')
 o  Added an option to pass additional arguments to maxent (e.g., prevalence)
 o  Added a function to extract variable importance for maxent models
 o  Fixed an inconsistency with the AICc columns of the results table when rasterPreds=F
