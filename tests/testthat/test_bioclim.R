@@ -1,3 +1,9 @@
+# set run to TRUE to automate these tests during a CMD CHECK
+# this is set to FALSE to avoid lagging when submitting to CRAN
+run <- FALSE
+
+testthat::skip_if(run == FALSE)
+
 library(dplyr)
 options(warn=-1)
 

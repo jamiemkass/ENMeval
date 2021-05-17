@@ -2,7 +2,7 @@
 #' @description \code{ENMnulls()} iteratively builds null ENMs for a single set of 
 #' user-specified model settings based on an input ENMevaluation object, from which all other analysis 
 #' settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
-#' (averages and standard deviations) and effect sizes and p-values are calculated by comparing these 
+#' (averages and standard deviations) and effect sizes and \emph{p}-values are calculated by comparing these 
 #' summary statistics to the empirical values of the performance metrics (i.e., from the model built with
 #' the empirical data). See the references below for more details on this method.
 #' 
@@ -22,23 +22,23 @@
 #' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' 
-#' @details This null ENM technique is based on the implementation in Bohl et al. (2019),
+#' @details This null ENM technique is based on the implementation in Bohl \emph{et al.} (2019),
 #' which follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
 #' instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
-#' validation data used to evaluate the empirical model. Bohl et al. (2019) demonstrates this approach using a single
-#' defined withheld partition group, but Kass et al. (2020) extended it to use spatial partitions by drawing null occurrences
-#' from the area of the predictor raster data defining each partition. 
+#' validation data used to evaluate the empirical model. Bohl \emph{et al.} (2019) demonstrates this approach using a single
+#' defined withheld partition group, but Kass \emph{et al.} (2020) extended it to use spatial partitions by drawing null occurrences
+#' from the area of the predictor raster data defining each partition. Please see the vignette for a brief example: <
 #' 
-#' This function avoids using raster data to speed up each iteration, and instead draws null occurrences from the 
+#' This function avoids using raster data to speed up each iteration, and instead samples null occurrences from the 
 #' partitioned background records. Thus, you should avoid running this when your background records are not well 
 #' sampled across the study extent, as this limits the extent that null occurrences can be sampled from.
 #' 
 #' @references 
-#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. \url{https://doi.org/10.1111/jbi.13573}
+#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. \doi{10.1111/jbi.13573}
 #' 
-#' Kass, J. M., Anderson, R. P., Espinosa‐Lucas, A., Juárez‐Jaimes, V., Martínez‐Salas, E., Botello, F.,  Tavera, G., Flores‐Martínez, J. J., & Sánchez‐Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. \emph{Ecography}, \bold{43}: 341-352. \url{https://doi.org/10.1111/ecog.04886}
+#' Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & Sánchez-Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. \emph{Ecography}, \bold{43}: 341-352. \doi{10.1111/ecog.04886}
 #' 
-#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \url{https://www.jstor.org/stable/30244521}
+#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \doi{10.1111/j.2007.0906-7590.05041.x}
 #' 
 #' @return An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
 #' and their cross-validation results, as well as differences in results between the empirical and null models. 

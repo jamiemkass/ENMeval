@@ -43,7 +43,7 @@ A named list of two items:
 \item{$bg.grp}{ A vector of bin designation for background localities in the same order they were provided.}
 }
 \description{
-\code{ENMeval} provides several ways to partition occurrence and background localities into bins for training and validation (or, evaluation and calibration). 
+\pkg{ENMeval} provides several ways to partition occurrence and background localities into bins for training and validation (or, evaluation and calibration). 
 Users should carefully consider the objectives of their study and the influence of spatial bias when deciding on a method of data partitioning.
 
 These functions are used internally to partition data during a call of \code{\link{ENMevaluate}} but can also be used independently to generate data partitions. 
@@ -162,11 +162,11 @@ points(bg, pch=21, bg=jack$bg.grp)
 \references{
 Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011). dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 
-Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117. \url{https://doi.org/10.1111/j.1365-2699.2006.01594.x}
+Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117. \doi{10.1111/j.1365-2699.2006.01594.x}
 
-Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}: 629-643. \url{https://doi.org/10.1111/jbi.12227}
+Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}: 629-643. \doi{10.1111/jbi.12227}
 
-Shcheglovitova, M. and Anderson, R. P. (2013). Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \url{https://doi.org/10.1016/j.ecolmodel.2013.08.011}
+Shcheglovitova, M. and Anderson, R. P. (2013). Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \doi{10.1016/j.ecolmodel.2013.08.011}
 }
 \author{
 Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jkass@gc.cuny.edu>

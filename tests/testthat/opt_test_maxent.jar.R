@@ -1,3 +1,9 @@
+# set run to TRUE to automate these tests during a CMD CHECK
+# this is set to FALSE to avoid lagging when submitting to CRAN and issues with Java
+run <- FALSE
+
+testthat::skip_if(run == FALSE)
+
 library(dplyr)
 options(warn=-1)
 
@@ -14,7 +20,7 @@ bg.z <- cbind(bg, raster::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
 
 algorithm <- "maxent.jar"
-tune.args <- list(fc = c("L","LQ"), rm = 2:3)
+tune.args <- list(fc = c("L"), rm = 2:3)
 mset <- lapply(tune.args, function(x) x[1])
 no.iter <- 5
 

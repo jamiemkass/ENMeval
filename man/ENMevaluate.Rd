@@ -11,10 +11,8 @@ ENMevaluate(
   tune.args = NULL,
   partitions = NULL,
   algorithm = NULL,
-  partition.settings = list(orientation = "lat_lon", aggregation.factor = 2, kfolds =
-    5),
-  other.settings = list(abs.auc.diff = TRUE, pred.type = "cloglog", validation.bg =
-    "full"),
+  partition.settings = NULL,
+  other.settings = NULL,
   categoricals = NULL,
   doClamp = TRUE,
   clamp.directions = NULL,
@@ -105,7 +103,7 @@ the ENMevaluation object and output metadata (rmm), but not necessary for analys
 \item{n.bg}{numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental
 raster data (default: 10000) if background records were not already provided.}
 
-\item{overlap}{boolean: if TRUE, calculate niche overlap statistics (Warren et al. 2008).}
+\item{overlap}{boolean: if TRUE, calculate niche overlap statistics (Warren \emph{et al.} 2008).}
 
 \item{overlapStat}{character: niche overlap statistics to be calculated -- 
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.}
@@ -114,7 +112,7 @@ raster data (default: 10000) if background records were not already provided.}
 This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
 and does not have any current use when running \code{ENMevaluate()} independently.}
 
-\item{user.eval}{function: custom function for specifying performance metrics not included in \code{ENMeval}.
+\item{user.eval}{function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
 The function must first be defined and then input as the argument \code{user.eval}. 
 This function should have a single argument called \code{vars}, which is a list that includes different data 
 that can be used to calculate the metric. See Details below and the vignette for a worked example.}
@@ -127,7 +125,7 @@ this object, but if not, a new \code{rangeModelMetadata} object will be generate
 
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
-\item{parallelType}{character:: either "doParallel" or "doSNOW" (default: "doSNOW") .}
+\item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
 
@@ -140,12 +138,15 @@ these arguments will be permanently deprecated.}
 An ENMevaluation object. See ?ENMevaluation for details.
 }
 \description{
-\code{ENMevaluate()} builds ecological niche models iteratively across a range of 
-user-specified tuning settings. Users can choose to evaluate models with cross validation or a
-full-withheld testing dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
+\code{ENMevaluate()} is the primary function for the \pkg{ENMeval} package. This
+function builds ecological niche models iteratively across a range of user-specified tuning 
+settings. Users can choose to evaluate models with cross validation or a full-withheld testing 
+dataset. \code{ENMevaluate()} returns an \code{ENMevaluation} object with slots containing 
 evaluation statistics for each combination of settings and for each cross validation fold therein, as
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
-results table should aid users in identifying model settings that balance fit and predictive ability.
+results table should aid users in identifying model settings that balance fit and predictive ability. See
+the extensive vignette for fully worked examples: 
+<https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html>.
 }
 \details{
 There are a few methodological details in the implementation of ENMeval 2.0.0 that are important to mention.
@@ -177,22 +178,22 @@ it is up to the user to remove such records before running \code{ENMevaluate()} 
 
 Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.
 
-For other.settings, the options are:\cr
-abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr
+For other.settings, the options are:\cr*
+abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr*
+pred.type - character: specifies which prediction type should be used to generate maxnet or 
+maxent.jar prediction rasters (default: "cloglog").\cr*
 validation.bg - character: either "full" to calculate training and validation AUC and CBI 
 for cross-validation with respect to the full background (default), or "partition" (meant for 
 spatial partitions only) to calculate each with respect to the partitioned background only 
 (i.e., training occurrences are compared to training background, and validation occurrences 
-compared to validation background)\cr
-pred.type - character: specifies which prediction type should be used to generate maxnet or 
-maxent.jar prediction rasters (default: "cloglog")\cr
+compared to validation background).\cr*
 other.args - named list: any additional model arguments not specified for tuning.\cr
 
-For partition.settings, the current options are:\cr
-orientation - character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition), 
-aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs
-raster to assign partitions (required for the checkerboard partitions)\cr
-kfolds - numeric: the number of folds (i.e., partitions) for random partitions.\cr
+For partition.settings, the current options are:\cr*
+orientation - character: one of "lat_lon" (default), "lon_lat", "lat_lat", or "lon_lon" (required for block partition).\cr* 
+aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs (default: 2)
+raster to assign partitions (required for the checkerboard partitions).\cr*
+kfolds - numeric: the number of folds (i.e., partitions) for random partitions (default: 5).\cr
 
 For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", 
 and they determine the order and orientations with which the block partitioning function creates the partition groups. 
@@ -205,19 +206,20 @@ second aggregation is then made to separate the resulting 2 bins into 4 bins. Fo
 can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
 for both levels.
 
-For user.eval, the accessible variables you have access to in order to run your custom function are:\cr
-enm - ENMdetails object\cr
-occs.train.z - data frame: predictor variable values for training occurrences\cr
-occs.val.z - data frame: predictor variable values for validation occurrences\cr
-bg.train.z - data frame: predictor variable values for training background\cr
-bg.val.z - data frame: predictor variable values for validation background\cr
-mod.k - Model object for current partition (k)\cr
-nk - numeric: number of folds (i.e., partitions)\cr
-other.settings - named list: other settings specified in ENMevaluate()\cr
-partitions - character: name of the partition method (e.g., "block")\cr
-occs.train.pred - numeric: predictions made by mod.k for training occurrences\cr
-occs.val.pred - numeric: predictions made by mod.k for validation occurrences\cr
-bg.train.pred - numeric: predictions made by mod.k for training background\cr
+For user.eval, the accessible variables you have access to in order to run your custom function are below. 
+See the vignette for a worked example.\cr*
+enm - ENMdetails object\cr*
+occs.train.z - data frame: predictor variable values for training occurrences\cr*
+occs.val.z - data frame: predictor variable values for validation occurrences\cr*
+bg.train.z - data frame: predictor variable values for training background\cr*
+bg.val.z - data frame: predictor variable values for validation background\cr*
+mod.k - Model object for current partition (k)\cr*
+nk - numeric: number of folds (i.e., partitions)\cr*
+other.settings - named list: other settings specified in ENMevaluate()\cr*
+partitions - character: name of the partition method (e.g., "block")\cr*
+occs.train.pred - numeric: predictions made by mod.k for training occurrences\cr*
+occs.val.pred - numeric: predictions made by mod.k for validation occurrences\cr*
+bg.train.pred - numeric: predictions made by mod.k for training background\cr*
 bg.val.pred - numeric: predictions made by mod.k for validation background
 }
 \examples{
@@ -242,5 +244,7 @@ algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
 
 }
 \references{
-Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \url{https://doi.org/10.1890/10-1171.1}
+Muscarella, R., Galante, P. J., Soley‐Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENM eval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \doi{10.1111/2041-210X.12261}
+
+Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \doi{10.1111/j.1558-5646.2008.00482.x}
 }
