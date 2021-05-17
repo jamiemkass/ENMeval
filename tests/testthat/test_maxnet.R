@@ -1,3 +1,9 @@
+# set to FALSE to run a comprehensive set of tests
+# when TRUE, only some essential tests are run to avoid lagging when submitting to CRAN
+skip_tests_for_cran <- TRUE
+# this additionally skips tests for env similarity and difference for the envSim.map tests
+skip_simDiff <- TRUE
+
 library(dplyr)
 options(warn=-1)
 
@@ -14,7 +20,7 @@ bg.z <- cbind(bg, raster::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
 
 algorithm <- "maxnet"
-tune.args <- list(fc = c("L","LQ"), rm = 2:3)
+tune.args <- list(fc = c("L"), rm = 2:3)
 mset <- lapply(tune.args, function(x) x[1])
 no.iter <- 5
 
@@ -29,7 +35,7 @@ grps <- get.block(occs, bg)
 context(paste("Testing evalplot.envSim.hist for", algorithm, "with block partitions..."))
 test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
 context(paste("Testing evalplot.envSim.map for", algorithm, "with block partitions..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
+test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, skip_simDiff = skip_simDiff)
 
 context(paste("Testing ENMnulls for", algorithm, "with block partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -40,79 +46,88 @@ test_evalplot.nulls(ns)
 
 
 # checkerboard1 partitions
-context(paste("Testing ENMevaluate for", algorithm, "with checkerboard1 partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard1", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, algorithm, "checkerboard1", tune.args, 2, 2)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with checkerboard1 partitions..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard1", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "checkerboard1", tune.args, 2, 2)
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with checkerboard1 partitions..."))
+  test_evalplot.stats(e)
+  grps <- get.checkerboard1(occs, envs, bg, aggregation.factor = 2)
+  context(paste("Testing evalplot.envSim.hist for", algorithm, "with checkerboard1 partitions..."))
+  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
+  context(paste("Testing evalplot.envSim.map for", algorithm, "with checkerboard1 partitions..."))
+  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, skip_simDiff = skip_simDiff)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with checkerboard1 partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "checkerboard1", mset, 2, 2)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with checkerboard1 partitions..."))
+  test_evalplot.nulls(ns)  
+}
 
-context(paste("Testing evalplot.stats for", algorithm, "with checkerboard1 partitions..."))
-test_evalplot.stats(e)
-grps <- get.checkerboard1(occs, envs, bg, aggregation.factor = 2)
-context(paste("Testing evalplot.envSim.hist for", algorithm, "with checkerboard1 partitions..."))
-test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
-context(paste("Testing evalplot.envSim.map for", algorithm, "with checkerboard1 partitions..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
-
-context(paste("Testing ENMnulls for", algorithm, "with checkerboard1 partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "checkerboard1", mset, 2, 2)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with checkerboard1 partitions..."))
-test_evalplot.nulls(ns)
 
 # checkerboard2 partitions
-context(paste("Testing ENMevaluate for", algorithm, "with checkerboard2 partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard2", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, algorithm, "checkerboard2", tune.args, 4, 4)
-
-context(paste("Testing evalplot.stats for", algorithm, "with checkerboard2 partitions..."))
-test_evalplot.stats(e)
-grps <- get.checkerboard2(occs, envs, bg, aggregation.factor = 2)
-context(paste("Testing evalplot.envSim.hist for", algorithm, "with checkerboard2 partitions..."))
-test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
-context(paste("Testing evalplot.envSim.map for", algorithm, "with checkerboard2 partitions..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
-
-context(paste("Testing ENMnulls for", algorithm, "with checkerboard2 partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "checkerboard2", mset, 4, 4)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with checkerboard2 partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with checkerboard2 partitions..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard2", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "checkerboard2", tune.args, 4, 4)
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with checkerboard2 partitions..."))
+  test_evalplot.stats(e)
+  grps <- get.checkerboard2(occs, envs, bg, aggregation.factor = 2)
+  context(paste("Testing evalplot.envSim.hist for", algorithm, "with checkerboard2 partitions..."))
+  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
+  context(paste("Testing evalplot.envSim.map for", algorithm, "with checkerboard2 partitions..."))
+  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, skip_simDiff = skip_simDiff)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with checkerboard2 partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "checkerboard2", mset, 4, 4)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with checkerboard2 partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # random k-fold partitions
-context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1)
-
-context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions..."))
-test_evalplot.stats(e)
-grps <- get.randomkfold(occs, bg, kfolds = 5)
-context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions..."))
-test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
-context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
-
-context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1)
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions..."))
+  test_evalplot.stats(e)
+  grps <- get.randomkfold(occs, bg, kfolds = 5)
+  context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions..."))
+  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
+  context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions..."))
+  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # jackknife partitions
-context(paste("Testing ENMevaluate for", algorithm, "with jackknife partitions..."))
-e <- ENMevaluate(occs[1:10,], envs, bg, tune.args = tune.args, partitions = "jackknife", algorithm = algorithm, overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, algorithm, "jackknife", tune.args, nrow(e@occs), 1)
-
-context(paste("Testing evalplot.stats for", algorithm, "with testing partition..."))
-test_evalplot.stats(e)
-
-context(paste("Testing ENMnulls for", algorithm, "with jackknife partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "jackknife", mset, nrow(e@occs), 1)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with jackknife partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with jackknife partitions..."))
+  e <- ENMevaluate(occs[1:10,], envs, bg, tune.args = tune.args, partitions = "jackknife", algorithm = algorithm, overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "jackknife", tune.args, nrow(e@occs), 1)
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with testing partition..."))
+  test_evalplot.stats(e)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with jackknife partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "jackknife", mset, nrow(e@occs), 1)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with jackknife partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # testing partition
 context(paste("Testing ENMevaluate for", algorithm, "with testing partition..."))
@@ -125,7 +140,7 @@ grps <- list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg)))
 context(paste("Testing evalplot.envSim.hist for", algorithm, "with testing partition..."))
 test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
 context(paste("Testing evalplot.envSim.map for", algorithm, "with testing partition..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
+test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing, skip_simDiff = skip_simDiff)
 
 context(paste("Testing ENMnulls for", algorithm, "with testing partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -135,16 +150,18 @@ context(paste("Testing ENMnulls plotting function for", algorithm, "with testing
 test_evalplot.nulls(ns)
 
 # no partitions
-context(paste("Testing ENMevaluate for", algorithm, "with no partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "none", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, algorithm, "none", tune.args, 1, 1)
-
-context(paste("Testing ENMnulls for", algorithm, "with no partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "none", mset, 1, 1)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with no partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with no partitions..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "none", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "none", tune.args, 1, 1)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with no partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "none", mset, 1, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with no partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # user partitions
 context(paste("Testing ENMevaluate for", algorithm, "with user partitions..."))
@@ -157,7 +174,7 @@ test_evalplot.stats(e)
 context(paste("Testing evalplot.envSim.hist for", algorithm, "with user partitions..."))
 test_evalplot.envSim.hist(e, occs.z, bg.z, user.grp$occs.grp, user.grp$bg.grp)
 context(paste("Testing evalplot.envSim.map for", algorithm, "with user partitions..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, user.grp$occs.grp, user.grp$bg.grp)
+test_evalplot.envSim.map(e, envs, occs.z, bg.z, user.grp$occs.grp, user.grp$bg.grp, skip_simDiff = skip_simDiff)
 
 context(paste("Testing ENMnulls for", algorithm, "with user partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
@@ -167,44 +184,48 @@ context(paste("Testing ENMnulls plotting function for", algorithm, "with user pa
 test_evalplot.nulls(ns)
 
 # no envs (SWD)
-context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
-e <- ENMevaluate(occs.z, bg = bg.z, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", quiet = TRUE)
-test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1, type = "swd")
-
-context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
-test_evalplot.stats(e)
-grps <- get.randomkfold(occs, bg, kfolds = 5)
-context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
-test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
-context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
-
-context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+  e <- ENMevaluate(occs.z, bg = bg.z, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1, type = "swd")
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+  test_evalplot.stats(e)
+  grps <- get.randomkfold(occs, bg, kfolds = 5)
+  context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
+  context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions and no raster environmental variables..."))
+  test_evalplot.nulls(ns)
+}
 
 # no bg
-context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and no input background data..."))
-e <- ENMevaluate(occs, envs, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, n.bg = 1000, categoricals = "biome", overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1) 
-
-context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions and no input background data..."))
-test_evalplot.stats(e)
-grps <- get.randomkfold(occs, bg, kfolds = 5)
-context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions and no input background data..."))
-test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
-context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions and no input background data..."))
-test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
-
-context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions and no input background data..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
-
-context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions and no input background data..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and no input background data..."))
+  e <- ENMevaluate(occs, envs, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, n.bg = 1000, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, algorithm, "randomkfold", tune.args, 5, 1) 
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions and no input background data..."))
+  test_evalplot.stats(e)
+  grps <- get.randomkfold(occs, bg, kfolds = 5)
+  context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions and no input background data..."))
+  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
+  context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions and no input background data..."))
+  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions and no input background data..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions and no input background data..."))
+  test_evalplot.nulls(ns)
+}
 
 # clamping
 context(paste("Testing clamping function for", algorithm, "..."))

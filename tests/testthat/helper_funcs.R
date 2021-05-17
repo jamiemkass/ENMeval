@@ -96,11 +96,11 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
   left <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", categoricals = categoricals)
   right <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", categoricals = categoricals)
   subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[c(7:8)], 
-                                right = names(envs)[c(4:6)], categoricals = categoricals)
+                        right = names(envs)[c(4:6)], categoricals = categoricals)
   subleft <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", 
-                                 left = names(envs)[c(4:6)], categoricals = categoricals)
+                        left = names(envs)[c(4:6)], categoricals = categoricals)
   subright <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", 
-                                  right = names(envs)[c(4:6)], categoricals = categoricals)
+                         right = names(envs)[c(4:6)], categoricals = categoricals)
   clamps.envs <- list(none=none, all=all, left=left, right=right, subboth=subboth, subleft=subleft, subright=subright)
   
   enm <- lookup.enm(e@algorithm)
@@ -213,11 +213,13 @@ test_evalplot.stats <- function(e) {
       y <- 5
       z <- c("metric", "avg", "sd", "lower", "upper")
     }
-    expect_true(ncol(x) == ncol(e@tune.settings) + y)
-    expect_true(nrow(x) == nrow(e@tune.settings) * length(stats))
-    expect_true(all(unique(x$metric) == stats))
-    n <- (ncol(e@tune.settings)+1):(ncol(x))
-    expect_true(all(names(x)[n] == z))
+    test_that("Outputs for evalplot.stats have correct form", {
+      expect_true(ncol(x) == ncol(e@tune.settings) + y)
+      expect_true(nrow(x) == nrow(e@tune.settings) * length(stats))
+      expect_true(all(unique(x$metric) == stats))
+      n <- (ncol(e@tune.settings)+1):(ncol(x))
+      expect_true(all(names(x)[n] == z))
+    })
   }
   
   if(e@partition.method == "none") {
@@ -247,9 +249,11 @@ test_evalplot.stats <- function(e) {
 test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL) {
   all_tests_hist <- function(sim.type) {
     test_hist <- function(i) {
-      expect_true(ncol(i) == 2)
-      expect_true(names(i)[1] == "partition")
-      expect_true(names(i)[2] == sim.type)
+      test_that("Outputs for evalplot.envSim.hist have correct form", {
+        expect_true(ncol(i) == 2)
+        expect_true(names(i)[1] == "partition")
+        expect_true(names(i)[2] == sim.type)
+      })
     }
     # with ENMevaluation object
     evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
@@ -267,27 +271,30 @@ test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel 
     evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = "biome", hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
   }
   
-    all_tests_hist("mess")
-    all_tests_hist("most_diff")
-    all_tests_hist("most_sim")  
+  all_tests_hist("mess")
+  all_tests_hist("most_diff")
+  all_tests_hist("most_sim")  
 }
 
-test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL) { 
-  all_tests_map <- function(sim.type) {
+test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL, skip_simDiff = TRUE) { 
+  all_tests_map <- function(sim.type, skip_simDiff) {
     test_map <- function(i) {
-      if(inherits(i, "Raster")) {
-        if(is.null(occs.testing.z)) {
-          expect_true(length(unique(e@occs.grp)) == raster::nlayers(i))
+      test_that("Outputs for evalplot.envSim.map have correct form", {
+        skip_if(skip_simDiff == TRUE)
+        if(inherits(i, "Raster")) {
+          if(is.null(occs.testing.z)) {
+            expect_true(length(unique(e@occs.grp)) == raster::nlayers(i))
+          }else{
+            expect_true(2 == raster::nlayers(i))
+          }
         }else{
-          expect_true(2 == raster::nlayers(i))
+          expect_true(ncol(i) == 4)
+          expect_true(names(i)[1] == "x")
+          expect_true(names(i)[2] == "y")
+          expect_true(names(i)[3] == "ras")
+          expect_true(names(i)[4] == sim.type)  
         }
-      }else{
-        expect_true(ncol(i) == 4)
-        expect_true(names(i)[1] == "x")
-        expect_true(names(i)[2] == "y")
-        expect_true(names(i)[3] == "ras")
-        expect_true(names(i)[4] == sim.type)  
-      }
+      })
     }
     # with ENMevaluation object
     evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = "biome", return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
@@ -304,14 +311,15 @@ test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg
     }
   }
   
-    all_tests_map("mess")
-    all_tests_map("most_diff")
-    all_tests_map("most_sim")
+  all_tests_map("mess", skip_simDiff = FALSE)
+  all_tests_map("most_diff", skip_simDiff)
+  all_tests_map("most_sim", skip_simDiff)  
 }
 
 test_evalplot.nulls <- function(ns) {
   
   test_nulls <- function(x, stats) {
+    test_that("Outputs for evalplot.nulls have correct form", {
     expect_true(length(x) == 2)
     expect_true(all(names(x) == c("null.avgs", "empirical.results")))
     expect_true(ncol(x[[1]]) == 2)
@@ -321,6 +329,7 @@ test_evalplot.nulls <- function(ns) {
     expect_true(nrow(x[[1]]) == ns@null.no.iter * length(stats))
     expect_true(all(unique(x[[1]]$metric) == stats))
     expect_true(all(unique(x[[2]]$metric) == stats))
+    })
   }
   
   if(ns@null.partition.method == "none") {
