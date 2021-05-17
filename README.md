@@ -23,11 +23,5 @@ NOTES:
 1. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) on the package's Github Pages website. 
 
 2. Please make sure to use the most recent version of [maxent.jar](https://biodiversityinformatics.amnh.org/open_source/maxent/) (currently 3.4.4), as recent bug fixes were made.
-<<<<<<< HEAD
 
 3. Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet). The output from this differs from that of the original Java program and so some features are not compatible (e.g., variable importance, html output).
-
-=======
-
-3. Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet). The output from this differs from that of the original Java program and so some features are not compatible (e.g., variable importance, html output).
->>>>>>> v2_cran

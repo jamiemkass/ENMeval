@@ -40,7 +40,10 @@
 
 
 <meta property="og:title" content="Calculate Multivariate Environmental Similarity — similarity" />
-<meta property="og:description" content="NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/)." />
+<meta property="og:description" content="NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
+Calculate Multivariate Environmental Similarity and most dissimilar/similar 
+variables with respect to a reference dataset, for a set of environmental 
+variables." />
 
 
 
@@ -122,6 +125,9 @@
 
     <div class="ref-description">
     <p>NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).</p>
+<p>Calculate Multivariate Environmental Similarity and most dissimilar/similar 
+variables with respect to a reference dataset, for a set of environmental 
+variables.</p>
     </div>
 
     <pre class="usage"><span class='fu'>similarity</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>ref</span>, full <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
@@ -158,7 +164,7 @@ across variables will be returned.</p></td>
   - `similarity_min`: a `Raster` layer giving the minimum similarity value 
   across all variables for each location (i.e. the MESS);
   - `mod`: a factor `Raster` layer indicating which variable was most 
-  dissimilar to its reference range (i.e. the MoD map, Elith et al. 2010); 
+  dissimilar to its reference range (i.e. the MoD map, Elith <em>et al.</em> 2010); 
   and
   - `mos`: a factor `Raster` layer indicating which variable was most 
   similar to its reference range.</p>  
@@ -167,14 +173,11 @@ across variables will be returned.</p></td>
   matrix and vectors.</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Calculate Multivariate Environmental Similarity and most dissimilar/similar 
-variables with respect to a reference dataset, for a set of environmental 
-variables.</p>
-<p>`similarity` uses the MESS algorithm described in Appendix S3
-  of Elith et al. 2010.</p>
+    <p>`similarity` uses the MESS algorithm described in Appendix S3
+  of Elith <em>et al.</em> 2010.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. <em>Methods in Ecology and Evolution</em>, <b>1</b>: 330-342. <a href='doi:10.1111/j.2041-210X.2010.00036.x'>doi:10.1111/j.2041-210X.2010.00036.x</a></p>
+    <p>Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. <em>Methods in Ecology and Evolution</em>, <b>1</b>: 330-342. doi: <a href='https://doi.org/10.1111/j.2041-210X.2010.00036.x'>10.1111/j.2041-210X.2010.00036.x</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://rspatial.org/raster/sdm/'>dismo</a></span><span class='op'>)</span>
@@ -204,7 +207,7 @@ variables.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert P. Anderson.</p>
+  <p>Developed by Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert A. Boria, Mariano Soley-Guardia, Robert P. Anderson.</p>
 </div>
 
 <div class="pkgdown">

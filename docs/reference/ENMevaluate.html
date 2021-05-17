@@ -40,12 +40,15 @@
 
 
 <meta property="og:title" content="Tune ecological niche model (ENM) settings and calculate evaluation statistics — ENMevaluate" />
-<meta property="og:description" content="ENMevaluate() builds ecological niche models iteratively across a range of 
-user-specified tuning settings. Users can choose to evaluate models with cross validation or a
-full-withheld testing dataset. ENMevaluate() returns an ENMevaluation object with slots containing 
+<meta property="og:description" content="ENMevaluate() is the primary function for the ENMeval package. This
+function builds ecological niche models iteratively across a range of user-specified tuning 
+settings. Users can choose to evaluate models with cross validation or a full-withheld testing 
+dataset. ENMevaluate() returns an ENMevaluation object with slots containing 
 evaluation statistics for each combination of settings and for each cross validation fold therein, as
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
-results table should aid users in identifying model settings that balance fit and predictive ability." />
+results table should aid users in identifying model settings that balance fit and predictive ability. See
+the extensive vignette for fully worked examples: 
+&amp;lt;https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html&amp;gt;." />
 
 
 
@@ -126,12 +129,15 @@ results table should aid users in identifying model settings that balance fit an
     </div>
 
     <div class="ref-description">
-    <p><code>ENMevaluate()</code> builds ecological niche models iteratively across a range of 
-user-specified tuning settings. Users can choose to evaluate models with cross validation or a
-full-withheld testing dataset. <code>ENMevaluate()</code> returns an <code>ENMevaluation</code> object with slots containing 
+    <p><code>ENMevaluate()</code> is the primary function for the <span class="pkg">ENMeval</span> package. This
+function builds ecological niche models iteratively across a range of user-specified tuning 
+settings. Users can choose to evaluate models with cross validation or a full-withheld testing 
+dataset. <code>ENMevaluate()</code> returns an <code>ENMevaluation</code> object with slots containing 
 evaluation statistics for each combination of settings and for each cross validation fold therein, as
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
-results table should aid users in identifying model settings that balance fit and predictive ability.</p>
+results table should aid users in identifying model settings that balance fit and predictive ability. See
+the extensive vignette for fully worked examples: 
+&lt;https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html&gt;.</p>
     </div>
 
     <pre class="usage"><span class='fu'>ENMevaluate</span><span class='op'>(</span>
@@ -141,10 +147,8 @@ results table should aid users in identifying model settings that balance fit an
   tune.args <span class='op'>=</span> <span class='cn'>NULL</span>,
   partitions <span class='op'>=</span> <span class='cn'>NULL</span>,
   algorithm <span class='op'>=</span> <span class='cn'>NULL</span>,
-  partition.settings <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>orientation <span class='op'>=</span> <span class='st'>"lat_lon"</span>, aggregation.factor <span class='op'>=</span> <span class='fl'>2</span>, kfolds <span class='op'>=</span>
-    <span class='fl'>5</span><span class='op'>)</span>,
-  other.settings <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>abs.auc.diff <span class='op'>=</span> <span class='cn'>TRUE</span>, pred.type <span class='op'>=</span> <span class='st'>"cloglog"</span>, validation.bg <span class='op'>=</span>
-    <span class='st'>"full"</span><span class='op'>)</span>,
+  partition.settings <span class='op'>=</span> <span class='cn'>NULL</span>,
+  other.settings <span class='op'>=</span> <span class='cn'>NULL</span>,
   categoricals <span class='op'>=</span> <span class='cn'>NULL</span>,
   doClamp <span class='op'>=</span> <span class='cn'>TRUE</span>,
   clamp.directions <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -271,7 +275,7 @@ raster data (default: 10000) if background records were not already provided.</p
     </tr>
     <tr>
       <th>overlap</th>
-      <td><p>boolean: if TRUE, calculate niche overlap statistics (Warren et al. 2008).</p></td>
+      <td><p>boolean: if TRUE, calculate niche overlap statistics (Warren <em>et al.</em> 2008).</p></td>
     </tr>
     <tr>
       <th>overlapStat</th>
@@ -286,7 +290,7 @@ and does not have any current use when running <code>ENMevaluate()</code> indepe
     </tr>
     <tr>
       <th>user.eval</th>
-      <td><p>function: custom function for specifying performance metrics not included in <code>ENMeval</code>.
+      <td><p>function: custom function for specifying performance metrics not included in <span class="pkg">ENMeval</span>.
 The function must first be defined and then input as the argument <code>user.eval</code>. 
 This function should have a single argument called <code>vars</code>, which is a list that includes different data 
 that can be used to calculate the metric. See Details below and the vignette for a worked example.</p></td>
@@ -307,7 +311,7 @@ this object, but if not, a new <code>rangeModelMetadata</code> object will be ge
     </tr>
     <tr>
       <th>parallelType</th>
-      <td><p>character:: either "doParallel" or "doSNOW" (default: "doSNOW") .</p></td>
+      <td><p>character: either "doParallel" or "doSNOW" (default: "doSNOW") .</p></td>
     </tr>
     <tr>
       <th>updateProgress</th>
@@ -353,21 +357,21 @@ The Java implementation of Maxent (maxent.jar) should automatically remove these
 <code>maxnet</code> does not, and the <code>bioclim()</code> function from the R package <code>dismo</code> does not as well. Therefore,  
 it is up to the user to remove such records before running <code>ENMevaluate()</code> when raster data are not included.</p>
 <p>Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.</p>
-<p>For other.settings, the options are:<br />
-abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)<br />
+<p>For other.settings, the options are:<br />*
+abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)<br />*
+pred.type - character: specifies which prediction type should be used to generate maxnet or 
+maxent.jar prediction rasters (default: "cloglog").<br />*
 validation.bg - character: either "full" to calculate training and validation AUC and CBI 
 for cross-validation with respect to the full background (default), or "partition" (meant for 
 spatial partitions only) to calculate each with respect to the partitioned background only 
 (i.e., training occurrences are compared to training background, and validation occurrences 
-compared to validation background)<br />
-pred.type - character: specifies which prediction type should be used to generate maxnet or 
-maxent.jar prediction rasters (default: "cloglog")<br />
+compared to validation background).<br />*
 other.args - named list: any additional model arguments not specified for tuning.<br /></p>
-<p>For partition.settings, the current options are:<br />
-orientation - character: one of "lat_lon", "lon_lat", "lat_lat", or "lon_lon" (required for block partition), 
-aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs
-raster to assign partitions (required for the checkerboard partitions)<br />
-kfolds - numeric: the number of folds (i.e., partitions) for random partitions.<br /></p>
+<p>For partition.settings, the current options are:<br />*
+orientation - character: one of "lat_lon" (default), "lon_lat", "lat_lat", or "lon_lon" (required for block partition).<br />* 
+aggregation.factor - numeric vector: one or two numbers specifying the factor with which to aggregate the envs (default: 2)
+raster to assign partitions (required for the checkerboard partitions).<br />*
+kfolds - numeric: the number of folds (i.e., partitions) for random partitions (default: 5).<br /></p>
 <p>For the block partition, the orientation specifications are abbreviations for "latitude" and "longitude", 
 and they determine the order and orientations with which the block partitioning function creates the partition groups. 
 For example, "lat_lon" will split the occurrence localities first by latitude, then by longitude. For the checkerboard 
@@ -378,23 +382,25 @@ The checkerboard2 partition is hierarchical, so cells are first aggregated to de
 second aggregation is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers 
 can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
 for both levels.</p>
-<p>For user.eval, the accessible variables you have access to in order to run your custom function are:<br />
-enm - ENMdetails object<br />
-occs.train.z - data frame: predictor variable values for training occurrences<br />
-occs.val.z - data frame: predictor variable values for validation occurrences<br />
-bg.train.z - data frame: predictor variable values for training background<br />
-bg.val.z - data frame: predictor variable values for validation background<br />
-mod.k - Model object for current partition (k)<br />
-nk - numeric: number of folds (i.e., partitions)<br />
-other.settings - named list: other settings specified in ENMevaluate()<br />
-partitions - character: name of the partition method (e.g., "block")<br />
-occs.train.pred - numeric: predictions made by mod.k for training occurrences<br />
-occs.val.pred - numeric: predictions made by mod.k for validation occurrences<br />
-bg.train.pred - numeric: predictions made by mod.k for training background<br />
+<p>For user.eval, the accessible variables you have access to in order to run your custom function are below. 
+See the vignette for a worked example.<br />*
+enm - ENMdetails object<br />*
+occs.train.z - data frame: predictor variable values for training occurrences<br />*
+occs.val.z - data frame: predictor variable values for validation occurrences<br />*
+bg.train.z - data frame: predictor variable values for training background<br />*
+bg.val.z - data frame: predictor variable values for validation background<br />*
+mod.k - Model object for current partition (k)<br />*
+nk - numeric: number of folds (i.e., partitions)<br />*
+other.settings - named list: other settings specified in ENMevaluate()<br />*
+partitions - character: name of the partition method (e.g., "block")<br />*
+occs.train.pred - numeric: predictions made by mod.k for training occurrences<br />*
+occs.val.pred - numeric: predictions made by mod.k for validation occurrences<br />*
+bg.train.pred - numeric: predictions made by mod.k for training background<br />*
 bg.val.pred - numeric: predictions made by mod.k for validation background</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>Warren, D. L., &amp; Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. <em>Ecological Applications</em>, <b>21</b>: 335-342. <a href='https://doi.org/10.1890/10-1171.1'>https://doi.org/10.1890/10-1171.1</a></p>
+    <p>Muscarella, R., Galante, P. J., Soley‐Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., &amp; Anderson, R. P. (2014). ENM eval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. <em>Methods in Ecology and Evolution</em>, <b>5</b>: 1198-1205. doi: <a href='https://doi.org/10.1111/2041-210X.12261'>10.1111/2041-210X.12261</a></p>
+<p>Warren, D. L., Glor, R. E., Turelli, M. &amp; Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. <em>Evolution</em>, <b>62</b>: 2868-2883. doi: <a href='https://doi.org/10.1111/j.1558-5646.2008.00482.x'>10.1111/j.1558-5646.2008.00482.x</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
@@ -428,7 +434,7 @@ algorithm <span class='op'>=</span> <span class='st'>"maxnet"</span>, categorica
 
       <footer>
       <div class="copyright">
-  <p>Developed by Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert P. Anderson.</p>
+  <p>Developed by Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert A. Boria, Mariano Soley-Guardia, Robert P. Anderson.</p>
 </div>
 
 <div class="pkgdown">
