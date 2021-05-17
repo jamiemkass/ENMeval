@@ -165,7 +165,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' a model (exp(-0.5 * \code{delta.AICc})) divided by the sum of the likelihood
 #' values of all models included in a run.  These can be used for model
 #' averaging (Burnham and Anderson 2002).
-#' @aliases calc.aicc get.params
+#' @aliases calc.aicc
 #' @details As motivated by Warren and Seifert (2011) and implemented in ENMTools (Warren 
 #' \emph{et al.} 2010), this function calculates the small sample size version of Akaike 
 #' Information Criterion for ENMs (Akaike 1974). We use AICc (instead of AIC) regardless of 
@@ -258,7 +258,7 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
 #' Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197. \doi{10.1214/aos/1176347263}
 #'   
 #' Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \doi{10.1016/j.ecolmodel.2013.08.011}
-#'   
+#' @export
 corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
 }

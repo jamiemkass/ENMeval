@@ -25,7 +25,7 @@ NULL
 #' @slot overlap list: matrices of pairwise niche overlap statistics
 #' @slot rmm list: the rangeModelMetadata objects for each model
 #' @rdname ENMevaluation
-#' @export
+#' @export ENMevaluation
 
 # class slots match older ENMeval versions
 ENMevaluation <- setClass("ENMevaluation",
@@ -274,7 +274,7 @@ setMethod("show",
 #' @slot varimp function: generates a data frame of variable importance from the model object (if functionality is available).
 #' The available arguments are: mod.
 #' @rdname ENMdetails
-#' @export
+#' @export ENMdetails
 
 ENMdetails <- setClass("ENMdetails",
                        slots = c(name = 'character',
@@ -483,7 +483,7 @@ setMethod("show",
 #' @slot emp.bg data frame: background coordinates and predictor variable values used for model training (empirical model)
 #' @slot emp.bg.grp vector: partition groups for background points (empirical model)
 #' @rdname ENMnull
-#' @export
+#' @export ENMnull
 
 # class slots match older ENMeval versions
 ENMnull <- setClass("ENMnull",
