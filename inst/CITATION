@@ -1,20 +1,21 @@
 citHeader("To cite ENMeval in publications please use:")
 
 citEntry(entry	= "Article",
-  title 	= "ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for ecological niche models",
-  author 	= personList(as.person("R. Muscarella"),
-			as.person("P.J. Galante"),
+  title 	= "ENMeval 2.0: Redesigned for customizable and reproducible modelling of species’ niches and distributions",
+  author 	= personList(as.person("J. M. Kass"),
+      as.person("R. Muscarella"),
+			as.person("P. J. Galante"),
+			as.person("C. L. Bohl"),
+			as.person("G. E. Pinilla-Buitrago"),
+			as.person("R. A. Boria"),
 			as.person("M. Soley-Guardia"),
-			as.person("R.A. Boria"),
-			as.person("J. Kass"),
-			as.person("M. Uriarte"),
-			as.person("R.P. Anderson")),
+			as.person("R. P. Anderson")),
   journal	= "Methods in Ecology and Evolution",
-  year 		= "2014",
-  volume	= "5",
-  number	= "11",
-  pages		= "1198-1205",
+  year 		= "2021",
+  volume	= "",
+  number	= "",
+  pages		= "",
 
   textVersion	= 
-  paste("Muscarella, R., Galante, P.J., Soley-Guardia, M., Boria, R.A., Kass, J., Uriarte, M. and R.P. Anderson (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for ecological niche models. Methods in Ecology and Evolution.")
+  paste("Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C. L., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., and R. P. Anderson (2021). ENMeval 2.0: Redesigned for customizable and reproducible modelling of species’ niches and distributions. Methods in Ecology and Evolution.")
 )
