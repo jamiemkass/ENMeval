@@ -3,7 +3,6 @@
 \name{aic.maxent}
 \alias{aic.maxent}
 \alias{calc.aicc}
-\alias{get.params}
 \title{Calculate AICc from Maxent model prediction}
 \usage{
 aic.maxent(p.occs, ncoefs, p = NULL)
