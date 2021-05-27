@@ -4,6 +4,10 @@
 
 ## R package for automated tuning and evaluations of ecological niche models
 
+NOTE: Version 2.0.1 is a work in progress, changing slowly to fix small bugs in 2.0.0. Please use this development version
+if you are having issues, and hopefully they get resolved. If not, please raise an Issue in this Github repo.
+Install with: `devtools::install_packages("jamiemkass/ENMeval")`
+
 [`ENMeval`](https://jamiemkass.github.io/ENMeval/index.html) is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version 2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive [vignette](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) with a complete analysis walkthrough, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests -- thank you for your input!
 
 `ENMeval` 2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) from the [maxnet R package](https://cran.r-project.org/package=maxnet) and the Java software maxent.jar [(Phillips *et al.* 2006)](https://doi.org/10.1016/j.ecolmodel.2005.03.026), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/), as well as BIOCLIM implemented with the [dismo R package](https://cran.r-project.org/package=dismo). 
