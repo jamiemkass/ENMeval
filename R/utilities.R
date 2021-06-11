@@ -8,6 +8,46 @@
 #' @usage lhs \%>\% rhs
 NULL
 
+#' @title Convert old ENMevaluation objects to new ones
+#' @description Converts ENMevaluation objects made with version <=0.3.1 to
+#' new ones made with version >=2.0.0.
+#' @param e ENMevaluation object: the old object to convert
+#' @param envs RasterStack: the original predictor variables used to generate
+#' the old ENMevaluation object (these are used to make the new occs and bg slots
+#' which contain the predictor variable values)
+#' @note If bin.output was set to TRUE, \code{`e@results`} will be equivalent to 
+#' the new results.partitions slot. Some slots are unable to be filled in because
+#' previous versions of ENMeval did not record them in ENMevaluation objects:
+#' variable.importance, partition.settings, other.settings, doClamp (set to TRUE
+#' arbitrarily to avoid errors, but may actually have been FALSE), clamp.directions,
+#' taxon.name, and rmm.
+#' @export
+ENMevaluation_convert <- function(e, envs) {
+  alg <- ifelse(grepl("Maxent", e@algorithm), "maxent.jar", "maxnet")
+  ts <- dplyr::distinct(e@results, fc = features, rm) %>% as.data.frame()
+  targs <- apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
+  ts <- cbind(ts, tune.args = targs)
+  rs <- cbind(ts, e@results[,-1:-3])
+  names(rs)[-1:-3] <- c("auc.train", "auc.val.avg", "auc.val.sd", "auc.diff.avg", "auc.diff.sd", 
+                        "or.10p.avg", "or.10p.sd", "or.mtp.avg", "or.mtp.sd", "AICc", 
+                        "delta.AICc", "w.AIC", "ncoef")
+  occs <- e@occ.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+  occs <- cbind(occs, raster::extract(envs, occs))
+  bg <- e@bg.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+  bg <- cbind(bg, raster::extract(envs, bg))
+  ms <- e@models
+  names(ms) <- rs$tune.args
+  e_new <- ENMevaluation(algorithm = alg, tune.settings = as.data.frame(ts),
+                         results = rs, results.partitions = data.frame(),
+                         predictions = e@predictions, models = ms, 
+                         variable.importance = list(),
+                         partition.method = e@partition.method, partition.settings = list(),
+                         other.settings = list(), doClamp = TRUE, clamp.directions = list(), 
+                         taxon.name = "", occs = occs, occs.testing = data.frame(), 
+                         occs.grp = factor(e@occ.grp), bg = bg, bg.grp = factor(e@bg.grp),
+                         rmm = list())
+  return(e_new)
+}
 
 #' @title Find NA cells in a RasterStack
 #' @description Finds cells that are NA for at least one raster in a RasterStack.
