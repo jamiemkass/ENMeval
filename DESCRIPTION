@@ -19,7 +19,6 @@ Encoding: UTF-8
 Depends: methods, R (>= 3.5.0), magrittr
 Imports: 
     raster,
-    sp,
     dismo,
     doSNOW,
     doParallel,
