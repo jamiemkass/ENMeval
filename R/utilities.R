@@ -26,7 +26,8 @@ ENMevaluation_convert <- function(e, envs) {
   alg <- ifelse(grepl("Maxent", e@algorithm), "maxent.jar", "maxnet")
   ts <- dplyr::distinct(e@results, fc = features, rm) %>% as.data.frame()
   targs <- apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
-  rs <- cbind(ts, tune.args = targs, e@results[,-1:-3])
+  ts <- cbind(ts, tune.args = targs)
+  rs <- cbind(ts, e@results[,-1:-3])
   names(rs)[-1:-3] <- c("auc.train", "auc.val.avg", "auc.val.sd", "auc.diff.avg", "auc.diff.sd", 
                         "or.10p.avg", "or.10p.sd", "or.mtp.avg", "or.mtp.sd", "AICc", 
                         "delta.AICc", "w.AIC", "ncoef")
@@ -41,7 +42,7 @@ ENMevaluation_convert <- function(e, envs) {
                          predictions = e@predictions, models = ms, 
                          variable.importance = list(),
                          partition.method = e@partition.method, partition.settings = list(),
-                         other.settings = other.settings, doClamp = TRUE, clamp.directions = list(), 
+                         other.settings = list(), doClamp = TRUE, clamp.directions = list(), 
                          taxon.name = "", occs = occs, occs.testing = data.frame(), 
                          occs.grp = factor(e@occ.grp), bg = bg, bg.grp = factor(e@bg.grp),
                          rmm = list())
