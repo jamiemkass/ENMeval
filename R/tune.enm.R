@@ -23,7 +23,7 @@
 #' to standardize the methodology for both training and validation data for spatial partitions, as ENMeval
 #' does not mask rasters to partition areas and hence does not have partitioned raster data. Further, 
 #' predictions for occurrence and background localities are combined as input for the parameter "fit" in 
-#' \code{ecospat::ecospat_boyce()} because the interval is determined from "fit" only, and if test occurrences 
+#' \code{boyce.cm()} because the interval is determined from "fit" only, and if test occurrences 
 #' all have higher predictions than the background, the interval will be cut short.
 #' @inheritParams ENMevaluate
 #' @name tune.enm
@@ -46,7 +46,7 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.sett
   # combine occs and bg predictions as input for "fit" because the interval
   # is determined from "fit" only, and if occs have higher predictions than
   # bg, the interval will be cut short
-  cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$Spearman.cor
+  cbi.train <- boyce.cm(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$Spearman.cor
   
   out.df <- data.frame(auc.train = auc.train, cbi.train = cbi.train)
   return(out.df)
@@ -78,7 +78,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the full background (do not calculate for jackknife partitions)
     if(partitions != "jackknife") {
-      cbi.val <- ecospat::ecospat.boyce(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
+      cbi.val <- boyce.cm(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
     }else{
       cbi.val <- NA
     }
@@ -93,7 +93,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the validation background only (do not calculate for jackknife partitions)
     if(partitions != "jackknife") {
-      cbi.val <- ecospat::ecospat.boyce(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
+      cbi.val <- boyce.cm(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
     }else{
       cbi.val <- NA
     }

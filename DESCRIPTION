@@ -35,8 +35,7 @@ Imports:
     ggplot2,
     testthat,
     glmnet,
-    rangeModelMetadata,
-    ecospat
+    rangeModelMetadata
 Suggests: 
   rJava (>= 0.5-0),
   knitr,
@@ -50,5 +49,4 @@ Suggests:
 	tibble,
 	latticeExtra
 RoxygenNote: 7.1.1
-VignetteBuilder: knitr
 LazyData: true

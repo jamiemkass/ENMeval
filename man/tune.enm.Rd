@@ -148,6 +148,6 @@ Validation CBI is calculated here with background values, not raster data, in or
 to standardize the methodology for both training and validation data for spatial partitions, as ENMeval
 does not mask rasters to partition areas and hence does not have partitioned raster data. Further, 
 predictions for occurrence and background localities are combined as input for the parameter "fit" in 
-\code{ecospat::ecospat_boyce()} because the interval is determined from "fit" only, and if test occurrences 
+\code{boyce.cm()} because the interval is determined from "fit" only, and if test occurrences 
 all have higher predictions than the background, the interval will be cut short.
 }
