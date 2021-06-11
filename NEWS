@@ -4,6 +4,8 @@ o  Fixed the DESCRIPTION file to ensure that all necessary packages are installe
 installation of ENMeval.
 o  Addition of ENMevaluation_convert() function to convert old ENMevaluation objects (<=0.3.1) into
 new (>=2.0.0) ones.
+o  Replacement of ecospat.boyce() from ecospat package with internal function boyce.cm(). This function
+was modified from ecospat.boyce() by Cory Merow to make it faster but retains the same functionality.
 
 
 ENMeval 2.0.0
