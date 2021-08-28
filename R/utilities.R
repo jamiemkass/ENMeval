@@ -171,8 +171,10 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
       out <- raster::addLayer(out, orig.vals[[categoricals]])
       out <- out[[names(orig.vals)]]
     }else{
-      out <- cbind(out, orig.vals[,categoricals])
-      names(out)[ncol(out)] <- categoricals
+      for(i in 1:length(categoricals)) {
+        out <- cbind(out, orig.vals[,categoricals[i]])
+        names(out)[ncol(out)] <- categoricals[i]
+      }
       out <- out[,names(orig.vals)]
     }
   }

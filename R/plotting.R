@@ -159,7 +159,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
 #' @param categoricals character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
-#' these must be specified as this function was intended for use with continuous data only
+#' these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object 
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 #' with respect to all variables (optional) 
 #' @param occs.testing.z data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
@@ -285,7 +285,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object (optional) 
 #' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
-#' removed before input, as they cannot be used to calculate MESS
+#' removed before input or identified with the argument "categoricals", as they cannot be used to calculate MESS
 #' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
 #' the first two columns must be named "longitude" and "latitude"
 #' @param occs.grp numeric vector: partition groups for occurrence records (optional)

@@ -1,3 +1,8 @@
+ENMeval 2.0.2
+===========
+o  Fixed a bug that caused an error in the clamp.vars() function when more than one categorical variable was specified for tabular data inputs (which ENMevaluate() uses internally).
+o  Added new tests for functionality with multiple categorical variables.
+
 ENMeval 2.0.1
 ===========
 o  Fixed the DESCRIPTION file to ensure that all necessary packages are installed with the

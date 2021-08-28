@@ -1,6 +1,6 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when submitting to CRAN
-skip_tests_for_cran <- TRUE
+skip_tests_for_cran <- FALSE
 # this additionally skips tests for env similarity and difference for the envSim.map tests
 skip_simDiff <- TRUE
 
@@ -227,6 +227,38 @@ if(skip_tests_for_cran == FALSE) {
   test_evalplot.nulls(ns)
 }
 
+# more than one categorical variable
+if(skip_tests_for_cran == FALSE) {
+  envs2 <- raster::addLayer(envs, envs$biome)
+  occs.z2 <- cbind(occs, raster::extract(envs2, occs))
+  occs.z2$biome.1 <- factor(occs.z2$biome.1)
+  occs.z2$biome.2 <- factor(occs.z2$biome.2)
+  bg.z2 <- cbind(bg, raster::extract(envs2, bg))
+  bg.z2$biome.1 <- factor(bg.z2$biome.1)
+  bg.z2$biome.2 <- factor(bg.z2$biome.2)
+  
+  context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and two categorical variables..."))
+  e2 <- ENMevaluate(occs, envs2, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, n.bg = 1000, categoricals = c("biome.1", "biome.2"), overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e2, algorithm, "randomkfold", tune.args, 5, 1) 
+  
+  context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions and two categorical variables..."))
+  test_evalplot.stats(e2)
+  grps <- get.randomkfold(occs, bg, kfolds = 5)
+  context(paste("Testing evalplot.envSim.hist for", algorithm, "with random 5-fold partitions and two categorical variables..."))
+  test_evalplot.envSim.hist(e2, occs.z2, bg.z2, grps$occs.grp, grps$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
+  context(paste("Testing evalplot.envSim.map for", algorithm, "with random 5-fold partitions and two categorical variables..."))
+  test_evalplot.envSim.map(e2, envs2, occs.z2, bg.z2, grps$occs.grp, grps$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
+  
+  context(paste("Testing ENMnulls for", algorithm, "with random 5-fold partitions and two categorical variables..."))
+  ns <- ENMnulls(e2, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e2, ns, no.iter, algorithm, "randomkfold", mset, 5, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", algorithm, "with random 5-fold partitions and two categorical variables..."))
+  test_evalplot.nulls(ns)
+}
+
 # clamping
-context(paste("Testing clamping function for", algorithm, "..."))
+context(paste("Testing clamping function for", algorithm, "with..."))
 test_clamp(e, envs, occs.z, bg.z, categoricals = "biome")
+context(paste("Testing clamping function for", algorithm, "with two categorical variables..."))
+test_clamp(e2, envs2, occs.z2, bg.z2, categoricals = c("biome.1", "biome.2"))
