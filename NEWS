@@ -2,6 +2,8 @@ ENMeval 2.0.2
 ===========
 o  Fixed a bug that caused an error in the clamp.vars() function when more than one categorical variable was specified for tabular data inputs (which ENMevaluate() uses internally).
 o  Added new tests for functionality with multiple categorical variables.
+o  Fixed a bug that made ENMnulls() error when the model included user-specified evaluation metrics.
+o  Fixed a warning for clamp.vars() that printed when a data frame with multiple categorical variables was input instead of a raster.
 
 ENMeval 2.0.1
 ===========

@@ -242,7 +242,7 @@ if(skip_tests_for_cran == FALSE) {
   test_ENMevaluation(e.2cat, algorithm, "randomkfold", tune.args, 5, 1) 
   
   context(paste("Testing ENMevaluate for", algorithm, "with random 5-fold partitions and two categorical variables and no env data..."))
-  e.2cat.z <- ENMevaluate(occs.z.2cat, bg.z.2cat, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, n.bg = 1000, categoricals = c("biome.1", "biome.2"), overlap = TRUE, quiet = TRUE)
+  e.2cat.z <- ENMevaluate(occs.z.2cat, bg = bg.z.2cat, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, n.bg = 1000, categoricals = c("biome.1", "biome.2"), quiet = TRUE)
   test_ENMevaluation(e.2cat.z, algorithm, "randomkfold", tune.args, 5, 1) 
   
   context(paste("Testing evalplot.stats for", algorithm, "with random 5-fold partitions and two categorical variables..."))

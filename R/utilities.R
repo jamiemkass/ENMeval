@@ -121,11 +121,11 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   # remove categorical variables from clamping analysis
   if(!is.null(categoricals)) {
     if(inherits(orig.vals, "BasicRaster") == TRUE) {
-      p <- orig.vals[[-which(names(orig.vals) == categoricals)]]
+      p <- orig.vals[[-which(names(orig.vals) %in% categoricals)]]
     }else{
-      p <- orig.vals[,-which(names(orig.vals) == categoricals)]
+      p <- orig.vals[,-which(colnames(orig.vals) %in% categoricals)]
     }
-    ref.vals <- ref.vals[,-which(colnames(ref.vals) == categoricals)]
+    ref.vals <- ref.vals[,-which(colnames(ref.vals) %in% categoricals)]
   }else{
     p <- orig.vals
   }

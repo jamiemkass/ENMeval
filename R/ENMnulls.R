@@ -189,7 +189,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
       partitions <- "user"
     }
     
-    args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partition = partitions,
+    args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partitions = partitions,
                    algorithm = e@algorithm, other.settings = e@other.settings, partition.settings = e@partition.settings,
                    occs.testing = e@occs.testing, user.val.grps = user.val.grps, user.grp = user.grp, 
                    doClamp = e@doClamp, clamp.directions = clamp.directions.i, quiet = TRUE)
@@ -259,12 +259,12 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     # get empirical model evaluation statistics for comparison
     emp.avgs <- emp.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::contains(eval.stats))
   }else{
-    nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
-    nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+    nulls.avgs <- nulls %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+    nulls.sds <- nulls %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".sd")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
     # get empirical model evaluation statistics for comparison
-    emp.avgs <- emp.mod.res %>% dplyr::select(dplyr::ends_with("train"), dplyr::ends_with("avg"))  
+    emp.avgs <- emp.mod.res %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg"))
   }
-  emp.sds <- emp.mod.res %>% dplyr::select(dplyr::ends_with("sd"))
+  emp.sds <- emp.mod.res %>% dplyr::select(paste0(eval.stats, ".sd"))
   if(ncol(emp.sds) == 0) emp.sds <- NULL
   
   empNull.stats <- as.data.frame(matrix(nrow = 6, ncol = ncol(emp.avgs)+1))
