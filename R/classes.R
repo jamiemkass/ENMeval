@@ -240,11 +240,12 @@ setMethod("show",
             cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
             cat(" partition method: ", object@partition.method, "\n")
             cat(" partition settings: ", ifelse(length(object@partition.settings) > 0, paste(names(object@partition.settings), unlist(object@partition.settings), sep = " = ", collapse = ", "), "none"), "\n")
-            cat(" clamp: ", object@doClamp, "\n")
-            clamp.dir.spacing <- "\n                    "
-            cat(" clamp directions: ", ifelse(length(object@clamp.directions) > 0, paste(sapply(1:2, function(x) paste0(names(object@clamp.directions[x]), ": ", paste(object@clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "none"), "\n")
+            clamp.dir.spacing <- "\n         "
+            if(object@doClamp == FALSE) cat(" clamp: ", object@doClamp, "\n")
+            if(object@doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@clamp.directions[x]), ": ", paste(object@clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
+            cat(" categoricals: ", paste(object@other.settings$categoricals, collapse = ", "), "\n")
             cat(" algorithm: ", object@algorithm, "\n")
-            tune.args.df <- object@tune.settings[,-which(names(object@tune.settings)=="tune.args")]
+            tune.args.df <- object@tune.settings[,-which(names(object@tune.settings)=="tune.args"), drop = FALSE]
             tune.spacing <- "\n                 "
             cat(" tune settings: ", paste0(names(tune.args.df), ": ", apply(tune.args.df, 2, function(x) paste(unique(x), collapse = ",")), collapse = tune.spacing), "\n")
             cat(" overlap: ", !is.null(object@overlap), "\n")
@@ -628,10 +629,16 @@ setMethod("show",
             cat(" empirical occurrence/background points: ", nrow(object@emp.occs), '/', nrow(object@emp.bg), "\n")
             cat(" partition method: ", object@null.partition.method, "\n")
             cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")
-            cat(" other settings: ", paste(names(object@null.other.settings), unlist(object@null.other.settings), sep = " = ", collapse = ", "), "\n")
+            clamp.dir.spacing <- "\n         "
+            if(object@null.other.settings$doClamp == FALSE) cat(" clamp: ", object@null.other.settings$doClamp, "\n")
+            if(object@null.other.settings$doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
+            cat(" categoricals: ", paste(object@null.other.settings$categoricals, collapse = ", "), "\n")
             cat(" algorithm: ", object@null.algorithm, "\n")
-            cat(" model settings: \n")
-            print(object@null.mod.settings[,-ncol(object@null.mod.settings)], row.names = FALSE)
+            # cat(" model settings: \n")
+            tune.args.df <- object@null.mod.settings[,-which(names(object@null.mod.settings)=="tune.args"), drop = FALSE]
+            tune.spacing <- "\n                  "
+            cat(" model settings: ", paste0(names(tune.args.df), ": ", apply(tune.args.df, 2, function(x) paste(unique(x), collapse = ",")), collapse = tune.spacing), "\n")
+            # print(object@null.mod.settings[,-ncol(object@null.mod.settings)], row.names = FALSE)
             cat("Refer to ?ENMnull for information on slots.", sep = "")
             invisible(NULL)
           })

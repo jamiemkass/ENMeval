@@ -103,7 +103,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   }else if(any(is.null(bg.z), is.null(bg.grp))) {
     pts.plot <- occs.z %>% dplyr::mutate(type = rep(1, nrow(occs.z)), partition = factor(occs.grp))  
   }else{
-    pts.plot <- rbind(occs.z, bg.z) %>% 
+    pts.plot <- rbind(occs.z, bg.z) %>% as.data.frame() %>%
       dplyr::mutate(type = c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))), partition = factor(c(occs.grp, bg.grp)))
   }
   names(pts.plot)[1:2] <- c("longitude","latitude")

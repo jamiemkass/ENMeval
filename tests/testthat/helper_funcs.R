@@ -117,7 +117,6 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
       }else{
         expect_true(raster::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)
       }
-      
     }
   })
   
@@ -192,6 +191,11 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
     expect_true(all(ns@emp.bg == e@bg))
     expect_true(all(ns@emp.occs.grp == e@occs.grp))
   })
+  
+  test_that("Data in ENMnulls object slots are not NA (except CBI, which can be NA due to low data)", {
+    expect_true(all(apply(ns@null.results %>% select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
+    if(ns@null.partition.method != "none") expect_true(all(apply(ns@null.results %>% select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
+  })
 }
 
 #' @title Unit tests for ENMevaluation plotting functions
@@ -260,14 +264,14 @@ test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel 
     if(bg.sel == 1) {
       evalplot.envSim.hist(e = e, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
     }
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.var = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
     evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
     # with occs and bg data
     evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
     if(bg.sel == 1) {
       evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist() 
     }
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.var = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
     evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
   }
   
@@ -299,8 +303,8 @@ test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg
     # with ENMevaluation object
     evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
     evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.var = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.var = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
     # with buffer
     evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
     evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
@@ -320,15 +324,15 @@ test_evalplot.nulls <- function(ns) {
   
   test_nulls <- function(x, stats) {
     test_that("Outputs for evalplot.nulls have correct form", {
-    expect_true(length(x) == 2)
-    expect_true(all(names(x) == c("null.avgs", "empirical.results")))
-    expect_true(ncol(x[[1]]) == 2)
-    expect_true(ncol(x[[2]]) == 2)
-    expect_true(all(names(x[[1]]) == c("metric", "avg")))
-    expect_true(all(names(x[[2]]) == c("metric", "avg")))
-    expect_true(nrow(x[[1]]) == ns@null.no.iter * length(stats))
-    expect_true(all(unique(x[[1]]$metric) == stats))
-    expect_true(all(unique(x[[2]]$metric) == stats))
+      expect_true(length(x) == 2)
+      expect_true(all(names(x) == c("null.avgs", "empirical.results")))
+      expect_true(ncol(x[[1]]) == 2)
+      expect_true(ncol(x[[2]]) == 2)
+      expect_true(all(names(x[[1]]) == c("metric", "avg")))
+      expect_true(all(names(x[[2]]) == c("metric", "avg")))
+      expect_true(nrow(x[[1]]) == ns@null.no.iter * length(stats))
+      expect_true(all(unique(x[[1]]$metric) == stats))
+      expect_true(all(unique(x[[2]]$metric) == stats))
     })
   }
   

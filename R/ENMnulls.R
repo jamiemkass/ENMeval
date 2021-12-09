@@ -264,8 +264,11 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     # get empirical model evaluation statistics for comparison
     emp.avgs <- emp.mod.res %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg"))
   }
-  emp.sds <- emp.mod.res %>% dplyr::select(paste0(eval.stats, ".sd"))
-  if(ncol(emp.sds) == 0) emp.sds <- NULL
+  if(sum(grepl("sd", names(emp.mod.res))) > 0) {
+    emp.sds <- emp.mod.res %>% dplyr::select(paste0(eval.stats, ".sd"))  
+  }else{
+    emp.sds <- NULL
+  }
   
   empNull.stats <- as.data.frame(matrix(nrow = 6, ncol = ncol(emp.avgs)+1))
   names(empNull.stats)[1] <- "statistic"
@@ -301,6 +304,8 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     nulls.grp$cbi.val <- NA
   }
   
+  # first, add clamp directions to other settings so the object can record it
+  e@other.settings$clamp.directions <- e@clamp.directions
   # condense mod.args to named matrix for inserting into class slot
   e.n <- ENMnull(null.algorithm = e@algorithm,
                  null.mod.settings = mod.settings.tbl,

@@ -469,6 +469,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
                          left = clamp.directions$left, right = clamp.directions$right, 
                          categoricals = categoricals)
       if(quiet != TRUE) message("* Clamping predictor variable rasters...")
+    }else{
+      if(is.null(clamp.directions)) {
+        clamp.directions$left <- names(d[, 3:(ncol(d)-1)])
+        clamp.directions$right <- names(d[, 3:(ncol(d)-1)])
+      }
     }
   }else{
     other.settings$doClamp <- FALSE
