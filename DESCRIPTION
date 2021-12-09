@@ -18,8 +18,8 @@ License: GPL
 Encoding: UTF-8
 Depends: methods, R (>= 3.5.0), magrittr
 Imports: 
-    raster,
     sp,
+    raster,
     dismo,
     doSNOW,
     doParallel,
@@ -37,18 +37,18 @@ Imports:
     glmnet,
     rangeModelMetadata,
     ecospat
-Suggests: 
-  rJava (>= 0.5-0),
-  knitr,
-  rmarkdown,
-  spocc,
-  RColorBrewer,
-	rasterVis,
-	sf,
-	blockCV,
-	devtools,
-	tibble,
-	latticeExtra
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 LazyData: true
+Suggests: 
+    rmarkdown,
+    knitr,
+    rJava (>= 0.5-0),
+    spocc,
+    RColorBrewer,
+    rasterVis,
+    sf,
+    blockCV,
+    devtools,
+    tibble,
+    latticeExtra
