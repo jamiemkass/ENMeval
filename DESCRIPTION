@@ -2,7 +2,7 @@ Package: ENMeval
 Type: Package
 Title: Automated Tuning and Evaluations of Ecological Niche Models
 Version: 2.0.2
-Date: 2021-06-11
+Date: 2021-12-10
 Authors@R: c(
   person("Jamie M.","Kass", email = "jamie.m.kass@gmail.com", role = c("aut","cre")), 
   person("Robert","Muscarella", role = "aut"),
@@ -38,7 +38,6 @@ Imports:
     rangeModelMetadata,
     rlang
 RoxygenNote: 7.1.1
-VignetteBuilder: knitr
 LazyData: true
 Suggests: 
     rmarkdown,
