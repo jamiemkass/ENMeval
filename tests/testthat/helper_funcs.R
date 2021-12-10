@@ -78,7 +78,7 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
         expect_true(max(e@results.partitions$fold) == 0)
       }
       # jackknife has NAs for cbi.val
-      if(parts == "jackknife") {
+      if(parts == "jackknife" | !require("ecospat")) {
         expect_true(sum(is.na(e@results.partitions)) == nrow(e@results.partitions))
       }else{
         expect_true(sum(is.na(e@results.partitions)) == 0)
@@ -177,15 +177,9 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
     
     # number of rows in empirical vs null results table
     expect_true(nrow(ns@null.emp.results) == 6)
-    # there should only be two NA values for this table: read.sd for auc.train and cbi.train
-    if(parts == "jackknife") {
-      expect_true(sum(is.na(ns@null.emp.results[2,])) == 3)
-      expect_true(sum(is.na(ns@null.emp.results[,6])) == 6) 
-    }else if(parts == "testing") {
-      expect_true(sum(is.na(ns@null.emp.results[2,])) == 7) 
-    }else{
-      expect_true(sum(is.na(ns@null.emp.results[2,])) == 2)  
-    }
+    # check that not all empirical results are NA
+    expect_true(sum(apply(ns@null.emp.results[,2:ncol(ns@null.emp.results)], 2, function(x) sum(is.na(x)))) != 
+                  nrow(ns@null.emp.results) * (ncol(ns@null.emp.results)-1))
     # check that tables match
     expect_true(all(ns@emp.occs == e@occs))
     expect_true(all(ns@emp.bg == e@bg))
@@ -193,8 +187,8 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
   })
   
   test_that("Data in ENMnulls object slots are not NA (except CBI, which can be NA due to low data)", {
-    expect_true(all(apply(ns@null.results %>% select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
-    if(ns@null.partition.method != "none") expect_true(all(apply(ns@null.results %>% select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
+    expect_true(all(apply(ns@null.results %>% dplyr::select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
+    if(ns@null.partition.method != "none") expect_true(all(apply(ns@null.results %>% dplyr::select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
   })
 }
 
@@ -338,7 +332,7 @@ test_evalplot.nulls <- function(ns) {
   
   if(ns@null.partition.method == "none") {
     stat1 <- "auc.train"
-    stat2 <- c("auc.train", "cbi.train")
+    if(require(ecospat)) stat2 <- c("auc.train", "cbi.train") else stat2 <- "auc.train"
   }else{
     stat1 <- "auc.val"
     stat2 <- c("auc.val", "or.10p") 

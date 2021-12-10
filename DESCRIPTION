@@ -35,8 +35,7 @@ Imports:
     ggplot2,
     testthat,
     glmnet,
-    rangeModelMetadata,
-    ecospat
+    rangeModelMetadata
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 LazyData: true
@@ -51,4 +50,5 @@ Suggests:
     blockCV,
     devtools,
     tibble,
-    latticeExtra
+    latticeExtra,
+    ecospat

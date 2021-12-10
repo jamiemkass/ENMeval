@@ -46,7 +46,11 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.sett
   # combine occs and bg predictions as input for "fit" because the interval
   # is determined from "fit" only, and if occs have higher predictions than
   # bg, the interval will be cut short
-  cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$Spearman.cor
+  if(other.settings$ecospat.use == TRUE) {
+    cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$Spearman.cor
+  }else{
+    cbi.train <- NA
+  }
   
   out.df <- data.frame(auc.train = auc.train, cbi.train = cbi.train)
   return(out.df)
@@ -77,8 +81,12 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     # calculate AUC diff as training AUC minus validation AUC with a shared background
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the full background (do not calculate for jackknife partitions)
-    if(partitions != "jackknife") {
-      cbi.val <- ecospat::ecospat.boyce(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
+    if(other.settings$ecospat.use == TRUE) {
+      if(partitions != "jackknife") {
+        cbi.val <- ecospat::ecospat.boyce(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor  
+      }else{
+        cbi.val <- NA
+      }
     }else{
       cbi.val <- NA
     }
@@ -92,8 +100,12 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     # calculate AUC diff as training AUC minus validation AUC with different backgrounds
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the validation background only (do not calculate for jackknife partitions)
-    if(partitions != "jackknife") {
-      cbi.val <- ecospat::ecospat.boyce(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
+    if(other.settings$ecospat.use == TRUE) {
+      if(partitions != "jackknife") {
+        cbi.val <- ecospat::ecospat.boyce(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
+      }else{
+        cbi.val <- NA
+      }
     }else{
       cbi.val <- NA
     }
@@ -232,8 +244,8 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
     occs.testing.zEnvs <- occs.testing.z %>% dplyr::select(dplyr::all_of(envs.names))
     if(other.settings$doClamp == TRUE) {
       occs.testing.zEnvs <- clamp.vars(orig.vals = occs.testing.zEnvs, ref.vals = rbind(occs.z, bg.z), 
-                          left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
-                          categoricals = other.settings$categoricals)
+                                       left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
+                                       categoricals = other.settings$categoricals)
     }
     validate <- tune.validate(enm, occs.z, occs.testing.zEnvs, bg.z, bg.val.z, mod.full, 0, tune.tbl.i, other.settings, partitions, user.eval, quiet)
     test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, stringsAsFactors = FALSE) %>% cbind(validate)
@@ -261,8 +273,8 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
     # this means for each partition, making sure no values in validation data are more extreme than those in training data
     if(other.settings$doClamp == TRUE) {
       val.z <- clamp.vars(orig.vals = rbind(occs.val.z, bg.val.z), ref.vals = rbind(occs.train.z, bg.train.z), 
-                 left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
-                 categoricals = other.settings$categoricals)
+                          left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
+                          categoricals = other.settings$categoricals)
       occs.val.z <- val.z[1:nrow(occs.val.z),]
       if(nrow(bg.val.z) > 0) bg.val.z <- val.z[(nrow(occs.val.z)+1):nrow(bg.val.z),]  
     }

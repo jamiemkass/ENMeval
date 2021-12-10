@@ -6,7 +6,7 @@ skip_maxent.jar <- FALSE
 skip_bioclim <- FALSE
 
 # this additionally skips tests for env similarity and difference for the envSim.map tests
-skip_simDiff <- TRUE
+skip_simDiff <- FALSE
 
 library(dplyr)
 options(warn=-1)

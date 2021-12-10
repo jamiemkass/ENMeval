@@ -228,6 +228,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # record start time
   start.time <- proc.time()
   
+  # check if ecospat is installed, and if not, prevent CBI calculations
+  if(!require("ecospat")) {
+    message("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
+    ecospat.use <- FALSE
+  }else{
+    ecospat.use <- TRUE
+  }
+  
   ######################## #
   # INITIAL DATA CHECKS ####
   ######################## #
@@ -244,6 +252,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(is.null(other.settings)) other.settings <- list(abs.auc.diff = TRUE, 
                                                      pred.type = "cloglog", 
                                                      validation.bg = "full")
+  # add whether to use ecospat to other.settings to avoid multiple calls to require()
+  other.settings <- c(other.settings, ecospat.use = ecospat.use)
   
   # make sure taxon name column is not included
   if(class(occs[,1]) == "character" | class(bg[,1]) == "character") stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
