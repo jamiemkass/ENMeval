@@ -1,0 +1,27 @@
+{
+    "id": "A46A3CEE",
+    "path": "~/Documents/github/ENMeval/tests/testthat/helper_funcs.R",
+    "project_path": "tests/testthat/helper_funcs.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1639105356976.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "331,2",
+        "scrollLine": "324",
+        "disableDependencyDiscovery": "1"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1639105411,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1639105411974,
+    "read_only": false,
+    "read_only_alternatives": []
+}

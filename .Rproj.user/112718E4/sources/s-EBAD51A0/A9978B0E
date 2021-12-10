@@ -1,0 +1,26 @@
+{
+    "id": "A9978B0E",
+    "path": "~/Documents/github/ENMeval/tests/testthat.R",
+    "project_path": "tests/testthat.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1639105587846.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "5,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1635386112,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1635386112,
+    "read_only": false,
+    "read_only_alternatives": []
+}

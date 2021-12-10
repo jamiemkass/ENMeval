@@ -1,0 +1,512 @@
+bg.grp = round(runif(nrow(bg), 1, 2)))
+e.user <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+tune.args = tune.args, partitions = "user", user.grp = user.grp)
+# 4. No partitions: no cross validation statistics calculated, nor any model
+# evaluation on test data.
+e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+tune.args = tune.args, partitions = "none")
+# 5. No raster data (a.k.a, samples with data, or SWD): no full model raster predictions
+# created, so will run faster; also, both cbi.train and cbi.val will be calculated on the
+# point data (training and validation background) instead of on the "envs" rasters (default).
+# For this implementation, assigning the categorical variable to factor with the argument
+# "categoricals" is easier, as ENMevaluate() internally assigns the levels based on both
+# occs and bg, avoiding any errors associated with different factor levels when combining data.
+occs.z <- cbind(occs, raster::extract(envs, occs))
+bg.z <- cbind(bg, raster::extract(envs, bg))
+e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, partitions = "block")
+# Define a custom function that implements a performance metric not included in ENMeval.
+# The function should have a single argument "vars", which is a list that includes the data
+# most performance metrics should require -- the total list of these data can be found here: ?user.eval.
+# Make sure you return a data frame that specifies the names you want to see in the results tables.
+devtools::install_github("marlonecobos/kuenm")
+library(kuenm)
+proc <- function(vars) {
+proc <- kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
+out <- data.frame(proc_auc_ratio = proc$pROC_summary[1],
+proc_pval = proc$pROC_summary[2], row.names = NULL)
+return(out)
+}
+# Now we can run ENMevaluate() with the argument "user.eval", and simply give it the custom function.
+e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+tune.args = list(fc = "L", rm = 1:2), partitions = "block", user.eval = proc)
+# We can see the new performance statistic averages in the results and results.partitions tables.
+e.mx.proc@results
+e.mx.proc@results.partitions
+library(ENMeval)
+e.mx.l <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'block',
+tune.args = list(fc = "L", rm = 1:2))
+getwd()
+saveRDS(e.mx.l, "data/e.mx.l.rds")
+saveRDS(e.mx.l, "e.mx.l.rds")
+saveRDS(e.mx.l, "e_mx_l.rds")
+e.mx.lqh <- ENMevaluate(occs = occs, envs = envs, bg = bg, algorithm = 'maxnet', partitions = 'block',
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:3))
+saveRDS(e.mx.lqh, "e_mx_lqh.rds")
+# This example is for Maxent models, and so we will specify the tune.tbl with ranges of
+# feature classes and regularization multipliers.
+tune.args <- list(fc = c("L", "LQ", "H", "LQH"), rm = 1:5)
+# 1. Standard: we are using the R package maxnet to avoid frequent user issues with rJava
+e.mx <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+tune.args = tune.args, partitions = "block")
+saveRDS(e.mx, "e_mx.rds")
+# We first run the null simulations with 100 iterations to get a reasonable null distribution for comparisons with the empirical values
+mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
+saveRDS(mod_null, "mod_null.rds")
+saveRDS(mod.null, "mod_null.rds")
+null.results
+document()
+mod.null
+library(ENMeval)
+# We first run the null simulations with 100 iterations to get a reasonable null distribution for comparisons with the empirical values
+mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
+document()
+# We first run the null simulations with 100 iterations to get a reasonable null distribution for comparisons with the empirical values
+mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
+mod.null@null.no.iter
+getwd()
+saveRDS(mod.null, "mod.null.rds")
+saveRDS(mod.null, "mod_null.rds")
+install.packages('dismo')
+install.packages("dismo")
+install.packages("dismo")
+library(ENMeval)
+devtools::test()
+vignette(package = 'ENMeval')
+library(ENMeval)
+devtools::test()
+bg = data.frame(x=1:100,y=1:100)
+b
+bg
+bg[,1]
+bg[,1] == "character"
+if(bg[,1] == "character") print("tt")
+git pull
+library(ENMeval)
+git pull
+library(ENMeval)
+library(dplyr)
+options(warn=-1)
+# read in data
+set.seed(48)
+occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''),
+pattern='grd', full.names=TRUE))
+occs.z <- cbind(occs, raster::extract(envs, occs))
+occs.z$biome <- factor(occs.z$biome)
+bg <- as.data.frame(dismo::randomPoints(envs, 1000))
+names(bg) <- names(occs)
+bg.z <- cbind(bg, raster::extract(envs, bg))
+bg.z$biome <- factor(bg.z$biome)
+algorithm <- "maxnet"
+tune.args <- list(fc = c("L","LQ"), rm = 2:3)
+mset <- lapply(tune.args, function(x) x[1])
+no.iter <- 5
+e <- ENMevaluate(occs.z, bg = bg.z, tune.args = tune.args, partitions = "randomkfold", algorithm = algorithm, categoricals = "biome", quiet = TRUE)
+e
+e@results
+devtools::document()
+devtools::document()
+devtools::check_win_devel()
+devtools::document()
+devtools::check_win_devel()
+devtools::check_win_devel()
+?devtools::check_win_devel
+devtools::check_win_release()
+devtools::document()
+?ENMevaluate
+devtools::document()
+?ENMevaluate
+devtools::document()
+?ENMevaluate
+devtools::document()
+?ENMevaluate
+devtools::document()
+?ENMevaluate
+devtools::document()
+?ENMevaluate
+?user.eval
+library(ENMeval)
+devtools::check()
+devtools::document()
+devtools::test()
+devtools::test()
+?skip_on_cran
+vignette("skipping")
+?vignette
+vignette()
+vignette("ENMeval 2.0.0 Vignette")
+vignette("ENMeval 2.0.0 Vignettedd")
+vignette(package="ENMeval")
+vignette(package="ENMeval")
+devtools::build_vignettes()
+devtools::build_vignettes()
+library(ENMeval)
+vignette()
+vignette("ENMeval-2.0.0-vignette")
+vignette("ENMeval-2.0.0-Vignette")
+?vignette
+vignette(package="ENMeval")
+library(ENMeval)
+vignette(package="ENMeval")
+devtools::install(build_vignettes = TRUE)
+vignette()
+vignette(package="ENMeval")
+vignette("ENMeval-2.0.0-vignette")
+install.packages("pkgdown")
+install.packages("pkgdown")
+install.packages("pkgdown")
+install.packages("systemfonts")
+install.packages("systemfonts")
+install.packages("textshaping")
+install.packages("textshaping")
+install.packages("pkgdown")
+usethis::use_pkgdown()
+pkgdown::build_site()
+library(ENMeval)
+pkgdown::build_site()
+citation()
+citation("ENMeval")
+devtools::document()
+pkgdown::build_site()
+devtools::document()
+devtools::test()
+devtools::test()
+devtools::test()
+devtools::test()
+devtools::test()
+devtools::test()
+devtools::test()
+devtools::document()
+?pkgdown
+pkgdown::build_site()
+pkgdown::build_site()
+pkgdown::build_site()
+pkgdown::build_site()
+library(ENMeval)
+citation("ENMeval")
+citation("ENMeval")
+library(ENMeval)
+citation("ENMeval")
+pkgdown::build_site()
+library(ENMeval)
+occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''),
+pattern='grd', full.names=TRUE))
+occs.z <- cbind(occs, raster::extract(envs, occs))
+occs.z$biome <- factor(occs.z$biome)
+bg <- as.data.frame(dismo::randomPoints(envs, 1000))
+names(bg) <- names(occs)
+bg.z <- cbind(bg, raster::extract(envs, bg))
+bg.z$biome <- factor(bg.z$biome)
+algorithm <- "maxent.jar"
+tune.args <- list(fc = c("L"), rm = 2:3)
+mset <- lapply(tune.args, function(x) x[1])
+no.iter <- 5
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+library(rJava)
+library(rJava)
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+e
+devtools::document()
+devtools::install_github("jamiemkass/ENMeval@v2_cran")
+library(ENMeval)
+enm.maxnet
+enm.predict(enm.maxnet)
+enm.maxnet@predict()
+install.packages("paleobioDB")
+citation("paleobioDB")
+install.packages("BIEN")
+citation("BIEN")
+load("~/Documents/github/ENMeval/data/enmeval_results.rda")
+e_old <- enmeval_results
+load("~/Documents/github/ENMeval/data/enmeval_results.rda")
+e_new <- enmeval_results
+e_new
+e_old
+rm(enmeval_results)
+e=e_old
+e
+rm(e_old)
+str(e)
+e@tune.settings
+e@rm
+e@results
+e@algorithm
+e_new@algorithm
+alg <- ifelse(grepl("Maxent", e@algorithm), "maxent.jar", "maxnet")
+alg
+e@results
+ts <- dplyr::distinct(e@results, features, rm)
+ts
+as.data.frame(ts)
+ts <- dplyr::distinct(e@results, fc = features, rm)
+ts
+as.data.frame(ts)
+e_new@results
+targs <- paste(names(ts), ts, collapse = "_", sep = ".")
+targs
+ts
+ts <- dplyr::distinct(e@results, fc = features, rm) %>% as.data.frame()
+library(ENMeval)
+ts <- dplyr::distinct(e@results, fc = features, rm) %>% as.data.frame()
+ts
+targs <- paste(names(ts), ts, collapse = "_", sep = ".")
+targs
+names(ts)
+ts
+apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
+targs <- apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
+cbind(ts, tune.args = targs)
+e_new@results
+names(e@results)
+names(e_new@results)
+e@results[,-1:-3]
+names(e@results)
+names(e_new@results)
+rs <- cbind(ts, tune.args = targs, e@results[,-1:-3])
+names(rs)[,-1:-3]
+names(rs)[-1:-3]
+names(rs)[-1:-3] <- c("auc.train", "auc.val.avg", "auc.val.sd", "auc.diff.avg", "auc.diff.sd",
+"or.10p.avg", "or.10p.sd", "or.mtp.avg", "or.mtp.sd", "AICc",
+"delta.AICc", "w.AIC", "ncoef")
+rs
+e@results.partitions
+e@predictions
+e@models
+names(e_new@models)
+names(ms) <- rs$tune.args
+ms <- e@models
+names(ms) <- rs$tune.args
+ms
+e@partition.method
+e@clamp
+e@occs
+e@occ.pts
+e_new@occs
+occs <- e@occ.pts %>% rename(lon = LON, lat = LAT)
+occs <- e@occ.pts %>% dplyr::rename(lon = LON, lat = LAT)
+occs
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''),
+pattern='grd', full.names=TRUE))
+occs <- cbind(occs, raster::extract(envs, occs))
+occs
+e@occ.pts
+occs <- e@occ.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+occs <- cbind(occs, raster::extract(envs, occs))
+occs
+raster::extract(envs, occs)
+occs <- e@occ.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+raster::extract(envs, occs)
+plot(envs[[1]])
+envs
+library(raster)
+envs
+plot(envs[[1]])
+occs
+cbind(occs, raster::extract(envs, occs))
+e_new@occs
+e@occ.grp
+e@bg.pts
+bg <- cbind(bg, raster::extract(envs, bg))
+bg <- e@bg.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+bg <- cbind(bg, raster::extract(envs, bg))
+bg
+e@bg.grp
+factor(e@bg.grp)
+devtools::document()
+citation("ecospat")
+rlang::last_error()
+citation("ecospat")
+devtools::document()
+devtools::document()
+devtools::document()
+usethis::use_package("ecospat")
+devtools::document()
+load("~/Documents/github/ENMeval/data/enmeval_results.rda")
+e=enmeval_results
+load("~/Documents/github/ENMeval/data/enmeval_results.rda")
+e_new = enmeval_results
+e
+library(ENMeval)
+e2 <- ENMevaluation_convert(e)
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''),
+pattern='grd', full.names=TRUE))
+e2 <- ENMevaluation_convert(e,envs)
+library(ENMeval)
+e2 <- ENMevaluation_convert(e,envs)
+e2
+e2@tune.settings
+e_new@tune.settings
+library(ENMeval)
+e2 <- ENMevaluation_convert(e,envs)
+library(ENMeval)
+library(ENMeval)
+e2 <- ENMevaluation_convert(e,envs)
+e2
+e2@partition.method
+evalplot.grps(e2, envs)
+library(ENMeval)
+citation("ENMeval")
+library(ENMeval)
+citation("ENMeval")
+?citEntry
+library(ENMeval)
+citation("ENMeval")
+library(ENMeval)
+citation("ENMeval")
+library(ENMeval)
+citation("ENMeval")
+devtools::document()
+library(usethis)
+use_package("ecospat")
+use_package("ecospat")
+use_package("ecospat")
+use_package("ecospat")
+use_package("raster")
+use_package("sp")
+use_package("dismo")
+use_package("doSNOW")
+use_package("doParallel")
+use_package("foreach")
+use_package("utils")
+use_package("graphics")
+use_package("stats")
+use_package("grDevices")
+use_package("maxnet")
+use_package("dplyr")
+use_package("tidyr")
+use_package("ggplot2")
+use_package("testthat")
+use_package("glmnet")
+use_package("rangeModelMetadata")
+devtools::document()
+use_package("ecospat")
+use_package("sp")
+use_package("rangeModelMetadata")
+use_package("glmnet")
+use_package("testhat")
+use_package("testhat")
+use_package("testthat")
+use_package("ggplot2")
+use_package("tidyr")
+use_package("dplyr")
+use_package("maxnet")
+use_package("rangeModelMetadata")
+use_package("glmnet")
+use_package("testhat")
+use_package("testthat")
+use_package("ggplot2")
+use_package("tidyr")
+use_package("rangeModelMetadata")
+use_package("glmnet")
+use_package("testthat")
+use_package("ggplot2")
+use_package("tidyr")
+use_package("dplyr")
+use_package("maxnet")
+use_package("grDevices")
+use_package("stats")
+use_package("graphics")
+use_package("utils")
+use_package("foreach")
+use_package("parallel")
+use_package("doParallel")
+use_package("doSNOW")
+use_package("ecospat")
+use_package("raster")
+use_package("sp")
+use_package("dismo")
+use_package("doSNOW")
+use_package("doParallel")
+use_package("parallel")
+use_package("foreach")
+use_package("utils")
+use_package("graphics")
+use_package("stats")
+use_package("grDevices")
+use_package("maxnet")
+use_package("dplyr")
+use_package("tidyr")
+use_package("ggplot2")
+use_package("testthat")
+use_package("glmnet")
+use_package("rangeModelMetadata")
+devtools::document()
+use_package("ecospat")
+use_package("raster")
+devtools::document()
+devtools::document()
+use_package("ecospat")
+devtools::document()
+use_package("magrittr")
+use_package("biomod2")
+use_package("ecospat")
+fix(ecospat::ecospat.boyce)
+fix("ecospat::ecospat.boyce")
+fix("ecospat.boyce")
+devtools::document()
+interval
+interval()
+?cor
+?points
+?ecospat.boyce
+devtools::document()
+e
+e_new
+library(ENMeval)
+e2=ENMevaluation_convert(e, envs)
+e2
+e2@tune.settings
+devtools::check_win_oldrelease()
+devtools::check_win_release()
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/R/ENMevaluate.R")
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/R/classes.R")
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/R/utilities.R")
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/data/bvariegatus.rda")
+load("~/Documents/github/ENMeval/data/bvariegatus.rda")
+bvariegatus
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/NEWS")
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/DESCRIPTION")
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/README.md")
+tools:::showNonASCIIfile("/Users/kass/Documents/github/ENMeval/README.md")
+devtools::test()
+set.seed(48)
+occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
+envs <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''),
+pattern='grd', full.names=TRUE))
+occs.z <- cbind(occs, raster::extract(envs, occs))
+occs.z$biome <- factor(occs.z$biome)
+bg <- as.data.frame(dismo::randomPoints(envs, 1000))
+names(bg) <- names(occs)
+bg.z <- cbind(bg, raster::extract(envs, bg))
+bg.z$biome <- factor(bg.z$biome)
+algorithm <- "maxnet"
+tune.args <- list(fc = c("L"), rm = 2:3)
+mset <- lapply(tune.args, function(x) x[1])
+no.iter <- 5
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = algorithm, categoricals = "biome", overlap = TRUE, quiet = TRUE)
+e
+?ecospat.boyce
+library(ecospat)
+?ecospat.boyce
+p = predict(e@models[[1]], e@occs)
+p
+p = predict(e@models[[1]], e@occs, type="cloglog")
+p
+as.numeric(p)
+p=as.numeric(p)
+p = predict(e@models[[1]], e@bg, type="cloglog") %>% as.numeric()
+p.occs = predict(e@models[[1]], e@occs, type="cloglog")
+p.occs=as.numeric(p.occs)
+p.bg = predict(e@models[[1]], e@bg, type="cloglog") %>% as.numeric()
+p.bg
+ecospat.boyce(p.bg, p.occs)
+ecospat::ecospat.boyce(p.bg, p.occs)
+boyce.cm(p.bg, p.occs)
+q1=ecospat::ecospat.boyce(p.bg, p.occs)
+q2=boyce.cm(p.bg, p.occs)
+q1$F.ratio
+q2$F.ratio
+q1$F.ratio == q2$F.ratio
+q1$Spearman.cor == q2$Spearman.cor
+q1$HS == q2$HS

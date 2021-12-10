@@ -153,7 +153,7 @@ the extensive vignette for fully worked examples:
 <https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html>.
 }
 \details{
-There are a few methodological details in the implementation of ENMeval 2.0.0 that are important to mention.
+There are a few methodological details in the implementation of ENMeval >=2.0.0 that are important to mention.
 There is also a brief discussion of some points relevant to null models in ?ENMnulls.
 
 1. By default, validation AUC is calculated with respect to the full background (training + validation).
