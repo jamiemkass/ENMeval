@@ -75,7 +75,7 @@
 #' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar These arguments from previous versions are backward-compatible to avoid unnecessary errors for older scripts, but in a later version
 #' these arguments will be permanently deprecated.
 #' 
-#' @details There are a few methodological details in the implementation of ENMeval 2.0.0 that are important to mention.
+#' @details There are a few methodological details in the implementation of ENMeval >=2.0.0 that are important to mention.
 #' There is also a brief discussion of some points relevant to null models in ?ENMnulls.
 #' 
 #' 1. By default, validation AUC is calculated with respect to the full background (training + validation).
@@ -229,11 +229,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   start.time <- proc.time()
   
   # check if ecospat is installed, and if not, prevent CBI calculations
-  if(!require("ecospat")) {
+  if((requireNamespace("ecospat", quietly = TRUE))) {
+    ecospat.use <- TRUE
+  }else{
     message("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
     ecospat.use <- FALSE
-  }else{
-    ecospat.use <- TRUE
   }
   
   ######################## #

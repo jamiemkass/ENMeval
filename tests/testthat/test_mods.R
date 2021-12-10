@@ -252,7 +252,7 @@ for(alg in algorithms) {
   }
   
   # more than one categorical variable
-  if(skip_tests_for_cran == FALSE & alg != "bioclim") {
+  if(skip_tests_for_cran == FALSE | alg != "bioclim") {
     envs.2cat <- raster::addLayer(envs, envs$biome * round(runif(raster::ncell(envs), min = 0, max = 5)))
     occs.z.2cat <- cbind(occs, raster::extract(envs.2cat, occs))
     occs.z.2cat$biome.1 <- factor(occs.z.2cat$biome.1)
@@ -289,7 +289,7 @@ for(alg in algorithms) {
   context(paste("Testing clamping function for", alg, "with..."))
   test_clamp(e, envs, occs.z, bg.z, categoricals = cats1, canExtrapolate = extrap)
   context(paste("Testing clamping function for", alg, "with two categorical variables..."))
-  if(alg != "bioclim") test_clamp(e.2cat, envs.2cat, occs.z.2cat, bg.z.2cat, categoricals = c("biome.1", "biome.2"))
+  if(skip_tests_for_cran == FALSE | alg != "bioclim") test_clamp(e.2cat, envs.2cat, occs.z.2cat, bg.z.2cat, categoricals = c("biome.1", "biome.2"))
   
 }
 

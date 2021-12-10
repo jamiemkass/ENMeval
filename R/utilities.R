@@ -21,19 +21,20 @@ NULL
 #' variable.importance, partition.settings, other.settings, doClamp (set to TRUE
 #' arbitrarily to avoid errors, but may actually have been FALSE), clamp.directions,
 #' taxon.name, and rmm.
+#' @importFrom rlang .data
 #' @export
 ENMevaluation_convert <- function(e, envs) {
   alg <- ifelse(grepl("Maxent", e@algorithm), "maxent.jar", "maxnet")
-  ts <- dplyr::distinct(e@results, fc = features, rm) %>% as.data.frame()
+  ts <- dplyr::distinct(e@results, fc = .data$features, rm) %>% as.data.frame()
   targs <- apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
   ts <- cbind(ts, tune.args = targs)
   rs <- cbind(ts, e@results[,-1:-3])
   names(rs)[-1:-3] <- c("auc.train", "auc.val.avg", "auc.val.sd", "auc.diff.avg", "auc.diff.sd", 
                         "or.10p.avg", "or.10p.sd", "or.mtp.avg", "or.mtp.sd", "AICc", 
                         "delta.AICc", "w.AIC", "ncoef")
-  occs <- e@occ.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+  occs <- e@occ.pts %>% dplyr::rename(lon = .data$LON, lat = .data$LAT) %>% as.data.frame()
   occs <- cbind(occs, raster::extract(envs, occs))
-  bg <- e@bg.pts %>% dplyr::rename(lon = LON, lat = LAT) %>% as.data.frame()
+  bg <- e@bg.pts %>% dplyr::rename(lon = .data$LON, lat = .data$LAT) %>% as.data.frame()
   bg <- cbind(bg, raster::extract(envs, bg))
   ms <- e@models
   names(ms) <- rs$tune.args

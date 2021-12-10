@@ -78,7 +78,7 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
         expect_true(max(e@results.partitions$fold) == 0)
       }
       # jackknife has NAs for cbi.val
-      if(parts == "jackknife" | !require("ecospat")) {
+      if(parts == "jackknife" | !requireNamespace("ecospat", quietly = TRUE)) {
         expect_true(sum(is.na(e@results.partitions)) == nrow(e@results.partitions))
       }else{
         expect_true(sum(is.na(e@results.partitions)) == 0)
@@ -332,7 +332,7 @@ test_evalplot.nulls <- function(ns) {
   
   if(ns@null.partition.method == "none") {
     stat1 <- "auc.train"
-    if(require(ecospat)) stat2 <- c("auc.train", "cbi.train") else stat2 <- "auc.train"
+    if(requireNamespace("ecospat", quietly = TRUE)) stat2 <- c("auc.train", "cbi.train") else stat2 <- "auc.train"
   }else{
     stat1 <- "auc.val"
     stat2 <- c("auc.val", "or.10p") 
