@@ -24,6 +24,7 @@ NULL
 #' @importFrom rlang .data
 #' @export
 ENMevaluation_convert <- function(e, envs) {
+  .data <- NULL
   alg <- ifelse(grepl("Maxent", e@algorithm), "maxent.jar", "maxnet")
   ts <- dplyr::distinct(e@results, fc = .data$features, rm) %>% as.data.frame()
   targs <- apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
