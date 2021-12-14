@@ -1,0 +1,6 @@
+datasets="/Library/Frameworks/R.framework/Versions/4.1/Resources/library/datasets"
+grDevices="/Library/Frameworks/R.framework/Versions/4.1/Resources/library/grDevices"
+graphics="/Library/Frameworks/R.framework/Versions/4.1/Resources/library/graphics"
+methods="/Library/Frameworks/R.framework/Versions/4.1/Resources/library/methods"
+stats="/Library/Frameworks/R.framework/Versions/4.1/Resources/library/stats"
+utils="/Library/Frameworks/R.framework/Versions/4.1/Resources/library/utils"

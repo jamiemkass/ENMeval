@@ -1,0 +1,512 @@
+# if NAs exist in an input data frame, stop the function and request user to remove manually
+if(isRas == TRUE) {
+orig.vals <- rasStackNAs(orig.vals)
+}else{
+orig.na <- sum(rowSums(is.na(orig.vals)))
+ref.na <- sum(rowSums(is.na(ref.vals)))
+if(orig.na > 0) stop("There are one or more NAs in the orig.vals table. Please remove them and rerun.")
+if(ref.na > 0) stop("There are one or more NAs in the ref.vals table. Please remove them and rerun.")
+}
+# remove categorical variables from clamping analysis
+if(!is.null(categoricals)) {
+if(inherits(orig.vals, "BasicRaster") == TRUE) {
+p <- orig.vals[[-which(names(orig.vals) == categoricals)]]
+}else{
+p <- orig.vals[,-which(names(orig.vals) == categoricals)]
+}
+ref.vals <- ref.vals[,-which(colnames(ref.vals) == categoricals)]
+}else{
+p <- orig.vals
+}
+# get mins and maxs of input variable values for occs and bg
+minmaxes <- data.frame(min = apply(ref.vals, 2, min, na.rm = TRUE),
+max = apply(ref.vals, 2, max, na.rm = TRUE))
+# function to clamp the values of the input raster
+adjustRas <- function(pp, toadjust, mm) {
+raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+layername <- names(oldlayer)
+if (!(layername %in% toadjust)) return(oldlayer)
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+names(newlayer) <- layername
+return(newlayer)
+}))
+}
+adjustDF <- function(pp, toadjust, mm) {
+inds <- which(names(pp) %in% toadjust)
+for(i in 1:ncol(pp)) {
+if(i %in% inds) {
+if(mm == "min") pp[,i] <- ifelse(pp[,i] < minmaxes[i,"min"], minmaxes[i,"min"], pp[,i])
+if(mm == "max") pp[,i] <- ifelse(pp[,i] > minmaxes[i,"max"], minmaxes[i,"max"], pp[,i])
+}
+}
+return(pp)
+}
+# default to all variables if left and/or right are NULL
+if(is.null(left)) left <- names(p)
+if(is.null(right)) right <- names(p)
+f <- ifelse(inherits(orig.vals, "BasicRaster") == TRUE, adjustRas, adjustDF)
+# clamp both sides unless left or right is "none"
+if("none" %in% left) {
+out <- f(p, right, "max")
+}else if("none" %in% right) {
+out <- f(p, left, "min")
+}else{
+out <- f(f(p, left, "min"), right, "max")
+}
+out
+out <- raster::addLayer(out, orig.vals[[categoricals]])
+out
+out$bio8
+# clamp both sides unless left or right is "none"
+if("none" %in% left) {
+out <- f(p, right, "max")
+}else if("none" %in% right) {
+out <- f(p, left, "min")
+}else{
+out <- f(f(p, left, "min"), right, "max")
+}
+out
+out$bio8
+plot(out$bio8)
+f
+# find if orig.vals is a raster or not
+isRas <- inherits(orig.vals, "BasicRaster") == TRUE
+# error if "none" is included in left or right alongside variable names
+if((("none" %in% left) & length(left) > 1) | (("none" %in% right) & length(right) > 1)) {
+stop('To turn clamping off, specify the argument left, right or both of them to "none".')
+}
+# error if both sides are set to "none"
+if(!is.null(left) & !is.null(right)) {
+if(("none" %in% left) & ("none" %in% right)) {
+warning('Both left and right were set to "none", so clamping was not performed.')
+return(orig.vals)
+}
+}
+# convert all RasterStack grid cells to NA that are NA for any one raster
+# if NAs exist in an input data frame, stop the function and request user to remove manually
+if(isRas == TRUE) {
+orig.vals <- rasStackNAs(orig.vals)
+}else{
+orig.na <- sum(rowSums(is.na(orig.vals)))
+ref.na <- sum(rowSums(is.na(ref.vals)))
+if(orig.na > 0) stop("There are one or more NAs in the orig.vals table. Please remove them and rerun.")
+if(ref.na > 0) stop("There are one or more NAs in the ref.vals table. Please remove them and rerun.")
+}
+# remove categorical variables from clamping analysis
+if(!is.null(categoricals)) {
+if(inherits(orig.vals, "BasicRaster") == TRUE) {
+p <- orig.vals[[-which(names(orig.vals) == categoricals)]]
+}else{
+p <- orig.vals[,-which(names(orig.vals) == categoricals)]
+}
+ref.vals <- ref.vals[,-which(colnames(ref.vals) == categoricals)]
+}else{
+p <- orig.vals
+}
+# get mins and maxs of input variable values for occs and bg
+minmaxes <- data.frame(min = apply(ref.vals, 2, min, na.rm = TRUE),
+max = apply(ref.vals, 2, max, na.rm = TRUE))
+# function to clamp the values of the input raster
+adjustRas <- function(pp, toadjust, mm) {
+raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+layername <- names(oldlayer)
+if (!(layername %in% toadjust)) return(oldlayer)
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+names(newlayer) <- layername
+return(newlayer)
+}))
+}
+adjustDF <- function(pp, toadjust, mm) {
+inds <- which(names(pp) %in% toadjust)
+for(i in 1:ncol(pp)) {
+if(i %in% inds) {
+if(mm == "min") pp[,i] <- ifelse(pp[,i] < minmaxes[i,"min"], minmaxes[i,"min"], pp[,i])
+if(mm == "max") pp[,i] <- ifelse(pp[,i] > minmaxes[i,"max"], minmaxes[i,"max"], pp[,i])
+}
+}
+return(pp)
+}
+# default to all variables if left and/or right are NULL
+if(is.null(left)) left <- names(p)
+if(is.null(right)) right <- names(p)
+f <- ifelse(inherits(orig.vals, "BasicRaster") == TRUE, adjustRas, adjustDF)
+f
+f(f(p, left, "min"), right, "max")
+p
+left
+right
+f(p, left, "min")
+p
+pp=p
+pp
+toadjust=left
+mm="min"
+raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+layername <- names(oldlayer)
+if (!(layername %in% toadjust)) return(oldlayer)
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+names(newlayer) <- layername
+return(newlayer)
+}))
+pp
+toadjust
+toadjust=toadjust[-2]
+toadjust
+raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+layername <- names(oldlayer)
+if (!(layername %in% toadjust)) return(oldlayer)
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+names(newlayer) <- layername
+return(newlayer)
+}))
+q=raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+layername <- names(oldlayer)
+if (!(layername %in% toadjust)) return(oldlayer)
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+names(newlayer) <- layername
+return(newlayer)
+}))
+q
+plot(q[[1]])
+pp[[1]]
+slot(pp, "layers")
+oldlayer=pp[[1]]
+layername <- names(oldlayer)
+layername
+layername %in% toadjust
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+newlayer
+mm
+ref.vals
+ref.vals = rbind(occs.train.z, bg.train.z)
+ref.vals
+orig.vals
+# find if orig.vals is a raster or not
+isRas <- inherits(orig.vals, "BasicRaster") == TRUE
+isRas
+# error if "none" is included in left or right alongside variable names
+if((("none" %in% left) & length(left) > 1) | (("none" %in% right) & length(right) > 1)) {
+stop('To turn clamping off, specify the argument left, right or both of them to "none".')
+}
+# error if both sides are set to "none"
+if(!is.null(left) & !is.null(right)) {
+if(("none" %in% left) & ("none" %in% right)) {
+warning('Both left and right were set to "none", so clamping was not performed.')
+return(orig.vals)
+}
+}
+# convert all RasterStack grid cells to NA that are NA for any one raster
+# if NAs exist in an input data frame, stop the function and request user to remove manually
+if(isRas == TRUE) {
+orig.vals <- rasStackNAs(orig.vals)
+}else{
+orig.na <- sum(rowSums(is.na(orig.vals)))
+ref.na <- sum(rowSums(is.na(ref.vals)))
+if(orig.na > 0) stop("There are one or more NAs in the orig.vals table. Please remove them and rerun.")
+if(ref.na > 0) stop("There are one or more NAs in the ref.vals table. Please remove them and rerun.")
+}
+# remove categorical variables from clamping analysis
+if(!is.null(categoricals)) {
+if(inherits(orig.vals, "BasicRaster") == TRUE) {
+p <- orig.vals[[-which(names(orig.vals) == categoricals)]]
+}else{
+p <- orig.vals[,-which(names(orig.vals) == categoricals)]
+}
+ref.vals <- ref.vals[,-which(colnames(ref.vals) == categoricals)]
+}else{
+p <- orig.vals
+}
+# get mins and maxs of input variable values for occs and bg
+minmaxes <- data.frame(min = apply(ref.vals, 2, min, na.rm = TRUE),
+max = apply(ref.vals, 2, max, na.rm = TRUE))
+# function to clamp the values of the input raster
+adjustRas <- function(pp, toadjust, mm) {
+raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+layername <- names(oldlayer)
+if (!(layername %in% toadjust)) return(oldlayer)
+newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+names(newlayer) <- layername
+return(newlayer)
+}))
+}
+adjustDF <- function(pp, toadjust, mm) {
+inds <- which(names(pp) %in% toadjust)
+for(i in 1:ncol(pp)) {
+if(i %in% inds) {
+if(mm == "min") pp[,i] <- ifelse(pp[,i] < minmaxes[i,"min"], minmaxes[i,"min"], pp[,i])
+if(mm == "max") pp[,i] <- ifelse(pp[,i] > minmaxes[i,"max"], minmaxes[i,"max"], pp[,i])
+}
+}
+return(pp)
+}
+# default to all variables if left and/or right are NULL
+if(is.null(left)) left <- names(p)
+if(is.null(right)) right <- names(p)
+f <- ifelse(inherits(orig.vals, "BasicRaster") == TRUE, adjustRas, adjustDF)
+# clamp both sides unless left or right is "none"
+if("none" %in% left) {
+out <- f(p, right, "max")
+}else if("none" %in% right) {
+out <- f(p, left, "min")
+}else{
+out <- f(f(p, left, "min"), right, "max")
+}
+out
+out
+out <- raster::addLayer(out, orig.vals[[categoricals]])
+out
+names(orig.vals)
+out[[names(orig.vals)]]
+out <- out[[names(orig.vals)]]
+library(ENMeval)
+# Biome last position
+envs_ok <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''),
+pattern='grd', full.names=TRUE))
+bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=100, has_coords=TRUE)
+occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
+occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
+occs <- occs[!duplicated(occs),]
+bg <- as.data.frame(dismo::randomPoints(envs_ok, 10000))
+names(bg) <- names(occs)
+tune.args <- list(fc = c("L"), rm = seq(1,2,1))
+e <- ENMevaluate(occs, envs_ok, bg, algorithm = "maxent.jar",
+tune.args = tune.args, categoricals = "biome",
+partitions = "block", overlap = TRUE)
+devtools::document()
+devtools::document()
+library(ENMeval)
+ENMevaluation
+?ENMevaluation
+ENMevaluation()
+library(devtools)
+document()
+library(ENMeval)
+ENMevaluation()
+library(devtools)
+document()
+install.packages("maxnet")
+document()
+install.packages("doParallel")
+install.packages("dismo")
+document()
+document()
+install.packages("ecospat")
+install.packages("ecospat")
+install.packages("rangeModelMetadata")
+document()
+install.packages("ecospat")
+document()
+library(devtools)
+document()
+install.packages("ecospat")
+document()
+library(ENMeval)
+document()
+rlang::last_error()
+devtools::document()
+devtools::document()
+usethis::use_package("ecospat")
+devtools::document()
+library(ENMeval)
+?ENMevaluate
+library(ENMeval)
+library(ENMeval)
+setwd("/Users/kass/Downloads/reenmeval2_0")
+envs <- list.files("/Users/kass/Downloads/reenmeval2_0", "tif*")
+envs <- stack(list.files("/Users/kass/Downloads/reenmeval2_0", "tif*", full.names = TRUE))
+envs <- raster::stack(list.files("/Users/kass/Downloads/reenmeval2_0", "tif*", full.names = TRUE))
+envs
+bg <- read.csv("/Users/kass/Downloads/reenmeval2_0/bg.csv")
+bg
+bg <- read.csv("/Users/kass/Downloads/reenmeval2_0/bg.csv")[,-1]
+bg
+occs <- read.csv("/Users/kass/Downloads/reenmeval2_0/pal_pres_thin1.csv")
+occs
+fcs <- c("L", "H", "LH", "LQ", "LQP", "LQH", "LQHP", "LQHPT")
+rms <- c(0.1, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0)
+proc <- function(vars) {
+proc <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
+out <- data.frame(proc_auc_ratio = proc$pROC_summary[1],
+proc_pval = proc$pROC_summary[2], row.names = NULL)
+return(out)
+}
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc)
+occs <- occs[,-1]
+tname <- occs[1,1]
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc)
+occs <- read.csv("/Users/kass/Downloads/reenmeval2_0/pal_pres_thin1.csv")
+tname <- occs[1,1]
+tname
+occs <- occs[,-1]
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc)
+install.packages("kuenm")
+# First, make sure you install kuenm from Github.
+devtools::install_github("marlonecobos/kuenm")
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc)
+envs <- raster::stack(list.files("/Users/kass/Downloads/reenmeval2_0", "tif*", full.names = TRUE))
+bg <- read.csv("/Users/kass/Downloads/reenmeval2_0/bg.csv")[,-1]
+occs <- read.csv("/Users/kass/Downloads/reenmeval2_0/pal_pres_thin1.csv")
+tname <- occs[1,1]
+occs <- occs[,-1]
+fcs <- c("L", "H", "LH", "LQ", "LQP", "LQH", "LQHP", "LQHPT")
+rms <- c(0.1, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0)
+proc <- function(vars) {
+proc <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
+out <- data.frame(proc_auc_ratio = proc$pROC_summary[1],
+proc_pval = proc$pROC_summary[2], row.names = NULL)
+return(out)
+}
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc)
+library(ENMeval)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+user.eval = proc, parallel = TRUE, numCores = 6)
+plot(envs[[1]])
+points(occs)
+points(bg)
+extract(envs, occs)
+raster::extract(envs, occs)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "L", rm = 1),
+partitions = "jackknife")
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms),
+partitions = "jackknife",
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "L", rm = 1),
+partitions = "jackknife", user.eval = proc)
+e@results
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "L", rm = 6),
+partitions = "jackknife", user.eval = proc)
+e@results
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "L", rm = 0.1),
+partitions = "jackknife", user.eval = proc)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "L", rm = rms),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e@results
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "H", rm = rms),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "LQHPT", rm = rms),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = 1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "LQHPT", rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "LQHP", rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e@results
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = "LQH", rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = 1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = c("L","LQH"), rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = c("L","H","LQH","LQP"), rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = c("L","H","LQH","LQP"), rm = 1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = c("L","H","LQH"), rm = 0.1),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+rms[5:12]
+e <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
+n.bg = bg, taxon.name = tname,
+tune.args = list(fc = fcs, rm = rms[5:12]),
+partitions = "jackknife",
+user.eval = proc,
+parallel = TRUE, numCores = 6)
+?other.settings
+citation("rmaxent")
+devtools::document()
+install.packages("ecospat")
+devtools::document()
+library(ENMeval)
+devtools::document()

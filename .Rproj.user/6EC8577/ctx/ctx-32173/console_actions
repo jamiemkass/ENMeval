@@ -1,0 +1,10 @@
+{
+    "type": [
+        2,
+        2
+    ],
+    "data": [
+        "\nR version 4.1.1 (2021-08-10) -- \"Kick Things\"\nCopyright (C) 2021 The R Foundation for Statistical Computing\nPlatform: x86_64-apple-darwin17.0 (64-bit)\n\nR is free software and comes with ABSOLUTELY NO WARRANTY.\nYou are welcome to redistribute it under certain conditions.\nType 'license()' or 'licence()' for distribution details.\n\n  Natural language support but running in an English locale\n\nR is a collaborative project with many contributors.\nType 'contributors()' for more information and\n'citation()' on how to cite R or R packages in publications.\n\n",
+        "Type 'demo()' for some demos, 'help()' for on-line help, or\n'help.start()' for an HTML browser interface to help.\nType 'q()' to quit R.\n\n\nRestarting R session...\n\n"
+    ]
+}

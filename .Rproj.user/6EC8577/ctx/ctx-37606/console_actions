@@ -1,0 +1,30 @@
+{
+    "type": [
+        2,
+        2,
+        0,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+    ],
+    "data": [
+        "\nR version 4.0.3 (2020-10-10) -- \"Bunny-Wunnies Freak Out\"\nCopyright (C) 2020 The R Foundation for Statistical Computing\nPlatform: x86_64-apple-darwin17.0 (64-bit)\n\nR is free software and comes with ABSOLUTELY NO WARRANTY.\nYou are welcome to redistribute it under certain conditions.\nType 'license()' or 'licence()' for distribution details.\n\n  Natural language support but running in an English locale\n\nR is a collaborative project with many contributors.\nType 'contributors()' for more information and\n'citation()' on how to cite R or R packages in publications.\n\n",
+        "Type 'demo()' for some demos, 'help()' for on-line help, or\n'help.start()' for an HTML browser interface to help.\nType 'q()' to quit R.\n\n",
+        "> ",
+        "devtools::document()",
+        "Updating ENMeval documentation\n",
+        "Loading ENMeval\n",
+        "Loading required package: magrittr\n",
+        "Loading required package: raster\n",
+        "Loading required package: sp\n",
+        "\nAttaching package: ‘raster’\n\n",
+        "The following object is masked from ‘package:magrittr’:\n\n    extract\n\n",
+        "Writing NAMESPACE\nWriting NAMESPACE\n\nRestarting R session...\n\n"
+    ]
+}

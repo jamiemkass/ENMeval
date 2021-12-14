@@ -1,0 +1,512 @@
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+occs.z
+envs
+similarity(envs[[-9]], occs.z)
+similarity(envs[[-9]], occs.z)
+envs[[-9]]
+similarity
+similarity(envs[[-9]], occs.z)
+occs.z
+similarity(envs[[-9]], as.data.frame(occs.z))
+x=envs[[-9]]
+ref=occs.z
+similarity(x, ref)
+full=FALSE
+if(!methods::is(ref, 'data.frame')) {
+ref <- as.data.frame(ref)
+}
+if(is(x, 'Raster')) {
+r <- TRUE
+if(isTRUE(full)) {
+out <- raster::stack(replicate(
+raster::nlayers(x), raster::init(x, function(x) NA)))
+} else {
+out <- raster::init(x, function(x) NA)
+}
+} else r <- FALSE
+ref <- stats::na.omit(ref)
+if(!methods::is(x, 'data.frame')) {
+x <- as.data.frame(x)
+}
+if(is.null(dim(ref))) {
+rng <- as.data.frame(range(ref, na.rm=TRUE))
+} else {
+rng <- as.data.frame(apply(ref, 2, range, na.rm=TRUE))
+}
+pct_less <- mapply(function(x, ref) {
+findInterval(x, sort(ref))/length(ref)
+}, x, ref, SIMPLIFY=FALSE)
+sim <- mapply(function(f, rng, p) {
+ifelse(f==0, (p-rng[1])/diff(rng)*100,
+ifelse(f > 0 & f <= 0.5, f*200,
+ifelse(f > 0.5 & f < 1, (1-f)*200,
+(rng[2]-p)/diff(rng)*100)))
+}, pct_less, rng, x)
+min_sim <- if(is.matrix(sim)) apply(sim, 1, min) else(min(sim))
+mins <- apply(sim, 1, which.min)
+most_dissimilar_vec <- unlist(ifelse(lengths(mins)==0, NA, mins))
+maxs <- apply(sim, 1, which.max)
+most_similar_vec <- unlist(ifelse(lengths(maxs)==0, NA, maxs))
+r
+most_dissimilar <- raster::raster(out)
+most_dissimilar
+most_dissimilar[] <- most_dissimilar_vec
+most_dissimilar <- as.factor(most_dissimilar)
+most_dissimilar
+levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+most_similar <- raster::raster(out)
+most_similar[] <- most_similar_vec
+most_similar <- as.factor(most_similar)
+levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+out_min <- raster::raster(out)
+out_min[] <- min_sim
+if(isTRUE(full)) {
+out[] <- sim
+list(similarity=out, similarity_min=out_min, mod=most_dissimilar,
+mos=most_similar)
+} else list(similarity_min=out_min, mod=most_dissimilar, mos=most_similar)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- ENMeval::similarity(envs[[-9]], occs.z)
+similarity(envs[[-9]], occs.z)
+similarity <- function(x, ref, full=FALSE) {
+if(!methods::is(ref, 'data.frame')) {
+ref <- as.data.frame(ref)
+}
+if(is(x, 'Raster')) {
+r <- TRUE
+if(isTRUE(full)) {
+out <- raster::stack(replicate(
+raster::nlayers(x), raster::init(x, function(x) NA)))
+} else {
+out <- raster::init(x, function(x) NA)
+}
+} else r <- FALSE
+ref <- stats::na.omit(ref)
+if(!methods::is(x, 'data.frame')) {
+x <- as.data.frame(x)
+}
+if(is.null(dim(ref))) {
+rng <- as.data.frame(range(ref, na.rm=TRUE))
+} else {
+rng <- as.data.frame(apply(ref, 2, range, na.rm=TRUE))
+}
+pct_less <- mapply(function(x, ref) {
+findInterval(x, sort(ref))/length(ref)
+}, x, ref, SIMPLIFY=FALSE)
+sim <- mapply(function(f, rng, p) {
+ifelse(f==0, (p-rng[1])/diff(rng)*100,
+ifelse(f > 0 & f <= 0.5, f*200,
+ifelse(f > 0.5 & f < 1, (1-f)*200,
+(rng[2]-p)/diff(rng)*100)))
+}, pct_less, rng, x)
+min_sim <- if(is.matrix(sim)) apply(sim, 1, min) else(min(sim))
+mins <- apply(sim, 1, which.min)
+most_dissimilar_vec <- unlist(ifelse(lengths(mins)==0, NA, mins))
+maxs <- apply(sim, 1, which.max)
+most_similar_vec <- unlist(ifelse(lengths(maxs)==0, NA, maxs))
+if(isTRUE(r)) {
+most_dissimilar <- raster::raster(out)
+most_dissimilar[] <- most_dissimilar_vec
+most_dissimilar <- as.factor(most_dissimilar)
+levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+most_similar <- raster::raster(out)
+most_similar[] <- most_similar_vec
+most_similar <- as.factor(most_similar)
+levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+out_min <- raster::raster(out)
+out_min[] <- min_sim
+if(isTRUE(full)) {
+out[] <- sim
+list(similarity=out, similarity_min=out_min, mod=most_dissimilar,
+mos=most_similar)
+} else list(similarity_min=out_min, mod=most_dissimilar, mos=most_similar)
+} else {
+if(isTRUE(full)) {
+list(similarity=sim, similarity_min=min_sim,
+mod=most_dissimilar_vec, mos=most_similar_vec)
+} else list(similarity_min=min_sim, mod=most_dissimilar_vec,
+mos=most_similar_vec)
+}
+}
+similarity(envs[[-9]], occs.z)
+library(ENMeval)
+occs <- readRDS("~/Documents/github/ENMeval/vignettes/bvariegatus.rds")
+# Remove duplicate rows - doesn't change our data, but is good practice in general
+occs <- occs[!duplicated(occs),]
+# Locate the predictor raster files from the dismo folder
+envs.files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
+# Read the raster files into a RasterStack
+# These variables represent 8 bioclimatic variables and one categorical variable "biome"
+# Find the descriptions of the bioclimatic variables here: https://www.worldclim.org/data/bioclim.html
+envs <- raster::stack(envs.files)
+# The biome raster has some NAs for cells that have values in the other rasters
+# Let's mask all rasters to biome to change the value of these cells to NA for all rasters
+# ENMeval will do this automatically, but let's do it here to avoid the warning message later
+# We change back from a RasterBrick to RasterStack because of issues with assigning factor rasters
+# for RasterBricks
+envs <- raster::mask(envs, envs[[9]]) %>% stack()
+# Make sure to declare the categorical variable as a factor
+envs$biome <- as.factor(envs$biome)
+# Let's now remove occurrences that are cell duplicates
+# ALthough Maxent does this by default, keep in mind that for other algorithms you may
+# or may not want to do this based on the aims of your study
+occs.cells <- raster::extract(envs[[1]], occs, cellnumbers = TRUE)
+occs.cellDups <- duplicated(occs.cells[,1])
+occs <- occs[!occs.cellDups,]
+# Plot first raster in the stack, bio1 (mean annual temperature)
+plot(envs[[1]], main="Mean annual temperature")
+# Add points for all the occurrence points onto the raster
+points(occs)
+# There are some points east of the Amazon River
+# Suppose we know this is a population that we don't want to include in the model
+# We can remove these points from the analysis by subsetting the occurrences by latitude and longitude
+occs <- filter(occs, latitude > -20, longitude < -45)
+# Plot the subsetted occurrences to make sure we filtered correctly
+points(occs, col = 'red')
+# We will demonstrate model evaluation using fully-withheld testing data later, so now we will specify a fake testing occurrence dataset
+occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, -10, 0))
+points(occs.testing, col="blue")
+library(dplyr)
+# Locate the predictor raster files from the dismo folder
+envs.files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
+# Read the raster files into a RasterStack
+# These variables represent 8 bioclimatic variables and one categorical variable "biome"
+# Find the descriptions of the bioclimatic variables here: https://www.worldclim.org/data/bioclim.html
+envs <- raster::stack(envs.files)
+# The biome raster has some NAs for cells that have values in the other rasters
+# Let's mask all rasters to biome to change the value of these cells to NA for all rasters
+# ENMeval will do this automatically, but let's do it here to avoid the warning message later
+# We change back from a RasterBrick to RasterStack because of issues with assigning factor rasters
+# for RasterBricks
+envs <- raster::mask(envs, envs[[9]]) %>% stack()
+# Make sure to declare the categorical variable as a factor
+envs$biome <- as.factor(envs$biome)
+# Let's now remove occurrences that are cell duplicates
+# ALthough Maxent does this by default, keep in mind that for other algorithms you may
+# or may not want to do this based on the aims of your study
+occs.cells <- raster::extract(envs[[1]], occs, cellnumbers = TRUE)
+occs.cellDups <- duplicated(occs.cells[,1])
+occs <- occs[!occs.cellDups,]
+# Plot first raster in the stack, bio1 (mean annual temperature)
+plot(envs[[1]], main="Mean annual temperature")
+# Add points for all the occurrence points onto the raster
+points(occs)
+# There are some points east of the Amazon River
+# Suppose we know this is a population that we don't want to include in the model
+# We can remove these points from the analysis by subsetting the occurrences by latitude and longitude
+occs <- filter(occs, latitude > -20, longitude < -45)
+# Plot the subsetted occurrences to make sure we filtered correctly
+points(occs, col = 'red')
+# We will demonstrate model evaluation using fully-withheld testing data later, so now we will specify a fake testing occurrence dataset
+occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, -10, 0))
+points(occs.testing, col="blue")
+# First we extract the climatic variable values at the occurrence points -- these values are our "reference"
+# We remove the categorical variable for these operations because the math is for continuous variables
+occs.z <- raster::extract(envs[[-9]], occs)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(x = envs[[-9]], ref = occs.z)
+fix(similarity)
+similarity <- function(x, ref, full=FALSE) {
+if(!methods::is(ref, 'data.frame')) {
+ref <- as.data.frame(ref)
+}
+if(is(x, 'Raster')) {
+r <- TRUE
+if(isTRUE(full)) {
+out <- raster::stack(replicate(
+raster::nlayers(x), raster::init(x, function(x) NA)))
+} else {
+out <- raster::init(x, function(x) NA)
+}
+} else r <- FALSE
+ref <- stats::na.omit(ref)
+if(!methods::is(x, 'data.frame')) {
+x <- as.data.frame(x)
+}
+if(is.null(dim(ref))) {
+rng <- as.data.frame(range(ref, na.rm=TRUE))
+} else {
+rng <- as.data.frame(apply(ref, 2, range, na.rm=TRUE))
+}
+pct_less <- mapply(function(x, ref) {
+findInterval(x, sort(ref))/length(ref)
+}, x, ref, SIMPLIFY=FALSE)
+sim <- mapply(function(f, rng, p) {
+ifelse(f==0, (p-rng[1])/diff(rng)*100,
+ifelse(f > 0 & f <= 0.5, f*200,
+ifelse(f > 0.5 & f < 1, (1-f)*200,
+(rng[2]-p)/diff(rng)*100)))
+}, pct_less, rng, x)
+min_sim <- if(is.matrix(sim)) apply(sim, 1, min) else(min(sim))
+mins <- apply(sim, 1, which.min)
+most_dissimilar_vec <- unlist(ifelse(lengths(mins)==0, NA, mins))
+maxs <- apply(sim, 1, which.max)
+most_similar_vec <- unlist(ifelse(lengths(maxs)==0, NA, maxs))
+if(isTRUE(r)) {
+most_dissimilar <- raster::raster(out)
+most_dissimilar[] <- most_dissimilar_vec
+most_dissimilar <- as.factor(most_dissimilar)
+levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+most_similar <- raster::raster(out)
+most_similar[] <- most_similar_vec
+most_similar <- as.factor(most_similar)
+levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+out_min <- raster::raster(out)
+out_min[] <- min_sim
+if(isTRUE(full)) {
+out[] <- sim
+list(similarity=out, similarity_min=out_min, mod=most_dissimilar,
+mos=most_similar)
+} else list(similarity_min=out_min, mod=most_dissimilar, mos=most_similar)
+} else {
+if(isTRUE(full)) {
+list(similarity=sim, similarity_min=min_sim,
+mod=most_dissimilar_vec, mos=most_similar_vec)
+} else list(similarity_min=min_sim, mod=most_dissimilar_vec,
+mos=most_similar_vec)
+}
+}
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(x = envs[[-9]], ref = occs.z)
+occs.sim
+rm(similarity())
+rm(similarity
+)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(x = envs[[-9]], ref = occs.z)
+devtools::document()
+similarity
+ENMevaluate
+ENMevaluate
+similarity
+library(ENMeval)
+occs <- readRDS("~/Documents/github/ENMeval/vignettes/bvariegatus.rds")
+library(ENMeval)
+library(dismo)
+library(dplyr)
+library(ggplot2)
+# Set a random seed in order to be able to reproduce this analysis
+set.seed(48)
+# Remove duplicate rows - doesn't change our data, but is good practice in general
+occs <- occs[!duplicated(occs),]
+# Locate the predictor raster files from the dismo folder
+envs.files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
+# Read the raster files into a RasterStack
+# These variables represent 8 bioclimatic variables and one categorical variable "biome"
+# Find the descriptions of the bioclimatic variables here: https://www.worldclim.org/data/bioclim.html
+envs <- raster::stack(envs.files)
+# The biome raster has some NAs for cells that have values in the other rasters
+# Let's mask all rasters to biome to change the value of these cells to NA for all rasters
+# ENMeval will do this automatically, but let's do it here to avoid the warning message later
+# We change back from a RasterBrick to RasterStack because of issues with assigning factor rasters
+# for RasterBricks
+envs <- raster::mask(envs, envs[[9]]) %>% stack()
+# Make sure to declare the categorical variable as a factor
+envs$biome <- as.factor(envs$biome)
+# Let's now remove occurrences that are cell duplicates
+# ALthough Maxent does this by default, keep in mind that for other algorithms you may
+# or may not want to do this based on the aims of your study
+occs.cells <- raster::extract(envs[[1]], occs, cellnumbers = TRUE)
+occs.cellDups <- duplicated(occs.cells[,1])
+occs <- occs[!occs.cellDups,]
+# Plot first raster in the stack, bio1 (mean annual temperature)
+plot(envs[[1]], main="Mean annual temperature")
+# Add points for all the occurrence points onto the raster
+points(occs)
+# There are some points east of the Amazon River
+# Suppose we know this is a population that we don't want to include in the model
+# We can remove these points from the analysis by subsetting the occurrences by latitude and longitude
+occs <- filter(occs, latitude > -20, longitude < -45)
+# Plot the subsetted occurrences to make sure we filtered correctly
+points(occs, col = 'red')
+# We will demonstrate model evaluation using fully-withheld testing data later, so now we will specify a fake testing occurrence dataset
+occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, -10, 0))
+points(occs.testing, col="blue")
+# First we extract the climatic variable values at the occurrence points -- these values are our "reference"
+# We remove the categorical variable for these operations because the math is for continuous variables
+occs.z <- raster::extract(envs[[-9]], occs)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+fix(similarity)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+similarity
+similarity
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+rm(similarity)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+similarity
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+similarity <- function(x, ref, full=FALSE) {
+if(!methods::is(ref, 'data.frame')) {
+ref <- as.data.frame(ref)
+}
+if(is(x, 'Raster')) {
+r <- TRUE
+if(isTRUE(full)) {
+out <- raster::stack(replicate(
+raster::nlayers(x), raster::init(x, function(x) NA)))
+} else {
+out <- raster::init(x, function(x) NA)
+}
+} else r <- FALSE
+ref <- stats::na.omit(ref)
+if(!methods::is(x, 'data.frame')) {
+x <- as.data.frame(x)
+}
+if(is.null(dim(ref))) {
+rng <- as.data.frame(range(ref, na.rm=TRUE))
+} else {
+rng <- as.data.frame(apply(ref, 2, range, na.rm=TRUE))
+}
+pct_less <- mapply(function(x, ref) {
+findInterval(x, sort(ref))/length(ref)
+}, x, ref, SIMPLIFY=FALSE)
+sim <- mapply(function(f, rng, p) {
+ifelse(f==0, (p-rng[1])/diff(rng)*100,
+ifelse(f > 0 & f <= 0.5, f*200,
+ifelse(f > 0.5 & f < 1, (1-f)*200,
+(rng[2]-p)/diff(rng)*100)))
+}, pct_less, rng, x)
+min_sim <- if(is.matrix(sim)) apply(sim, 1, min) else(min(sim))
+mins <- apply(sim, 1, which.min)
+most_dissimilar_vec <- unlist(ifelse(lengths(mins)==0, NA, mins))
+maxs <- apply(sim, 1, which.max)
+most_similar_vec <- unlist(ifelse(lengths(maxs)==0, NA, maxs))
+if(isTRUE(r)) {
+most_dissimilar <- raster::raster(out)
+most_dissimilar[] <- most_dissimilar_vec
+most_dissimilar <- as.factor(most_dissimilar)
+levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+most_similar <- raster::raster(out)
+most_similar[] <- most_similar_vec
+most_similar <- as.factor(most_similar)
+levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)),
+var=colnames(sim))
+out_min <- raster::raster(out)
+out_min[] <- min_sim
+if(isTRUE(full)) {
+out[] <- sim
+list(similarity=out, similarity_min=out_min, mod=most_dissimilar,
+mos=most_similar)
+} else list(similarity_min=out_min, mod=most_dissimilar, mos=most_similar)
+} else {
+if(isTRUE(full)) {
+list(similarity=sim, similarity_min=min_sim,
+mod=most_dissimilar_vec, mos=most_similar_vec)
+} else list(similarity_min=min_sim, mod=most_dissimilar_vec,
+mos=most_similar_vec)
+}
+}
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+devtools::document()
+rm(list=c("similarity"))
+devtools::document()
+library(ENMeval)
+occs <- readRDS("~/Documents/github/ENMeval/vignettes/bvariegatus.rds")
+library(dismo)
+library(dplyr)
+library(ggplot2)
+# Remove duplicate rows - doesn't change our data, but is good practice in general
+occs <- occs[!duplicated(occs),]
+# Locate the predictor raster files from the dismo folder
+envs.files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), pattern='grd', full.names=TRUE)
+# Read the raster files into a RasterStack
+# These variables represent 8 bioclimatic variables and one categorical variable "biome"
+# Find the descriptions of the bioclimatic variables here: https://www.worldclim.org/data/bioclim.html
+envs <- raster::stack(envs.files)
+# The biome raster has some NAs for cells that have values in the other rasters
+# Let's mask all rasters to biome to change the value of these cells to NA for all rasters
+# ENMeval will do this automatically, but let's do it here to avoid the warning message later
+# We change back from a RasterBrick to RasterStack because of issues with assigning factor rasters
+# for RasterBricks
+envs <- raster::mask(envs, envs[[9]]) %>% stack()
+# Make sure to declare the categorical variable as a factor
+envs$biome <- as.factor(envs$biome)
+# Let's now remove occurrences that are cell duplicates
+# ALthough Maxent does this by default, keep in mind that for other algorithms you may
+# or may not want to do this based on the aims of your study
+occs.cells <- raster::extract(envs[[1]], occs, cellnumbers = TRUE)
+occs.cellDups <- duplicated(occs.cells[,1])
+occs <- occs[!occs.cellDups,]
+# Plot first raster in the stack, bio1 (mean annual temperature)
+plot(envs[[1]], main="Mean annual temperature")
+# Add points for all the occurrence points onto the raster
+points(occs)
+# There are some points east of the Amazon River
+# Suppose we know this is a population that we don't want to include in the model
+# We can remove these points from the analysis by subsetting the occurrences by latitude and longitude
+occs <- filter(occs, latitude > -20, longitude < -45)
+# Plot the subsetted occurrences to make sure we filtered correctly
+points(occs, col = 'red')
+# We will demonstrate model evaluation using fully-withheld testing data later, so now we will specify a fake testing occurrence dataset
+occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, -10, 0))
+points(occs.testing, col="blue")
+# First we extract the climatic variable values at the occurrence points -- these values are our "reference"
+# We remove the categorical variable for these operations because the math is for continuous variables
+occs.z <- raster::extract(envs[[-9]], occs)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+devtools::document()
+library(ENMeval)
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+?similarity
+devtools::document()
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity2(envs[[-9]], occs.z)
+devtools::document()
+# Now we use the similarity() function (borrowed from the rmaxent package) to calculate environmental similarity metrics
+# Just as a note, you cannot input categorical variables into this function or it won't work
+occs.sim <- similarity(envs[[-9]], occs.z)
+devtools::document()
