@@ -52,3 +52,4 @@ Suggests:
     tibble,
     latticeExtra,
     ecospat
+VignetteBuilder: knitr
