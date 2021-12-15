@@ -154,19 +154,22 @@ Since our models will compare the environment at occurrence localities to the en
 # as the RasterStack's crs.
 occs.sf <- sf::st_as_sf(occs, coords = c("longitude","latitude"), crs = raster::crs(envs))
 
-# Now, we project our raster and point data to an equal-area projection, which converts our 
-# degrees to meters, which is ideal for buffering (the next step). We use the typical Eckert IV 
-# projection.
+# Now, we project our point data to an equal-area projection, which converts our 
+# degrees to meters, which is ideal for buffering (the next step). 
+# We use the typical Eckert IV projection.
 eckertIV <- "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
-envs <- raster::projectRaster(envs, crs = eckertIV)
 occs.sf <- sf::st_transform(occs.sf, crs = eckertIV)
 
-# Buffer all occurrences by 500 km, union the polygons together (for visualization), 
-# and convert back to a form that the raster package can use.
+# Buffer all occurrences by 500 km, union the polygons together 
+# (for visualization), and convert back to a form that the raster package 
+# can use. Finally, we reproject the buffers back to WGS84 (lat/lon).
 # We choose 500 km here to avoid sampling the Caribbean islands.
-occs.buf <- sf::st_buffer(occs.sf, dist = 500000) %>% sf::st_union() %>% sf::st_sf()
+occs.buf <- sf::st_buffer(occs.sf, dist = 500000) %>% 
+  sf::st_union() %>% 
+  sf::st_sf() %>%
+  sf::st_transform(crs = raster::crs(envs))
 plot(envs[[1]], main = names(envs)[1])
-plot(occs.sf$geometry, add = TRUE)
+points(occs)
 # To add sf objects to a plot, use add = TRUE
 plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 
@@ -175,7 +178,7 @@ envs.bg <- raster::crop(envs, occs.buf)
 # Next, mask the rasters to the shape of the buffers
 envs.bg <- raster::mask(envs.bg, occs.buf)
 plot(envs.bg[[1]], main = names(envs)[1])
-plot(occs.sf$geometry, add = TRUE)
+points(occs)
 plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 ```
 
