@@ -6,7 +6,7 @@
 
 ## R package for automated tuning and evaluations of ecological niche models
 
-NOTE: ENMeval is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The Github version may lag behind the CRAN one, so please use try dev version here first if you are having any issues.
+NOTE: ENMeval is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
 Install with: `devtools::install_packages("jamiemkass/ENMeval")`
 
 [`ENMeval`](https://jamiemkass.github.io/ENMeval/index.html) is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version >=2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive [vignette](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) with a complete analysis walkthrough, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests -- thank you for your input!
