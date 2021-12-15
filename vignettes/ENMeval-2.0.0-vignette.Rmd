@@ -149,24 +149,24 @@ Since our models will compare the environment at occurrence localities to the en
 
 ```{r backgExt, message=FALSE, warning=FALSE}
 # We'll now experiment with a different spatial R package called sf (simple features).
-# Let's make our occs into a sf object -- here we specify the coordinate reference system  
-# (crs) in order to perform spatial functions.
-occs.sf <- sf::st_as_sf(occs, coords = c("longitude","latitude"), 
-                        crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-# Make sure the RasterStack has the same coordinate reference system (CRS) string.
-# Both are the same CRS, but when the strings are different, some spatial functions error.
-crs(envs) <- raster::crs(occs.sf)
+# Let's make our occs into a sf object -- as the coordinate reference system (crs) for these 
+# points is WGS84, a geographic crs (lat/lon) and the same as our envs rasters, we specify it 
+# as the RasterStack's crs.
+occs.sf <- sf::st_as_sf(occs, coords = c("longitude","latitude"), crs = raster::crs(envs))
 
-# Buffer all occurrences by 7 degrees: this will give a warning because we are not buffering. 
-# in a projected coordinate system, then union the polygons together (for visualization), 
+# Now, we project our raster and point data to an equal-area projection, which converts our 
+# degrees to meters, which is ideal for buffering (the next step). We use the typical Eckert IV 
+# projection.
+eckertIV <- "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+envs <- raster::projectRaster(envs, crs = eckertIV)
+occs.sf <- sf::st_transform(occs.sf, crs = eckertIV)
+
+# Buffer all occurrences by 500 km, union the polygons together (for visualization), 
 # and convert back to a form that the raster package can use.
-# We choose 7 degrees here to avoid sampling the Caribbean islands.
-# For simplicity, this vignette does not involve coordinate reference system (CRS) 
-# transformations, but for a real analysis, transforming to a projected CRS before 
-# buffering is best practice.
-occs.buf <- sf::st_buffer(occs.sf, dist = 7) %>% sf::st_union() %>% sf::st_sf()
+# We choose 500 km here to avoid sampling the Caribbean islands.
+occs.buf <- sf::st_buffer(occs.sf, dist = 500000) %>% sf::st_union() %>% sf::st_sf()
 plot(envs[[1]], main = names(envs)[1])
-points(occs)
+plot(occs.sf$geometry, add = TRUE)
 # To add sf objects to a plot, use add = TRUE
 plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 
@@ -175,7 +175,7 @@ envs.bg <- raster::crop(envs, occs.buf)
 # Next, mask the rasters to the shape of the buffers
 envs.bg <- raster::mask(envs.bg, occs.buf)
 plot(envs.bg[[1]], main = names(envs)[1])
-points(occs)
+plot(occs.sf$geometry, add = TRUE)
 plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 ```
 
