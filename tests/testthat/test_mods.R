@@ -252,7 +252,7 @@ for(alg in algorithms) {
   }
   
   # more than one categorical variable
-  if(skip_tests_for_cran == FALSE | alg != "bioclim") {
+  if(skip_tests_for_cran == FALSE & alg != "bioclim") {
     envs.2cat <- raster::addLayer(envs, envs$biome * round(runif(raster::ncell(envs), min = 0, max = 5)))
     occs.z.2cat <- cbind(occs, raster::extract(envs.2cat, occs))
     occs.z.2cat$biome.1 <- factor(occs.z.2cat$biome.1)
