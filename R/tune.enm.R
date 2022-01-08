@@ -47,7 +47,7 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.sett
   # is determined from "fit" only, and if occs have higher predictions than
   # bg, the interval will be cut short
   if(other.settings$ecospat.use == TRUE) {
-    cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$Spearman.cor
+    cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$cor
   }else{
     cbi.train <- NA
   }
@@ -83,7 +83,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     # calculate CBI based on the full background (do not calculate for jackknife partitions)
     if(other.settings$ecospat.use == TRUE) {
       if(partitions != "jackknife") {
-        cbi.val <- ecospat::ecospat.boyce(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor  
+        cbi.val <- ecospat::ecospat.boyce(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$cor  
       }else{
         cbi.val <- NA
       }
@@ -102,7 +102,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     # calculate CBI based on the validation background only (do not calculate for jackknife partitions)
     if(other.settings$ecospat.use == TRUE) {
       if(partitions != "jackknife") {
-        cbi.val <- ecospat::ecospat.boyce(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$Spearman.cor
+        cbi.val <- ecospat::ecospat.boyce(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$cor
       }else{
         cbi.val <- NA
       }
