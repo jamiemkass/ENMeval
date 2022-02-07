@@ -15,9 +15,9 @@ Install with: `devtools::install_packages("jamiemkass/ENMeval")`
 
 Model tuning refers to the process of building models with varying complexity settings, then choosing optimal settings based on some criteria. As it is difficult to predict in advance what level of complexity best fits your data and results in the most ecologically realistic response for your species, model tuning and evaluations are essential for ENM studies. This process helps researchers maximize predictive ability and avoid overfitting with models that are too complex. 
 
-For a more detailed description of version >=2.0.0, please reference the new open-access publication in Methods in Ecology and Evolution:
+For a more detailed description of version >=2.0.0, please reference the new publication in Methods in Ecology and Evolution:
 
-Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., & Anderson, R. P. (2021). ENMeval 2.0: redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution, Accepted.
+[Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., & Anderson, R. P. (2021). ENMeval 2.0: redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution, 12: 1602-1608.](https:://doi.org/10.1111/2041-210X.13628)
 
 For the original package version, please reference the new open-access publication in Methods in Ecology and Evolution:
 
