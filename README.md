@@ -19,7 +19,7 @@ For a more detailed description of version >=2.0.0, please reference the new pub
 
 [Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., & Anderson, R. P. (2021). ENMeval 2.0: redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution, 12: 1602-1608.](https:://doi.org/10.1111/2041-210X.13628)
 
-For the original package version, please reference the new open-access publication in Methods in Ecology and Evolution:
+For the original package version, please reference the 2014 publication in Methods in Ecology and Evolution:
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](https://doi.org/10.1111/2041-210X.12261)
 
