@@ -695,7 +695,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
                      results = as.data.frame(eval.stats), results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
-                     variable.importance = varimp.all,
+                     varimp = varimp.all,
                      partition.method = partitions, partition.settings = partition.settings,
                      other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
                      taxon.name = as.character(taxon.name),

@@ -14,7 +14,7 @@ NULL
 #' @slot results data frame: evaluation summary statistics
 #' @slot results.partitions data frame: evaluation k-fold statistics
 #' @slot models list: model objects
-#' @slot variable.importance list: variable importance data frames (when available)
+#' @slot varimp list: variable importance data frames (when available)
 #' @slot predictions RasterStack: model predictions
 #' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
@@ -39,7 +39,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                     results = 'data.frame',
                                     results.partitions = 'data.frame',
                                     models = 'list',
-                                    variable.importance = 'list',
+                                    varimp = 'list',
                                     predictions = 'RasterStack',
                                     taxon.name = 'character',
                                     occs = 'data.frame',
@@ -95,14 +95,14 @@ setGeneric("eval.models", function(x) standardGeneric("eval.models"))
 #' @rdname eval.models
 setMethod("eval.models", "ENMevaluation", function(x) x@models)
 
-#' @title eval.variable.importance generic for ENMevaluation object
+#' @title eval.varimp (variable importance) generic for ENMevaluation object
 #' @param x ENMevaluation object
-#' @rdname eval.variable.importance
+#' @rdname eval.varimp
 #' @export
-setGeneric("eval.variable.importance", function(x) standardGeneric("eval.variable.importance"))
+setGeneric("eval.varimp", function(x) standardGeneric("eval.varimp"))
 
 #' @rdname eval.models
-setMethod("eval.models", "ENMevaluation", function(x) x@models)
+setMethod("eval.varimp", "ENMevaluation", function(x) x@varimp)
 
 #' @title eval.predictions generic for ENMevaluation object
 #' @param x ENMevaluation object

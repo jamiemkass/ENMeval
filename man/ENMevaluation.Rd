@@ -38,7 +38,7 @@ An S4 class that contains the ENMevaluate results.
 
 \item{\code{models}}{list: model objects}
 
-\item{\code{variable.importance}}{list: variable importance data frames (when available)}
+\item{\code{varimp}}{list: variable importance data frames (when available)}
 
 \item{\code{predictions}}{RasterStack: model predictions}
 
