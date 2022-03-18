@@ -26,10 +26,10 @@ bioclim.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   return(out)
 }
 
-bioclim.predict <- function(mod, envs, tune.tbl.i, other.settings) {
+bioclim.predict <- function(mod, envs, other.settings) {
   # if no tails in other.args, defaults to NULL
   # useC is set to FALSE to avoid a current error with dismo 1.3-3
-  pred <- dismo::predict(mod, envs, tails = tune.tbl.i, na.rm = TRUE, useC = FALSE)
+  pred <- dismo::predict(mod, envs, tails = other.settings$tails, na.rm = TRUE, useC = FALSE)
   return(pred)
 }
 

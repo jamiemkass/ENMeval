@@ -49,6 +49,7 @@ tune.parallel(
   numCores,
   parallelType,
   user.eval,
+  algorithm,
   quiet
 )
 
@@ -64,6 +65,7 @@ tune.regular(
   occs.testing.z,
   updateProgress,
   user.eval,
+  algorithm,
   quiet
 )
 
@@ -78,6 +80,7 @@ cv.enm(
   user.val.grps,
   occs.testing.z,
   user.eval,
+  algorithm,
   quiet
 )
 }
@@ -136,6 +139,9 @@ coordinates at the testing occurrence records}
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
 \item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
+
+\item{algorithm}{character: name of the algorithm used to build models. Currently one of "maxnet",
+"maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
 }

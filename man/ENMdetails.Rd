@@ -36,7 +36,7 @@ The available arguments are: occs.z, bg.z, tune.tbl.i, other.settings (where x.z
 coordinates of x, and tune.tbl.i is a single set of tuning parameters).}
 
 \item{\code{predict}}{function: specifies how to calculate a model prediction for a Raster* or a data frame.
-The available arguments are: mod, envs, tune.tbl.i, other.settings.}
+The available arguments are: mod, envs, other.settings.}
 
 \item{\code{ncoefs}}{function: counts the number of non-zero model coefficients.
 The available arguments are: mod.}

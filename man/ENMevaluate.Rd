@@ -237,13 +237,75 @@ bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
 bg.z <- cbind(bg, raster::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
-tune.args <- list(fc = c("L","LQ","LQH","H"), rm = 1:5)
-os <- list(abs.auc.diff = FALSE, pred.type = "logistic", validation.bg = "partition")
+
+# set other.settings -- pred.type is only for Maxent models
+os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+# set partition.settings -- here's an example for the block method
+# see Details for the required settings for other partition methods
 ps <- list(orientation = "lat_lat")
 
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
-other.settings = os, partition.settings = ps,
+# here's a run with maxnet -- note the tune.args for feature classes (fc)
+# and regularization multipliers (rm), as well as the designation of the
+# categorical variable we are using (this can be a vector if multiple
+# categorical variables are used)
+e.maxnet <- ENMevaluate(occs, envs, bg, 
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+partitions = "block", other.settings = os, partition.settings = ps,
 algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
+
+# print the tuning results
+eval.results(e.maxnet)
+
+# there is currently no native function to make raster model predictions for
+# maxnet models, but ENMeval can be used to make them like this:
+# here's an example where we make a prediction based on the L2 model
+# (feature class: Linear, regularization multiplier: 2) for our envs data
+mods.maxnet <- eval.models(e.maxnet)
+pred.L2 <- enm.maxnet@predict(mods.maxnet$fc.L_rm.2, envs, os)
+raster::plot(pred.L2)
+
+#' # here's a run with maxent.jar -- note that if the R package rJava cannot 
+install or load, or if other issues with Java exist on your computer, 
+maxent.jar will not function
+e.maxnet <- ENMevaluate(occs, envs, bg, 
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+partitions = "block", other.settings = os, partition.settings = ps,
+algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE)
+
+# print the tuning results
+eval.results(e.maxent.jar)
+# raster predictions can be made for maxent.jar models with dismo or ENMeval
+mods.maxent.jar <- eval.models(e.maxent.jar)
+pred.L2 <- dismo::predict(mods.maxent.jar$fc.L_rm.2, envs, args = "outputform=cloglog")
+pred.L2 <- enm.maxent.jar@predict(mods.maxent.jar$fc.L_rm.2, envs, os)
+raster::plot(pred.L2)
+
+# this will give you the percent contribution (not deterministic) and
+# permutation importance (deterministic) values of variable importance for
+# Maxent models, and it only works with maxent.jar
+eval.varimp(e.maxent.jar)
+
+# here's a run with BIOCLIM -- note that 1) we need to remove the categorical
+# variable here because this algorithm only takes continuous variables, and
+# that 2) the way BIOCLIM makes predicted is getting tuned (as opposed to the
+way the model is fit like maxnet or maxent.jar), namely, the tails of the 
+# distribution that are ignored when predicting (see ?dismo::bioclim)
+
+# print the tuning results
+eval.results(e.bioclim)
+# make raster predictions with dismo or ENMeval
+mods.bioclim <- eval.models(e.bioclim)
+# note: the models for low, high, and both are actually all the same, and
+# the only difference for tuning is how they are predicted during
+# cross-validation
+pred.both <- dismo::predict(mods.bioclim$tails.both, envs, tails = "both")
+os <- c(os, list(tails = "both"))
+pred.both <- enm.bioclim@predict(mods.bioclim$tails.both, envs, os)
+raster::plot(pred.both)
+
+# please see the vignette for more examples of model tuning, 
+# partitioning, plotting functions, and null models
+# https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html
 }
 
 }

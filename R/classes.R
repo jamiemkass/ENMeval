@@ -269,7 +269,7 @@ setMethod("show",
 #' The available arguments are: occs.z, bg.z, tune.tbl.i, other.settings (where x.z is a data.frame of the envs values at
 #' coordinates of x, and tune.tbl.i is a single set of tuning parameters).
 #' @slot predict function: specifies how to calculate a model prediction for a Raster* or a data frame.
-#' The available arguments are: mod, envs, tune.tbl.i, other.settings.
+#' The available arguments are: mod, envs, other.settings.
 #' @slot ncoefs function: counts the number of non-zero model coefficients.
 #' The available arguments are: mod.
 #' @slot varimp function: generates a data frame of variable importance from the model object (if functionality is available).
