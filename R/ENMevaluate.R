@@ -532,7 +532,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # CLAMPING ####
   ################# #
   if(doClamp == TRUE) {
-    # record in other.settings
+    # record clamping choice in other.settings
     other.settings$doClamp <- TRUE
     
     if(!is.null(envs)) {
@@ -545,15 +545,24 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       envs <- clamp.vars(orig.vals = envs, ref.vals = rbind(occs.z, bg.z), 
                          left = clamp.directions$left, right = clamp.directions$right, 
                          categoricals = categoricals)
+      # set model.clamp to FALSE so that models do not perform internal clamping
+      # and instead use the clamped variables specifed above
+      other.settings$model.clamp <- FALSE
       if(quiet != TRUE) message("* Clamping predictor variable rasters...")
     }else{
+      # set model.clamp to TRUE if no envs are specified (species-with-data, or SWD)
+      # to ensure that models are clamped as no clamped envs are generated
+      other.settings$model.clamp <- TRUE
       if(is.null(clamp.directions)) {
         clamp.directions$left <- names(d[, 3:(ncol(d)-1)])
         clamp.directions$right <- names(d[, 3:(ncol(d)-1)])
       }
     }
   }else{
+    # record clamping choice in other.settings
     other.settings$doClamp <- FALSE
+    # make sure models do not clamp internally
+    other.settings$model.clamp <- FALSE
   }
   
   ###################### #
