@@ -311,6 +311,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
                  null.mod.settings = mod.settings.tbl,
                  null.partition.method = e@partition.method,
                  null.partition.settings = e@partition.settings,
+                 null.doClamp = e@doClamp,
                  null.other.settings = e@other.settings,
                  null.no.iter = no.iter,
                  null.results = nulls,

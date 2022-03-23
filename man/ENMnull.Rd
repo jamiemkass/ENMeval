@@ -26,6 +26,8 @@ An S4 class that contains the ENMnulls results.
 
 \item{\code{null.partition.settings}}{list: partition settings used (i.e., value of *k* or aggregation factor)}
 
+\item{\code{null.doClamp}}{logical: whether to clamp model predictions or not}
+
 \item{\code{null.other.settings}}{list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
 
 \item{\code{null.no.iter}}{numeric: number of null model iterations}

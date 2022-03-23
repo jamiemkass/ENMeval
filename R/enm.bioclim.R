@@ -26,6 +26,8 @@ bioclim.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   return(out)
 }
 
+# NOTE: clamping is not needed for BIOCLIM predictions because predictions
+# are always clamped for this algorithm
 bioclim.predict <- function(mod, envs, other.settings) {
   # if no tails in other.args, defaults to NULL
   # useC is set to FALSE to avoid a current error with dismo 1.3-3

@@ -39,7 +39,11 @@
 #' are already factors, specifying names of such variables in this argument is not needed.
 #' @param doClamp boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 #' bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
-#' the range of the training data. If extrapolation is a study aim, this should be set to FALSE.
+#' the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
+#' for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
+#' When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
+#' When no predictor variables are input and data frames of variable values are used instead (SWD format),
+#' validation data is clamped before making model predictions when clamping is on.
 #' @param clamp.directions named list: specifies the direction ("left" for minimum, "right" for maximum) 
 #' of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).
 #' @param user.enm ENMdetails object: a custom ENMdetails object used to build models. 
@@ -532,38 +536,40 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # CLAMPING ####
   ################# #
   if(doClamp == TRUE) {
-    # record clamping choice in other.settings
-    other.settings$doClamp <- TRUE
-    
+    # when predictor variable rasters are input
     if(!is.null(envs)) {
+      # assign both clamp directions to all variables if none are set
       if(is.null(clamp.directions)) {
         clamp.directions$left <- names(envs)
         clamp.directions$right <- names(envs)
       }
-      # record in other.settings
+      # record clamp directions in other.settings
       other.settings$clamp.directions <- clamp.directions
+      # run function to clamp predictor variable rasters
       envs <- clamp.vars(orig.vals = envs, ref.vals = rbind(occs.z, bg.z), 
-                         left = clamp.directions$left, right = clamp.directions$right, 
+                         left = clamp.directions$left, 
+                         right = clamp.directions$right, 
                          categoricals = categoricals)
-      # set model.clamp to FALSE so that models do not perform internal clamping
-      # and instead use the clamped variables specifed above
-      other.settings$model.clamp <- FALSE
       if(quiet != TRUE) message("* Clamping predictor variable rasters...")
     }else{
-      # set model.clamp to TRUE if no envs are specified (species-with-data, or SWD)
-      # to ensure that models are clamped as no clamped envs are generated
-      other.settings$model.clamp <- TRUE
+      # if no predictor variable rasters are input, assign both clamp directions
+      # to all variable names (columns besides the first two, which should be
+      # coordinates) if none are set
+      # during cross-validation, validation data will be clamped using the
+      # clamp.vars() function
       if(is.null(clamp.directions)) {
         clamp.directions$left <- names(d[, 3:(ncol(d)-1)])
         clamp.directions$right <- names(d[, 3:(ncol(d)-1)])
       }
     }
-  }else{
-    # record clamping choice in other.settings
-    other.settings$doClamp <- FALSE
-    # make sure models do not clamp internally
-    other.settings$model.clamp <- FALSE
   }
+  # record clamping choice as FALSE in other.settings regardless of doClamp
+  # selection -- this is because the clamping is done on the predictor rasters 
+  # or values directly, so that internally all model predictions are made with 
+  # clamping off
+  # when enm.predict() functions are run externally, users can specify
+  # other.settings$doClamp to turn on clamping functionality
+  other.settings$doClamp <- FALSE
   
   ###################### #
   # ASSIGN PARTITIONS ####
@@ -633,11 +639,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, 
-                             user.val.grps, occs.testing.z, numCores, parallelType, user.eval, algorithm, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, doClamp, 
+                             other.settings, partition.settings, user.val.grps, 
+                             occs.testing.z, numCores, parallelType, user.eval, 
+                             algorithm, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings,
-                            user.val.grps, occs.testing.z, updateProgress, user.eval, algorithm, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, doClamp, 
+                            other.settings, partition.settings, user.val.grps, 
+                            occs.testing.z, updateProgress, user.eval, 
+                            algorithm, quiet)
   }
   
   ##################### #
@@ -766,6 +776,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   # get variable importance for all models
   varimp.all <- lapply(mod.full.all, enm@varimp)
+  
+  # remove the doClamp = FALSE recorded in other.settings to avoid confusion
+  other.settings$doClamp <- NULL
   
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),

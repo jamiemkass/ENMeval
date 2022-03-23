@@ -56,7 +56,7 @@ maxent.jar.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
 
 maxent.jar.predict <- function(mod, envs, other.settings) {
   output.format <- paste0("outputformat=", other.settings$pred.type)
-  model.clamp <- ifelse(other.settings$model.clamp == TRUE, "doclamp=true", "doclamp=false")
+  model.clamp <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
   pred <- dismo::predict(mod, envs, args = c(output.format, model.clamp), na.rm = TRUE)
   return(pred)
 }

@@ -9,7 +9,7 @@ NULL
 #' @slot partition.method character: partition method used
 #' @slot partition.settings list: partition settings used (i.e., value of *k* or aggregation factor)
 #' @slot other.settings list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
-#' @slot doClamp boolean: whether or not clamping was used 
+#' @slot doClamp logical: whether or not clamping was used 
 #' @slot clamp.directions list: the clamping directions specified 
 #' @slot results data frame: evaluation summary statistics
 #' @slot results.partitions data frame: evaluation k-fold statistics
@@ -474,6 +474,7 @@ setMethod("show",
 #' @slot null.mod.settings data frame: model settings used
 #' @slot null.partition.method character: partition method used
 #' @slot null.partition.settings list: partition settings used (i.e., value of *k* or aggregation factor)
+#' @slot null.doClamp logical: whether to clamp model predictions or not
 #' @slot null.other.settings list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
 #' @slot null.no.iter numeric: number of null model iterations
 #' @slot null.results data frame: evaluation summary statistics for null models
@@ -492,6 +493,7 @@ ENMnull <- setClass("ENMnull",
                               null.mod.settings = 'data.frame',
                               null.partition.method = 'character',
                               null.partition.settings = 'list',
+                              null.doClamp = 'logical',
                               null.other.settings = 'list',
                               null.no.iter = 'numeric',
                               null.results = 'data.frame',
@@ -537,6 +539,15 @@ setGeneric("null.partition.settings", function(x) standardGeneric("null.partitio
 
 #' @rdname null.partition.settings
 setMethod("null.partition.settings", "ENMnull", function(x) x@null.partition.settings)
+
+#' @title null.doClamp generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.doClamp
+#' @export
+setGeneric("null.doClamp", function(x) standardGeneric("null.doClamp"))
+
+#' @rdname null.doClamp
+setMethod("null.doClamp", "ENMnull", function(x) x@null.doClamp)
 
 #' @title null.other.settings generic for ENMnull object
 #' @param x ENMnull object
@@ -630,8 +641,8 @@ setMethod("show",
             cat(" partition method: ", object@null.partition.method, "\n")
             cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")
             clamp.dir.spacing <- "\n         "
-            if(object@null.other.settings$doClamp == FALSE) cat(" clamp: ", object@null.other.settings$doClamp, "\n")
-            if(object@null.other.settings$doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
+            if(object@doClamp == FALSE) cat(" clamp: ", object@doClamp, "\n")
+            if(object@doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
             cat(" categoricals: ", paste(object@null.other.settings$categoricals, collapse = ", "), "\n")
             cat(" algorithm: ", object@null.algorithm, "\n")
             # cat(" model settings: \n")

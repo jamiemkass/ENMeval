@@ -106,7 +106,7 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
   enm <- lookup.enm(e@algorithm)
   m <- e@models[[1]]
   
-  clamp.envs.p <- lapply(clamps.envs, function(x) enm@predict(m, x, list(pred.type = "cloglog")))
+  clamp.envs.p <- lapply(clamps.envs, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
   
   combs <- expand.grid(x=names(clamp.envs.p), y=names(clamp.envs.p), stringsAsFactors = FALSE) %>% dplyr::filter(x != y)
   
@@ -121,7 +121,7 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
   })
   
   clamps.df <- lapply(clamps.envs, function(x) raster::getValues(x))
-  clamp.df.p <- lapply(clamps.df, function(x) enm@predict(m, x, list(pred.type = "cloglog")))
+  clamp.df.p <- lapply(clamps.df, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
   
   test_that("Clamped data frames are different from each other", {
     for(i in 1:nrow(combs)) {

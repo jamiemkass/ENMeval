@@ -85,7 +85,11 @@ are already factors, specifying names of such variables in this argument is not 
 
 \item{doClamp}{boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
-the range of the training data. If extrapolation is a study aim, this should be set to FALSE.}
+the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
+for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
+When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
+When no predictor variables are input and data frames of variable values are used instead (SWD format),
+validation data is clamped before making model predictions when clamping is on.}
 
 \item{clamp.directions}{named list: specifies the direction ("left" for minimum, "right" for maximum) 
 of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).}

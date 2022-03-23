@@ -143,7 +143,10 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
 }
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, user.val.grps, occs.testing.z, numCores, parallelType, user.eval, algorithm, quiet) {
+tune.parallel <- function(d, envs, enm, partitions, tune.tbl, doClamp, 
+                          other.settings, partition.settings, user.val.grps, 
+                          occs.testing.z, numCores, parallelType, user.eval, 
+                          algorithm, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -166,7 +169,9 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, pa
   if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
   
   results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, algorithm, quiet)
+    cv.enm(d, envs, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
+           partition.settings, user.val.grps, occs.testing.z, user.eval, 
+           algorithm, quiet)
   }
   if(quiet != TRUE) close(pb)
   parallel::stopCluster(cl)
@@ -174,7 +179,10 @@ tune.parallel <- function(d, envs, enm, partitions, tune.tbl, other.settings, pa
 }
 
 #' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, user.val.grps, occs.testing.z, updateProgress, user.eval, algorithm, quiet) {
+tune.regular <- function(d, envs, enm, partitions, tune.tbl, doClamp, 
+                         other.settings, partition.settings, user.val.grps, 
+                         occs.testing.z, updateProgress, user.eval, algorithm, 
+                         quiet) {
   results <- list()
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
@@ -192,14 +200,18 @@ tune.regular <- function(d, envs, enm, partitions, tune.tbl, other.settings, par
     }
     # set the current tune settings
     tune.tbl.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.tbl.i, other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, algorithm, quiet)
+    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.tbl.i, doClamp,
+                           other.settings, partition.settings, user.val.grps, 
+                           occs.testing.z, user.eval, algorithm, quiet)
   }
   if(quiet != TRUE) close(pb)
   return(results)
 }
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partition.settings, user.val.grps, occs.testing.z, user.eval, algorithm, quiet) {
+cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp, 
+                   other.settings, partition.settings, user.val.grps, 
+                   occs.testing.z, user.eval, algorithm, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
@@ -247,7 +259,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
   if(partitions == "testing") {
     bg.val.z <- data.frame()
     occs.testing.zEnvs <- occs.testing.z %>% dplyr::select(dplyr::all_of(envs.names))
-    if(other.settings$doClamp == TRUE) {
+    if(doClamp == TRUE) {
       occs.testing.zEnvs <- clamp.vars(orig.vals = occs.testing.zEnvs, ref.vals = rbind(occs.z, bg.z), 
                                        left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
                                        categoricals = other.settings$categoricals)
@@ -276,7 +288,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, other.settings, partiti
     
     # if doClamp is on, make sure that the validation data for each validation model is also clamped
     # this means for each partition, making sure no values in validation data are more extreme than those in training data
-    if(other.settings$doClamp == TRUE) {
+    if(doClamp == TRUE) {
       val.z <- clamp.vars(orig.vals = rbind(occs.val.z, bg.val.z), ref.vals = rbind(occs.train.z, bg.train.z), 
                           left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
                           categoricals = other.settings$categoricals)

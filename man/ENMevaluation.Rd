@@ -28,7 +28,7 @@ An S4 class that contains the ENMevaluate results.
 
 \item{\code{other.settings}}{list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)}
 
-\item{\code{doClamp}}{boolean: whether or not clamping was used}
+\item{\code{doClamp}}{logical: whether or not clamping was used}
 
 \item{\code{clamp.directions}}{list: the clamping directions specified}
 

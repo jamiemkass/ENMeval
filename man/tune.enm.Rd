@@ -42,6 +42,7 @@ tune.parallel(
   enm,
   partitions,
   tune.tbl,
+  doClamp,
   other.settings,
   partition.settings,
   user.val.grps,
@@ -59,6 +60,7 @@ tune.regular(
   enm,
   partitions,
   tune.tbl,
+  doClamp,
   other.settings,
   partition.settings,
   user.val.grps,
@@ -75,6 +77,7 @@ cv.enm(
   enm,
   partitions,
   tune.tbl.i,
+  doClamp,
   other.settings,
   partition.settings,
   user.val.grps,
@@ -125,6 +128,14 @@ that can be used to calculate the metric. See Details below and the vignette for
 \item{d}{data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 
 \item{tune.tbl}{data frame: all combinations of tuning parameters}
+
+\item{doClamp}{boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
+bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
+the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
+for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
+When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
+When no predictor variables are input and data frames of variable values are used instead (SWD format),
+validation data is clamped before making model predictions when clamping is on.}
 
 \item{partition.settings}{named list: used to specify certain settings for partitioning schema.
 See Details and ?partitions for descriptions of these settings.}
