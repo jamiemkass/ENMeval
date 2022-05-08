@@ -267,14 +267,19 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   # this avoids considering overly complex models at all
   n.occs <- nrow(p.occs)
   AIC.valid <- ncoefs < n.occs
-  # calculate log likelihood
-  LL <- colSums(log(p.occs), na.rm = TRUE)
-  AICc <- (2 * ncoefs - 2 * LL) + (2 * (ncoefs) * (ncoefs + 1) / (n.occs - ncoefs - 1))
-  # if determined invalid or if infinite, make AICc NA
-  AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
-  # make output table
-  out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE), row.names = NULL)
-  out$w.AIC <- exp(-0.5 * out$delta.AICc) / sum(exp(-0.5 * out$delta.AICc), na.rm=TRUE)
+  if(AIC.valid == FALSE) {
+    message("Warning: this model has more non-zero coefficients (ncoef) than occurrence records for training, so AIC cannot be calculated.")
+    out <- data.frame(AICc = NA, delta.AICc = NA, row.names = NULL)
+  }else{
+    # calculate log likelihood
+    LL <- colSums(log(p.occs), na.rm = TRUE)
+    AICc <- (2 * ncoefs - 2 * LL) + (2 * (ncoefs) * (ncoefs + 1) / (n.occs - ncoefs - 1))
+    # if determined invalid or if infinite, make AICc NA
+    AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
+    # make output table
+    out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE), row.names = NULL)
+    out$w.AIC <- exp(-0.5 * out$delta.AICc) / sum(exp(-0.5 * out$delta.AICc), na.rm=TRUE)
+  }
   return(out)
 }
 
