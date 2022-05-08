@@ -33,7 +33,8 @@
 #' See Details and ?partitions for descriptions of these settings.
 #' @param other.settings named list: used to specify extra settings for the analysis. 
 #' All of these settings have internal defaults, so if they are not specified the analysis will be run 
-#' with default settings. See Details for descriptions of these settings.
+#' with default settings. See Details for descriptions of these settings, including how to specify arguments
+#' for maxent.jar.
 #' @param categoricals character vector: name or names of categorical environmental variables. If not specified,
 #' all predictor variables will be treated as continuous unless they are factors. If categorical variables
 #' are already factors, specifying names of such variables in this argument is not needed.
@@ -117,7 +118,8 @@
 #' spatial partitions only) to calculate each with respect to the partitioned background only 
 #' (i.e., training occurrences are compared to training background, and validation occurrences 
 #' compared to validation background).\cr*
-#' other.args - named list: any additional model arguments not specified for tuning.\cr
+#' other.args - named list: any additional model arguments not specified for tuning; this can
+#' include arguments for maxent.jar, which are described in the software's Help file.\cr
 #' 
 #' For partition.settings, the current options are:\cr*
 #' orientation - character: one of "lat_lon" (default), "lon_lat", "lat_lat", or "lon_lon" (required for block partition).\cr* 
