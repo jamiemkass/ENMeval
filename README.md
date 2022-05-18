@@ -2,7 +2,7 @@
 [![R-CMD-check](https://github.com/jamiemkass/ENMeval/workflows/R-CMD-check/badge.svg)](https://github.com/jamiemkass/ENMeval/actions)
 
 
-# ENMeval version 2.0.3
+# ENMeval version 2.0.4
 
 ## R package for automated tuning and evaluations of ecological niche models
 

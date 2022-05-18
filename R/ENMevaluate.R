@@ -273,7 +273,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # legacy argument handling so ENMevaluate doesn't break for older code
   all.legacy <- list(occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds)
   if(sum(sapply(all.legacy, function(x) !is.null(x))) > 0) {
-    if(quiet != TRUE) message("* Running ENMeval v2.0.3 with legacy arguments. These will be phased out in the next version.")
+    if(quiet != TRUE) message("* Running ENMeval v2.0.4 with legacy arguments. These will be phased out in the next version.")
   }
   if(!is.null(occ)) occs <- occ
   if(!is.null(env)) envs <- env
@@ -321,9 +321,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(is.null(partition.settings)) partition.settings <- list(orientation = "lat_lon", 
                                                              aggregation.factor = 2, 
                                                              kfolds = 5)
-  if(is.null(other.settings)) other.settings <- list(abs.auc.diff = TRUE, 
+  other.settings <- c(other.settings, list(abs.auc.diff = TRUE, 
                                                      pred.type = "cloglog", 
-                                                     validation.bg = "full")
+                                                     validation.bg = "full"))
   # add whether to use ecospat to other.settings to avoid multiple calls to require()
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
   
@@ -624,9 +624,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ################# #
   # print model-specific message
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.3 with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.4 with", enm@msgs(tune.args, other.settings), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.3 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.4 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
   }
   
   ################# #
