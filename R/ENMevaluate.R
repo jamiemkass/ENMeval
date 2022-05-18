@@ -39,11 +39,7 @@
 #' are already factors, specifying names of such variables in this argument is not needed.
 #' @param doClamp boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 #' bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
-#' the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
-#' for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
-#' When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
-#' When no predictor variables are input and data frames of variable values are used instead (SWD format),
-#' validation data is clamped before making model predictions when clamping is on.
+#' the range of the training data. If extrapolation is a study aim, this should be set to FALSE.
 #' @param clamp.directions named list: specifies the direction ("left" for minimum, "right" for maximum) 
 #' of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).
 #' @param user.enm ENMdetails object: a custom ENMdetails object used to build models. 
@@ -179,79 +175,13 @@
 #' names(bg) <- names(occs)
 #' bg.z <- cbind(bg, raster::extract(envs, bg))
 #' bg.z$biome <- factor(bg.z$biome)
-#' 
-#' # set other.settings -- pred.type is only for Maxent models
-#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
-#' # set partition.settings -- here's an example for the block method
-#' # see Details for the required settings for other partition methods
+#' tune.args <- list(fc = c("L","LQ","LQH","H"), rm = 1:5)
+#' os <- list(abs.auc.diff = FALSE, pred.type = "logistic", validation.bg = "partition")
 #' ps <- list(orientation = "lat_lat")
 #' 
-#' # here's a run with maxnet -- note the tune.args for feature classes (fc)
-#' # and regularization multipliers (rm), as well as the designation of the
-#' # categorical variable we are using (this can be a vector if multiple
-#' # categorical variables are used)
-#' e.maxnet <- ENMevaluate(occs, envs, bg, 
-#' tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
-#' partitions = "block", other.settings = os, partition.settings = ps,
+#' e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
+#' other.settings = os, partition.settings = ps,
 #' algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
-#' 
-#' # print the tuning results
-#' eval.results(e.maxnet)
-#' 
-#' # there is currently no native function to make raster model predictions for
-#' # maxnet models, but ENMeval can be used to make them like this:
-#' # here's an example where we make a prediction based on the L2 model
-#' # (feature class: Linear, regularization multiplier: 2) for our envs data
-#' mods.maxnet <- eval.models(e.maxnet)
-#' pred.L2 <- enm.maxnet@predict(mods.maxnet$fc.L_rm.2, envs, os)
-#' raster::plot(pred.L2)
-#' 
-#' #' # here's a run with maxent.jar -- note that if the R package rJava cannot 
-#' install or load, or if other issues with Java exist on your computer, 
-#' maxent.jar will not function
-#' e.maxnet <- ENMevaluate(occs, envs, bg, 
-#' tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
-#' partitions = "block", other.settings = os, partition.settings = ps,
-#' algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE)
-#' 
-#' # print the tuning results
-#' eval.results(e.maxent.jar)
-#' # raster predictions can be made for maxent.jar models with dismo or ENMeval
-#' mods.maxent.jar <- eval.models(e.maxent.jar)
-#' pred.L2 <- dismo::predict(mods.maxent.jar$fc.L_rm.2, envs, args = "outputform=cloglog")
-#' pred.L2 <- enm.maxent.jar@predict(mods.maxent.jar$fc.L_rm.2, envs, os)
-#' raster::plot(pred.L2)
-#' 
-#' # this will give you the percent contribution (not deterministic) and
-#' # permutation importance (deterministic) values of variable importance for
-#' # Maxent models, and it only works with maxent.jar
-#' eval.varimp(e.maxent.jar)
-#' 
-#' # here's a run with BIOCLIM -- note that 1) we need to remove the categorical
-#' # variable here because this algorithm only takes continuous variables, and
-#' # that 2) the way BIOCLIM makes predicted is getting tuned (as opposed to the
-#' way the model is fit like maxnet or maxent.jar), namely, the tails of the 
-#' # distribution that are ignored when predicting (see ?dismo::bioclim)
-# e.bioclim <- ENMevaluate(occs, envs[[-9]], bg,
-# tune.args = list(tails = c("low", "high", "both")),
-# partitions = "block", other.settings = os, partition.settings = ps,
-# algorithm = "bioclim", overlap = TRUE)
-#' 
-#' # print the tuning results
-#' eval.results(e.bioclim)
-#' # make raster predictions with dismo or ENMeval
-#' mods.bioclim <- eval.models(e.bioclim)
-#' # note: the models for low, high, and both are actually all the same, and
-#' # the only difference for tuning is how they are predicted during
-#' # cross-validation
-#' pred.both <- dismo::predict(mods.bioclim$tails.both, envs, tails = "both")
-#' os <- c(os, list(tails = "both"))
-#' pred.both <- enm.bioclim@predict(mods.bioclim$tails.both, envs, os)
-#' raster::plot(pred.both)
-#' 
-#' # please see the vignette for more examples of model tuning, 
-#' # partitioning, plotting functions, and null models
-#' # https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html
 #' }
 #' 
 #' @export 
@@ -413,7 +343,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # algorithm-specific errors
   enm@errors(occs, envs, bg, tune.args, partitions, algorithm, partition.settings, other.settings, 
              categoricals, doClamp, clamp.directions)
-
   
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
@@ -536,40 +465,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # CLAMPING ####
   ################# #
   if(doClamp == TRUE) {
-    # when predictor variable rasters are input
+    # record in other.settings
+    other.settings$doClamp <- TRUE
+    
     if(!is.null(envs)) {
-      # assign both clamp directions to all variables if none are set
       if(is.null(clamp.directions)) {
         clamp.directions$left <- names(envs)
         clamp.directions$right <- names(envs)
       }
-      # record clamp directions in other.settings
+      # record in other.settings
       other.settings$clamp.directions <- clamp.directions
-      # run function to clamp predictor variable rasters
       envs <- clamp.vars(orig.vals = envs, ref.vals = rbind(occs.z, bg.z), 
-                         left = clamp.directions$left, 
-                         right = clamp.directions$right, 
+                         left = clamp.directions$left, right = clamp.directions$right, 
                          categoricals = categoricals)
       if(quiet != TRUE) message("* Clamping predictor variable rasters...")
     }else{
-      # if no predictor variable rasters are input, assign both clamp directions
-      # to all variable names (columns besides the first two, which should be
-      # coordinates) if none are set
-      # during cross-validation, validation data will be clamped using the
-      # clamp.vars() function
       if(is.null(clamp.directions)) {
         clamp.directions$left <- names(d[, 3:(ncol(d)-1)])
         clamp.directions$right <- names(d[, 3:(ncol(d)-1)])
       }
     }
+  }else{
+    other.settings$doClamp <- FALSE
   }
-  # record clamping choice as FALSE in other.settings regardless of doClamp
-  # selection -- this is because the clamping is done on the predictor rasters 
-  # or values directly, so that internally all model predictions are made with 
-  # clamping off
-  # when enm.predict() functions are run externally, users can specify
-  # other.settings$doClamp to turn on clamping functionality
-  other.settings$doClamp <- FALSE
   
   ###################### #
   # ASSIGN PARTITIONS ####
@@ -639,15 +557,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
   if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, doClamp, 
-                             other.settings, partition.settings, user.val.grps, 
-                             occs.testing.z, numCores, parallelType, user.eval, 
-                             algorithm, quiet)  
+    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings, 
+                             user.val.grps, occs.testing.z, numCores, parallelType, user.eval, quiet)  
   }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, doClamp, 
-                            other.settings, partition.settings, user.val.grps, 
-                            occs.testing.z, updateProgress, user.eval, 
-                            algorithm, quiet)
+    results <- tune.regular(d, envs, enm, partitions, tune.tbl, other.settings, partition.settings,
+                            user.val.grps, occs.testing.z, updateProgress, user.eval, quiet)
   }
   
   ##################### #
@@ -753,11 +667,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     aic.settings <- other.settings
     aic.settings$pred.type <- pred.type.raw
     if(!is.null(envs)) {
-      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, aic.settings))
+      pred.all.raw <- raster::stack(lapply(mod.full.all, enm@predict, envs, NULL, aic.settings))
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], NULL, aic.settings))
     aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
@@ -777,14 +691,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # get variable importance for all models
   varimp.all <- lapply(mod.full.all, enm@varimp)
   
-  # remove the doClamp = FALSE recorded in other.settings to avoid confusion
-  other.settings$doClamp <- NULL
-  
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
                      results = as.data.frame(eval.stats), results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
-                     varimp = varimp.all,
+                     variable.importance = varimp.all,
                      partition.method = partitions, partition.settings = partition.settings,
                      other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
                      taxon.name = as.character(taxon.name),
