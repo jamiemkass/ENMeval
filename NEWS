@@ -1,3 +1,15 @@
+ENMeval 2.0.4
+===========
+* This update makes a bunch of bug fixes and enhancements brought to me by the user community. Thank you for helping me improve the software!*
+o  Fixed the variable importance slot in ENMevaluation objects, now called "varimp", as in e@varimp. This slot will only be populated for maxent.jar models because maxnet (or BIOCLIM) lack a native function for this. Might add some external function to do this for these models in the future.
+o  Simplified the predict method for maxnet ENMdetails objects and provided an example in ?ENMevaluate. 
+o  Added the ability to turn clamping on or off for maxnet models by specifying doClamp in other.settings, and added a doClamp slot for ENMnull objects.
+o  Fixed a bug that prevented clamping even when doClamp was TRUE for models specified without raster environmental predictor data (species-with-data format). Now models specified without raster data also clamp as expected.
+o  Added a switch that turns on or off ecospat functionality depending on whether it is installed into ENMnulls. This was already present in ENMevaluate.
+o  Added documentation on the other.args option for the other.settings argument in ENMevaluate.
+o  Added a warning message when AIC is unable to be calculated because the number of model non-zero coefficients exceeds the number of occurrence records input. Previously, this resulted in the silent attribution of NAs to the results table without explanation.
+o  Fixed a bug that caused an error when other.settings was specified in ENMevaluate instead of left at the default NULL. Now this list is populated with default fields whether it is left NULL or specified as a list with elements by the user.
+
 ENMeval 2.0.3
 ===========
 o  Updated to be compatible with ecospat 3.2.1.

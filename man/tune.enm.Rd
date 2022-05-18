@@ -42,6 +42,7 @@ tune.parallel(
   enm,
   partitions,
   tune.tbl,
+  doClamp,
   other.settings,
   partition.settings,
   user.val.grps,
@@ -49,6 +50,7 @@ tune.parallel(
   numCores,
   parallelType,
   user.eval,
+  algorithm,
   quiet
 )
 
@@ -58,12 +60,14 @@ tune.regular(
   enm,
   partitions,
   tune.tbl,
+  doClamp,
   other.settings,
   partition.settings,
   user.val.grps,
   occs.testing.z,
   updateProgress,
   user.eval,
+  algorithm,
   quiet
 )
 
@@ -73,11 +77,13 @@ cv.enm(
   enm,
   partitions,
   tune.tbl.i,
+  doClamp,
   other.settings,
   partition.settings,
   user.val.grps,
   occs.testing.z,
   user.eval,
+  algorithm,
   quiet
 )
 }
@@ -123,6 +129,14 @@ that can be used to calculate the metric. See Details below and the vignette for
 
 \item{tune.tbl}{data frame: all combinations of tuning parameters}
 
+\item{doClamp}{boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
+bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
+the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
+for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
+When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
+When no predictor variables are input and data frames of variable values are used instead (SWD format),
+validation data is clamped before making model predictions when clamping is on.}
+
 \item{partition.settings}{named list: used to specify certain settings for partitioning schema.
 See Details and ?partitions for descriptions of these settings.}
 
@@ -136,6 +150,9 @@ coordinates at the testing occurrence records}
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
 \item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
+
+\item{algorithm}{character: name of the algorithm used to build models. Currently one of "maxnet",
+"maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
 }

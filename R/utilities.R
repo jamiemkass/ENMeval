@@ -18,7 +18,7 @@ NULL
 #' @note If bin.output was set to TRUE, \code{`e@results`} will be equivalent to 
 #' the new results.partitions slot. Some slots are unable to be filled in because
 #' previous versions of ENMeval did not record them in ENMevaluation objects:
-#' variable.importance, partition.settings, other.settings, doClamp (set to TRUE
+#' varimp, partition.settings, other.settings, doClamp (set to TRUE
 #' arbitrarily to avoid errors, but may actually have been FALSE), clamp.directions,
 #' taxon.name, and rmm.
 #' @importFrom rlang .data
@@ -42,7 +42,7 @@ ENMevaluation_convert <- function(e, envs) {
   e_new <- ENMevaluation(algorithm = alg, tune.settings = as.data.frame(ts),
                          results = rs, results.partitions = data.frame(),
                          predictions = e@predictions, models = ms, 
-                         variable.importance = list(),
+                         varimp = list(),
                          partition.method = e@partition.method, partition.settings = list(),
                          other.settings = list(), doClamp = TRUE, clamp.directions = list(), 
                          taxon.name = "", occs = occs, occs.testing = data.frame(), 
@@ -267,14 +267,19 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   # this avoids considering overly complex models at all
   n.occs <- nrow(p.occs)
   AIC.valid <- ncoefs < n.occs
-  # calculate log likelihood
-  LL <- colSums(log(p.occs), na.rm = TRUE)
-  AICc <- (2 * ncoefs - 2 * LL) + (2 * (ncoefs) * (ncoefs + 1) / (n.occs - ncoefs - 1))
-  # if determined invalid or if infinite, make AICc NA
-  AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
-  # make output table
-  out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE), row.names = NULL)
-  out$w.AIC <- exp(-0.5 * out$delta.AICc) / sum(exp(-0.5 * out$delta.AICc), na.rm=TRUE)
+  if(AIC.valid == FALSE) {
+    message("Warning: this model has more non-zero coefficients (ncoef) than occurrence records for training, so AIC cannot be calculated.")
+    out <- data.frame(AICc = NA, delta.AICc = NA, row.names = NULL)
+  }else{
+    # calculate log likelihood
+    LL <- colSums(log(p.occs), na.rm = TRUE)
+    AICc <- (2 * ncoefs - 2 * LL) + (2 * (ncoefs) * (ncoefs + 1) / (n.occs - ncoefs - 1))
+    # if determined invalid or if infinite, make AICc NA
+    AICc <- sapply(1:length(AICc), function(x) ifelse(AIC.valid[x] == FALSE | is.infinite(AICc[x]), NA, AICc[x]))
+    # make output table
+    out <- data.frame(AICc = AICc, delta.AICc = AICc - min(AICc, na.rm=TRUE), row.names = NULL)
+    out$w.AIC <- exp(-0.5 * out$delta.AICc) / sum(exp(-0.5 * out$delta.AICc), na.rm=TRUE)
+  }
   return(out)
 }
 

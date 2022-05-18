@@ -9,12 +9,12 @@ NULL
 #' @slot partition.method character: partition method used
 #' @slot partition.settings list: partition settings used (i.e., value of *k* or aggregation factor)
 #' @slot other.settings list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
-#' @slot doClamp boolean: whether or not clamping was used 
+#' @slot doClamp logical: whether or not clamping was used 
 #' @slot clamp.directions list: the clamping directions specified 
 #' @slot results data frame: evaluation summary statistics
 #' @slot results.partitions data frame: evaluation k-fold statistics
 #' @slot models list: model objects
-#' @slot variable.importance list: variable importance data frames (when available)
+#' @slot varimp list: variable importance data frames (when available)
 #' @slot predictions RasterStack: model predictions
 #' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
@@ -39,7 +39,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                     results = 'data.frame',
                                     results.partitions = 'data.frame',
                                     models = 'list',
-                                    variable.importance = 'list',
+                                    varimp = 'list',
                                     predictions = 'RasterStack',
                                     taxon.name = 'character',
                                     occs = 'data.frame',
@@ -95,14 +95,14 @@ setGeneric("eval.models", function(x) standardGeneric("eval.models"))
 #' @rdname eval.models
 setMethod("eval.models", "ENMevaluation", function(x) x@models)
 
-#' @title eval.variable.importance generic for ENMevaluation object
+#' @title eval.varimp (variable importance) generic for ENMevaluation object
 #' @param x ENMevaluation object
-#' @rdname eval.variable.importance
+#' @rdname eval.varimp
 #' @export
-setGeneric("eval.variable.importance", function(x) standardGeneric("eval.variable.importance"))
+setGeneric("eval.varimp", function(x) standardGeneric("eval.varimp"))
 
 #' @rdname eval.models
-setMethod("eval.models", "ENMevaluation", function(x) x@models)
+setMethod("eval.varimp", "ENMevaluation", function(x) x@varimp)
 
 #' @title eval.predictions generic for ENMevaluation object
 #' @param x ENMevaluation object
@@ -269,7 +269,7 @@ setMethod("show",
 #' The available arguments are: occs.z, bg.z, tune.tbl.i, other.settings (where x.z is a data.frame of the envs values at
 #' coordinates of x, and tune.tbl.i is a single set of tuning parameters).
 #' @slot predict function: specifies how to calculate a model prediction for a Raster* or a data frame.
-#' The available arguments are: mod, envs, tune.tbl.i, other.settings.
+#' The available arguments are: mod, envs, other.settings.
 #' @slot ncoefs function: counts the number of non-zero model coefficients.
 #' The available arguments are: mod.
 #' @slot varimp function: generates a data frame of variable importance from the model object (if functionality is available).
@@ -474,6 +474,7 @@ setMethod("show",
 #' @slot null.mod.settings data frame: model settings used
 #' @slot null.partition.method character: partition method used
 #' @slot null.partition.settings list: partition settings used (i.e., value of *k* or aggregation factor)
+#' @slot null.doClamp logical: whether to clamp model predictions or not
 #' @slot null.other.settings list: other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
 #' @slot null.no.iter numeric: number of null model iterations
 #' @slot null.results data frame: evaluation summary statistics for null models
@@ -492,6 +493,7 @@ ENMnull <- setClass("ENMnull",
                               null.mod.settings = 'data.frame',
                               null.partition.method = 'character',
                               null.partition.settings = 'list',
+                              null.doClamp = 'logical',
                               null.other.settings = 'list',
                               null.no.iter = 'numeric',
                               null.results = 'data.frame',
@@ -537,6 +539,15 @@ setGeneric("null.partition.settings", function(x) standardGeneric("null.partitio
 
 #' @rdname null.partition.settings
 setMethod("null.partition.settings", "ENMnull", function(x) x@null.partition.settings)
+
+#' @title null.doClamp generic for ENMnull object
+#' @param x ENMnull object
+#' @rdname null.doClamp
+#' @export
+setGeneric("null.doClamp", function(x) standardGeneric("null.doClamp"))
+
+#' @rdname null.doClamp
+setMethod("null.doClamp", "ENMnull", function(x) x@null.doClamp)
 
 #' @title null.other.settings generic for ENMnull object
 #' @param x ENMnull object
@@ -630,8 +641,8 @@ setMethod("show",
             cat(" partition method: ", object@null.partition.method, "\n")
             cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")
             clamp.dir.spacing <- "\n         "
-            if(object@null.other.settings$doClamp == FALSE) cat(" clamp: ", object@null.other.settings$doClamp, "\n")
-            if(object@null.other.settings$doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
+            if(object@doClamp == FALSE) cat(" clamp: ", object@doClamp, "\n")
+            if(object@doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
             cat(" categoricals: ", paste(object@null.other.settings$categoricals, collapse = ", "), "\n")
             cat(" algorithm: ", object@null.algorithm, "\n")
             # cat(" model settings: \n")

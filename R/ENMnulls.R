@@ -189,6 +189,13 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
       partitions <- "user"
     }
     
+    # check if ecospat is installed, and if not, prevent CBI calculations
+    if((requireNamespace("ecospat", quietly = TRUE))) {
+      e@other.settings$ecospat.use <- TRUE
+    }else{
+      e@other.settings$ecospat.use <- FALSE
+    }
+    
     args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partitions = partitions,
                    algorithm = e@algorithm, other.settings = e@other.settings, partition.settings = e@partition.settings,
                    occs.testing = e@occs.testing, user.val.grps = user.val.grps, user.grp = user.grp, 
@@ -311,6 +318,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
                  null.mod.settings = mod.settings.tbl,
                  null.partition.method = e@partition.method,
                  null.partition.settings = e@partition.settings,
+                 null.doClamp = e@doClamp,
                  null.other.settings = e@other.settings,
                  null.no.iter = no.iter,
                  null.results = nulls,
