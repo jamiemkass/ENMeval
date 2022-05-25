@@ -12,11 +12,11 @@ citEntry(entry	= "Article",
 			as.person("R. P. Anderson")),
   journal	= "Methods in Ecology and Evolution",
   year 		= "2021",
-  volume	= "",
-  number	= "",
-  pages		= "",
+  volume	= "12",
+  number	= "9",
+  pages		= "1602-1608",
   url = "https://doi.org/10.1111/2041-210X.13628",
 
   textVersion	= 
-  paste("Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C. L., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., and R. P. Anderson (2021). ENMeval 2.0: Redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution. https://doi.org/10.1111/2041-210X.13628")
+  paste("Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C. L., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., and R. P. Anderson (2021). ENMeval 2.0: Redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution. 12(9), 1602-1608. https://doi.org/10.1111/2041-210X.13628")
 )
