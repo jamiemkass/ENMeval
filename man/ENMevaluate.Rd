@@ -77,7 +77,8 @@ See Details and ?partitions for descriptions of these settings.}
 
 \item{other.settings}{named list: used to specify extra settings for the analysis. 
 All of these settings have internal defaults, so if they are not specified the analysis will be run 
-with default settings. See Details for descriptions of these settings.}
+with default settings. See Details for descriptions of these settings, including how to specify arguments
+for maxent.jar.}
 
 \item{categoricals}{character vector: name or names of categorical environmental variables. If not specified,
 all predictor variables will be treated as continuous unless they are factors. If categorical variables
@@ -154,7 +155,7 @@ evaluation statistics for each combination of settings and for each cross valida
 well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 results table should aid users in identifying model settings that balance fit and predictive ability. See
 the extensive vignette for fully worked examples: 
-<https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html>.
+<https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html>.
 }
 \details{
 There are a few methodological details in the implementation of ENMeval >=2.0.0 that are important to mention.
@@ -195,7 +196,8 @@ for cross-validation with respect to the full background (default), or "partitio
 spatial partitions only) to calculate each with respect to the partitioned background only 
 (i.e., training occurrences are compared to training background, and validation occurrences 
 compared to validation background).\cr*
-other.args - named list: any additional model arguments not specified for tuning.\cr
+other.args - named list: any additional model arguments not specified for tuning; this can
+include arguments for maxent.jar, which are described in the software's Help file.\cr
 
 For partition.settings, the current options are:\cr*
 orientation - character: one of "lat_lon" (default), "lon_lat", "lat_lat", or "lon_lon" (required for block partition).\cr* 
@@ -309,7 +311,7 @@ raster::plot(pred.both)
 
 # please see the vignette for more examples of model tuning, 
 # partitioning, plotting functions, and null models
-# https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html
+# https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html
 }
 
 }

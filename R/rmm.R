@@ -15,7 +15,7 @@ buildRMM <- function(e, envs, rmm = NULL) {
     rmm <- rangeModelMetadata::rmmTemplate()  
   }
   
-  rmm$code$software$packages <- "ENMeval 2.0.0"
+  rmm$code$software$packages <- paste("ENMeval", packageVersion("ENMeval"))
   
   # occurrence/background metadata ####
   rmm$data$occurrence$taxon <- e@taxon.name

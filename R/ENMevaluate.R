@@ -7,7 +7,7 @@
 #' well as raster predictions for each model when raster data is input. The evaluation statistics in the 
 #' results table should aid users in identifying model settings that balance fit and predictive ability. See
 #' the extensive vignette for fully worked examples: 
-#' <https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html>.
+#' <https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html>.
 #' 
 #' @param occs matrix / data frame: occurrence records with two columns for longitude and latitude 
 #' of occurrence localities, in that order. If specifying predictor variable values
@@ -253,7 +253,7 @@
 #' 
 #' # please see the vignette for more examples of model tuning, 
 #' # partitioning, plotting functions, and null models
-#' # https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html
+#' # https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html
 #' }
 #' 
 #' @export 

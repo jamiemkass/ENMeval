@@ -102,7 +102,8 @@ cv.enm(
 
 \item{other.settings}{named list: used to specify extra settings for the analysis. 
 All of these settings have internal defaults, so if they are not specified the analysis will be run 
-with default settings. See Details for descriptions of these settings.}
+with default settings. See Details for descriptions of these settings, including how to specify arguments
+for maxent.jar.}
 
 \item{partitions}{character: name of partitioning technique (see \code{?partitions})}
 
