@@ -3,7 +3,7 @@ pkgdown: 2.0.5
 pkgdown_sha: ~
 articles:
   ENMeval-2.0-vignette: ENMeval-2.0-vignette.html
-last_built: 2022-06-30T06:09Z
+last_built: 2022-06-30T06:24Z
 urls:
   reference: https://jamiemkass.github.io/ENMeval/reference
   article: https://jamiemkass.github.io/ENMeval/articles
