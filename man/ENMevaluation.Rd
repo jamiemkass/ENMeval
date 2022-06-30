@@ -15,6 +15,26 @@
 \description{
 An S4 class that contains the ENMevaluate results.
 }
+\details{
+The following are brief descriptions of the columns in the results table, which prints
+when accessing `e@results` or `results(e)` if `e` is the ENMevaluation object. Those columns
+that represent evaluations of validation data (__.val.__) end in either "avg" (average of the
+metric across the models trained on withheld data during cross-validation) or "sd" (standard
+deviation of the metric across these models).\cr*
+fc = feature class\cr*
+rm = regularization multiplier\cr*
+tune.args = combination of arguments that define the complexity settings used for tuning (i.e., fc and rm for Maxent)\cr*
+auc.train = AUC calculated on the full dataset\cr*
+cbi.train = Continuous Boyce Index calculated on the full dataset\cr*
+auc.val = average/sd AUC calculated on the validation datasets (the data withheld during cross-validation)\cr*
+or.mtp = average/sd omission rate with threshold as the minimum suitability value across occurrence records\cr*
+or.10p = average/sd omission rate with threshold as the minimum suitability value across occurrence records after removing the lowest 10%\cr*
+cbi.val = average/sd Continuous Boyce Index calculated on the validation datasets (the data withheld during cross-validation)\cr*
+AICc = AIC corrected for small sample sizes\cr*
+delta.AICc = highest AICc value across all models minus this model's AICc value, where lower values mean higher performance and 0 is the highest performing model\cr*
+w.AIC = AIC weights, calculated by exp( -0.5 * delta.AIC), where higher values mean higher performance\cr*
+ncoef = number of non-zero beta values (model coefficients)
+}
 \section{Slots}{
 
 \describe{
@@ -59,6 +79,27 @@ An S4 class that contains the ENMevaluate results.
 \item{\code{rmm}}{list: the rangeModelMetadata objects for each model}
 }}
 
+\references{
+For references on performance metrics, see the following:
+
+In general for ENMeval: 
+
+Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \url{https://doi.org/10.1111/2041-210X.12261}
+
+\emph{AUC}
+
+Fielding, A. H., & Bell, J. F. (1997). A review of methods for the assessment of prediction errors in conservation presence/absence models. \emph{Environmental Conservation}, \bold{24}: 38-49. \url{https://doi.org/10.1017/S0376892997000088}
+
+Jiménez‐Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. \emph{Global Ecology and Biogeography}, \bold{21}: 498-507. \url{https://doi.org/10.1111/j.1466-8238.2011.00683.x}
+
+\emph{Omission rates}
+
+Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}(4), 629-643. \url{https://doi.org/10.1111/jbi.12227}
+
+\emph{Continuous Boyce Index}
+
+Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., & Guisan, A. (2006). Evaluating the ability of habitat suitability models to predict species presences. \emph{Ecological Modelling}, \bold{199}: 142-152. \url{https://doi.org/10.1016/j.ecolmodel.2006.05.017}
+}
 \author{
 Jamie M. Kass, \email{jamie.m.kass@gmail.com}, Bob Muscarella, \email{bob.muscarella@gmail.com}
 }

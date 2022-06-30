@@ -239,17 +239,17 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' number of observations (occurrence localities).
 #' 
 #' @references 
-#' Akaike, H. (1974) A new look at the statistical model identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}: 716-723. \doi{10.1109/TAC.1974.1100705}
+#' Akaike, H. (1974) A new look at the statistical model identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}: 716-723. \url{https://doi.org/10.1109/TAC.1974.1100705}
 #' 
 #' Burnham, K. P. and Anderson, D. R. (1998) Model selection and multimodel inference: a practical information-theoretic approach. Springer, New York.
 #' 
-#' Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. \emph{Sociological Methods and Research}, \bold{33}: 261-304. \doi{10.1177/0049124104268644}
+#' Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. \emph{Sociological Methods and Research}, \bold{33}: 261-304. \url{https://doi.org/10.1177/0049124104268644}
 #' 
-#' Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. \emph{Ecography}, \bold{33}: 607-611. \doi{10.1111/j.1600-0587.2009.06142.x}
+#' Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. \emph{Ecography}, \bold{33}: 607-611. \url{https://doi.org/10.1111/j.1600-0587.2009.06142.x}
 #' 
-#' Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \doi{10.1890/10-1171.1}
+#' Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \url{https://doi.org/10.1890/10-1171.1}
 #' 
-#' Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. \emph{Diversity and Distributions}, \bold{20}: 334-343. \doi{10.1111/ddi.12160}
+#' Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. \emph{Diversity and Distributions}, \bold{20}: 334-343. \url{https://doi.org/10.1111/ddi.12160}
 #' 
 #' @export
 aic.maxent <- function(p.occs, ncoefs, p = NULL) {
@@ -300,13 +300,13 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
 #' @return A numeric value of the corrected variance.
 #' @author Robert Muscarella <bob.muscarella@gmail.com>
 #' @references 
-#' Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15. \doi{10.1093/biomet/61.1.1}
+#' Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15. \url{https://doi.org/10.1093/biomet/61.1.1}
 #'   
-#' Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66. \doi{10.1111/j.2517-6161.1985.tb01330.x}
+#' Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66. \url{https://doi.org/10.1111/j.2517-6161.1985.tb01330.x}
 #'   
-#' Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197. \doi{10.1214/aos/1176347263}
+#' Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197. \url{https://doi.org/10.1214/aos/1176347263}
 #'   
-#' Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \doi{10.1016/j.ecolmodel.2013.08.011}
+#' Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \url{https://doi.org/10.1016/j.ecolmodel.2013.08.011}
 #' @export
 corrected.var <- function(x, nk){
   sum((x - mean(x))^2) * ((nk-1)/nk)
@@ -338,9 +338,9 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @references 
 #' Hijmans, R. J., Phillips, S., Leathwick, J. & Elith, J. (2011) dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
 #' 
-#' Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726. \doi{10.2307/1935534}
+#' Schoener, T. W. (1968) The \emph{Anolis} lizards of Bimini: resource partitioning in a complex fauna. \emph{Ecology}, \bold{49}: 704-726. \url{https://doi.org/10.2307/1935534}
 #' 
-#' Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \doi{10.1111/j.1558-5646.2008.00482.x}
+#' Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
 #' 
 #' @author 
 #' Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}
