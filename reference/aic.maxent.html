@@ -51,7 +51,7 @@ and Seifert (2011).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">aic.maxent</span><span class="op">(</span><span class="va">p.occs</span>, <span class="va">ncoefs</span>, p <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">aic.maxent</span><span class="op">(</span><span class="va">p.occs</span>, <span class="va">ncoefs</span>, p <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -59,22 +59,35 @@ and Seifert (2011).</p>
     <dl><dt>p.occs</dt>
 <dd><p>data frame: raw (maxent.jar) or exponential (maxnet) predictions for
 the occurrence localities based on one or more models</p></dd>
+
+
 <dt>ncoefs</dt>
 <dd><p>numeric: number of non-zero model coefficients</p></dd>
+
+
 <dt>p</dt>
 <dd><p>RasterStack: raw (maxent.jar) or exponential (maxnet) model predictions;
 if NULL, AICc will be calculated based on the background points, which already
 have predictions that sum to 1 and thus need no correction -- this assumes that
 the background points represent a good sample of the study extent</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>data frame with three columns:
+    
+
+<p>data frame with three columns:
 <code>AICc</code> is the Akaike Information Criterion corrected for small sample
 sizes calculated as:
-$$ (2 * K - 2 * logLikelihood) + (2 * K) * (K+1) / (n - K - 1)$$where <em>K</em> is the number of non-zero coefficients in the model and <em>n</em> is the number of
+$$ (2 * K - 2 * logLikelihood) + (2 * K) * (K+1) / (n - K - 1)$$</p>
+
+
+<p>where <em>K</em> is the number of non-zero coefficients in the model and <em>n</em> is the number of
 occurrence localities.  The <em>logLikelihood</em> is calculated as:
-$$ sum(log(vals))$$where <em>vals</em> is a vector of Maxent raw/exponential values at occurrence localities
+$$ sum(log(vals))$$</p>
+
+
+<p>where <em>vals</em> is a vector of Maxent raw/exponential values at occurrence localities
 and the sum of these values across the study extent is equal to 1.
 <code>delta.AICc</code> is the difference between the AICc of a given model and
 the AICc of the model with the lowest AICc.
@@ -115,12 +128,12 @@ number of observations (occurrence localities).</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Akaike, H. (1974) A new look at the statistical model identification. <em>IEEE Transactions on Automatic Control</em>, <b>19</b>: 716-723. <a href="https://doi.org/10.1109/TAC.1974.1100705" class="external-link">doi:10.1109/TAC.1974.1100705</a></p>
+    <p>Akaike, H. (1974) A new look at the statistical model identification. <em>IEEE Transactions on Automatic Control</em>, <b>19</b>: 716-723. <a href="https://doi.org/10.1109/TAC.1974.1100705" class="external-link">https://doi.org/10.1109/TAC.1974.1100705</a></p>
 <p>Burnham, K. P. and Anderson, D. R. (1998) Model selection and multimodel inference: a practical information-theoretic approach. Springer, New York.</p>
-<p>Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. <em>Sociological Methods and Research</em>, <b>33</b>: 261-304. <a href="https://doi.org/10.1177/0049124104268644" class="external-link">doi:10.1177/0049124104268644</a></p>
-<p>Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. <em>Ecography</em>, <b>33</b>: 607-611. <a href="https://doi.org/10.1111/j.1600-0587.2009.06142.x" class="external-link">doi:10.1111/j.1600-0587.2009.06142.x</a></p>
-<p>Warren, D. L., &amp; Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. <em>Ecological Applications</em>, <b>21</b>: 335-342. <a href="https://doi.org/10.1890/10-1171.1" class="external-link">doi:10.1890/10-1171.1</a></p>
-<p>Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. <em>Diversity and Distributions</em>, <b>20</b>: 334-343. <a href="https://doi.org/10.1111/ddi.12160" class="external-link">doi:10.1111/ddi.12160</a></p>
+<p>Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. <em>Sociological Methods and Research</em>, <b>33</b>: 261-304. <a href="https://doi.org/10.1177/0049124104268644" class="external-link">https://doi.org/10.1177/0049124104268644</a></p>
+<p>Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. <em>Ecography</em>, <b>33</b>: 607-611. <a href="https://doi.org/10.1111/j.1600-0587.2009.06142.x" class="external-link">https://doi.org/10.1111/j.1600-0587.2009.06142.x</a></p>
+<p>Warren, D. L., &amp; Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. <em>Ecological Applications</em>, <b>21</b>: 335-342. <a href="https://doi.org/10.1890/10-1171.1" class="external-link">https://doi.org/10.1890/10-1171.1</a></p>
+<p>Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. <em>Diversity and Distributions</em>, <b>20</b>: 334-343. <a href="https://doi.org/10.1111/ddi.12160" class="external-link">https://doi.org/10.1111/ddi.12160</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -136,7 +149,7 @@ number of observations (occurrence localities).</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>

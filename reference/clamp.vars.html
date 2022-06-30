@@ -81,7 +81,7 @@ are excluded from the clamping analysis, but are put back into the RasterStack t
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">clamp.vars</span><span class="op">(</span><span class="va">orig.vals</span>, <span class="va">ref.vals</span>, left <span class="op">=</span> <span class="cn">NULL</span>, right <span class="op">=</span> <span class="cn">NULL</span>, categoricals <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">clamp.vars</span><span class="op">(</span><span class="va">orig.vals</span>, <span class="va">ref.vals</span>, left <span class="op">=</span> <span class="cn">NULL</span>, right <span class="op">=</span> <span class="cn">NULL</span>, categoricals <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -89,22 +89,33 @@ are excluded from the clamping analysis, but are put back into the RasterStack t
     <dl><dt>orig.vals</dt>
 <dd><p>RasterStack / matrix / data frame: environmental predictor variables (must be in same geographic 
 projection as occurrence data), or predictor variables values for the original records</p></dd>
+
+
 <dt>ref.vals</dt>
 <dd><p>matrix / data frame: predictor variable values for the reference records
 (not including coordinates), used to determine the minimums and maximums -- 
 this should ideally be the occurrences + background (can be made with raster::extract())</p></dd>
+
+
 <dt>left</dt>
 <dd><p>character vector: names of variables to get a minimum clamp; can be "none" to turn
 off minimum clamping</p></dd>
+
+
 <dt>right</dt>
 <dd><p>character vector: names of variables to get a maximum clamp, can be "none" to turn
 off maximum clamping</p></dd>
+
+
 <dt>categoricals</dt>
 <dd><p>character vector: name or names of categorical environmental variables</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The clamped Raster* object.</p>
+    
+
+<p>The clamped Raster* object.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -120,7 +131,7 @@ off maximum clamping</p></dd>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>

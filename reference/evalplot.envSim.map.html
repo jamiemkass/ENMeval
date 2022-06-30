@@ -60,83 +60,124 @@ categorical variables.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">evalplot.envSim.map</span><span class="op">(</span>
-  e <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">envs</span>,
-  occs.z <span class="op">=</span> <span class="cn">NULL</span>,
-  bg.z <span class="op">=</span> <span class="cn">NULL</span>,
-  occs.grp <span class="op">=</span> <span class="cn">NULL</span>,
-  bg.grp <span class="op">=</span> <span class="cn">NULL</span>,
-  ref.data <span class="op">=</span> <span class="st">"occs"</span>,
-  sim.type <span class="op">=</span> <span class="st">"mess"</span>,
-  categoricals <span class="op">=</span> <span class="cn">NULL</span>,
-  envs.vars <span class="op">=</span> <span class="cn">NULL</span>,
-  bb.buf <span class="op">=</span> <span class="fl">0</span>,
-  occs.testing.z <span class="op">=</span> <span class="cn">NULL</span>,
-  plot.bg.pts <span class="op">=</span> <span class="cn">FALSE</span>,
-  sim.palette <span class="op">=</span> <span class="cn">NULL</span>,
-  pts.size <span class="op">=</span> <span class="fl">1.5</span>,
-  gradient.colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"white"</span>, <span class="st">"blue"</span><span class="op">)</span>,
-  na.color <span class="op">=</span> <span class="st">"gray"</span>,
-  return.tbl <span class="op">=</span> <span class="cn">FALSE</span>,
-  return.ras <span class="op">=</span> <span class="cn">FALSE</span>,
-  quiet <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">evalplot.envSim.map</span><span class="op">(</span></span>
+<span>  e <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">envs</span>,</span>
+<span>  occs.z <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bg.z <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  occs.grp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bg.grp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ref.data <span class="op">=</span> <span class="st">"occs"</span>,</span>
+<span>  sim.type <span class="op">=</span> <span class="st">"mess"</span>,</span>
+<span>  categoricals <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  envs.vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bb.buf <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  occs.testing.z <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plot.bg.pts <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sim.palette <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pts.size <span class="op">=</span> <span class="fl">1.5</span>,</span>
+<span>  gradient.colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"white"</span>, <span class="st">"blue"</span><span class="op">)</span>,</span>
+<span>  na.color <span class="op">=</span> <span class="st">"gray"</span>,</span>
+<span>  return.tbl <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  return.ras <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  quiet <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>e</dt>
 <dd><p>ENMevaluation object (optional)</p></dd>
+
+
 <dt>envs</dt>
 <dd><p>RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
 removed before input or identified with the argument "categoricals", as they cannot be used to calculate MESS</p></dd>
+
+
 <dt>occs.z</dt>
 <dd><p>data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
 the first two columns must be named "longitude" and "latitude"</p></dd>
+
+
 <dt>bg.z</dt>
 <dd><p>data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
 the first two columns must be named "longitude" and "latitude"</p></dd>
+
+
 <dt>occs.grp</dt>
 <dd><p>numeric vector: partition groups for occurrence records (optional)</p></dd>
+
+
 <dt>bg.grp</dt>
 <dd><p>numeric vector: partition groups for background records (optional)</p></dd>
+
+
 <dt>ref.data</dt>
 <dd><p>character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"</p></dd>
+
+
 <dt>sim.type</dt>
 <dd><p>character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 or "most_sim" for most similar variable; uses similarity function from package rmaxent</p></dd>
+
+
 <dt>categoricals</dt>
 <dd><p>character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
 these must be specified as this function was intended for use with continuous data only</p></dd>
+
+
 <dt>envs.vars</dt>
 <dd><p>character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 with respect to all variables (optional)</p></dd>
+
+
 <dt>bb.buf</dt>
 <dd><p>numeric: distance used to buffer (extend) the mapping extent in map units; for latitude/longitude, this is in degrees (optional)</p></dd>
+
+
 <dt>occs.testing.z</dt>
 <dd><p>data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
 in that order; this is for use only with the "testing" partition option when an ENMevaluation object is not input (optional)</p></dd>
+
+
 <dt>plot.bg.pts</dt>
 <dd><p>boolean: if TRUE, plot background points when using ref.data = "bg"</p></dd>
+
+
 <dt>sim.palette</dt>
 <dd><p>character: RColorBrewer palette name to use for plotting discrete variables; if NULL, default is "Set1"</p></dd>
+
+
 <dt>pts.size</dt>
 <dd><p>numeric: custom point size for ggplot</p></dd>
+
+
 <dt>gradient.colors</dt>
 <dd><p>character vector: colors used for ggplot2::scale_fill_gradient2</p></dd>
+
+
 <dt>na.color</dt>
 <dd><p>character: color used for NA values</p></dd>
+
+
 <dt>return.tbl</dt>
 <dd><p>boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself</p></dd>
+
+
 <dt>return.ras</dt>
 <dd><p>boolean: if TRUE, return the RasterStack of similarity values used to make the ggplot instead of the plot itself</p></dd>
+
+
 <dt>quiet</dt>
 <dd><p>boolean: if TRUE, silence all function messages (but not errors)</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A ggplot of environmental similarities between the occurrence or background data 
+    
+
+<p>A ggplot of environmental similarities between the occurrence or background data 
 for each partition and all predictor variable values in the extent.</p>
     </div>
     <div class="section level2">
@@ -170,7 +211,7 @@ Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shift
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>

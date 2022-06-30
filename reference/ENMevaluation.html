@@ -48,15 +48,37 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># S4 method for ENMevaluation</span>
-<span class="fu">show</span><span class="op">(</span><span class="va">object</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S4 method for ENMevaluation</span></span>
+<span><span class="fu">show</span><span class="op">(</span><span class="va">object</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>object</dt>
 <dd><p>ENMevaluation object</p></dd>
+
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The following are brief descriptions of the columns in the results table, which prints
+when accessing `e@results` or `results(e)` if `e` is the ENMevaluation object. Those columns
+that represent evaluations of validation data (__.val.__) end in either "avg" (average of the
+metric across the models trained on withheld data during cross-validation) or "sd" (standard
+deviation of the metric across these models).<br>*
+fc = feature class<br>*
+rm = regularization multiplier<br>*
+tune.args = combination of arguments that define the complexity settings used for tuning (i.e., fc and rm for Maxent)<br>*
+auc.train = AUC calculated on the full dataset<br>*
+cbi.train = Continuous Boyce Index calculated on the full dataset<br>*
+auc.val = average/sd AUC calculated on the validation datasets (the data withheld during cross-validation)<br>*
+or.mtp = average/sd omission rate with threshold as the minimum suitability value across occurrence records<br>*
+or.10p = average/sd omission rate with threshold as the minimum suitability value across occurrence records after removing the lowest 10<!-- %\cr* -->
+cbi.val = average/sd Continuous Boyce Index calculated on the validation datasets (the data withheld during cross-validation)<br>*
+AICc = AIC corrected for small sample sizes<br>*
+delta.AICc = highest AICc value across all models minus this model's AICc value, where lower values mean higher performance and 0 is the highest performing model<br>*
+w.AIC = AIC weights, calculated by exp( -0.5 * delta.AIC), where higher values mean higher performance<br>*
+ncoef = number of non-zero beta values (model coefficients)</p>
+    </div>
     <div class="section level2">
     <h2 id="slots">Slots<a class="anchor" aria-label="anchor" href="#slots"></a></h2>
     
@@ -143,6 +165,19 @@
 
 </dl></div>
     <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>For references on performance metrics, see the following:</p>
+<p>In general for ENMeval:</p>
+<p>Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., &amp; Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. <em>Methods in Ecology and Evolution</em>, <b>5</b>: 1198-1205. <a href="https://doi.org/10.1111/2041-210X.12261" class="external-link">https://doi.org/10.1111/2041-210X.12261</a></p>
+<p><em>AUC</em></p>
+<p>Fielding, A. H., &amp; Bell, J. F. (1997). A review of methods for the assessment of prediction errors in conservation presence/absence models. <em>Environmental Conservation</em>, <b>24</b>: 38-49. <a href="https://doi.org/10.1017/S0376892997000088" class="external-link">https://doi.org/10.1017/S0376892997000088</a></p>
+<p>Jiménez‐Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. <em>Global Ecology and Biogeography</em>, <b>21</b>: 498-507. <a href="https://doi.org/10.1111/j.1466-8238.2011.00683.x" class="external-link">https://doi.org/10.1111/j.1466-8238.2011.00683.x</a></p>
+<p><em>Omission rates</em></p>
+<p>Radosavljevic, A., &amp; Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. <em>Journal of Biogeography</em>, <b>41</b>(4), 629-643. <a href="https://doi.org/10.1111/jbi.12227" class="external-link">https://doi.org/10.1111/jbi.12227</a></p>
+<p><em>Continuous Boyce Index</em></p>
+<p>Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., &amp; Guisan, A. (2006). Evaluating the ability of habitat suitability models to predict species presences. <em>Ecological Modelling</em>, <b>199</b>: 142-152. <a href="https://doi.org/10.1016/j.ecolmodel.2006.05.017" class="external-link">https://doi.org/10.1016/j.ecolmodel.2006.05.017</a></p>
+    </div>
+    <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
     <p>Jamie M. Kass, <a href="mailto:jamie.m.kass@gmail.com">jamie.m.kass@gmail.com</a>, Bob Muscarella, <a href="mailto:bob.muscarella@gmail.com">bob.muscarella@gmail.com</a></p>
     </div>
@@ -156,7 +191,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>

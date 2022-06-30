@@ -72,46 +72,46 @@ the extensive vignette for fully worked examples:
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ENMevaluate</span><span class="op">(</span>
-  <span class="va">occs</span>,
-  envs <span class="op">=</span> <span class="cn">NULL</span>,
-  bg <span class="op">=</span> <span class="cn">NULL</span>,
-  tune.args <span class="op">=</span> <span class="cn">NULL</span>,
-  partitions <span class="op">=</span> <span class="cn">NULL</span>,
-  algorithm <span class="op">=</span> <span class="cn">NULL</span>,
-  partition.settings <span class="op">=</span> <span class="cn">NULL</span>,
-  other.settings <span class="op">=</span> <span class="cn">NULL</span>,
-  categoricals <span class="op">=</span> <span class="cn">NULL</span>,
-  doClamp <span class="op">=</span> <span class="cn">TRUE</span>,
-  clamp.directions <span class="op">=</span> <span class="cn">NULL</span>,
-  user.enm <span class="op">=</span> <span class="cn">NULL</span>,
-  user.grp <span class="op">=</span> <span class="cn">NULL</span>,
-  occs.testing <span class="op">=</span> <span class="cn">NULL</span>,
-  taxon.name <span class="op">=</span> <span class="cn">NULL</span>,
-  n.bg <span class="op">=</span> <span class="fl">10000</span>,
-  overlap <span class="op">=</span> <span class="cn">FALSE</span>,
-  overlapStat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"D"</span>, <span class="st">"I"</span><span class="op">)</span>,
-  user.val.grps <span class="op">=</span> <span class="cn">NULL</span>,
-  user.eval <span class="op">=</span> <span class="cn">NULL</span>,
-  rmm <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel <span class="op">=</span> <span class="cn">FALSE</span>,
-  numCores <span class="op">=</span> <span class="cn">NULL</span>,
-  parallelType <span class="op">=</span> <span class="st">"doSNOW"</span>,
-  updateProgress <span class="op">=</span> <span class="cn">FALSE</span>,
-  quiet <span class="op">=</span> <span class="cn">FALSE</span>,
-  occ <span class="op">=</span> <span class="cn">NULL</span>,
-  env <span class="op">=</span> <span class="cn">NULL</span>,
-  bg.coords <span class="op">=</span> <span class="cn">NULL</span>,
-  RMvalues <span class="op">=</span> <span class="cn">NULL</span>,
-  fc <span class="op">=</span> <span class="cn">NULL</span>,
-  occ.grp <span class="op">=</span> <span class="cn">NULL</span>,
-  bg.grp <span class="op">=</span> <span class="cn">NULL</span>,
-  method <span class="op">=</span> <span class="cn">NULL</span>,
-  bin.output <span class="op">=</span> <span class="cn">NULL</span>,
-  rasterPreds <span class="op">=</span> <span class="cn">NULL</span>,
-  clamp <span class="op">=</span> <span class="cn">NULL</span>,
-  progbar <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ENMevaluate</span><span class="op">(</span></span>
+<span>  <span class="va">occs</span>,</span>
+<span>  envs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bg <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tune.args <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  partitions <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  algorithm <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  partition.settings <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  other.settings <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  categoricals <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  doClamp <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  clamp.directions <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  user.enm <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  user.grp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  occs.testing <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  taxon.name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n.bg <span class="op">=</span> <span class="fl">10000</span>,</span>
+<span>  overlap <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  overlapStat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"D"</span>, <span class="st">"I"</span><span class="op">)</span>,</span>
+<span>  user.val.grps <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  user.eval <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rmm <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  numCores <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallelType <span class="op">=</span> <span class="st">"doSNOW"</span>,</span>
+<span>  updateProgress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  occ <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  env <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bg.coords <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  RMvalues <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fc <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  occ.grp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bg.grp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  method <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bin.output <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rasterPreds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  clamp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  progbar <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -122,8 +122,12 @@ of occurrence localities, in that order. If specifying predictor variable values
 assigned to presence/background localities (without inputting raster data), this table should also have 
 one column for each predictor variable. See Note for important distinctions between running the function
 with and without rasters.</p></dd>
+
+
 <dt>envs</dt>
 <dd><p>RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.</p></dd>
+
+
 <dt>bg</dt>
 <dd><p>matrix / data frame: background records with two columns for longitude and latitude of 
 background (or pseudo-absence) localities, in that order. If NULL, points will be randomly sampled across <code>envs</code> 
@@ -131,29 +135,43 @@ with the number specified by argument <code>n.bg</code>. If specifying predictor
 assigned to presence/background localities (without inputting raster data), this table should also have 
 one column for each predictor variable. See Details for important distinctions between running the function
 with and without rasters.</p></dd>
+
+
 <dt>tune.args</dt>
 <dd><p>named list: model settings to be tuned (i.e., for Maxent models:  <code>list(fc = c("L","Q"), rm = 1:3)</code>)</p></dd>
+
+
 <dt>partitions</dt>
 <dd><p>character: name of partitioning technique. Currently available options are
 the nonspatial partitions "randomkfold" and "jackknife", and the spatial partitions "block",
 "checkerboard1", and "checkerboard2", "testing" for partitioning with fully withheld data (see 
 argument occs.testing), the "user" option (see argument user.grp), and "none" for no partitioning 
 (see <code><a href="partitions.html">?partitions</a></code> for details).</p></dd>
+
+
 <dt>algorithm</dt>
 <dd><p>character: name of the algorithm used to build models. Currently one of "maxnet",
 "maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.</p></dd>
+
+
 <dt>partition.settings</dt>
 <dd><p>named list: used to specify certain settings for partitioning schema.
 See Details and ?partitions for descriptions of these settings.</p></dd>
+
+
 <dt>other.settings</dt>
 <dd><p>named list: used to specify extra settings for the analysis. 
 All of these settings have internal defaults, so if they are not specified the analysis will be run 
 with default settings. See Details for descriptions of these settings, including how to specify arguments
 for maxent.jar.</p></dd>
+
+
 <dt>categoricals</dt>
 <dd><p>character vector: name or names of categorical environmental variables. If not specified,
 all predictor variables will be treated as continuous unless they are factors. If categorical variables
 are already factors, specifying names of such variables in this argument is not needed.</p></dd>
+
+
 <dt>doClamp</dt>
 <dd><p>boolean: if TRUE (default), model prediction extrapolations will be restricted to the upper and lower
 bounds of the predictor variables. Clamping avoids extreme predictions for environment values outside
@@ -162,61 +180,99 @@ for most applications leaving this at the default of TRUE is advisable to avoid 
 When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
 When no predictor variables are input and data frames of variable values are used instead (SWD format),
 validation data is clamped before making model predictions when clamping is on.</p></dd>
+
+
 <dt>clamp.directions</dt>
 <dd><p>named list: specifies the direction ("left" for minimum, "right" for maximum) 
 of clamping for predictor variables -- (e.g., <code>list(left = c("bio1","bio5"), right = c("bio10","bio15"))</code>).</p></dd>
+
+
 <dt>user.enm</dt>
 <dd><p>ENMdetails object: a custom ENMdetails object used to build models. 
 This is an alternative to specifying <code>algorithm</code> with a character string.</p></dd>
+
+
 <dt>user.grp</dt>
 <dd><p>named list: specifies user-defined partition groups, where <code>occs.grp</code> = vector of partition group 
 (fold) for each occurrence locality, intended for user-defined partitions, and <code>bg.grp</code> = same vector for 
 background (or pseudo-absence) localities.</p></dd>
+
+
 <dt>occs.testing</dt>
 <dd><p>matrix / data frame: a fully withheld testing dataset with two columns for longitude and latitude 
 of occurrence localities, in that order when <code>partitions = "testing"</code>. These occurrences will be used only 
 for evaluation but not for model training, and thus no cross validation will be performed.</p></dd>
+
+
 <dt>taxon.name</dt>
 <dd><p>character: name of the focal species or taxon. This is used primarily for annotating
 the ENMevaluation object and output metadata (rmm), but not necessary for analysis.</p></dd>
+
+
 <dt>n.bg</dt>
 <dd><p>numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental
 raster data (default: 10000) if background records were not already provided.</p></dd>
+
+
 <dt>overlap</dt>
 <dd><p>boolean: if TRUE, calculate niche overlap statistics (Warren <em>et al.</em> 2008).</p></dd>
+
+
 <dt>overlapStat</dt>
 <dd><p>character: niche overlap statistics to be calculated -- 
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.</p></dd>
+
+
 <dt>user.val.grps</dt>
 <dd><p>matrix / data frame: user-defined validation record coordinates and predictor variable values. 
 This is used internally by <code><a href="ENMnulls.html">ENMnulls()</a></code> to force each null model to evaluate with empirical validation data,
 and does not have any current use when running <code>ENMevaluate()</code> independently.</p></dd>
+
+
 <dt>user.eval</dt>
 <dd><p>function: custom function for specifying performance metrics not included in <span class="pkg">ENMeval</span>.
 The function must first be defined and then input as the argument <code>user.eval</code>. 
 This function should have a single argument called <code>vars</code>, which is a list that includes different data 
 that can be used to calculate the metric. See Details below and the vignette for a worked example.</p></dd>
+
+
 <dt>rmm</dt>
 <dd><p>rangeModelMetadata object: if specified, <code>ENMevaluate()</code> will write metadata details for the analysis into
 this object, but if not, a new <code>rangeModelMetadata</code> object will be generated and included in the output
 <code>ENMevaluation</code> object.</p></dd>
+
+
 <dt>parallel</dt>
 <dd><p>boolean: if TRUE, run with parallel processing.</p></dd>
+
+
 <dt>numCores</dt>
 <dd><p>numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.</p></dd>
+
+
 <dt>parallelType</dt>
 <dd><p>character: either "doParallel" or "doSNOW" (default: "doSNOW") .</p></dd>
+
+
 <dt>updateProgress</dt>
 <dd><p>boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.</p></dd>
+
+
 <dt>quiet</dt>
 <dd><p>boolean: if TRUE, silence all function messages (but not errors).</p></dd>
+
+
 <dt>occ, env, bg.coords, RMvalues, fc, occ.grp, bg.grp, method, bin.output, rasterPreds, clamp, progbar</dt>
 <dd><p>These arguments from previous versions are backward-compatible to avoid unnecessary errors for older scripts, but in a later version
 these arguments will be permanently deprecated.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An ENMevaluation object. See ?ENMevaluation for details.</p>
+    
+
+<p>An ENMevaluation object. See ?ENMevaluation for details and description of the columns
+in the results table.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -288,8 +344,8 @@ bg.val.pred - numeric: predictions made by mod.k for validation background</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., &amp; Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. <em>Methods in Ecology and Evolution</em>, <b>5</b>: 1198-1205. <a href="https://doi.org/10.1111/2041-210X.12261" class="external-link">doi:10.1111/2041-210X.12261</a></p>
-<p>Warren, D. L., Glor, R. E., Turelli, M. &amp; Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. <em>Evolution</em>, <b>62</b>: 2868-2883. <a href="https://doi.org/10.1111/j.1558-5646.2008.00482.x" class="external-link">doi:10.1111/j.1558-5646.2008.00482.x</a></p>
+    <p>Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., &amp; Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. <em>Methods in Ecology and Evolution</em>, <b>5</b>: 1198-1205. <a href="https://doi.org/10.1111/2041-210X.12261" class="external-link">https://doi.org/10.1111/2041-210X.12261</a></p>
+<p>Warren, D. L., Glor, R. E., Turelli, M. &amp; Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. <em>Evolution</em>, <b>62</b>: 2868-2883. <a href="https://doi.org/10.1111/j.1558-5646.2008.00482.x" class="external-link">https://doi.org/10.1111/j.1558-5646.2008.00482.x</a></p>
     </div>
 
     <div class="section level2">
@@ -305,7 +361,7 @@ bg.val.pred - numeric: predictions made by mod.k for validation background</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>

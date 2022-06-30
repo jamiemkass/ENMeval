@@ -48,21 +48,28 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">calc.niche.overlap</span><span class="op">(</span><span class="va">predictors</span>, <span class="va">overlapStat</span>, quiet <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calc.niche.overlap</span><span class="op">(</span><span class="va">predictors</span>, <span class="va">overlapStat</span>, quiet <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>predictors</dt>
 <dd><p>RasterStack: at least 2 Maxent raster predictions</p></dd>
+
+
 <dt>overlapStat</dt>
 <dd><p>character: either "D" or "I", the statistic calculated by the <code>nicheOverlap</code> function of the <span class="pkg">dismo</span> package (default: "D")</p></dd>
+
+
 <dt>quiet</dt>
 <dd><p>boolean: if TRUE, silence all function messages (but not errors)</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names correspond to the results table output by <code><a href="ENMevaluate.html">ENMevaluate</a>()</code>.</p>
+    
+
+<p>A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names correspond to the results table output by <code><a href="ENMevaluate.html">ENMevaluate</a>()</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -71,8 +78,8 @@
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Hijmans, R. J., Phillips, S., Leathwick, J. &amp; Elith, J. (2011) dismo package for R. Available online at: <a href="https://cran.r-project.org/package=dismo" class="external-link">https://cran.r-project.org/package=dismo</a>.</p>
-<p>Schoener, T. W. (1968) The <em>Anolis</em> lizards of Bimini: resource partitioning in a complex fauna. <em>Ecology</em>, <b>49</b>: 704-726. <a href="https://doi.org/10.2307/1935534" class="external-link">doi:10.2307/1935534</a></p>
-<p>Warren, D. L., Glor, R. E., Turelli, M. &amp; Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. <em>Evolution</em>, <b>62</b>: 2868-2883. <a href="https://doi.org/10.1111/j.1558-5646.2008.00482.x" class="external-link">doi:10.1111/j.1558-5646.2008.00482.x</a></p>
+<p>Schoener, T. W. (1968) The <em>Anolis</em> lizards of Bimini: resource partitioning in a complex fauna. <em>Ecology</em>, <b>49</b>: 704-726. <a href="https://doi.org/10.2307/1935534" class="external-link">https://doi.org/10.2307/1935534</a></p>
+<p>Warren, D. L., Glor, R. E., Turelli, M. &amp; Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. <em>Evolution</em>, <b>62</b>: 2868-2883. <a href="https://doi.org/10.1111/j.1558-5646.2008.00482.x" class="external-link">https://doi.org/10.1111/j.1558-5646.2008.00482.x</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -93,7 +100,7 @@ Robert Muscarella &lt;bob.muscarella@gmail.com&gt;</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>
