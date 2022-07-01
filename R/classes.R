@@ -689,8 +689,8 @@ setMethod("show",
             cat(" partition method: ", object@null.partition.method, "\n")
             cat(" partition settings: ", paste(names(object@null.partition.settings), unlist(object@null.partition.settings), sep = " = ", collapse = ", "), "\n")
             clamp.dir.spacing <- "\n         "
-            if(object@doClamp == FALSE) cat(" clamp: ", object@doClamp, "\n")
-            if(object@doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
+            if(object@null.doClamp == FALSE) cat(" clamp: ", object@null.doClamp, "\n")
+            if(object@null.doClamp == TRUE) cat(" clamp: ", paste(sapply(1:2, function(x) paste0(names(object@null.other.settings$clamp.directions[x]), ": ", paste(object@null.other.settings$clamp.directions[[x]], collapse = ", "))), collapse = clamp.dir.spacing), "\n")
             cat(" categoricals: ", paste(object@null.other.settings$categoricals, collapse = ", "), "\n")
             cat(" algorithm: ", object@null.algorithm, "\n")
             # cat(" model settings: \n")

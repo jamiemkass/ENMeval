@@ -67,9 +67,34 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     eval.type <- user.eval.type
   }
   
-  
-  # checks
+  ## checks
+  # model settings are all single entries
   if(!all(sapply(mod.settings, length) == 1)) stop("Please input a single set of model settings.")
+  # model settings are correct for input algorithm and are entered in the right order -- 
+  #if not, put them in the right order, else indexing models later will fail because the model 
+  # name will be incorrect
+  if(e@algorithm %in% c("maxent.jar", "maxnet")) {
+    if(length(mod.settings) != 2) {
+      stop("Please input two complexity settings (fc [feature classes] and rm [regularization
+           multipliers]) for mod.settings for maxent.jar and maxnet models.")
+    }
+    if(all(names(mod.settings) %in% c("fc", "rm"))) {
+      if(!all(names(mod.settings) == c("fc", "rm"))) {
+        mod.settings <- mod.settings[c("fc", "rm")]
+      }
+    }else{
+      stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
+           mod.settings for maxent.jar and maxnet models.')
+    }
+  }else if(e@algorithm == "bioclim") {
+    if(length(mod.settings) != 1) {
+      stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
+    }
+    if(!all(names(mod.settings) == "tails")) {
+      stop('Please input only "tails" for mod.settings for BIOCLIM models.')
+    }
+  }
+  
   
   # assign directionality of sign for evaluation stats
   signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
