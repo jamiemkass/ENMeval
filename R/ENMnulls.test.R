@@ -25,12 +25,11 @@
 #' @param parallelType character: either "doParallel" or "doSNOW" (default: "doSNOW").
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors).
 #' 
-#' #' @details This null ENM technique extends the implementation in Bohl \emph{et al.} (2019),
-#' which follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
-#' instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
-#' validation data used to evaluate the empirical model. Bohl \emph{et al.} (2019) demonstrates this approach using a single
-#' defined withheld partition group, but Kass \emph{et al.} (2020) extended it to use spatial partitions by drawing null occurrences
-#' from the area of the predictor raster data defining each partition. Please see the vignette for a brief example: <
+#' #' @details This null ENM technique extends the implementation in Bohl \emph{et al.} (2019)and Kass \emph{et al.} (2020),
+#' which follows the original methodology of Raes & ter Steege (2007). Here we evaluate if observed differences in accuracy metric values 
+#' (e.g., AUC, omission rates, CBI) of empirical models built with different sets of predictor variable are greater than expected 
+#' at random. This is done by building the null distributions of the difference in accuracy metrics
+#  employing the same withheld validation data used to evaluate the empirical models. Please see the vignette for a brief example: <
 #' 
 #' This function avoids using raster data to speed up each iteration, and instead samples null occurrences from the 
 #' partitioned background records. Thus, you should avoid running this when your background records are not well 
@@ -41,21 +40,84 @@
 #' 
 #' Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & Sánchez-Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. \emph{Ecography}, \bold{43}: 341-352. \url{https://doi.org/10.1111/ecog.04886}
 #'
-#' #' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \url{https://doi.org/10.1111/j.2007.0906-7590.05041.x} 
+#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \url{https://doi.org/10.1111/j.2007.0906-7590.05041.x} 
 #' 
 #' #' @return An \code{ENMnull}An ENMnull object with slots containing evaluation summary statistics 
 #' for the null models and their cross-validation results, as well as differences in results between the 
 #' empirical and null models. This comparison table includes T-statistics for pairwise comparisons (T-test) 
 #' and F-statistic (ANOVA) of these differences and their associated p-values (under a normal distribution). 
 
-ENMnulls.test <- 	function(e.list,mod.settings.list, no.iter, 
+ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter, 
                            eval.stats = c("auc.val", "auc.diff","cbi.val","or.mtp","or.10p"),
                            user.enm = NULL, user.eval.type = NULL, user.Stats.signs = NULL,
                            removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, 
                            parallelType = "doSnow", quiet = FALSE){
   
-  #Create list of background SWD dataframes
+  ## checks
+  #more than one input enm
+  if(length(e.list) == 1){
+    stop("Please input more than one ENM to run comparisons.")
+  }
+  
+  # model settings are all single entries for each enm treatment
+  for(i in 1:length(mod.settings.list)){
+    if(!all(sapply(mod.settings.list[[i]], length) == 1)){
+      stop("Please input a single set of model settings.")
+    }
+  }
+  # model settings are correct for input algorithm and are entered in the right order -- 
+  #if not, put them in the right order, else indexing models later will fail because the model 
+  # name will be incorrect
+  for(i in 1:length(e.list)){
+    if(e.list[[i]]@algorithm %in% c("maxent.jar", "maxnet")) {
+      if(length(mod.settings[[i]]) != 2){
+      stop("Please input two complexity settings (fc [feature classes] and rm [regularization
+           multipliers]) for mod.settings for maxent.jar and maxnet models.")
+        }
+    if(all(names(mod.settings[[i]]) %in% c("fc", "rm"))) {
+      if(!all(names(mod.settings[[i]]) == c("fc", "rm"))) {
+        mod.settings <- mod.settings[c("fc", "rm")]
+      }
+    }else{
+      stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
+           mod.settings for maxent.jar and maxnet models.')
+    }
+  #}else if(e@algorithm == "bioclim") {
+  #  if(length(mod.settings) != 1) {
+  #    stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
+  #  }
+  #  if(!all(names(mod.settings) == "tails")) {
+  #    stop('Please input only "tails" for mod.settings for BIOCLIM models.')
+  #  }
+    }
+  }
+  
+    # assign evaluation type based on partition method
+    if(is.null(user.eval.type)) {
+      eval.type <- switch(e.list[[1]]@partition.method,
+                          randomkfold = "knonspatial",
+                          jackknife = "knonspatial",
+                          block = "kspatial",
+                          checkerboard1 = "kspatial",
+                          checkerboard2 = "kspatial",
+                          testing = "testing",
+                          none = "none")  
+    }else{
+      eval.type <- user.eval.type
+    }
+  #Create list of background SWD dataframes for each ENM treatment
+  bg.list <- lapply(e.list, function(e){
+    #Get bg points env values from ENMevaluation object
+    bg<- e@bg
+    #Get bg partitions groups
+    bg.grp <- e@bg.grp
+    #Concatenate bg points, env values & partition groups
+    bg <- cbind(bg, bg.grp)
+    return(bg)
+  })
+  
   #Create list of "i" sets of null "n" occurrences for each ENMevaluation object in e.list
+  
   #Iteratively apply ENMulls
   #Extract relevant model accuracy metrics
   #Run statistical tests
