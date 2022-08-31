@@ -49,7 +49,7 @@
 
 ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter, 
                            eval.stats = c("auc.val", "auc.diff","cbi.val","or.mtp","or.10p"),
-                           user.enm = NULL, user.eval.type = NULL, user.Stats.signs = NULL,
+                           user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL,
                            removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, 
                            parallelType = "doSnow", quiet = FALSE){
   
@@ -69,26 +69,27 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   #if not, put them in the right order, else indexing models later will fail because the model 
   # name will be incorrect
   for(i in 1:length(e.list)){
-    if(e.list[[i]]@algorithm %in% c("maxent.jar", "maxnet")) {
-      if(length(mod.settings[[i]]) != 2){
-      stop("Please input two complexity settings (fc [feature classes] and rm [regularization
+    if(e.list[[i]]@algorithm %in% c("maxent.jar", "maxnet")){
+        if(length(mod.settings.list[[i]]) != 2){
+          stop("Please input two complexity settings (fc [feature classes] and rm [regularization
            multipliers]) for mod.settings for maxent.jar and maxnet models.")
         }
-    if(all(names(mod.settings[[i]]) %in% c("fc", "rm"))) {
-      if(!all(names(mod.settings[[i]]) == c("fc", "rm"))) {
-        mod.settings <- mod.settings[c("fc", "rm")]
-      }
-    }else{
-      stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
+      if(all(names(mod.settings.list[[i]]) %in% c("fc", "rm"))) {
+        if(!all(names(mod.settings.list[[i]]) == c("fc", "rm"))) {
+          mod.settings.list[[i]] <- mod.settings.list[[i]][c("fc", "rm")]
+        }
+      }else{
+        stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
            mod.settings for maxent.jar and maxnet models.')
+        
+      }
+  }else if(e.list[[1]]@algorithm == "bioclim") {
+    if(length(mod.settings.list[[i]]) != 1) {
+      stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
     }
-  #}else if(e@algorithm == "bioclim") {
-  #  if(length(mod.settings) != 1) {
-  #    stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
-  #  }
-  #  if(!all(names(mod.settings) == "tails")) {
-  #    stop('Please input only "tails" for mod.settings for BIOCLIM models.')
-  #  }
+    if(!all(names(mod.settings.list[[i]]) == "tails")) {
+      stop('Please input only "tails" for mod.settings for BIOCLIM models.')
+    }
     }
   }
   
@@ -105,21 +106,75 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     }else{
       eval.type <- user.eval.type
     }
-  #Create list of background SWD dataframes for each ENM treatment
-  bg.list <- lapply(e.list, function(e){
-    #Get bg points env values from ENMevaluation object
-    bg<- e@bg
-    #Get bg partitions groups
-    bg.grp <- e@bg.grp
-    #Concatenate bg points, env values & partition groups
-    bg <- cbind(bg, bg.grp)
-    return(bg)
-  })
+  # assign directionality of sign for evaluation stats in post-hoc tests
+  if(!is.null(userStats.signs)){
+  signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
+                  "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
+  }
   
+  # record start time
+  start.time <- proc.time()
+  
+  ##############################
+  ## 1. Create null occurrences
+  ##############################
   #Create list of "i" sets of null "n" occurrences for each ENMevaluation object in e.list
   
+  # assign the number of cross validation iterations
+  # each ENMevaluation object in e.list should be built using the same parameters
+  nk <- max(as.numeric(as.character(e.list[[1]]@occs.grp)))
+  
+  # get number of occurrence points by partition
+  occs.grp.tbl <- lapply(e.list, function(e){table(e@occs.grp)})
+  
+  # if more than one background partition exists, assume spatial CV and
+  # keep existing partitions
+  
+  #Create list of background SWD dataframes for each ENM treatment
+  null.samps.list <- lapply(e.list, function(e){
+    #Get occ points env values from ENMevaluation object
+    null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
+    #Get bg points env values from ENMevaluation object
+    #bg<- e@bg
+    #Get bg partitions groups
+    #bg.grp <- e@bg.grp
+    #Concatenate bg points, env values & partition groups
+    #bg <- cbind(bg, bg.grp)
+    return(null.samps)
+  })
+  
+  for(i in 1:length(e.list){
+    if(e.list[[i]]@algorithm == "maxent.jar") {
+      # create temp directory to store maxent.jar output, for potential removal later
+      tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
+      dir.create(tmpdir, showWarnings = TRUE, recursive = FALSE)
+    }  
+  })
+  
+  # assign user algorithm if provided
+  if(!is.null(user.enm)) {
+    for(i in 1:length(e.list)){
+      e.list[[i]]@algorithm <- user.enm
+    }
+  }
+  
+  #########################################
+  ## 2. specify empirical model statistics 
+  #########################################
+  
+  #########################################
+  ## 3. Build null models
+  #########################################           
   #Iteratively apply ENMulls
+  
+  #########################################
+  ## 4. Run statistical tests
+  #########################################
   #Extract relevant model accuracy metrics
   #Run statistical tests
+  
+  #########################################
+  ## 5. Run post-hoc tests
+  #########################################
   #Run post-hoc test (one-tailed z-test) for pairwise differences
 }
