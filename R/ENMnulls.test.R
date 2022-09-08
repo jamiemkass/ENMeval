@@ -52,7 +52,9 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
                            user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL,
                            removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, 
                            parallelType = "doSnow", quiet = FALSE){
-  
+  #loading dependencies
+  require(doParallel)
+  require(doSNOW)
   ## checks
   #more than one input enm
   if(length(e.list) == 1){
@@ -60,23 +62,23 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   }
   
   # model settings are all single entries for each enm treatment
-  for(i in 1:length(mod.settings.list)){
-    if(!all(sapply(mod.settings.list[[i]], length) == 1)){
+  for(k in 1:length(mod.settings.list)){
+    if(!all(sapply(mod.settings.list[[k]], length) == 1)){
       stop("Please input a single set of model settings.")
     }
   }
   # model settings are correct for input algorithm and are entered in the right order -- 
   #if not, put them in the right order, else indexing models later will fail because the model 
   # name will be incorrect
-  for(i in 1:length(e.list)){
-    if(e.list[[i]]@algorithm %in% c("maxent.jar", "maxnet")){
-        if(length(mod.settings.list[[i]]) != 2){
+  for(k in 1:length(e.list)){
+    if(e.list[[k]]@algorithm %in% c("maxent.jar", "maxnet")){
+        if(length(mod.settings.list[[k]]) != 2){
           stop("Please input two complexity settings (fc [feature classes] and rm [regularization
            multipliers]) for mod.settings for maxent.jar and maxnet models.")
         }
-      if(all(names(mod.settings.list[[i]]) %in% c("fc", "rm"))) {
-        if(!all(names(mod.settings.list[[i]]) == c("fc", "rm"))) {
-          mod.settings.list[[i]] <- mod.settings.list[[i]][c("fc", "rm")]
+      if(all(names(mod.settings.list[[k]]) %in% c("fc", "rm"))) {
+        if(!all(names(mod.settings.list[[k]]) == c("fc", "rm"))) {
+          mod.settings.list[[k]] <- mod.settings.list[[k]][c("fc", "rm")]
         }
       }else{
         stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
@@ -84,10 +86,10 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
         
       }
   }else if(e.list[[1]]@algorithm == "bioclim") {
-    if(length(mod.settings.list[[i]]) != 1) {
+    if(length(mod.settings.list[[k]]) != 1) {
       stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
     }
-    if(!all(names(mod.settings.list[[i]]) == "tails")) {
+    if(!all(names(mod.settings.list[[k]]) == "tails")) {
       stop('Please input only "tails" for mod.settings for BIOCLIM models.')
     }
     }
@@ -125,7 +127,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   nk <- max(as.numeric(as.character(e.list[[1]]@occs.grp)))
   
   # get number of occurrence points by partition
-  occs.grp.tbl <- lapply(e.list, function(e){table(e@occs.grp)})
+  occs.grp.tbl.list <- lapply(e.list, function(e){table(e@occs.grp)})
   
   # if more than one background partition exists, assume spatial CV and
   # keep existing partitions
@@ -135,37 +137,206 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     #Get occ points env values from ENMevaluation object
     null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
     #Get bg points env values from ENMevaluation object
-    #bg<- e@bg
-    #Get bg partitions groups
-    #bg.grp <- e@bg.grp
-    #Concatenate bg points, env values & partition groups
-    #bg <- cbind(bg, bg.grp)
     return(null.samps)
   })
   
-  for(i in 1:length(e.list){
-    if(e.list[[i]]@algorithm == "maxent.jar") {
+  for(k in 1:length(e.list)){
+    if(e.list[[k]]@algorithm == "maxent.jar") {
       # create temp directory to store maxent.jar output, for potential removal later
       tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
       dir.create(tmpdir, showWarnings = TRUE, recursive = FALSE)
     }  
-  })
+  }
   
   # assign user algorithm if provided
   if(!is.null(user.enm)) {
-    for(i in 1:length(e.list)){
-      e.list[[i]]@algorithm <- user.enm
+    for(k in 1:length(e.list)){
+      e.list[[k]]@algorithm <- user.enm
     }
   }
   
   #########################################
-  ## 2. specify empirical model statistics 
+  ## 2. Specify empirical model statistics 
   #########################################
+  # Specify empirical model statistics for each ENM treatment
+  
+  emp.mod.res.list<- mapply(function(e, m){
+    mod.tune.args <- paste(names(m), m, collapse = "_", sep = ".")
+    emp.mod <- e@models[[mod.tune.args]]
+    emp.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
+  },e.list, mod.settings.list)
   
   #########################################
   ## 3. Build null models
   #########################################           
-  #Iteratively apply ENMulls
+  #Iteratively apply ENMulls for each ENMevaluation object in e.list
+  
+  if(quiet == FALSE) message(paste("Building and evaluating null ENMs with", no.iter, "iterations..."))
+  if(quiet == FALSE) pb <- txtProgressBar(0, no.iter, style = 3)
+  
+  # set up parallel processing functionality
+  if(parallel == TRUE) {
+    allCores <- parallel::detectCores()
+    if (is.null(numCores)) {
+      numCores <- allCores
+    }
+    cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
+    if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
+    
+    if(parallelType == "doParallel") {
+      doParallel::registerDoParallel(cl)
+      opts <- NULL
+    } else if(parallelType == "doSNOW") {
+      doSNOW::registerDoSNOW(cl)
+      if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
+    }
+    numCoresUsed <- foreach::getDoParWorkers()
+    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
+    if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))  
+  }
+  
+  #Specify clamping directions
+  clamp.directions.list <- lapply(e.list, function(e){
+    if(length(e@clamp.directions) == 0){
+      clamp.directions.i <- NULL
+    }else{
+      clamp.directions.i <- e@clamp.directions  
+    }
+  })
+  
+  
+  # define function to run null model for iteration i
+  null_i <- function(i) {
+    null.occs.ik <- list()
+    if(eval.type == "kspatial") {
+      # randomly sample the same number of training occs over each k partition
+      # of envs; if kspatial evaluation, only sample over the current spatial
+      # partition of envs.z
+      for(k in 1:nk) {
+        # sample null occurrences only from
+        # the records in partition group k
+        null.samps.k <- null.samps %>% dplyr::filter(grp == k)
+        # randomly sample n null occurrences, where n equals the number
+        # of empirical occurrence in partition group k
+        samp.k <- sample(1:nrow(null.samps.k), occs.grp.tbl[k])
+        null.occs.ik[[k]] <- null.samps.k[samp.k, ]
+      }
+    }else if(eval.type == "knonspatial") {
+      for(k in 1:nk) {
+        # randomly sample n null occurrences, where n equals the number
+        # of empirical occurrence in partition group k
+        samp.k <- sample(1:nrow(null.samps), occs.grp.tbl[k])
+        null.occs.ik[[k]] <- null.samps[samp.k, ]
+      }
+    }else if(eval.type %in% c("testing", "none")) {
+      samp.test <- sample(1:nrow(null.samps), occs.grp.tbl)
+      null.occs.ik[[1]] <- null.samps[samp.test, ]
+    }
+    
+    # bind rows together to make full null occurrence dataset
+    null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
+    if(eval.type == "knonspatial") {
+      if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occs.grp
+      if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
+    }
+    null.occs.i.z <- null.occs.i.df %>% dplyr::select(-grp)
+    
+    # shortcuts
+    categoricals <- names(which(sapply(e@occs, is.factor)))
+    if(length(categoricals) == 0) categoricals <- NULL
+    
+    if(eval.type %in% c("testing", "none")) {
+      partitions <- eval.type
+      user.grp <- NULL
+      user.val.grps <- NULL
+    }else{
+      # assign the null occurrence partitions as user partition settings, but
+      # keep the empirical model background partitions
+      user.grp <- list(occs.grp = null.occs.i.df$grp, bg.grp = e@bg.grp)
+      # assign user validation partitions to those used in the empirical model
+      user.val.grps <- cbind(e@occs, grp = e@occs.grp)
+      partitions <- "user"
+    }
+    
+    # check if ecospat is installed, and if not, prevent CBI calculations
+    #if(requireNamespace("ecospat", quietly = TRUE)) {
+    #  e@other.settings$ecospat.use <- TRUE
+    #}else{
+    #  e@other.settings$ecospat.use <- FALSE
+    #}
+    
+    args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partitions = partitions,
+                   algorithm = e@algorithm, other.settings = e@other.settings, partition.settings = e@partition.settings,
+                   occs.testing = e@occs.testing, user.val.grps = user.val.grps, user.grp = user.grp, 
+                   doClamp = e@doClamp, clamp.directions = clamp.directions.i, quiet = TRUE)
+    
+    null.e.i <- tryCatch({
+      do.call(ENMevaluate, args.i)  
+    }, error = function(cond) {
+      if(quiet != TRUE) message(paste0("\n", cond, "\n"))
+      # Choose a return value in case of error
+      return(NULL)
+    })
+    
+    if(is.null(null.e.i)) {
+      results.na <- e@results[1,] %>% dplyr::mutate(dplyr::across(auc.train:ncoef, ~NA))
+      mod.settings.i <- paste(names(mod.settings), mod.settings, collapse = "_", sep = ".")
+      if(nrow(e@results.partitions) > 0) {
+        results.partitions.na <- e@results.partitions %>% dplyr::filter(tune.args == mod.settings.i) %>% dplyr::mutate(dplyr::across(3:ncol(.), ~NA)) %>% dplyr::mutate(iter = i)  
+      }else{
+        results.partitions.na <- e@results.partitions
+      }
+      
+      out <- list(results = results.na, results.partitions = results.partitions.na)
+    }else{
+      out <- list(results = null.e.i@results, 
+                  results.partitions = null.e.i@results.partitions %>% dplyr::mutate(iter = i) %>% dplyr::select(iter, dplyr::everything()))  
+      # restore NA row if partition evaluation is missing (model was NULL)
+      if(eval.type != "testing") {
+        allParts <- unique(user.grp$occs.grp) %in% out$results.partitions$fold
+        if(!all(allParts)) {
+          inds <- which(allParts == FALSE)
+          newrow <- out$results.partitions[1,]
+          newrow[,4:ncol(newrow)] <- NA
+          for(ind in inds) {
+            out$results.partitions <- dplyr::bind_rows(out$results.partitions, newrow %>% dplyr::mutate(fold = ind))  
+          }
+          out$results.partitions <- dplyr::arrange(out$results.partitions, fold)
+        }  
+      }
+    }
+    
+    
+    return(out)
+  }
+  
+  #Run null models
+  if(parallel == TRUE) {
+    outs <- foreach::foreach(e = e.list, null.samps = null.samps.list, 
+                             occs.grp.tbl = occs.grp.tbl.list, 
+                             mod.settings = mod.settings.list,
+                             clamp.directions.i = clamp.directions.list) %do% {
+                               null <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .packages = c("dplyr", "ENMeval")) %dopar% {
+                                 null_i(i)}
+                               return(null)
+                             }
+    return(outs)
+  }
+      
+  }else{
+    outs <- foreach::foreach(e = e.list, null.samps = null.samps.list, 
+                             occs.grp.tbl = occs.grp.tbl.list, 
+                             mod.settings = mod.settings.list,
+                             clamp.directions.i = clamp.directions.list) %do% {
+                               null <- foreach::foreach(i = 1:no.iter) %dopar% {
+                                 null_i(i)}
+                               return(null)
+                               if(quiet == FALSE) setTxtProgressBar(pb, i)
+                             }
+    }
+#START HERE
+  if(quiet != TRUE) close(pb)
+  if(parallel == TRUE) parallel::stopCluster(cl)
   
   #########################################
   ## 4. Run statistical tests
