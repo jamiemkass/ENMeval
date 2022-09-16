@@ -199,7 +199,7 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
     vert <- mean(c(max(grpA[, 1]), min(grpB[, 1])))
     bggrp1 <- bg[bg[, 1] <= bvert,]
     bggrp2 <- bg[bg[, 1] > bvert & bg[, 1] <= vert,]
-    bggrp3 <- bg[bg[, 1] >= vert & bg[, 1] < tvert,]
+    bggrp3 <- bg[bg[, 1] > vert & bg[, 1] < tvert,]
     bggrp4 <- bg[bg[, 1] >= tvert,]
   }else if(orientation == "lat_lat"){
     bhorz <- mean(c(max(grp1[, 2]), min(grp2[, 2])))
@@ -207,7 +207,7 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
     horz <- mean(c(max(grpA[, 2]), min(grpB[, 2])))
     bggrp1 <- bg[bg[, 2] <= bhorz,]
     bggrp2 <- bg[bg[, 2] > bhorz & bg[, 2] <= horz,]
-    bggrp3 <- bg[bg[, 2] >= horz & bg[, 2] < thorz,]
+    bggrp3 <- bg[bg[, 2] > horz & bg[, 2] < thorz,]
     bggrp4 <- bg[bg[, 2] >= thorz,]
   }
   
