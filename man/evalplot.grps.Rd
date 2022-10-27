@@ -17,9 +17,9 @@ evalplot.grps(
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{envs}{RasterStack: environmental predictor variable used to build the models in "e"}
+\item{envs}{RasterStack or stars object: environmental predictor variable used to build the models in "e"}
 
-\item{pts}{matrix / data frame: coordinates for occurrence or background data}
+\item{pts}{matrix / data frame or sf object: coordinates for occurrence or background data}
 
 \item{pts.grp}{numeric vector: partition groups corresponding to data in "pts"}
 

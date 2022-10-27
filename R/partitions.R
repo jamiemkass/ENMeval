@@ -28,9 +28,9 @@
 #' 
 #' Users can also define custom partitions for occurrence and background data in the call to `ENMevaluate` with the "user.grp" parameter. 
 #' 
-#' @param occs matrix / data frame: longitude and latitude (in that order) of occurrence localities
-#' @param bg matrix / data frame: longitude and latitude (in that order) of background localities
-#' @param envs RasterStack: environmental predictor variables
+#' @param occs matrix / data frame or sf: longitude and latitude (in that order) of occurrence localities
+#' @param bg matrix / data frame or sf: longitude and latitude (in that order) of background localities
+#' @param envs RasterStack or stars: environmental predictor variables
 #' @param orientation character vector: the order of spatial partitioning for the \code{get.block} method;
 #' the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
 #' options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"
@@ -153,11 +153,9 @@ NULL
 
 get.block <- function(occs, bg, orientation = "lat_lon"){
   if(!(orientation %in% c("lat_lon", "lon_lat", "lon_lon", "lat_lat"))) stop('Please enter orientation that is one of "lat_lon", "lon_lat", "lon_lon", or "lat_lat".')
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
-  
+
+  occs <- as_dataframe(occs)
+  bg <- as_dataframe(bg)
   # SPLIT occs POINTS INTO FOUR SPATIAL GROUPS
   noccs <- nrow(occs)
   n1 <- ceiling(nrow(occs)/2)
@@ -235,11 +233,11 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
 
 get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
-  
+
+  occs <- as_dataframe(occs)
+  bg <- as_dataframe(bg)
+
+  if (inherits(envs, "stars")) envs <- as(envs, "Raster")
   grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
   w <- dismo::gridSample(occs, grid, n=gridSampleN, chess='white')
   b <- dismo::gridSample(occs, grid, n=gridSampleN, chess='black')
@@ -280,11 +278,11 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
 
 get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
   
+  occs <- as_dataframe(occs)
+  bg <- as_dataframe(bg)
+  
+  if (inherits(envs, "stars")) envs <- as(envs, "Raster")
   if (length(aggregation.factor) == 1) aggregation.factor <- rep(aggregation.factor, 2)
   grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
   grid2 <- raster::aggregate(grid, aggregation.factor[2])
@@ -338,13 +336,12 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
 #' @export
 
 get.jackknife <- function(occs, bg) {
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
-  occs.grp <- 1:nrow(occs)
-  bg.grp <- rep(0, nrow(bg))
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
+
+  occs <- as_dataframe(occs)
+  bg <- as_dataframe(bg)
+  
+  out <- list(occs.grp = seq_len(nrow(occs)), 
+              bg.grp = rep(0, nrow(bg)) )
   return(out)
 }
 
@@ -353,10 +350,11 @@ get.jackknife <- function(occs, bg) {
 #' @export
 
 get.randomkfold <- function(occs, bg, kfolds){
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
+
+
+  occs <- as_dataframe(occs)
+  bg <- as_dataframe(bg)
+  
   occs.grp <- dismo::kfold(occs, kfolds)
   bg.grp <- rep(0, nrow(bg))
   out <- list(occs.grp=occs.grp, bg.grp=bg.grp)

@@ -20,15 +20,15 @@ get.jackknife(occs, bg)
 get.randomkfold(occs, bg, kfolds)
 }
 \arguments{
-\item{occs}{matrix / data frame: longitude and latitude (in that order) of occurrence localities}
+\item{occs}{matrix / data frame or sf: longitude and latitude (in that order) of occurrence localities}
 
-\item{bg}{matrix / data frame: longitude and latitude (in that order) of background localities}
+\item{bg}{matrix / data frame or sf: longitude and latitude (in that order) of background localities}
 
 \item{orientation}{character vector: the order of spatial partitioning for the \code{get.block} method;
 the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
 options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"}
 
-\item{envs}{RasterStack: environmental predictor variables}
+\item{envs}{RasterStack or stars: environmental predictor variables}
 
 \item{aggregation.factor}{numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
 if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation}

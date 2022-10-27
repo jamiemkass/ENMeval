@@ -7,7 +7,7 @@
 #' variables with respect to a reference dataset, for a set of environmental 
 #' variables.
 #'
-#' @param x a `Raster*`, `list`, `matrix`, or `data.frame`
+#' @param x a `Raster*` (or `stars`), `list`, `matrix`, or `data.frame`
 #'   where each layer/column/element represents focal values of an environmental
 #'   variable.
 #' @param ref a `list`, `matrix`, or `data.frame` where each
@@ -16,7 +16,7 @@
 #' @param full (logical) should similarity values be returned for all variables?
 #'   If `FALSE` (the default), then only the minimum similarity scores
 #'   across variables will be returned.
-#' @return If `x` is a `Raster*` object, this function returns a list 
+#' @return If `x` is a `Raster*` (or `stars`)object, this function returns a list 
 #'   containing:
 #'   - `similarity`: a `RasterStack` giving the environmental similarities for
 #'   each variable in `x` (only included when `full=TRUE`); 
@@ -61,6 +61,8 @@ similarity <- function(x, ref, full=FALSE) {
   if(!methods::is(ref, 'data.frame')) {
     ref <- as.data.frame(ref)
   }
+  is_stars <- inherits(x, "stars")
+  if (is_stars) x <- as(x, "Raster")
   if(is(x, 'Raster')) {
     r <- TRUE
     if(isTRUE(full)) {
@@ -113,14 +115,20 @@ similarity <- function(x, ref, full=FALSE) {
     out_min[] <- min_sim
     if(isTRUE(full)) {
       out[] <- sim
-      list(similarity=out, similarity_min=out_min, mod=most_dissimilar, 
+      R <- list(similarity=out, similarity_min=out_min, mod=most_dissimilar, 
            mos=most_similar)
-    } else list(similarity_min=out_min, mod=most_dissimilar, mos=most_similar)
+    } else R <- list(similarity_min=out_min, mod=most_dissimilar, mos=most_similar)
   } else {
     if(isTRUE(full)) {
-      list(similarity=sim, similarity_min=min_sim, 
+      R <- list(similarity=sim, similarity_min=min_sim, 
            mod=most_dissimilar_vec, mos=most_similar_vec)
-    } else list(similarity_min=min_sim, mod=most_dissimilar_vec, 
+    } else R <- list(similarity_min=min_sim, mod=most_dissimilar_vec, 
                 mos=most_similar_vec)
   }
+  
+  if (is_stars){
+    R <- sapply(R, sf::st_as_stars, simplify = FALSE)
+  }
+  
+  return(R)
 }

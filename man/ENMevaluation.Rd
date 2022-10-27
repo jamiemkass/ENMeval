@@ -27,6 +27,7 @@ tune.args = combination of arguments that define the complexity settings used fo
 auc.train = AUC calculated on the full dataset\cr*
 cbi.train = Continuous Boyce Index calculated on the full dataset\cr*
 auc.val = average/sd AUC calculated on the validation datasets (the data withheld during cross-validation)\cr*
+auc.diff = average/sd difference between auc.train and auc.val\cr*
 or.mtp = average/sd omission rate with threshold as the minimum suitability value across occurrence records\cr*
 or.10p = average/sd omission rate with threshold as the minimum suitability value across occurrence records after removing the lowest 10%\cr*
 cbi.val = average/sd Continuous Boyce Index calculated on the validation datasets (the data withheld during cross-validation)\cr*
@@ -91,6 +92,12 @@ Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Ur
 Fielding, A. H., & Bell, J. F. (1997). A review of methods for the assessment of prediction errors in conservation presence/absence models. \emph{Environmental Conservation}, \bold{24}: 38-49. \url{https://doi.org/10.1017/S0376892997000088}
 
 Jiménez‐Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. \emph{Global Ecology and Biogeography}, \bold{21}: 498-507. \url{https://doi.org/10.1111/j.1466-8238.2011.00683.x}
+
+\emph{AUC diff}
+
+Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
+
+Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}(4), 629-643. \url{https://doi.org/10.1111/jbi.12227} 
 
 \emph{Omission rates}
 

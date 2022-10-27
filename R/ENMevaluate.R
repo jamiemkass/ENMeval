@@ -9,13 +9,13 @@
 #' the extensive vignette for fully worked examples: 
 #' <https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html>.
 #' 
-#' @param occs matrix / data frame: occurrence records with two columns for longitude and latitude 
+#' @param occs matrix/data frame/sf: occurrence records with two columns for longitude and latitude 
 #' of occurrence localities, in that order. If specifying predictor variable values
 #' assigned to presence/background localities (without inputting raster data), this table should also have 
 #' one column for each predictor variable. See Note for important distinctions between running the function
 #' with and without rasters.
-#' @param envs RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.
-#' @param bg matrix / data frame: background records with two columns for longitude and latitude of 
+#' @param envs RasterStack/stars: environmental predictor variables. These should be in same geographic projection as occurrence data.
+#' @param bg matrix/data frame/sf: background records with two columns for longitude and latitude of 
 #' background (or pseudo-absence) localities, in that order. If NULL, points will be randomly sampled across \code{envs} 
 #' with the number specified by argument \code{n.bg}. If specifying predictor variable values
 #' assigned to presence/background localities (without inputting raster data), this table should also have 
@@ -52,7 +52,7 @@
 #' @param user.grp named list: specifies user-defined partition groups, where \code{occs.grp} = vector of partition group 
 #' (fold) for each occurrence locality, intended for user-defined partitions, and \code{bg.grp} = same vector for 
 #' background (or pseudo-absence) localities.
-#' @param occs.testing matrix / data frame: a fully withheld testing dataset with two columns for longitude and latitude 
+#' @param occs.testing matrix/data frame/sf: a fully withheld testing dataset with two columns for longitude and latitude 
 #' of occurrence localities, in that order when \code{partitions = "testing"}. These occurrences will be used only 
 #' for evaluation but not for model training, and thus no cross validation will be performed.
 #' @param taxon.name character: name of the focal species or taxon. This is used primarily for annotating
@@ -62,7 +62,7 @@
 #' @param overlap boolean: if TRUE, calculate niche overlap statistics (Warren \emph{et al.} 2008).
 #' @param overlapStat character: niche overlap statistics to be calculated -- 
 #' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.
-#' @param user.val.grps matrix / data frame: user-defined validation record coordinates and predictor variable values. 
+#' @param user.val.grps matrix/data frame/sf: user-defined validation record coordinates and predictor variable values. 
 #' This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
 #' and does not have any current use when running \code{ENMevaluate()} independently.
 #' @param user.eval function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
@@ -314,8 +314,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ######################## #
   
   # coerce occs and bg to df
-  occs <- as.data.frame(occs)
-  if(!is.null(bg)) bg <- as.data.frame(bg)
+  occs <- as_dataframe(occs)
+  if(!is.null(bg)) bg <- as_dataframe(bg)
   # extract species name and coordinates
   
   # fill in these arguments with defaults if they are NULL
@@ -425,6 +425,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
     # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
+    if (inherits(envs, 'stars')) envs <- as(envs, "Raster")
     envs <- raster::stack(envs)
     envs.z <- raster::values(envs)
     envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
