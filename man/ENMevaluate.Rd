@@ -46,15 +46,15 @@ ENMevaluate(
 )
 }
 \arguments{
-\item{occs}{matrix / data frame: occurrence records with two columns for longitude and latitude 
+\item{occs}{matrix/data frame/sf: occurrence records with two columns for longitude and latitude 
 of occurrence localities, in that order. If specifying predictor variable values
 assigned to presence/background localities (without inputting raster data), this table should also have 
 one column for each predictor variable. See Note for important distinctions between running the function
 with and without rasters.}
 
-\item{envs}{RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.}
+\item{envs}{RasterStack/stars: environmental predictor variables. These should be in same geographic projection as occurrence data.}
 
-\item{bg}{matrix / data frame: background records with two columns for longitude and latitude of 
+\item{bg}{matrix/data frame/sf: background records with two columns for longitude and latitude of 
 background (or pseudo-absence) localities, in that order. If NULL, points will be randomly sampled across \code{envs} 
 with the number specified by argument \code{n.bg}. If specifying predictor variable values
 assigned to presence/background localities (without inputting raster data), this table should also have 
@@ -102,7 +102,7 @@ This is an alternative to specifying \code{algorithm} with a character string.}
 (fold) for each occurrence locality, intended for user-defined partitions, and \code{bg.grp} = same vector for 
 background (or pseudo-absence) localities.}
 
-\item{occs.testing}{matrix / data frame: a fully withheld testing dataset with two columns for longitude and latitude 
+\item{occs.testing}{matrix/data frame/sf: a fully withheld testing dataset with two columns for longitude and latitude 
 of occurrence localities, in that order when \code{partitions = "testing"}. These occurrences will be used only 
 for evaluation but not for model training, and thus no cross validation will be performed.}
 
@@ -117,7 +117,7 @@ raster data (default: 10000) if background records were not already provided.}
 \item{overlapStat}{character: niche overlap statistics to be calculated -- 
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.}
 
-\item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values. 
+\item{user.val.grps}{matrix/data frame/sf: user-defined validation record coordinates and predictor variable values. 
 This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
 and does not have any current use when running \code{ENMevaluate()} independently.}
 
@@ -144,7 +144,8 @@ this object, but if not, a new \code{rangeModelMetadata} object will be generate
 these arguments will be permanently deprecated.}
 }
 \value{
-An ENMevaluation object. See ?ENMevaluation for details.
+An ENMevaluation object. See ?ENMevaluation for details and description of the columns
+in the results table.
 }
 \description{
 \code{ENMevaluate()} is the primary function for the \pkg{ENMeval} package. This
@@ -316,7 +317,7 @@ raster::plot(pred.both)
 
 }
 \references{
-Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \doi{10.1111/2041-210X.12261}
+Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \url{https://doi.org/10.1111/2041-210X.12261}
 
-Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \doi{10.1111/j.1558-5646.2008.00482.x}
+Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
 }

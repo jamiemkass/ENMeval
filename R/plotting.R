@@ -1,8 +1,8 @@
 #' @title Partition group plots
 #' @description Plot occurrence partition groups over an environmental predictor raster.
 #' @param e ENMevaluation object
-#' @param envs RasterStack: environmental predictor variable used to build the models in "e"
-#' @param pts matrix / data frame: coordinates for occurrence or background data
+#' @param envs RasterStack or stars object: environmental predictor variable used to build the models in "e"
+#' @param pts matrix / data frame or sf object: coordinates for occurrence or background data
 #' @param pts.grp numeric vector: partition groups corresponding to data in "pts"
 #' @param ref.data character: plot occurrences ("occs") or background ("bg"), with default "occs"
 #' @param pts.size numeric: custom point size for ggplot
@@ -23,9 +23,10 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     names(pts.plot)[1:2] <- c("longitude", "latitude")
   }else{
     if(!is.null(pts) & !is.null(pts.grp)) {
+      #if (inherits(pts, c("sf", "sfc")) ) pts <- sf::st_coordinates(pts)
       # make sure pts is a data frame with the right column names
-      pts <- as.data.frame(pts)
-      names(pts) <- c("longitude", "latitude")
+      pts <- as_dataframe(pts)
+      #names(pts) <- c("longitude", "latitude")
       pts.plot <- cbind(pts, partition = factor(pts.grp))
     }else{
       stop("If inputting point data instead of an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
@@ -34,19 +35,28 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
   
   grp.n <- length(unique(pts.plot$partition))
   if(grp.n > 9) {
-    theme.custom <- ggplot2::guides(color = FALSE)
+    theme.custom <- ggplot2::guides(color = "none")
     pt.cols <- rainbow(grp.n)
   }else{
     theme.custom <- NULL
     pt.cols <- RColorBrewer::brewer.pal(9, "Set1")
   }
   
-  if(raster::nlayers(envs) > 1) {
-    message("Plotting first raster in stack...")
-    envs <- envs[[1]]
-  }
-  envs.df <- raster::as.data.frame(envs, xy = TRUE)
-  names(envs.df)[3] <- "value"
+  if (inherits(envs, "stars")){
+    if (length(envs) > 1){
+      message("Plotting first attribute in stars...")
+      envs <- envs[1]
+    }
+    envs.df <- as.data.frame(envs)
+    names(envs.df)[3] <- "value"
+  } else { # raster
+    if(raster::nlayers(envs) > 1) {
+      message("Plotting first raster in stack...")
+      envs <- envs[[1]]
+    }
+    envs.df <- raster::as.data.frame(envs, xy = TRUE)
+    names(envs.df)[3] <- "value"
+  } 
   g <- ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = partition), size = pts.size) +
     ggplot2::scale_color_manual(values = pt.cols) +
@@ -60,10 +70,48 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
   }
 }
 
+#' Convert, matrix, list, data.frame, sf POINT or sfc_POINT object to data frame
+#'
+#' @export
+#' @param x matrix, list, data.frame, sf POINT or sfc_POINT type object
+#' @param rename_xy character, rename X and Y coordinates to these?  NULL to skip renaming.
+#' @param row_names character, if "index" set row names to indices, "none" to skip
+#' @return data frame with [X,Y] or [longitude, latitude] as the leading columns
+as_dataframe <- function(x, rename_xy = c("longitude", "latitude"), row_names = "index"){
+  
+  if (inherits(x, "matrix")){
+    xy <- as.data.frame(x)
+  } else if(inherits(x, c("sf", "sfc"))){
+    xy <- sf::st_coordinates(x) |>
+      as.data.frame()
+    if (inherits(x, "sf")){
+      xy <- cbind(xy, sf::st_drop_geometry(x))
+    }
+  } else if (inherits(x, "stars")){
+    xy <- as.data.frame(x)
+  } else if (inherits(x, "RasterLayer")){
+    xy <- raster::as.data.frame(x, xy = TRUE)
+  } else if(is.list(x)){
+    xy <- as.data.frame(x)
+  } 
+  
+  if (!is.null(rename_xy)) {
+    nm <- names(xy)
+    nm[1:2] <- rename_xy
+    names(xy) <- nm
+  } 
+  
+  if (tolower(row_names[1]) == "index") rownames(xy) <- seq_len(NROW(xy))
+  
+  xy
+}
 
 
 
 plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet) {
+  
+  occs.z <- as_dataframe(occs.z)
+  bg.z <- as_dataframe(bg.z)
   
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
     stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
@@ -99,18 +147,23 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   if(ref.data == "bg" & length(unique(bg.grp)) == 1) stop('If background is not partitioned (non-spatial), do not assign ref.data to "bg".')
   
   if(any(is.null(occs.z), is.null(occs.grp))) {
-    pts.plot <- bg.z %>% dplyr::mutate(type = rep(0, nrow(bg.z)), partition = factor(bg.grp))  
+    pts.plot <- bg.z %>% dplyr::mutate(type = rep(0, NROW(bg.z)), partition = factor(bg.grp))  
   }else if(any(is.null(bg.z), is.null(bg.grp))) {
-    pts.plot <- occs.z %>% dplyr::mutate(type = rep(1, nrow(occs.z)), partition = factor(occs.grp))  
+    pts.plot <- occs.z %>% dplyr::mutate(type = rep(1, NROW(occs.z)), partition = factor(occs.grp))  
   }else{
     pts.plot <- rbind(occs.z, bg.z) %>% as.data.frame() %>%
-      dplyr::mutate(type = c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))), partition = factor(c(occs.grp, bg.grp)))
+      dplyr::mutate(type = c(rep(1, NROW(occs.z)), rep(0, NROW(bg.z))), partition = factor(c(occs.grp, bg.grp)))
   }
   names(pts.plot)[1:2] <- c("longitude","latitude")
   
   # find factor rasters or columns and identify them as categoricals
   if(!is.null(envs)) {
-    categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+    
+    if (inherits(envs, "stars")){
+      categoricals <- unique(c(categoricals, names(envs)[which(sapply(envs, is.factor))]))
+    } else {
+       categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+    }
     if(length(categoricals) == 0) categoricals <- NULL
   }else{
     categoricals <- unique(c(categoricals, names(occs.z)[which(sapply(occs.z, is.factor))]))
@@ -128,8 +181,12 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   if(all(unique(pts.plot$partition) == 0)) {
     if(ref.data == "bg") stop('If using fully withheld testing data, input ref.data as "occs".')
     if(is.null(e) & is.null(occs.testing.z)) stop("If using fully withheld testing data, input either an ENMevaluation object or occs.testing.z.")
-    if(!is.null(e)) occs.testing.z <- e@occs.testing
-    names(occs.testing.z)[1:2] <- c("longitude","latitude")
+    if(!is.null(e)) {
+      occs.testing.z <- e@occs.testing
+      names(occs.testing.z)[1:2] <- c("longitude","latitude")
+    } else {
+      occs.testing.z <- as_dataframe(occs.testing.z)
+    }
     occs.testing.z[[categoricals]] <- NULL
     occs.testing.z <- occs.testing.z %>% dplyr::mutate(type = 1, partition = 2)
     pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
@@ -150,11 +207,13 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' ENMevaluation object or the argument occs.testing.z. In the resulting plot, partition 1 
 #' refers to the training data, while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object
-#' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
-#' the first two columns must be named "longitude" and "latitude"
+#' @param occs.z data frame or a sf object: If a data frame then longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
+#' the first two columns must be named "longitude" and "latitude". If a sf object then the first attribute
+#' is used as the environmental predictor variable values.
 #' @param occs.grp numeric vector: partition groups for occurrence records (optional)
-#' @param bg.z data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
-#' the first two columns must be named "longitude" and "latitude"
+#' @param bg.z data frame or a sf object: If a data frame then longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
+#' the first two columns must be named "longitude" and "latitude". If a sf object then the first attribute
+#' is used as the environmental predictor variable values.
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 #' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
@@ -163,7 +222,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object 
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 #' with respect to all variables (optional) 
-#' @param occs.testing.z data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
+#' @param occs.testing.z data frame or sf: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
 #' in that order; this is for use only with the "testing" partition option when an ENMevaluation object is not input (optional)
 #' @param hist.bins numeric: number of histogram bins for histogram plots; default is 30
 #' @param return.tbl boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself
@@ -229,7 +288,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   }
   
   if(nk > 9) {
-    theme.custom <- ggplot2::guides(color = FALSE)
+    theme.custom <- ggplot2::guides(color = "none")
     pt.cols <- rainbow(nk)
   }else{
     theme.custom <- NULL
@@ -355,14 +414,25 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
   
-  if(!is.null(categoricals) & !is.null(envs)) envs <- raster::dropLayer(envs, categoricals)
+  if(!is.null(categoricals) & !is.null(envs)) {
+    if (inherits(envs, "stars")){
+      envs <- dplyr::select(envs, -dplyr::all_of(categoricals))
+    } else {
+      envs <- raster::dropLayer(envs, categoricals)
+    }
+  }
   
   if(!is.null(envs.vars)) {
     if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
     envs.names <- names(envs)
     envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
     pts.plot <- pts.plot %>% dplyr::select(-dplyr::all_of(envs.rem))
-    envs <- envs[[envs.vars]]
+    if (inherits(envs, "stars")){
+      envs <- envs[envs.vars]
+    } else {
+      envs <- envs[[envs.vars]]
+    }
+
   }
   
   if(ref.data == "occs") {
@@ -376,6 +446,11 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   if(nk == sum(pts.plot$type)) {
     stop("This plotting function is not available for jackknife (leave-one-out) partitions.")
   }
+  
+  # while it is worth making the subsequent steps sf/stars compatible, it is possible 
+  # to simply coerce stars to raster here and finish up.
+  
+  if (inherits(envs, 'stars')) envs <- as(envs, "Raster")
   
   for(k in 1:nk) {
     test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)

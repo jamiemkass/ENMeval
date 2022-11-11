@@ -36,8 +36,10 @@ Imports:
     testthat,
     glmnet,
     rangeModelMetadata,
-    rlang
-RoxygenNote: 7.1.2
+    rlang,
+    sf,
+    stars
+RoxygenNote: 7.2.1
 LazyData: true
 Suggests: 
     rmarkdown,
@@ -46,7 +48,6 @@ Suggests:
     spocc,
     RColorBrewer,
     rasterVis,
-    sf,
     blockCV,
     devtools,
     tibble,

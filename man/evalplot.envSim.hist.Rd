@@ -23,11 +23,13 @@ evalplot.envSim.hist(
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
-the first two columns must be named "longitude" and "latitude"}
+\item{occs.z}{data frame or a sf object: If a data frame then longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
+the first two columns must be named "longitude" and "latitude". If a sf object then the first attribute
+is used as the environmental predictor variable values.}
 
-\item{bg.z}{data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
-the first two columns must be named "longitude" and "latitude"}
+\item{bg.z}{data frame or a sf object: If a data frame then longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
+the first two columns must be named "longitude" and "latitude". If a sf object then the first attribute
+is used as the environmental predictor variable values.}
 
 \item{occs.grp}{numeric vector: partition groups for occurrence records (optional)}
 
@@ -44,7 +46,7 @@ these must be specified as this function was intended for use with continuous da
 \item{envs.vars}{character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 with respect to all variables (optional)}
 
-\item{occs.testing.z}{data frame: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
+\item{occs.testing.z}{data frame or sf: longitude, latitude, and environmental predictor variable values for fully withheld testing records, 
 in that order; this is for use only with the "testing" partition option when an ENMevaluation object is not input (optional)}
 
 \item{hist.bins}{numeric: number of histogram bins for histogram plots; default is 30}

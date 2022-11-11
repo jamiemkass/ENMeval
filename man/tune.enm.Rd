@@ -96,7 +96,7 @@ cv.enm(
 
 \item{mod.full}{model object: the model trained on the full dataset}
 
-\item{envs}{RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.}
+\item{envs}{RasterStack/stars: environmental predictor variables. These should be in same geographic projection as occurrence data.}
 
 \item{tune.tbl.i}{vector: single set of tuning parameters}
 
@@ -141,7 +141,7 @@ validation data is clamped before making model predictions when clamping is on.}
 \item{partition.settings}{named list: used to specify certain settings for partitioning schema.
 See Details and ?partitions for descriptions of these settings.}
 
-\item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values. 
+\item{user.val.grps}{matrix/data frame/sf: user-defined validation record coordinates and predictor variable values. 
 This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
 and does not have any current use when running \code{ENMevaluate()} independently.}
 

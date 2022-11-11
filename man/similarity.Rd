@@ -7,7 +7,7 @@
 similarity(x, ref, full = FALSE)
 }
 \arguments{
-\item{x}{a `Raster*`, `list`, `matrix`, or `data.frame`
+\item{x}{a `Raster*` (or `stars`), `list`, `matrix`, or `data.frame`
 where each layer/column/element represents focal values of an environmental
 variable.}
 
@@ -20,7 +20,7 @@ If `FALSE` (the default), then only the minimum similarity scores
 across variables will be returned.}
 }
 \value{
-If `x` is a `Raster*` object, this function returns a list 
+If `x` is a `Raster*` (or `stars`)object, this function returns a list 
   containing:
   - `similarity`: a `RasterStack` giving the environmental similarities for
   each variable in `x` (only included when `full=TRUE`); 

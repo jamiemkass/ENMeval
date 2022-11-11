@@ -34,11 +34,11 @@
 #' sampled across the study extent, as this limits the extent that null occurrences can be sampled from.
 #' 
 #' @references 
-#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. \doi{10.1111/jbi.13573}
+#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. \url{https://doi.org/10.1111/jbi.13573}
 #' 
-#' Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & Sánchez-Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. \emph{Ecography}, \bold{43}: 341-352. \doi{10.1111/ecog.04886}
+#' Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & Sánchez-Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. \emph{Ecography}, \bold{43}: 341-352. \url{https://doi.org/10.1111/ecog.04886}
 #' 
-#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \doi{10.1111/j.2007.0906-7590.05041.x}
+#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \url{https://doi.org/10.1111/j.2007.0906-7590.05041.x}
 #' 
 #' @return An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
 #' and their cross-validation results, as well as differences in results between the empirical and null models. 
@@ -67,9 +67,34 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     eval.type <- user.eval.type
   }
   
-  
-  # checks
+  ## checks
+  # model settings are all single entries
   if(!all(sapply(mod.settings, length) == 1)) stop("Please input a single set of model settings.")
+  # model settings are correct for input algorithm and are entered in the right order -- 
+  #if not, put them in the right order, else indexing models later will fail because the model 
+  # name will be incorrect
+  if(e@algorithm %in% c("maxent.jar", "maxnet")) {
+    if(length(mod.settings) != 2) {
+      stop("Please input two complexity settings (fc [feature classes] and rm [regularization
+           multipliers]) for mod.settings for maxent.jar and maxnet models.")
+    }
+    if(all(names(mod.settings) %in% c("fc", "rm"))) {
+      if(!all(names(mod.settings) == c("fc", "rm"))) {
+        mod.settings <- mod.settings[c("fc", "rm")]
+      }
+    }else{
+      stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
+           mod.settings for maxent.jar and maxnet models.')
+    }
+  }else if(e@algorithm == "bioclim") {
+    if(length(mod.settings) != 1) {
+      stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
+    }
+    if(!all(names(mod.settings) == "tails")) {
+      stop('Please input only "tails" for mod.settings for BIOCLIM models.')
+    }
+  }
+  
   
   # assign directionality of sign for evaluation stats
   signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
