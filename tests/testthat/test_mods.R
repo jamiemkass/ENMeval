@@ -1,6 +1,6 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when submitting to CRAN
-skip_tests_for_cran <- FALSE
+skip_tests_for_cran <- TRUE
 skip_maxnet <- FALSE
 skip_maxent.jar <- FALSE
 skip_bioclim <- FALSE
@@ -289,7 +289,7 @@ for(alg in algorithms) {
   context(paste("Testing clamping function for", alg, "with..."))
   test_clamp(e, envs, occs.z, bg.z, categoricals = cats1, canExtrapolate = extrap)
   context(paste("Testing clamping function for", alg, "with two categorical variables..."))
-  if(skip_tests_for_cran == FALSE | alg != "bioclim") test_clamp(e.2cat, envs.2cat, occs.z.2cat, bg.z.2cat, categoricals = c("biome.1", "biome.2"))
+  if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(e.2cat, envs.2cat, occs.z.2cat, bg.z.2cat, categoricals = c("biome.1", "biome.2"))
   
 }
 

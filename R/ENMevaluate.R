@@ -329,7 +329,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
   
   # make sure taxon name column is not included
-  if(class(occs[,1]) == "character" | class(bg[,1]) == "character") stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
+  if(inherits(occs[,1], "character") | inherits(bg[,1], "character")) stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
   
   if(is.null(taxon.name)) {
     if(quiet != TRUE) message(paste0("*** Running initial checks... ***\n"))
