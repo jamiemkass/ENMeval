@@ -31,7 +31,6 @@ Imports:
     dplyr,
     tidyr,
     ggplot2,
-    testthat,
     glmnet,
     rangeModelMetadata,
     rlang
@@ -40,6 +39,7 @@ LazyData: true
 Suggests: 
     rmarkdown,
     graphics,
+    testthat,
     knitr,
     rJava (>= 0.5-0),
     spocc,
