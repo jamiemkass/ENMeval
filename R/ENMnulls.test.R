@@ -72,10 +72,10 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   # name will be incorrect
   for(k in 1:length(e.list)){
     if(e.list[[k]]@algorithm %in% c("maxent.jar", "maxnet")){
-        if(length(mod.settings.list[[k]]) != 2){
-          stop("Please input two complexity settings (fc [feature classes] and rm [regularization
+      if(length(mod.settings.list[[k]]) != 2){
+        stop("Please input two complexity settings (fc [feature classes] and rm [regularization
            multipliers]) for mod.settings for maxent.jar and maxnet models.")
-        }
+      }
       if(all(names(mod.settings.list[[k]]) %in% c("fc", "rm"))) {
         if(!all(names(mod.settings.list[[k]]) == c("fc", "rm"))) {
           mod.settings.list[[k]] <- mod.settings.list[[k]][c("fc", "rm")]
@@ -85,33 +85,33 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
            mod.settings for maxent.jar and maxnet models.')
         
       }
-  }else if(e.list[[1]]@algorithm == "bioclim") {
-    if(length(mod.settings.list[[k]]) != 1) {
-      stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
-    }
-    if(!all(names(mod.settings.list[[k]]) == "tails")) {
-      stop('Please input only "tails" for mod.settings for BIOCLIM models.')
-    }
+    }else if(e.list[[1]]@algorithm == "bioclim") {
+      if(length(mod.settings.list[[k]]) != 1) {
+        stop("Please input one complexity setting (tails) for mod.settings for BIOCLIM models.")
+      }
+      if(!all(names(mod.settings.list[[k]]) == "tails")) {
+        stop('Please input only "tails" for mod.settings for BIOCLIM models.')
+      }
     }
   }
   
-    # assign evaluation type based on partition method
-    if(is.null(user.eval.type)) {
-      eval.type <- switch(e.list[[1]]@partition.method,
-                          randomkfold = "knonspatial",
-                          jackknife = "knonspatial",
-                          block = "kspatial",
-                          checkerboard1 = "kspatial",
-                          checkerboard2 = "kspatial",
-                          testing = "testing",
-                          none = "none")  
-    }else{
-      eval.type <- user.eval.type
-    }
+  # assign evaluation type based on partition method
+  if(is.null(user.eval.type)) {
+    eval.type <- switch(e.list[[1]]@partition.method,
+                        randomkfold = "knonspatial",
+                        jackknife = "knonspatial",
+                        block = "kspatial",
+                        checkerboard1 = "kspatial",
+                        checkerboard2 = "kspatial",
+                        testing = "testing",
+                        none = "none")  
+  }else{
+    eval.type <- user.eval.type
+  }
   # assign directionality of sign for evaluation stats in post-hoc tests
   if(!is.null(userStats.signs)){
-  signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
-                  "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
+    signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
+                    "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
   }
   
   # record start time
@@ -206,7 +206,10 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   
   
   # define function to run null model for iteration i
-  null_i <- function(i) {
+  null_i <- function(i, e, null.samps, 
+                     occs.grp.tbl, 
+                     mod.settings,
+                     clamp.directions.i) {
     null.occs.ik <- list()
     if(eval.type == "kspatial") {
       # randomly sample the same number of training occs over each k partition
@@ -259,11 +262,11 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     }
     
     # check if ecospat is installed, and if not, prevent CBI calculations
-    #if(requireNamespace("ecospat", quietly = TRUE)) {
-    #  e@other.settings$ecospat.use <- TRUE
-    #}else{
-    #  e@other.settings$ecospat.use <- FALSE
-    #}
+    if(requireNamespace("ecospat", quietly = TRUE)) {
+      e@other.settings$ecospat.use <- TRUE
+    }else{
+      e@other.settings$ecospat.use <- FALSE
+    }
     
     args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partitions = partitions,
                    algorithm = e@algorithm, other.settings = e@other.settings, partition.settings = e@partition.settings,
@@ -310,6 +313,21 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     return(out)
   }
   
+  null.i.list <- list()
+  for(x in 1:length(e.list)) {
+    cat("Doing e", x, "\n")
+    e <- e.list[[x]] 
+    null.samps <- null.samps.list[[x]] 
+    occs.grp.tbl <- occs.grp.tbl.list[[x]]
+    mod.settings <- mod.settings.list[[x]]
+    clamp.directions.i <- clamp.directions.list[[x]]
+    for(i in 1:no.iter) {
+      cat("Doing i", i, "\n")
+      null.i.list[[x]] <- null_i(i, e, null.samps, occs.grp.tbl, mod.settings,
+                                 clamp.directions.i)
+    }
+  }
+  
   #Run null models
   if(parallel == TRUE) {
     outs <- foreach::foreach(e = e.list, null.samps = null.samps.list, 
@@ -321,8 +339,6 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
                                return(null)
                              }
     return(outs)
-  }
-      
   }else{
     outs <- foreach::foreach(e = e.list, null.samps = null.samps.list, 
                              occs.grp.tbl = occs.grp.tbl.list, 
@@ -333,19 +349,21 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
                                return(null)
                                if(quiet == FALSE) setTxtProgressBar(pb, i)
                              }
-    }
+    return(outs)  
+  }
+}
 #START HERE
-  if(quiet != TRUE) close(pb)
-  if(parallel == TRUE) parallel::stopCluster(cl)
-  
-  #########################################
-  ## 4. Run statistical tests
-  #########################################
-  #Extract relevant model accuracy metrics
-  #Run statistical tests
-  
-  #########################################
-  ## 5. Run post-hoc tests
-  #########################################
-  #Run post-hoc test (one-tailed z-test) for pairwise differences
+if(quiet != TRUE) close(pb)
+if(parallel == TRUE) parallel::stopCluster(cl)
+
+#########################################
+## 4. Run statistical tests
+#########################################
+#Extract relevant model accuracy metrics
+#Run statistical tests
+
+#########################################
+## 5. Run post-hoc tests
+#########################################
+#Run post-hoc test (one-tailed z-test) for pairwise differences
 }
