@@ -166,6 +166,9 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     emp.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
   },e.list, mod.settings.list)
   
+  emp.mod.res.list <- list(as.data.frame(t(emp.mod.res.list))[1,],
+                           as.data.frame(t(emp.mod.res.list))[2,])
+  
   #########################################
   ## 3. Build null models
   #########################################           
@@ -313,6 +316,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     return(out)
   }
   
+  #Run null models
   null.i.list <- list()
   for(x in 1:length(e.list)) {
     cat("Doing e", x, "\n")
@@ -321,49 +325,65 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     occs.grp.tbl <- occs.grp.tbl.list[[x]]
     mod.settings <- mod.settings.list[[x]]
     clamp.directions.i <- clamp.directions.list[[x]]
-    for(i in 1:no.iter) {
+    null.i.list[[x]] <- lapply(c(1:no.iter), function(i){
       cat("Doing i", i, "\n")
-      null.i.list[[x]] <- null_i(i, e, null.samps, occs.grp.tbl, mod.settings,
-                                 clamp.directions.i)
-    }
+      null_i(i, e, null.samps, occs.grp.tbl, mod.settings, 
+             clamp.directions.i)
+    })
   }
   
-  #Run null models
-  if(parallel == TRUE) {
-    outs <- foreach::foreach(e = e.list, null.samps = null.samps.list, 
-                             occs.grp.tbl = occs.grp.tbl.list, 
-                             mod.settings = mod.settings.list,
-                             clamp.directions.i = clamp.directions.list) %do% {
-                               null <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .packages = c("dplyr", "ENMeval")) %dopar% {
-                                 null_i(i)}
-                               return(null)
-                             }
-    return(outs)
-  }else{
-    outs <- foreach::foreach(e = e.list, null.samps = null.samps.list, 
-                             occs.grp.tbl = occs.grp.tbl.list, 
-                             mod.settings = mod.settings.list,
-                             clamp.directions.i = clamp.directions.list) %do% {
-                               null <- foreach::foreach(i = 1:no.iter) %dopar% {
-                                 null_i(i)}
-                               return(null)
-                               if(quiet == FALSE) setTxtProgressBar(pb, i)
-                             }
-    return(outs)  
+  #########################################
+  ## 4. Run statistical tests
+  #########################################
+  #Extract relevant model accuracy metrics
+  #Run statistical tests
+  
+  # assemble null evaluation statistics and take summaries
+  nulls <- lapply(null.i.list, function(x){
+    null.stat <- dplyr::bind_rows(lapply(x, function(y) y$results)) %>% 
+      dplyr::select(-dplyr::contains("AIC"))
+    })
+  
+  nulls.grp <- lapply(null.i.list, function(x){
+    null.stat <- dplyr::bind_rows(lapply(x, function(y) y$results.partitions))
+  })
+  if(eval.type %in% c("testing", "none")) {
+    nulls.avgs <- lapply(nulls, function(x){
+      avg <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+    })
+    nulls.sds <- lapply(nulls, function(x){
+      sds <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+    })
+    # get empirical model evaluation statistics for comparison
+    emp.avgs <- lapply(emp.mod.res.list, function(emp){
+    emp %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train"))
+    })
+    }else{
+      nulls.avgs <- lapply(nulls, function(x){
+        avg <- x %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+      })
+      nulls.sds <- lapply(nulls, function(x){
+        sds <- x %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".sd")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+      }) 
+      # get empirical model evaluation statistics for comparison
+      emp.avgs <- lapply(emp.mod.res.list, function(emp){ 
+        emp <- emp %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg"))
+      })
+    }
+  emp.sds <- lapply(emp.mod.res.list, function(emp){
+    if(sum(grepl("sd", names(emp))) > 0){
+      sds <- emp %>% dplyr::select(paste0(eval.stats, ".sd"))
+    }else{
+      sds <- NULL
   }
+})
+  
+  #START HERE 
+  #RUN STAT TESTS 
 }
-#START HERE
-if(quiet != TRUE) close(pb)
-if(parallel == TRUE) parallel::stopCluster(cl)
-
-#########################################
-## 4. Run statistical tests
-#########################################
-#Extract relevant model accuracy metrics
-#Run statistical tests
 
 #########################################
 ## 5. Run post-hoc tests
 #########################################
 #Run post-hoc test (one-tailed z-test) for pairwise differences
-}
+
