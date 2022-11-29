@@ -12,7 +12,7 @@
 #' that specify the settings used for building null models
 #' @param no.iter numeric: number of null model iterations.
 #' @param eval.stats character: model accuarcy metrics that will be used to calculate null model statistics. 
-#' Can be “auc.val”, “auc.diff”, “cbi.val”, “or.mtp”, “or.10p”.
+#' Can be one of “auc”, “cbi”, “or.mtp”, “or.10p”.
 #' @param user.enm ENMdetails object: if implementing a user-specified model. 
 #' @user.eval.type character: if implementing a user-specified model -- either "knonspatial", "kspatial", 
 #' "testing" or "none".
@@ -48,7 +48,7 @@
 #' and F-statistic (ANOVA) of these differences and their associated p-values (under a normal distribution). 
 
 ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter, 
-                           eval.stats = c("auc.val", "auc.diff","cbi.val","or.mtp","or.10p"),
+                           eval.stats = c("auc", "cbi","or.mtp","or.10p"),
                            user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL,
                            removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, 
                            parallelType = "doSnow", quiet = FALSE){
@@ -166,8 +166,8 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     emp.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
   },e.list, mod.settings.list)
   
-  emp.mod.res.list <- list(as.data.frame(t(emp.mod.res.list))[1,],
-                           as.data.frame(t(emp.mod.res.list))[2,])
+  emp.mod.res.list <- lapply(1:ncol(emp.mod.res.list), function(x){
+    as.data.frame(t(emp.mod.res.list))[x,]})
   
   #########################################
   ## 3. Build null models
@@ -333,10 +333,10 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   }
   
   #########################################
-  ## 4. Run statistical tests
+  ## 4. Calculate pairwise differences
   #########################################
-  #Extract relevant model accuracy metrics
-  #Run statistical tests
+  #Extract relevant model accuracy metrics &
+  #Calculate pairwise differences among empirical and null model treatments
   
   # assemble null evaluation statistics and take summaries
   nulls <- lapply(null.i.list, function(x){
@@ -348,42 +348,111 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     null.stat <- dplyr::bind_rows(lapply(x, function(y) y$results.partitions))
   })
   if(eval.type %in% c("testing", "none")) {
-    nulls.avgs <- lapply(nulls, function(x){
-      avg <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+    nulls.dif <- lapply(nulls, function(x){
+      dif <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% 
+        dplyr::add_rownames(var = "iter")
     })
-    nulls.sds <- lapply(nulls, function(x){
-      sds <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
-    })
+  
+    for(x in 1:length(nulls.dif)){
+      nulls.dif[[x]] <- nulls.dif[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
+    }
+    
+    statistic <- grep(eval.stats, names(nulls.dif), value = T)
+    
+    nulls.dif <- nulls.dif %>% dplyr::bind_rows(.)%>% 
+      tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
+    
+    
     # get empirical model evaluation statistics for comparison
-    emp.avgs <- lapply(emp.mod.res.list, function(emp){
+    emp.dif <- lapply(emp.mod.res.list, function(emp){
     emp %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train"))
     })
+    
+    emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
+      dplyr::mutate(model.treatment = LETTERS[1:nrow(.)]) %>%
+      tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
+      tidyr::unnest(cols = colnames(.))
+    
     }else{
-      nulls.avgs <- lapply(nulls, function(x){
-        avg <- x %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg")) %>% dplyr::summarize_all(mean, na.rm = TRUE)
+      nulls.dif <- lapply(nulls, function(x){
+        if("auc" %in% eval.stats | "cbi" %in% eval.stats){
+        dif <- x %>% dplyr::select(paste0(eval.stats, ".val.avg")) %>% dplyr::add_rownames(var = "iter")
+        } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
+          dif <- x %>% dplyr::select(paste0(eval.stats, ".avg")) %>% dplyr::add_rownames(var = "iter")
+        }
       })
-      nulls.sds <- lapply(nulls, function(x){
-        sds <- x %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".sd")) %>% dplyr::summarise_all(sd, na.rm = TRUE)
-      }) 
+      for(x in 1:length(nulls.dif)){
+        nulls.dif[[x]] <- nulls.dif[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
+      }
+      
+      statistic <- paste0(eval.stats, ".avg")
+      
+      nulls.dif <- nulls.dif %>% dplyr::bind_rows(.)%>% 
+        tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
+      
       # get empirical model evaluation statistics for comparison
-      emp.avgs <- lapply(emp.mod.res.list, function(emp){ 
-        emp <- emp %>% dplyr::select(dplyr::ends_with("train"), paste0(eval.stats, ".avg"))
+      emp.dif <- lapply(emp.mod.res.list, function(emp){ 
+        if("auc" %in%  eval.stats | "cbi" %in% eval.stats){
+          emp <- emp %>% dplyr::select(paste0(eval.stats, ".val.avg"))
+        } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
+          emp <- emp %>% dplyr::select(paste0(eval.stats, ".avg"))  
+        }
       })
+      
+      emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
+        dplyr::mutate(model.treatment = LETTERS[1:nrow(.)]) %>%
+        tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
+        tidyr::unnest(cols = colnames(.))
     }
-  emp.sds <- lapply(emp.mod.res.list, function(emp){
-    if(sum(grepl("sd", names(emp))) > 0){
-      sds <- emp %>% dplyr::select(paste0(eval.stats, ".sd"))
-    }else{
-      sds <- NULL
-  }
-})
   
-  #START HERE 
-  #RUN STAT TESTS 
+      #calculate model metrics pairwise differences among treatments
+      if(ncol(nulls.dif) == 3){
+        nulls.dif <- nulls.dif %>% dplyr::transmute(`null.B-A` = abs(B - A)) %>% dplyr::mutate(iter = 1:nrow(.))
+      } else if(ncol(nulls.dif > 3)){
+        #Obtaining all pairwise model treatment combinations
+        comb <- nulls.dif %>% select(-iter) 
+        comb <- combn(colnames(comb), 2)
+        
+        #calculating pairwise differences among treatments & merging in single dataframe
+        nulls.dif.list <- list() 
+        for(i in 1:ncol(comb)){
+          name <- paste0("null.",comb[,i][2], "-", comb[,i][1])
+          nulls.dif.list[[i]] <- nulls.dif %>% 
+            dplyr::transmute(abs(nulls.dif[grep(comb[,i][2], colnames(.))] - nulls.dif[grep(comb[,i][1], colnames(.))]))
+          names(nulls.dif.list[[i]]) <- name
+        }
+        
+        nulls.dif <- bind_cols(nulls.dif.list)%>% mutate(iter = 1:nrow(.))
+      }
+
+  #calculate model metrics pairwise differences among treatments
+  if(ncol(emp.dif) == 2){
+    emp.dif <- emp.dif %>% dplyr::transmute(`emp.B-A` = abs(B - A))
+    
+  }else if(ncol(nulls.dif > 2)){
+    #Obtaining all pairwise model treatment combinations
+    comb <- emp.dif
+    comb <- combn(colnames(comb), 2)
+    
+    #calculating pairwise differences among treatments & merging in single dataframe
+    emp.dif.list <- list() 
+    for(i in 1:ncol(comb)){
+      name <- paste0("emp.",comb[,i][2], "-", comb[,i][1])
+      emp.dif.list[[i]] <- emp.dif %>% 
+        dplyr::transmute(abs(emp.dif[grep(comb[,i][2], colnames(.))] - emp.dif[grep(comb[,i][1], colnames(.))]))
+      names(emp.dif.list[[i]]) <- name
+    }
+    emp.dif <- bind_cols(emp.dif.list)
+  }
+  return(list(nulls.dif, emp.dif))
 }
+#########################################
+## 5. Run statistical tests
+#########################################
+#Run statistical tests
 
 #########################################
-## 5. Run post-hoc tests
+## 6. Run post-hoc tests
 #########################################
 #Run post-hoc test (one-tailed z-test) for pairwise differences
 
