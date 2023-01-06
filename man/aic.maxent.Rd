@@ -68,17 +68,17 @@ Returns all \code{NA}s if the number of non-zero coefficients is larger than the
 number of observations (occurrence localities).
 }
 \references{
-Akaike, H. (1974) A new look at the statistical model identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}: 716-723. \url{https://doi.org/10.1109/TAC.1974.1100705}
+Akaike, H. (1974) A new look at the statistical model identification. \emph{IEEE Transactions on Automatic Control}, \bold{19}: 716-723. \doi{10.1109/TAC.1974.1100705}
 
 Burnham, K. P. and Anderson, D. R. (1998) Model selection and multimodel inference: a practical information-theoretic approach. Springer, New York.
 
-Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. \emph{Sociological Methods and Research}, \bold{33}: 261-304. \url{https://doi.org/10.1177/0049124104268644}
+Burnham, K. P. and Anderson, D. R. (2004) Multimodel inference: understanding AIC and BIC in model selection. \emph{Sociological Methods and Research}, \bold{33}: 261-304. \doi{10.1177/0049124104268644}
 
-Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. \emph{Ecography}, \bold{33}: 607-611. \url{https://doi.org/10.1111/j.1600-0587.2009.06142.x}
+Warren, D. L., Glor, R. E, and Turelli, M. (2010) ENMTools: a toolbox for comparative studies of environmental niche models. \emph{Ecography}, \bold{33}: 607-611. \doi{10.1111/j.1600-0587.2009.06142.x}
 
-Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \url{https://doi.org/10.1890/10-1171.1}
+Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. \emph{Ecological Applications}, \bold{21}: 335-342. \doi{10.1890/10-1171.1}
 
-Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. \emph{Diversity and Distributions}, \bold{20}: 334-343. \url{https://doi.org/10.1111/ddi.12160}
+Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. \emph{Diversity and Distributions}, \bold{20}: 334-343. \doi{10.1111/ddi.12160}
 }
 \seealso{
 \code{maxent} in the \pkg{dismo} package.
