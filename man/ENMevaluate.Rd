@@ -290,7 +290,7 @@ raster::plot(pred.L2)
 # this will give you the percent contribution (not deterministic) and
 # permutation importance (deterministic) values of variable importance for
 # Maxent models, and it only works with maxent.jar
-eval.varimp(e.maxent.jar)
+eval.variable.importance(e.maxent.jar)
 
 # here's a run with BIOCLIM -- note that 1) we need to remove the categorical
 # variable here because this algorithm only takes continuous variables, and

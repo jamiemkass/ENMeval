@@ -21,7 +21,7 @@ new ones made with version >=2.0.0.
 If bin.output was set to TRUE, \code{`e@results`} will be equivalent to 
 the new results.partitions slot. Some slots are unable to be filled in because
 previous versions of ENMeval did not record them in ENMevaluation objects:
-varimp, partition.settings, other.settings, doClamp (set to TRUE
+variable.importance, partition.settings, other.settings, doClamp (set to TRUE
 arbitrarily to avoid errors, but may actually have been FALSE), clamp.directions,
 taxon.name, and rmm.
 }

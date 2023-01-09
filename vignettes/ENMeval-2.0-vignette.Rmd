@@ -557,7 +557,7 @@ Now let's take a look at the output from `ENMevaluate()`, which is an `ENMevalua
 - `results` A data.frame of evaluation summary statistics
 - `results.partitions` A data.frame of evaluation k-fold statistics
 - `models` A list of model objects
-- `varimp` A list of data frames with variable importance for each model (when applicable)
+- `variable.importance` A list of data frames with variable importance for each model (when applicable)
 - `predictions` A RasterStack of model predictions
 - `taxon.name` A character for taxon name (when specified)
 - `occs` A data frame of the occurrence record coordinates used for model training

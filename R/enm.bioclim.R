@@ -41,7 +41,7 @@ bioclim.ncoefs <- function(mod) {
 }
 
 # no existing method in model object for variable importance
-bioclim.varimp <- function(mod) {
+bioclim.variable.importance <- function(mod) {
   NULL
 }
 
@@ -50,4 +50,4 @@ bioclim.varimp <- function(mod) {
 #' @export
 enm.bioclim <- ENMdetails(name = bioclim.name, fun = bioclim.fun, errors = bioclim.errors,
                           msgs = bioclim.msgs, args = bioclim.args,
-                          predict = bioclim.predict, ncoefs = bioclim.ncoefs, varimp = bioclim.varimp)
+                          predict = bioclim.predict, ncoefs = bioclim.ncoefs, variable.importance = bioclim.variable.importance)

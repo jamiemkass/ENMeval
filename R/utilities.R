@@ -18,7 +18,7 @@ NULL
 #' @note If bin.output was set to TRUE, \code{`e@results`} will be equivalent to 
 #' the new results.partitions slot. Some slots are unable to be filled in because
 #' previous versions of ENMeval did not record them in ENMevaluation objects:
-#' varimp, partition.settings, other.settings, doClamp (set to TRUE
+#' variable.importance, partition.settings, other.settings, doClamp (set to TRUE
 #' arbitrarily to avoid errors, but may actually have been FALSE), clamp.directions,
 #' taxon.name, and rmm.
 #' @importFrom rlang .data
@@ -42,7 +42,7 @@ ENMevaluation_convert <- function(e, envs) {
   e_new <- ENMevaluation(algorithm = alg, tune.settings = as.data.frame(ts),
                          results = rs, results.partitions = data.frame(),
                          predictions = e@predictions, models = ms, 
-                         varimp = list(),
+                         variable.importance = list(),
                          partition.method = e@partition.method, partition.settings = list(),
                          other.settings = list(), doClamp = TRUE, clamp.directions = list(), 
                          taxon.name = "", occs = occs, occs.testing = data.frame(), 

@@ -67,7 +67,7 @@ maxnet.ncoefs <- function(mod) {
 }
 
 # no existing method in model object for variable importance
-maxnet.varimp <- function(mod) {
+maxnet.variable.importance <- function(mod) {
   NULL
 }
 
@@ -79,4 +79,4 @@ maxnet.varimp <- function(mod) {
 #' @export
 enm.maxnet <- ENMdetails(name = maxnet.name, fun = maxnet.fun, errors = maxnet.errors,
                          msgs = maxnet.msgs, args = maxnet.args,
-                         predict = maxnet.predict, ncoefs = maxnet.ncoefs, varimp = maxnet.varimp)
+                         predict = maxnet.predict, ncoefs = maxnet.ncoefs, variable.importance = maxnet.variable.importance)

@@ -41,7 +41,7 @@ The available arguments are: mod, envs, other.settings.}
 \item{\code{ncoefs}}{function: counts the number of non-zero model coefficients.
 The available arguments are: mod.}
 
-\item{\code{varimp}}{function: generates a data frame of variable importance from the model object (if functionality is available).
+\item{\code{variable.importance}}{function: generates a data frame of variable importance from the model object (if functionality is available).
 The available arguments are: mod.}
 }}
 
