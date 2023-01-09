@@ -228,7 +228,7 @@
 #' # this will give you the percent contribution (not deterministic) and
 #' # permutation importance (deterministic) values of variable importance for
 #' # Maxent models, and it only works with maxent.jar
-#' eval.varimp(e.maxent.jar)
+#' eval.variable.importance(e.maxent.jar)
 #' 
 #' # here's a run with BIOCLIM -- note that 1) we need to remove the categorical
 #' # variable here because this algorithm only takes continuous variables, and
@@ -778,7 +778,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   if(is.null(clamp.directions)) clamp.directions <- list()
   
   # get variable importance for all models
-  varimp.all <- lapply(mod.full.all, enm@varimp)
+  variable.importance.all <- lapply(mod.full.all, enm@variable.importance)
   
   # remove the doClamp = FALSE recorded in other.settings to avoid confusion
   other.settings$doClamp <- NULL
@@ -787,7 +787,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
                      results = as.data.frame(eval.stats), results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
-                     varimp = varimp.all,
+                     variable.importance = variable.importance.all,
                      partition.method = partitions, partition.settings = partition.settings,
                      other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
                      taxon.name = as.character(taxon.name),

@@ -68,7 +68,7 @@ maxent.jar.ncoefs <- function(mod) {
   return(np)
 }
 
-maxent.jar.varimp <- function(mod) {
+maxent.jar.variable.importance <- function(mod) {
   res <- mod@results
   # percent contribution is a heuristic measure of variable importance
   # quoting A Brief Tutorial on Maxent (Phillips 2017):
@@ -101,4 +101,4 @@ maxent.jar.varimp <- function(mod) {
 #' @export
 enm.maxent.jar <- ENMdetails(name = maxent.jar.name, fun = maxent.jar.fun, errors = maxent.jar.errors,
                              msgs = maxent.jar.msgs, args = maxent.jar.args,
-                             predict = maxent.jar.predict, ncoefs = maxent.jar.ncoefs, varimp = maxent.jar.varimp)
+                             predict = maxent.jar.predict, ncoefs = maxent.jar.ncoefs, variable.importance = maxent.jar.variable.importance)

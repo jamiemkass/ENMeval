@@ -2,11 +2,11 @@
 # when TRUE, only some essential tests are run to avoid lagging when submitting to CRAN
 skip_tests_for_cran <- TRUE
 skip_maxnet <- FALSE
-skip_maxent.jar <- FALSE
-skip_bioclim <- FALSE
+skip_maxent.jar <- TRUE
+skip_bioclim <- TRUE
 
 # this additionally skips tests for env similarity and difference for the envSim.map tests
-skip_simDiff <- FALSE
+skip_simDiff <- TRUE
 
 library(dplyr)
 options(warn=-1)

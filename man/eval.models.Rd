@@ -3,14 +3,14 @@
 \name{eval.models}
 \alias{eval.models}
 \alias{eval.models,ENMevaluation-method}
-\alias{eval.varimp,ENMevaluation-method}
+\alias{eval.variable.importance,ENMevaluation-method}
 \title{eval.models generic for ENMevaluation object}
 \usage{
 eval.models(x)
 
 \S4method{eval.models}{ENMevaluation}(x)
 
-\S4method{eval.varimp}{ENMevaluation}(x)
+\S4method{eval.variable.importance}{ENMevaluation}(x)
 }
 \arguments{
 \item{x}{ENMevaluation object}

@@ -59,7 +59,7 @@ ncoef = number of non-zero beta values (model coefficients)
 
 \item{\code{models}}{list: model objects}
 
-\item{\code{varimp}}{list: variable importance data frames (when available)}
+\item{\code{variable.importance}}{list: variable importance data frames (when available)}
 
 \item{\code{predictions}}{RasterStack: model predictions}
 

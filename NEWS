@@ -2,7 +2,7 @@ ENMeval 2.0.4
 ===========
 * This update makes a bunch of bug fixes and enhancements brought to me by the user community. Thank you for helping me improve the software!*
 o  Added documentation on the columns of the e@results table to ?ENMevaluation.
-o  Fixed the variable importance slot in ENMevaluation objects, now called "varimp", as in e@varimp. This slot will only be populated for maxent.jar models because maxnet (or BIOCLIM) lack a native function for this. Might add some external function to do this for these models in the future.
+o  Fixed the variable importance slot in ENMevaluation objects. This slot will only be populated for maxent.jar models because maxnet (or BIOCLIM) lack a native function for this. Might add some external function to do this for these models in the future.
 o  Simplified the predict method for maxnet ENMdetails objects and provided an example in ?ENMevaluate. 
 o  Added the ability to turn clamping on or off for maxnet models by specifying doClamp in other.settings, and added a doClamp slot for ENMnull objects.
 o  Fixed a bug that prevented clamping even when doClamp was TRUE for models specified without raster environmental predictor data (species-with-data format). Now models specified without raster data also clamp as expected.

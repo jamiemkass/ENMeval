@@ -14,7 +14,7 @@ NULL
 #' @slot results data frame: evaluation summary statistics
 #' @slot results.partitions data frame: evaluation k-fold statistics
 #' @slot models list: model objects
-#' @slot varimp list: variable importance data frames (when available)
+#' @slot variable.importance list: variable importance data frames (when available)
 #' @slot predictions RasterStack: model predictions
 #' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
@@ -87,7 +87,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                     results = 'data.frame',
                                     results.partitions = 'data.frame',
                                     models = 'list',
-                                    varimp = 'list',
+                                    variable.importance = 'list',
                                     predictions = 'RasterStack',
                                     taxon.name = 'character',
                                     occs = 'data.frame',
@@ -143,14 +143,14 @@ setGeneric("eval.models", function(x) standardGeneric("eval.models"))
 #' @rdname eval.models
 setMethod("eval.models", "ENMevaluation", function(x) x@models)
 
-#' @title eval.varimp (variable importance) generic for ENMevaluation object
+#' @title eval.variable.importance (variable importance) generic for ENMevaluation object
 #' @param x ENMevaluation object
-#' @rdname eval.varimp
+#' @rdname eval.variable.importance
 #' @export
-setGeneric("eval.varimp", function(x) standardGeneric("eval.varimp"))
+setGeneric("eval.variable.importance", function(x) standardGeneric("eval.variable.importance"))
 
 #' @rdname eval.models
-setMethod("eval.varimp", "ENMevaluation", function(x) x@varimp)
+setMethod("eval.variable.importance", "ENMevaluation", function(x) x@variable.importance)
 
 #' @title eval.predictions generic for ENMevaluation object
 #' @param x ENMevaluation object
@@ -320,7 +320,7 @@ setMethod("show",
 #' The available arguments are: mod, envs, other.settings.
 #' @slot ncoefs function: counts the number of non-zero model coefficients.
 #' The available arguments are: mod.
-#' @slot varimp function: generates a data frame of variable importance from the model object (if functionality is available).
+#' @slot variable.importance function: generates a data frame of variable importance from the model object (if functionality is available).
 #' The available arguments are: mod.
 #' @rdname ENMdetails
 #' @export ENMdetails
@@ -333,7 +333,7 @@ ENMdetails <- setClass("ENMdetails",
                                  args = 'function',
                                  predict = 'function',
                                  ncoefs = 'function',
-                                 varimp = 'function'))
+                                 variable.importance = 'function'))
 
 #' @title eval.name generic for ENMdetails object
 #' @param x ENMdetails object
@@ -482,23 +482,23 @@ setMethod("enm.ncoefs<-", "ENMdetails", function(x, value) {
   x
 })
 
-#' @title enm.varimp generic for ENMdetails object
+#' @title enm.variable.importance generic for ENMdetails object
 #' @param x ENMdetails object
 #' @param value input value
-#' @rdname enm.varimp
+#' @rdname enm.variable.importance
 #' @export
-setGeneric("enm.varimp", function(x) standardGeneric("enm.varimp"))
+setGeneric("enm.variable.importance", function(x) standardGeneric("enm.variable.importance"))
 
-#' @rdname enm.varimp
+#' @rdname enm.variable.importance
 #' @export
-setGeneric("enm.varimp<-", function(x, value) standardGeneric("enm.varimp<-"))
+setGeneric("enm.variable.importance<-", function(x, value) standardGeneric("enm.variable.importance<-"))
 
-#' @rdname enm.varimp
-setMethod("enm.varimp", "ENMdetails", function(x) x@varimp)
+#' @rdname enm.variable.importance
+setMethod("enm.variable.importance", "ENMdetails", function(x) x@variable.importance)
 
-#' @rdname enm.varimp
-setMethod("enm.varimp<-", "ENMdetails", function(x, value) {
-  x@varimp <- value
+#' @rdname enm.variable.importance
+setMethod("enm.variable.importance<-", "ENMdetails", function(x, value) {
+  x@variable.importance <- value
   validObject(x)
   x
 })
