@@ -100,7 +100,7 @@
     <loc>https://jamiemkass.github.io/ENMeval/reference/enm.predict.html</loc>
   </url>
   <url>
-    <loc>https://jamiemkass.github.io/ENMeval/reference/enm.varimp.html</loc>
+    <loc>https://jamiemkass.github.io/ENMeval/reference/enm.variable.importance.html</loc>
   </url>
   <url>
     <loc>https://jamiemkass.github.io/ENMeval/reference/enmeval_results.html</loc>
@@ -163,7 +163,7 @@
     <loc>https://jamiemkass.github.io/ENMeval/reference/eval.tune.settings.html</loc>
   </url>
   <url>
-    <loc>https://jamiemkass.github.io/ENMeval/reference/eval.varimp.html</loc>
+    <loc>https://jamiemkass.github.io/ENMeval/reference/eval.variable.importance.html</loc>
   </url>
   <url>
     <loc>https://jamiemkass.github.io/ENMeval/reference/evalplot.envSim.hist.html</loc>
