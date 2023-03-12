@@ -115,15 +115,9 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     eval.type <- user.eval.type
   }
   # assign directionality of sign for evaluation stats in post-hoc tests
-  if(is.null(alternative)){
-    alternative <- "two.sided"
-    signs <- c(list("auc.val.avg" = 1, "auc.train" = 1, "cbi.val.avg" = 1, "cbi.train" = 1,
-                    "or.10p.avg" = -1, "or.mtp.avg" = -1), userStats.signs) 
-  } else {
-    alternative <- alternative
-    #signs <- c(list("auc.val.avg" = 1, "auc.train" = 1, "cbi.val.avg" = 1, "cbi.train" = 1,
-    #                "or.10p.avg" = -1, "or.mtp.avg" = -1), userStats.signs) #NEED TO FIGURE THIS OUT
-  }
+  
+  signs <- c(list("auc.val.avg" = 1, "auc.train.avg" = 1, "cbi.val.avg" = 1, "cbi.train.avg" = 1,
+                  "auc.diff.avg" = -1, "or.10p.avg" = -1, "or.mtp.avg" = -1), userStats.signs)
   
   # record start time
   start.time <- proc.time()
@@ -362,18 +356,18 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   })
   
   if(eval.type %in% c("testing", "none")) {
-    nulls.dif <- lapply(nulls, function(x){
+    nulls <- lapply(nulls, function(x){
       dif <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% 
         tibble::rownames_to_column(var = "iter")
     })
   
-    for(x in 1:length(nulls.dif)){
-      nulls.dif[[x]] <- nulls.dif[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
+    for(x in 1:length(nulls)){
+      nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
     }
     
-    stat <- grep(eval.stats, names(nulls.dif), value = T)
+    stat <- grep(eval.stats, names(nulls), value = T)
     
-    nulls.dif <- nulls.dif %>% dplyr::bind_rows(.)%>% 
+    nulls <- nulls %>% dplyr::bind_rows(.)%>% 
       tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
     
     
@@ -388,19 +382,19 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
       tidyr::unnest(cols = colnames(.))
     
     }else{
-      nulls.dif <- lapply(nulls, function(x){
+      nulls <- lapply(nulls, function(x){
         if("auc" %in% eval.stats | "cbi" %in% eval.stats){
         dif <- x %>% dplyr::select(paste0(eval.stats, ".val.avg")) %>% tibble::rownames_to_column(var = "iter")
         } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
           dif <- x %>% dplyr::select(paste0(eval.stats, ".avg")) %>% tibble::rownames_to_column(var = "iter")
         }
       })
-      for(x in 1:length(nulls.dif)){
-        nulls.dif[[x]] <- nulls.dif[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
+      for(x in 1:length(nulls)){
+        nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
       }
       
       
-      nulls.dif <- nulls.dif %>% dplyr::bind_rows(.)%>% 
+      nulls <- nulls %>% dplyr::bind_rows(.)%>% 
         tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
       
       if("auc" %in% eval.stats | "cbi" %in% eval.stats){
@@ -425,15 +419,15 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     }
   
       #calculate model metrics pairwise differences among treatments
-      if(ncol(nulls.dif) == 3){
+      if(ncol(nulls) == 3){
         if(alternative == "two.sided"){
-          nulls.dif <- nulls.dif %>% dplyr::transmute(`null.B-A` = abs(B - A)) %>% dplyr::mutate(iter = 1:nrow(.))  
+          nulls.dif <- nulls %>% dplyr::transmute(`null.B-A` = abs(B - A)) %>% dplyr::mutate(iter = 1:nrow(.))  
         } else {
-          nulls.dif <- nulls.dif %>% dplyr::transmute(`null.B-A` = B - A) %>% dplyr::mutate(iter = 1:nrow(.))  
+          nulls.dif <- nulls %>% dplyr::transmute(`null.B-A` = B - A) %>% dplyr::mutate(iter = 1:nrow(.))  
         } 
-      }else if(ncol(nulls.dif > 3)){
+      }else if(ncol(nulls > 3)){
         #Obtaining all pairwise model treatment combinations
-        comb <- nulls.dif %>% dplyr::select(-iter) 
+        comb <- nulls %>% dplyr::select(-iter) 
         comb <- combn(colnames(comb), 2)
         
         #calculating pairwise differences among treatments & merging in single dataframe
@@ -441,12 +435,12 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
         for(i in 1:ncol(comb)){
           name <- paste0("null.",comb[,i][2], "-", comb[,i][1])
           if(alternative == "two.sided"){
-            nulls.dif.list[[i]] <- nulls.dif %>% 
-              dplyr::transmute(abs(nulls.dif[grep(comb[,i][2], colnames(.))] - nulls.dif[grep(comb[,i][1], colnames(.))]))
+            nulls.dif.list[[i]] <- nulls %>% 
+              dplyr::transmute(abs(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))]))
             names(nulls.dif.list[[i]]) <- name  
           }else{
-            nulls.dif.list[[i]] <- nulls.dif %>%
-              dplyr::transmute(nulls.dif[grep(comb[,i][2], colnames(.))] - nulls.dif[grep(comb[,i][1], colnames(.))])
+            nulls.dif.list[[i]] <- nulls %>%
+              dplyr::transmute(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))])
             names(nulls.dif.list[[i]]) <- name  
           }
         }
@@ -494,18 +488,25 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   #Run a one-way repeated measures ANOVA on null model differences
   
   #shaping data into the correct format for anova testing
-  if(ncol(nulls.dif) > 3){
-    nulls.dif.l<- tidyr::pivot_longer(nulls.dif, cols= -iter,
-                                      names_to = "pair.dif", values_to = eval.stats)%>%
+  if(ncol(nulls) > 3){
+    nulls.l<- tidyr::pivot_longer(nulls, cols= -iter, names_to = "predictor", 
+                                  values_to = eval.stats)%>%
       mutate(iter = as.factor(iter))
   }
   
-  #fitting the linear model 
-  anova.nulls <- paste0(eval.stats, "~", " pair.dif + iter")
-  anova.nulls <- lm(anova.nulls, data = nulls.dif.l)
+  #using the rstatix package to implement repeated measures anova
+  anova.nulls <- rstatix::anova_test(data  = nulls.l, 
+                                     dv = eval.stats,
+                                     wid = iter, 
+                                     within = predictor)
   
-  #running ANOVA 
-  anova.nulls <- anova(anova.nulls, )
+  #post-hoc tests to examine pairwise differences among predictor sets
+  pairwise.mod <- as.formula(paste(eval.stats, "predictor", sep = "~"))
+  
+    pairwise.nulls <- nulls.l %>%
+      rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
+                               p.adjust.method = "bonferroni", 
+                               alternative = alternative)
   
   ####################################################################
   ## 5. Estimate statistical differences between real and null models 
@@ -543,8 +544,8 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   }
   #Consider removing bind_rows 
   empNull.stats <- dplyr::bind_rows(empNull.stats.list)
-  return(empNull.stats)
-  
+  return(list(anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
+              emp.nulls = empNull.stats))
   }
-}
+
 
