@@ -509,11 +509,11 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
                                alternative = alternative)
   
   ####################################################################
-  ## 5. Estimate statistical differences between real and null models 
+  ## 6. Estimate statistical differences between real and null models 
   ####################################################################
   #One sample t-test between empirical and null differences for each treatment combination
   
-  #NOTE: WE NEED TO WORK IN A WAY TO INCORPORATE DIRECTIONALITY.
+  #NOTE: NEED TO CHECK HOW TO INCORPORATE DIRECTIONALITY.
   
   empNull.stats.list <- list()
   
