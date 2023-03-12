@@ -58,6 +58,9 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   #loading dependencies
   require(doParallel)
   require(doSNOW)
+  require(tidyr)
+  require(dplyr)
+  require(rstatix)
   ## checks
   #more than one input enm
   if(length(e.list) == 1){
@@ -488,16 +491,21 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   ##################################################################
   ## 5. Estimate statistical differences among null model treatments
   ##################################################################
-  #Run a repeated measures ANOVA on null model differences
+  #Run a one-way repeated measures ANOVA on null model differences
   
+  #shaping data into the correct format for anova testing
   if(ncol(nulls.dif) > 3){
     nulls.dif.l<- tidyr::pivot_longer(nulls.dif, cols= -iter,
                                       names_to = "pair.dif", values_to = eval.stats)%>%
       mutate(iter = as.factor(iter))
   }
   
-  #anova.nulls <- lm()
+  #fitting the linear model 
+  anova.nulls <- paste0(eval.stats, "~", " pair.dif + iter")
+  anova.nulls <- lm(anova.nulls, data = nulls.dif.l)
   
+  #running ANOVA 
+  anova.nulls <- anova(anova.nulls, )
   
   ####################################################################
   ## 5. Estimate statistical differences between real and null models 
