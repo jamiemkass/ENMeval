@@ -9,6 +9,7 @@ ENMnulls(
   mod.settings,
   no.iter,
   eval.stats = c("auc.val", "auc.diff", "cbi.val", "or.mtp", "or.10p"),
+  input.random.data = list(),
   user.enm = NULL,
   user.eval.type = NULL,
   userStats.signs = NULL,

@@ -55,28 +55,26 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
                            userStats.signs = NULL,
                            removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, 
                            parallelType = "doSnow", quiet = FALSE){
-  #loading dependencies
-  require(doParallel)
-  require(doSNOW)
-  require(tidyr)
-  require(dplyr)
-  require(rstatix)
+  
+  # number of treatment groups (ENMevaluation objects to statistically compare null models)
+  g <- length(e.list)
+  
   ## checks
-  #more than one input enm
-  if(length(e.list) == 1){
-    stop("Please input more than one ENM to run comparisons.")
+  # more than one input ENMevaluation object
+  if(g == 1){
+    stop("Please input more than one ENMevaluation object to run comparisons.")
   }
   
-  # model settings are all single entries for each enm treatment
+  # model settings are all single entries for each ENMevaluation object
   for(k in 1:length(mod.settings.list)){
     if(!all(sapply(mod.settings.list[[k]], length) == 1)){
-      stop("Please input a single set of model settings.")
+      stop("Please input a single set of model settings per ENMevaluation object.")
     }
   }
   # model settings are correct for input algorithm and are entered in the right order -- 
   #if not, put them in the right order, else indexing models later will fail because the model 
   # name will be incorrect
-  for(k in 1:length(e.list)){
+  for(k in 1:g){
     if(e.list[[k]]@algorithm %in% c("maxent.jar", "maxnet")){
       if(length(mod.settings.list[[k]]) != 2){
         stop("Please input two complexity settings (fc [feature classes] and rm [regularization
@@ -89,7 +87,6 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
       }else{
         stop('Please input only "fc" (feature classes) and "rm" (regularization multipliers) for
            mod.settings for maxent.jar and maxnet models.')
-        
       }
     }else if(e.list[[1]]@algorithm == "bioclim") {
       if(length(mod.settings.list[[k]]) != 1) {
@@ -145,7 +142,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     return(null.samps)
   })
   
-  for(k in 1:length(e.list)){
+  for(k in 1:g){
     if(e.list[[k]]@algorithm == "maxent.jar") {
       # create temp directory to store maxent.jar output, for potential removal later
       tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
@@ -155,7 +152,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   
   # assign user algorithm if provided
   if(!is.null(user.enm)) {
-    for(k in 1:length(e.list)){
+    for(k in 1:g){
       e.list[[k]]@algorithm <- user.enm
     }
   }
@@ -164,15 +161,11 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   ## 2. Specify empirical model evaluation metrics 
   #################################################
   # Specify empirical model evaluation metrics for each ENM treatment
-  
-  emp.mod.res.list<- mapply(function(e, m){
-    mod.tune.args <- paste(names(m), m, collapse = "_", sep = ".")
-    emp.mod <- e@models[[mod.tune.args]]
-    emp.mod.res <- e@results %>% dplyr::filter(tune.args == mod.tune.args)
-  },e.list, mod.settings.list)
-  
-  emp.mod.res.list <- lapply(1:ncol(emp.mod.res.list), function(x){
-    as.data.frame(t(emp.mod.res.list))[x,]})
+
+  emp.mod.res.list <- lapply(1:g, function(x) {
+    mod.tune.args <- paste(names(mod.settings.list[[x]]), mod.settings.list[[x]], collapse = "_", sep = ".")
+    emp.mod.res <- e.list[[x]]@results %>% dplyr::filter(tune.args == mod.tune.args)
+  })
   
   #########################################
   ## 3. Build null models
@@ -323,7 +316,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   
   #Run null models
   null.i.list <- list()
-  for(x in 1:length(e.list)) {
+  for(x in 1:g) {
     cat("Doing e", x, "\n")
     e <- e.list[[x]] 
     null.samps <- null.samps.list[[x]] 
@@ -349,7 +342,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   nulls <- lapply(null.i.list, function(x){
     null.stat <- dplyr::bind_rows(lapply(x, function(y) y$results)) %>% 
       dplyr::select(-dplyr::contains("AIC"))
-  })
+    })
   
   nulls.grp <- lapply(null.i.list, function(x){
     null.stat <- dplyr::bind_rows(lapply(x, function(y) y$results.partitions))
@@ -360,7 +353,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
       dif <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% 
         tibble::rownames_to_column(var = "iter")
     })
-    
+  
     for(x in 1:length(nulls)){
       nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
     }
@@ -373,7 +366,7 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
     
     # get empirical model evaluation statistics for comparison
     emp.dif <- lapply(emp.mod.res.list, function(emp){
-      emp %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train"))
+    emp %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train"))
     })
     
     emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
@@ -381,71 +374,71 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
       tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
       tidyr::unnest(cols = colnames(.))
     
-  }else{
-    nulls <- lapply(nulls, function(x){
-      if("auc" %in% eval.stats | "cbi" %in% eval.stats){
+    }else{
+      nulls <- lapply(nulls, function(x){
+        if("auc" %in% eval.stats | "cbi" %in% eval.stats){
         dif <- x %>% dplyr::select(paste0(eval.stats, ".val.avg")) %>% tibble::rownames_to_column(var = "iter")
-      } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
-        dif <- x %>% dplyr::select(paste0(eval.stats, ".avg")) %>% tibble::rownames_to_column(var = "iter")
+        } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
+          dif <- x %>% dplyr::select(paste0(eval.stats, ".avg")) %>% tibble::rownames_to_column(var = "iter")
+        }
+      })
+      for(x in 1:length(nulls)){
+        nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
       }
-    })
-    for(x in 1:length(nulls)){
-      nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
-    }
-    
-    
-    nulls <- nulls %>% dplyr::bind_rows(.)%>% 
-      tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
-    
-    if("auc" %in% eval.stats | "cbi" %in% eval.stats){
-      statistic <- paste0(eval.stats, ".val.avg")
-    } else if ("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
-      statistic <- paste0(eval.stats, ".avg")
-    }
-    
-    # get empirical model evaluation statistics for comparison
-    emp.dif <- lapply(emp.mod.res.list, function(emp){ 
-      if("auc" %in%  eval.stats | "cbi" %in% eval.stats){
-        emp <- emp %>% dplyr::select(paste0(eval.stats, ".val.avg"))
-      } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
-        emp <- emp %>% dplyr::select(paste0(eval.stats, ".avg"))  
+      
+      
+      nulls <- nulls %>% dplyr::bind_rows(.)%>% 
+        tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
+      
+      if("auc" %in% eval.stats | "cbi" %in% eval.stats){
+        statistic <- paste0(eval.stats, ".val.avg")
+      } else if ("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
+        statistic <- paste0(eval.stats, ".avg")
       }
-    })
-    
-    emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
-      dplyr::mutate(model.treatment = LETTERS[1:nrow(.)]) %>%
-      tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
-      tidyr::unnest(cols = colnames(.))
-  }
+      
+      # get empirical model evaluation statistics for comparison
+      emp.dif <- lapply(emp.mod.res.list, function(emp){ 
+        if("auc" %in%  eval.stats | "cbi" %in% eval.stats){
+          emp <- emp %>% dplyr::select(paste0(eval.stats, ".val.avg"))
+        } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
+          emp <- emp %>% dplyr::select(paste0(eval.stats, ".avg"))  
+        }
+      })
+      
+      emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
+        dplyr::mutate(model.treatment = LETTERS[1:nrow(.)]) %>%
+        tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
+        tidyr::unnest(cols = colnames(.))
+    }
   
-  #calculate model metrics pairwise differences among treatments
-  if(ncol(nulls) == 3){
-    if(alternative == "two.sided"){
-      nulls.dif <- nulls %>% dplyr::transmute(`null.B-A` = abs(B - A)) %>% dplyr::mutate(iter = 1:nrow(.))  
-    } else {
-      nulls.dif <- nulls %>% dplyr::transmute(`null.B-A` = B - A) %>% dplyr::mutate(iter = 1:nrow(.))  
-    } 
-  }else if(ncol(nulls > 3)){
-    #Obtaining all pairwise model treatment combinations
-    comb <- nulls %>% dplyr::select(-iter) 
-    comb <- combn(colnames(comb), 2)
-    
-    #calculating pairwise differences among treatments & merging in single dataframe
-    nulls.dif.list <- list() 
-    for(i in 1:ncol(comb)){
-      name <- paste0("null.",comb[,i][2], "-", comb[,i][1])
-      if(alternative == "two.sided"){
-        nulls.dif.list[[i]] <- nulls %>% 
-          dplyr::transmute(abs(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))]))
-        names(nulls.dif.list[[i]]) <- name  
-      }else{
-        nulls.dif.list[[i]] <- nulls %>%
-          dplyr::transmute(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))])
-        names(nulls.dif.list[[i]]) <- name  
+      #calculate model metrics pairwise differences among treatments
+      if(ncol(nulls) == 3){
+        if(alternative == "two.sided"){
+          nulls.dif <- nulls %>% dplyr::transmute(`null.B-A` = abs(B - A)) %>% dplyr::mutate(iter = 1:nrow(.))  
+        } else {
+          nulls.dif <- nulls %>% dplyr::transmute(`null.B-A` = B - A) %>% dplyr::mutate(iter = 1:nrow(.))  
+        } 
+      }else if(ncol(nulls > 3)){
+        #Obtaining all pairwise model treatment combinations
+        comb <- nulls %>% dplyr::select(-iter) 
+        comb <- combn(colnames(comb), 2)
+        
+        #calculating pairwise differences among treatments & merging in single dataframe
+        nulls.dif.list <- list() 
+        for(i in 1:ncol(comb)){
+          name <- paste0("null.",comb[,i][2], "-", comb[,i][1])
+          if(alternative == "two.sided"){
+            nulls.dif.list[[i]] <- nulls %>% 
+              dplyr::transmute(abs(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))]))
+            names(nulls.dif.list[[i]]) <- name  
+          }else{
+            nulls.dif.list[[i]] <- nulls %>%
+              dplyr::transmute(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))])
+            names(nulls.dif.list[[i]]) <- name  
+          }
+        }
+        nulls.dif <- dplyr::bind_cols(nulls.dif.list)%>% dplyr::mutate(iter = 1:nrow(.))
       }
-    }
-    nulls.dif <- dplyr::bind_cols(nulls.dif.list)%>% dplyr::mutate(iter = 1:nrow(.))
-  }
   
   #calculate model metrics pairwise differences among treatments
   if(ncol(emp.dif) == 2){
@@ -467,18 +460,18 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
         emp.dif.list[[i]] <- emp.dif %>% 
           dplyr::transmute(abs(emp.dif[grep(comb[,i][2], colnames(.))] - emp.dif[grep(comb[,i][1], colnames(.))]))
         names(emp.dif.list[[i]]) <- name
-      }
-    }else{
-      for(i in 1:ncol(comb)){
+        }
+      }else{
+        for(i in 1:ncol(comb)){
         name <- paste0("emp.",comb[,i][2], "-", comb[,i][1])
         emp.dif.list[[i]] <- emp.dif %>% 
           dplyr::transmute(emp.dif[grep(comb[,i][2], colnames(.))] - emp.dif[grep(comb[,i][1], colnames(.))])
         names(emp.dif.list[[i]]) <- name
+        }
       }
-    }
-    emp.dif <- dplyr::bind_cols(emp.dif.list)
-  }
-  
+      emp.dif <- dplyr::bind_cols(emp.dif.list)
+      }
+      
   nulls.dif.avg <- nulls.dif %>% dplyr::select(-iter) %>% dplyr::summarise_all(mean, na.rm = T)
   nulls.dif.sd <- nulls.dif %>% dplyr::select(-iter) %>% dplyr::summarise_all(sd, na.rm = T)
   
@@ -503,10 +496,10 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   #post-hoc tests to examine pairwise differences among predictor sets
   pairwise.mod <- as.formula(paste(eval.stats, "predictor", sep = "~"))
   
-  pairwise.nulls <- nulls.l %>%
-    rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
-                             p.adjust.method = "bonferroni", 
-                             alternative = alternative)
+    pairwise.nulls <- nulls.l %>%
+      rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
+                               p.adjust.method = "bonferroni", 
+                               alternative = alternative)
   
   ####################################################################
   ## 6. Estimate statistical differences between real and null models 
@@ -546,6 +539,6 @@ ENMnulls.test <- 	function(e.list, mod.settings.list, no.iter,
   empNull.stats <- dplyr::bind_rows(empNull.stats.list)
   return(list(anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
               emp.nulls = empNull.stats))
-}
+  }
 
 

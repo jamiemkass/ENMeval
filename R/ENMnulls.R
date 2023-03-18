@@ -1,3 +1,50 @@
+#' @export
+#'
+make_null_occs <- function(e, eval.type) {
+  # assign the number of cross validation iterations
+  nk <- max(as.numeric(as.character(e@occs.grp)))
+  # get number of occurrence points by partition
+  occs.grp.tbl <- table(e@occs.grp)
+  # if more than one background partition exists, assume spatial CV and
+  # keep existing partitions
+  occs.and.bg <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
+  
+  null.occs.ik <- list()
+  if(eval.type == "kspatial") {
+    # randomly sample the same number of training occs over each k partition
+    # of envs; if kspatial evaluation, sample separately for each spatial
+    # partition of envs.z
+    for(k in 1:nk) {
+      # sample null occurrences only from
+      # the records in partition group k
+      occs.and.bg.k <- occs.and.bg %>% dplyr::filter(grp == k)
+      # randomly sample n null occurrences, where n equals the number
+      # of empirical occurrence in partition group k
+      samp.k <- sample(1:nrow(occs.and.bg.k), occs.grp.tbl[k])
+      null.occs.ik[[k]] <- occs.and.bg.k[samp.k, ]
+    }
+  }else if(eval.type == "knonspatial") {
+    for(k in 1:nk) {
+      # randomly sample n null occurrences, where n equals the number
+      # of empirical occurrence in partition group k
+      samp.k <- sample(1:nrow(occs.and.bg), occs.grp.tbl[k])
+      null.occs.ik[[k]] <- occs.and.bg[samp.k, ]
+    }
+  }else if(eval.type %in% c("testing", "none")) {
+    samp.test <- sample(1:nrow(occs.and.bg), occs.grp.tbl)
+    null.occs.ik[[1]] <- occs.and.bg[samp.test, ]
+  }
+  
+  # bind rows together to make full null occurrence dataset
+  null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
+  if(eval.type == "knonspatial") {
+    if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occs.grp
+    if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
+  }
+  return(null.occs.i.df)
+}
+
+
 #' @title Generate null ecological niche models (ENMs) and compare null with empirical performance metrics
 #' @description \code{ENMnulls()} iteratively builds null ENMs for a single set of 
 #' user-specified model settings based on an input ENMevaluation object, from which all other analysis 
@@ -50,6 +97,7 @@
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
 ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
+                     input.random.data = list(),
                      user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL, 
                      removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
   
@@ -103,16 +151,6 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   # record start time
   start.time <- proc.time()
   
-  # assign the number of cross validation iterations
-  nk <- max(as.numeric(as.character(e@occs.grp)))
-  
-  # get number of occurrence points by partition
-  occs.grp.tbl <- table(e@occs.grp)
-  
-  # if more than one background partition exists, assume spatial CV and
-  # keep existing partitions
-  null.samps <- cbind(rbind(e@occs, e@bg), grp = c(e@occs.grp, e@bg.grp))
-  
   if(e@algorithm == "maxent.jar") {
     # create temp directory to store maxent.jar output, for potential removal later
     tmpdir <- paste(tempdir(), runif(1,0,1), sep = "/")
@@ -164,39 +202,14 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   
   # define function to run null model for iteration i
   null_i <- function(i) {
-    null.occs.ik <- list()
-    if(eval.type == "kspatial") {
-      # randomly sample the same number of training occs over each k partition
-      # of envs; if kspatial evaluation, only sample over the current spatial
-      # partition of envs.z
-      for(k in 1:nk) {
-        # sample null occurrences only from
-        # the records in partition group k
-        null.samps.k <- null.samps %>% dplyr::filter(grp == k)
-        # randomly sample n null occurrences, where n equals the number
-        # of empirical occurrence in partition group k
-        samp.k <- sample(1:nrow(null.samps.k), occs.grp.tbl[k])
-        null.occs.ik[[k]] <- null.samps.k[samp.k, ]
-      }
-    }else if(eval.type == "knonspatial") {
-      for(k in 1:nk) {
-        # randomly sample n null occurrences, where n equals the number
-        # of empirical occurrence in partition group k
-        samp.k <- sample(1:nrow(null.samps), occs.grp.tbl[k])
-        null.occs.ik[[k]] <- null.samps[samp.k, ]
-      }
-    }else if(eval.type %in% c("testing", "none")) {
-      samp.test <- sample(1:nrow(null.samps), occs.grp.tbl)
-      null.occs.ik[[1]] <- null.samps[samp.test, ]
-    }
     
-    # bind rows together to make full null occurrence dataset
-    null.occs.i.df <- dplyr::bind_rows(null.occs.ik)
-    if(eval.type == "knonspatial") {
-      if(e@partition.method == "randomkfold") null.occs.i.df$grp <- get.randomkfold(null.occs.i.df, e@bg, kfolds = e@partition.settings$kfolds)$occs.grp
-      if(e@partition.method == "jackknife") null.occs.i.df$grp <- get.jackknife(null.occs.i.df, e@bg)$occs.grp
+    if(length(input.random.data) > 0) {
+      null.occs.i.df <- input.random.data[[i]]
+    }else{
+      null.occs.i.df <- make_null_occs(e, eval.type)
     }
     null.occs.i.z <- null.occs.i.df %>% dplyr::select(-grp)
+    
     # shortcuts
     categoricals <- names(which(sapply(e@occs, is.factor)))
     if(length(categoricals) == 0) categoricals <- NULL
