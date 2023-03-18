@@ -48,7 +48,7 @@
 #' empirical and null models. This comparison table includes T-statistics for pairwise comparisons (T-test) 
 #' and F-statistic (ANOVA) of these differences and their associated p-values (under a normal distribution). 
 
-ENMnull_ANOVA <- function(e.list, mod.settings.list, 
+ENMnulls_ANOVA <- function(e.list, mod.settings.list, 
                           eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
                           alternative = "two.sided",
                           no.iter, user.eval.type) {
@@ -121,39 +121,6 @@ ENMnull_ANOVA <- function(e.list, mod.settings.list,
                                   parallelType = "doSNOW", quiet = FALSE)
   }
   
-  #######################################################
-  ## 4. Calculate differences in model evaluation metrics 
-  #######################################################
-  #Extract relevant model accuracy metrics &
-  #Calculate pairwise differences among empirical and null model treatments
-  
-  #NOTE: WE NEED TO WORK IN A WAY TO MAKE THE TEST DIRECTIONAL 
-  
-  # assemble null evaluation statistics and take summaries
-  # nulls <- lapply(ENMnull.list, function(x){
-  #   dplyr::bind_rows(lapply(x, function(y) y@null.results))
-  # })
-  # 
-  # nulls.grp <- lapply(ENMnull.list, function(x){
-  #   null.stat <- dplyr::bind_rows(lapply(x, function(y) y$results.partitions))
-  # })
-  
-  # if(eval.type %in% c("testing", "none")) {
-  # nulls <- lapply(nulls, function(x){
-  #   dif <- x %>% dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("train")) %>% 
-  #     tibble::rownames_to_column(var = "iter")
-  # })
-  # 
-  # for(x in 1:length(nulls)){
-  #   nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
-  # }
-  # 
-  # stat <- grep(eval.stats, names(nulls), value = T)
-  # 
-  # nulls <- nulls %>% dplyr::bind_rows(.)%>% 
-  #   tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
-  
-  
   # get empirical model evaluation statistics for comparison
   emp.diff <- lapply(1:z, function(x) ENMnull.list[[x]]@null.emp.results[1,] %>%
                        dplyr::select(-statistic))
@@ -163,48 +130,8 @@ ENMnull_ANOVA <- function(e.list, mod.settings.list,
                                dplyr::select(dplyr::contains(eval.stats) & dplyr::ends_with("avg")))
   names(null.results.all) <- LETTERS[1:z]
   
-  
-  # emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
-  #   dplyr::mutate(model.treatment = LETTERS[1:nrow(.)]) %>%
-  #   tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
-  #   tidyr::unnest(cols = colnames(.))
-  
-  # }else{
-  #   nulls <- lapply(nulls, function(x){
-  #     if("auc" %in% eval.stats | "cbi" %in% eval.stats){
-  #       dif <- x %>% dplyr::select(paste0(eval.stats, ".val.avg")) %>% tibble::rownames_to_column(var = "iter")
-  #     } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
-  #       dif <- x %>% dplyr::select(paste0(eval.stats, ".avg")) %>% tibble::rownames_to_column(var = "iter")
-  #     }
-  #   })
-  #   for(x in 1:length(nulls)){
-  #     nulls[[x]] <- nulls[[x]] %>% dplyr::mutate(model.treatment = rep(LETTERS[x], nrow(.)))
-  #   }
-  #   
-  #   
-  #   nulls <- nulls %>% dplyr::bind_rows(.)%>% 
-  #     tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))
-  #   
-  #   if("auc" %in% eval.stats | "cbi" %in% eval.stats){
-  #     statistic <- paste0(eval.stats, ".val.avg")
-  #   } else if ("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
-  #     statistic <- paste0(eval.stats, ".avg")
-  #   }
-  #   
-  #   # get empirical model evaluation statistics for comparison
-  #   emp.dif <- lapply(emp.mod.res.list, function(emp){ 
-  #     if("auc" %in%  eval.stats | "cbi" %in% eval.stats){
-  #       emp <- emp %>% dplyr::select(paste0(eval.stats, ".val.avg"))
-  #     } else if("or.mtp" %in% eval.stats | "or.10p" %in% eval.stats){
-  #       emp <- emp %>% dplyr::select(paste0(eval.stats, ".avg"))  
-  #     }
-  #   })
-  #   
-  #   emp.dif <- emp.dif %>% dplyr::bind_rows(.) %>% 
-  #     dplyr::mutate(model.treatment = LETTERS[1:nrow(.)]) %>%
-  #     tidyr::pivot_wider(names_from = model.treatment, values_from = grep(eval.stats, names(.), value = T))%>%
-  #     tidyr::unnest(cols = colnames(.))
-  # }
+  # Make code names for different combinations of treatments and assign them.
+  # Then calculate the differences in evaluation stats.
   comb <- combn(LETTERS[1:z], 2)
   null.results.diff.list <- list()
   emp.diff.list <- list()
@@ -224,78 +151,12 @@ ENMnull_ANOVA <- function(e.list, mod.settings.list,
     emp.diff.list[[i]] <- dplyr::mutate(emp.diff.list[[i]], comb = paste(comb.i, collapse = "_"))
   }
   
+  # Combine into one table.
   emp.diff.comb <- dplyr::bind_rows(emp.diff.list)
   null.results.diff.comb <- dplyr::bind_rows(null.results.diff.list)
   
-  
-  #calculate model metrics pairwise differences among treatments
-  # if(g <= 2) {
-  # if(alternative == "two.sided"){
-  # null.results.diff <- abs(null.results.all[[1]] - null.results.all[[2]])
-  # nulls.diff <- null.results.all %>% dplyr::transmute(`null.B-A` = abs(B - A)) %>% dplyr::mutate(iter = 1:nrow(.))  
-  # }else{
-  # null.results.diff <- null.results.all[[1]] - null.results.all[[2]]
-  # nulls.diff <- nulls %>% dplyr::transmute(`null.B-A` = B - A) %>% dplyr::mutate(iter = 1:nrow(.))  
-  # }
-  # null.results.diff <- null.results.diff %>% dplyr::mutate(iter = 1:nrow(.))
-  # }else{
-  
-  
-  #Obtaining all pairwise model treatment combinations
-  # comb <- nulls %>% dplyr::select(-iter) 
-  # comb <- combn(colnames(comb), 2)
-  
-  #calculating pairwise differences among treatments & merging in single dataframe
-  #   nulls.dif.list <- list() 
-  #   for(i in 1:ncol(comb)){
-  #     name <- paste0("null.",comb[,i][2], "-", comb[,i][1])
-  #     if(alternative == "two.sided"){
-  #       nulls.dif.list[[i]] <- nulls %>% 
-  #         dplyr::transmute(abs(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))]))
-  #       names(nulls.dif.list[[i]]) <- name  
-  #     }else{
-  #       nulls.dif.list[[i]] <- nulls %>%
-  #         dplyr::transmute(nulls[grep(comb[,i][2], colnames(.))] - nulls[grep(comb[,i][1], colnames(.))])
-  #       names(nulls.dif.list[[i]]) <- name  
-  #     }
-  #   }
-  #   nulls.dif <- dplyr::bind_cols(nulls.dif.list)%>% dplyr::mutate(iter = 1:nrow(.))
-  # }
-  
-  # #calculate model metrics pairwise differences among treatments
-  # if(ncol(emp.diff) == 2){
-  #   if(alternative == "two.sided"){
-  #     emp.dif <- emp.dif %>% dplyr::transmute(`emp.B-A` = abs(B - A))  
-  #   } else {
-  #     emp.dif <- emp.dif %>% dplyr::transmute(`emp.B-A` = B - A)  
-  #   }
-  # }else if(ncol(emp.dif > 2)){
-  #   #Obtaining all pairwise model treatment combinations
-  #   comb <- emp.dif
-  #   comb <- combn(colnames(comb), 2)
-  #   
-  #   #calculating pairwise differences among treatments & merging in single dataframe
-  #   emp.dif.list <- list() 
-  #   if(alternative == "two.sided"){
-  #     for(i in 1:ncol(comb)){
-  #       name <- paste0("emp.",comb[,i][2], "-", comb[,i][1])
-  #       emp.dif.list[[i]] <- emp.dif %>% 
-  #         dplyr::transmute(abs(emp.dif[grep(comb[,i][2], colnames(.))] - emp.dif[grep(comb[,i][1], colnames(.))]))
-  #       names(emp.dif.list[[i]]) <- name
-  #     }
-  #   }else{
-  #     for(i in 1:ncol(comb)){
-  #       name <- paste0("emp.",comb[,i][2], "-", comb[,i][1])
-  #       emp.dif.list[[i]] <- emp.dif %>% 
-  #         dplyr::transmute(emp.dif[grep(comb[,i][2], colnames(.))] - emp.dif[grep(comb[,i][1], colnames(.))])
-  #       names(emp.dif.list[[i]]) <- name
-  #     }
-  #   }
-  #   emp.dif <- dplyr::bind_cols(emp.dif.list)
-  # }
-  
+  # Get averages and sds.
   nulls.diff.avg <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(mean, na.rm = TRUE)
-  # nulls.diff.avg <- nulls.dif %>% dplyr::select(-iter) %>% dplyr::summarise_all(mean, na.rm = T)
   nulls.diff.sd <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(sd, na.rm = TRUE)
   
   ###
