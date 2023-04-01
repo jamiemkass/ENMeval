@@ -1,6 +1,6 @@
 #' @title Compare model accuracy metrics of Ecological Niche Models (ENMs) built with different set of predictors.
 #' #' @description \code{ENMnulls.test()} Iteratively builds null ENMs for "k" sets of user-specified model
-#' settings bsaed on "k" input ENMevaluation objects, from which all other analysis 
+#' settings based on "k" input ENMevaluation objects, from which all other analysis 
 #' settings are extracted.Summary statistics of the performance metrics for the null ENMs 
 #' are taken (averages and standard deviations) and effect sizes and p-values are calculated by 
 #' comparing these summary statistics to the empirical values of the performance metrics 
@@ -51,7 +51,7 @@
 ENMnulls_ANOVA <- function(e.list, mod.settings.list, 
                           eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
                           alternative = "two.sided",
-                          no.iter, user.eval.type) {
+                          no.iter, user.eval.type = NULL) {
   
   # z equal number of treatments
   z <- length(e.list)
