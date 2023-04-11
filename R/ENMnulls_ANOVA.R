@@ -180,8 +180,6 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
     null.results.all <- dplyr::bind_rows(null.results.all, .id = 'predictor')%>%
       dplyr::mutate(predictor = as.factor(predictor))
     
-    #eval.stats <- paste0(eval.stats, ".avg")
-    
     #using the rstatix package to implement repeated measures anova
     anova.nulls <- rstatix::anova_test(data  = null.results.all, 
                                        dv = grep(paste0(eval.stats, ".avg"), names(null.results.all), value = T),
