@@ -222,6 +222,6 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
     empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore))
   }
   
-  return(list(anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
-              emp.nulls = empNull.stats))
+  return(list(Null.dist = null.results.all, anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
+              emp.nulls = empNull.stats, nulls.diff = null.results.diff.comb))
 }
