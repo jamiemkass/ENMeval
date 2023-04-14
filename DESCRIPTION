@@ -1,7 +1,7 @@
 Package: ENMeval
 Type: Package
 Title: Automated Tuning and Evaluations of Ecological Niche Models
-Version: 2.0.4
+Version: 2.0.4.1
 Date: 2022-05-19
 Authors@R: c(
   person("Jamie M.","Kass", email = "jamie.m.kass@gmail.com", role = c("aut","cre")), 

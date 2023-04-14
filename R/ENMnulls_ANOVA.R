@@ -1,6 +1,6 @@
 #' @title Compare model accuracy metrics of Ecological Niche Models (ENMs) built with different set of predictors.
-#' #' @description \code{ENMnulls.test()} Iteratively builds null ENMs for "k" sets of user-specified model
-#' settings bsaed on "k" input ENMevaluation objects, from which all other analysis 
+#' @description \code{ENMnulls.test()} Iteratively builds null ENMs for "k" sets of user-specified model
+#' settings based on "k" input ENMevaluation objects, from which all other analysis 
 #' settings are extracted.Summary statistics of the performance metrics for the null ENMs 
 #' are taken (averages and standard deviations) and effect sizes and p-values are calculated by 
 #' comparing these summary statistics to the empirical values of the performance metrics 
@@ -16,7 +16,8 @@
 #' @param user.enm ENMdetails object: if implementing a user-specified model. 
 #' @param user.eval.type character: if implementing a user-specified model -- either "knonspatial", "kspatial", 
 #' "testing" or "none".
-#' @param alternative a character string 
+#' @param alternative a character string indicating the type of test for post-hoc analyses. Can be one of "two.sided" (default),
+#' "greater", "less".  
 #' @param userStats.signs named list: user-defined evaluation statistics attributed with either 1 or -1 
 #' to designate whether the expected difference between empirical and null models is positive or negative; 
 #' this is used to calculate the p-value of the z-score when comparing two predictor variable sets. Default is NULL.
@@ -26,7 +27,7 @@
 #' @param parallelType character: either "doParallel" or "doSNOW" (default: "doSNOW").
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors).
 #' 
-#' #' @details This null ENM technique extends the implementation in Bohl \emph{et al.} (2019)and Kass \emph{et al.} (2020),
+#' @details This null ENM technique extends the implementation in Bohl \emph{et al.} (2019)and Kass \emph{et al.} (2020),
 #' which follows the original methodology of Raes & ter Steege (2007). Here we evaluate if observed differences in accuracy metric values 
 #' (e.g., AUC, omission rates, CBI) of empirical models built with different sets of predictor variable are greater than expected 
 #' at random. This is done by building the null distributions of the difference in accuracy metrics
@@ -43,18 +44,23 @@
 #'
 #' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \url{https://doi.org/10.1111/j.2007.0906-7590.05041.x} 
 #' 
-#' #' @return An \code{ENMnull}An ENMnull object with slots containing evaluation summary statistics 
+#' @return An \code{ENMnull}An ENMnull object with slots containing evaluation summary statistics 
 #' for the null models and their cross-validation results, as well as differences in results between the 
 #' empirical and null models. This comparison table includes T-statistics for pairwise comparisons (T-test) 
 #' and F-statistic (ANOVA) of these differences and their associated p-values (under a normal distribution). 
+#' @export
 
 ENMnulls_ANOVA <- function(e.list, mod.settings.list, 
-                          eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
-                          alternative = "two.sided",
-                          no.iter, user.eval.type) {
+                           eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
+                           alternative = "two.sided",
+                           no.iter, user.eval.type = NULL, userStats.signs = NULL) {
   
   # z equal number of treatments
   z <- length(e.list)
+  
+  # assign directionality of sign for evaluation stats
+  signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
+                  "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
   
   # check that e.list occs and bg are the same (unfinished)
   e.occs <- list()
@@ -69,7 +75,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   }else if(length(e.part.methods) != 1) {
     stop("When statistically comparing ENMevaluation objects, they cannot use different partition methods.")
   }
-    
+  
   # assign evaluation type based on partition method
   if(is.null(user.eval.type)) {
     eval.type <- switch(e.list[[1]]@partition.method,
@@ -84,6 +90,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
     eval.type <- user.eval.type
   }
   
+  
   # make a list to hold the same null occs for each treatment
   null.occs.treatments <- list()
   # The first list will be for the first ENMevaluation object. This one will 
@@ -94,7 +101,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   }
   # To avoid duplication of work, we keep these values for e1 and associate the 
   # predictor values of e2, e3, ... based on the same coordinates.
-  for(x in 2:length(e.list)) {
+  for(x in 2:z) {
     e.x <- e.list[[x]]
     null.occs.treatments[[x]] <- list()
     for(i in 1:no.iter) {
@@ -111,7 +118,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   # other treatment and thus specify partition.method as "user". However, the
   # user.eval.type is the same.
   ENMnull.list <- list()
-  for(i in 1:length(e.list)) {
+  for(i in 1:z){
     message(paste0("* Predictor treatment ", i, ":"))
     ENMnull.list[[i]] <- ENMnulls(e.list[[i]], mod.settings.list[[i]], no.iter, 
                                   input.random.data = null.occs.treatments[[i]],
@@ -123,7 +130,8 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   
   # get empirical model evaluation statistics for comparison
   emp.diff <- lapply(1:z, function(x) ENMnull.list[[x]]@null.emp.results[1,] %>%
-                       dplyr::select(-statistic))
+                       dplyr::select(dplyr::contains(eval.stats)))
+  
   names(emp.diff) <- LETTERS[1:z]
   
   null.results.all <- lapply(1:z, function(x) ENMnull.list[[x]]@null.results %>%
@@ -151,7 +159,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
     emp.diff.list[[i]] <- dplyr::mutate(emp.diff.list[[i]], comb = paste(comb.i, collapse = "_"))
   }
   
-  # Combine into one table.
+  # Combine into one table
   emp.diff.comb <- dplyr::bind_rows(emp.diff.list)
   null.results.diff.comb <- dplyr::bind_rows(null.results.diff.list)
   
@@ -159,72 +167,61 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   nulls.diff.avg <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(mean, na.rm = TRUE)
   nulls.diff.sd <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(sd, na.rm = TRUE)
   
-  ###
-  ### DID UP TO HERE ###
-  ###
+  #Run a one-way repeated measures ANOVA on null model differences to 
+  #estimate statistical differences among null model treatments
   
-  ##################################################################
-  ## 5. Estimate statistical differences among null model treatments
-  ##################################################################
-  #Run a one-way repeated measures ANOVA on null model differences
-  
-  #shaping data into the correct format for anova testing
-  if(ncol(nulls) > 3){
-    nulls.l<- tidyr::pivot_longer(nulls, cols= -iter, names_to = "predictor", 
-                                  values_to = eval.stats)%>%
-      mutate(iter = as.factor(iter))
-  }
-  
-  #using the rstatix package to implement repeated measures anova
-  anova.nulls <- rstatix::anova_test(data  = nulls.l, 
-                                     dv = eval.stats,
-                                     wid = iter, 
-                                     within = predictor)
-  
-  #post-hoc tests to examine pairwise differences among predictor sets
-  pairwise.mod <- as.formula(paste(eval.stats, "predictor", sep = "~"))
-  
-  pairwise.nulls <- nulls.l %>%
-    rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
-                             p.adjust.method = "bonferroni", 
-                             alternative = alternative)
-  
-  ####################################################################
-  ## 6. Estimate statistical differences between real and null models 
-  ####################################################################
-  #One sample t-test between empirical and null differences for each treatment combination
-  
-  #NOTE: NEED TO CHECK HOW TO INCORPORATE DIRECTIONALITY.
-  
-  empNull.stats.list <- list()
-  
-  for(i in 1:ncol(emp.dif)){
-    #create output dataframe
-    empNull.stats.list[[i]] <- as.data.frame(matrix(nrow = 1, ncol = 7))
-    
-    names(empNull.stats.list[[i]]) <- c("treatment.dif","statistic","emp.dif.mean", "null.dif.mean", "null.dif.sd", "zscore", "pvalue")
-    
-    #fill in slots
-    empNull.stats.list[[i]]$treatment.dif <- names(emp.dif[i])
-    empNull.stats.list[[i]]$statistic <- statistic
-    empNull.stats.list[[i]]$emp.dif.mean <- as.numeric(as.data.frame(emp.dif[i]))
-    empNull.stats.list[[i]]$null.dif.mean <- as.numeric(as.data.frame(nulls.dif.avg[i]))
-    empNull.stats.list[[i]]$null.dif.sd <- as.numeric(as.data.frame(nulls.dif.sd[i]))
-    empNull.stats.list[[i]]$zscore <- as.numeric(as.data.frame(emp.dif[i] - nulls.dif.avg[i]) / nulls.dif.sd[i])
-    
-    # find statistics that need a positive pnorm, and those that need a negative pnorm
-    p.pos <- names(signs[sapply(signs, function(x) x == 1)])
-    p.neg <- names(signs[sapply(signs, function(x) x == -1)])
-    
-    if(empNull.stats.list[[i]]$statistic %in% p.pos){
-      empNull.stats.list[[i]]$pvalue <- pnorm(empNull.stats.list[[i]]$zscore, lower.tail = FALSE)
-      
-    }else if(empNull.stats.list[[i]]$statistic %in% p.neg){
-      empNull.stats.list[[i]]$pvalue <- pnorm(empNull.stats.list[[i]]$zscore)
+  if(z >= 3){
+    #Assigning iteration row ids and merging into single dataframe for anova test
+    for(i in 1:z){
+      null.results.all[[i]] <- null.results.all[[i]]%>%
+        dplyr::mutate(iter = as.factor(1:nrow(.)))
     }
+    
+    null.results.all <- dplyr::bind_rows(null.results.all, .id = 'predictor')%>%
+      dplyr::mutate(predictor = as.factor(predictor))
+    
+    #using the rstatix package to implement repeated measures anova
+    anova.nulls <- rstatix::anova_test(data  = null.results.all, 
+                                       dv = grep(paste0(eval.stats, ".avg"), names(null.results.all), value = T),
+                                       wid = iter, 
+                                       within = predictor)
+    
+    #post-hoc tests to examine pairwise differences among predictor sets
+    pairwise.mod <- as.formula(paste(paste0(eval.stats, ".avg"), "predictor", sep = "~"))
+    
+    pairwise.nulls <- null.results.all %>%
+      rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
+                               p.adjust.method = "bonferroni", 
+                               alternative = alternative)
   }
-  #Consider removing bind_rows 
-  empNull.stats <- dplyr::bind_rows(empNull.stats.list)
-  return(list(anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
-              emp.nulls = empNull.stats))
+  
+  #Testing if empirical evaluation metrics are significantly different from null differences.
+  
+  #Run a one sample t-test between empirical and null differences for each treatment combination
+  
+  #create output dataframe
+  empNull.stats <- emp.diff.comb %>% inner_join(nulls.diff.avg, by = 'comb')%>%
+    inner_join(nulls.diff.sd, by = 'comb')
+  
+  names(empNull.stats) <- c("emp.diff.mean", "treatment.diff","nulls.diff.mean", "nulls.diff.sd")
+  
+  #calculate z-scores
+  empNull.stats <- empNull.stats %>% mutate(eval.stat = rep(eval.stats, nrow(.))) %>% 
+    relocate(treatment.diff) %>% relocate(eval.stat, .after = treatment.diff) %>%
+    mutate(zscore =((emp.diff.mean - nulls.diff.mean)/ nulls.diff.sd))
+  
+  # find statistics that need a positive pnorm, and those that need a negative pnorm
+  p.pos <- names(signs[sapply(signs, function(x) x == 1)])
+  p.neg <- names(signs[sapply(signs, function(x) x == -1)])
+  
+  # obtain p-values
+  if(eval.stats %in% p.pos){
+    empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore, lower.tail = FALSE))
+    
+  }else if(eval.stats %in% p.neg){
+    empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore))
+  }
+  
+  return(list(Null.dist = null.results.all, anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
+              emp.nulls = empNull.stats, nulls.diff = null.results.diff.comb))
 }
