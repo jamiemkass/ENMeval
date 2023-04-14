@@ -62,10 +62,34 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   signs <- c(list("auc.val" = 1, "auc.train" = 1, "cbi.val" = 1, "cbi.train" = 1,
                   "auc.diff" = -1, "or.10p" = -1, "or.mtp" = -1), userStats.signs)
   
-  # check that e.list occs and bg are the same (unfinished)
+  # check that e.list occs and bg are the same
   e.occs <- list()
+  e.bg <- list()
   for(i in 1:z) {
-    e.occs[[i]] <- e.list[[i]]@occs[,c("longitude", "latitude")] %>% dplyr::mutate(tr = i)
+    e.occs.i <- e.list[[i]]@occs[,c("longitude", "latitude")] %>% dplyr::arrange(longitude, latitude)
+    e.occs[[i]] <- unname(apply(e.occs.i, 1, paste, collapse = "|"))
+    e.bg.i <- e.list[[i]]@bg[,c("longitude", "latitude")] %>% dplyr::arrange(longitude, latitude)
+    e.bg[[i]] <- unname(apply(e.bg.i, 1, paste, collapse = "|"))
+  }
+  if(!all(length(e.occs[[1]]) == sapply(e.occs, length))) {
+    stop("At least one occurrence dataset has a different number of rows from the others.
+         All ENMevaluation objects must have the same number of occurrence records.")
+  }
+  if(!all(length(e.bg[[1]]) == sapply(e.bg, length))) {
+    stop("At least one background dataset has a different number of rows from the others.
+         All ENMevaluation objects must have the same number of background records.")
+  }
+  e.occs.df <- dplyr::bind_cols(e.occs)
+  e.bg.df <- dplyr::bind_cols(e.bg)
+  e.occs.allEq <- sum(apply(e.occs.df, 1, function(x) x[1] %in% x)) == nrow(e.occs.df)
+  e.bg.allEq <- sum(apply(e.bg.df, 1, function(x) x[1] %in% x)) == nrow(e.bg.df)
+  if(e.occs.allEq != TRUE) {
+    stop("At least one occurrence record has coordinates that differ between datasets.
+         Occurrence record coordinates must be identical among datasets.")
+  }
+  if(e.bg.allEq != TRUE) {
+    stop("At least one background record has coordinates that differ between datasets.
+         Background record coordinates must be identical among datasets.")
   }
   
   # Check that partition.method is the same or just includes "user".
@@ -118,7 +142,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   # other treatment and thus specify partition.method as "user". However, the
   # user.eval.type is the same.
   ENMnull.list <- list()
-  for(i in 1:z){
+  for(i in 1:z) {
     message(paste0("* Predictor treatment ", i, ":"))
     ENMnull.list[[i]] <- ENMnulls(e.list[[i]], mod.settings.list[[i]], no.iter, 
                                   input.random.data = null.occs.treatments[[i]],
@@ -130,7 +154,8 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   
   # get empirical model evaluation statistics for comparison
   emp.diff <- lapply(1:z, function(x) ENMnull.list[[x]]@null.emp.results[1,] %>%
-                       dplyr::select(dplyr::contains(eval.stats)))
+                       dplyr::select(dplyr::contains(eval.stats)) %>%
+                       dplyr::rename_with(~paste0(., ".avg")))
   
   names(emp.diff) <- LETTERS[1:z]
   
@@ -163,65 +188,85 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   emp.diff.comb <- dplyr::bind_rows(emp.diff.list)
   null.results.diff.comb <- dplyr::bind_rows(null.results.diff.list)
   
-  # Get averages and sds.
+  # Get averages and sds
   nulls.diff.avg <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(mean, na.rm = TRUE)
   nulls.diff.sd <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(sd, na.rm = TRUE)
   
   #Run a one-way repeated measures ANOVA on null model differences to 
   #estimate statistical differences among null model treatments
   
-  if(z >= 3){
-    #Assigning iteration row ids and merging into single dataframe for anova test
-    for(i in 1:z){
+  if(z >= 3) {
+    # Assign iteration row ids and merging into single data frame for anova test
+    for(i in 1:z) {
       null.results.all[[i]] <- null.results.all[[i]]%>%
         dplyr::mutate(iter = as.factor(1:nrow(.)))
     }
     
-    null.results.all <- dplyr::bind_rows(null.results.all, .id = 'predictor')%>%
-      dplyr::mutate(predictor = as.factor(predictor))
+    null.results.all <- dplyr::bind_rows(null.results.all, .id = 'treatment')%>%
+      dplyr::mutate(treatment = as.factor(treatment))
     
-    #using the rstatix package to implement repeated measures anova
-    anova.nulls <- rstatix::anova_test(data  = null.results.all, 
-                                       dv = grep(paste0(eval.stats, ".avg"), names(null.results.all), value = T),
-                                       wid = iter, 
-                                       within = predictor)
-    
-    #post-hoc tests to examine pairwise differences among predictor sets
-    pairwise.mod <- as.formula(paste(paste0(eval.stats, ".avg"), "predictor", sep = "~"))
-    
-    pairwise.nulls <- null.results.all %>%
-      rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
-                               p.adjust.method = "bonferroni", 
-                               alternative = alternative)
+    # Use the rstatix package to implement repeated measures anova for each 
+    # metric in eval.stats
+    anova.nulls.ls <- list()
+    pairwise.nulls.ls <- list()
+    for(i in eval.stats) {
+      eval.stats.i <- paste0(i, ".avg")
+      anova.nulls.ls[[i]] <- rstatix::anova_test(data  = null.results.all, 
+                                                 dv = eval.stats.i,
+                                                 wid = iter, 
+                                                 within = treatment)
+      #post-hoc tests to examine pairwise differences among predictor sets
+      pairwise.mod <- as.formula(paste(eval.stats.i, "treatment", sep = "~"))
+      
+      pairwise.nulls.ls[[i]] <- null.results.all %>%
+        rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
+                                 p.adjust.method = "bonferroni", 
+                                 alternative = alternative)
+    }
   }
+  pairwise.nulls <- dplyr::bind_rows(pairwise.nulls.ls)
   
   #Testing if empirical evaluation metrics are significantly different from null differences.
   
   #Run a one sample t-test between empirical and null differences for each treatment combination
   
   #create output dataframe
-  empNull.stats <- emp.diff.comb %>% inner_join(nulls.diff.avg, by = 'comb')%>%
-    inner_join(nulls.diff.sd, by = 'comb')
+  emp.diff.comb <- emp.diff.comb %>% 
+    tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
+  nulls.diff.avg <- nulls.diff.avg %>% 
+    tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.mean")
+  nulls.diff.sd <- nulls.diff.sd %>% 
+    tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.sd")
+
+  empNull.stats <- dplyr::inner_join(emp.diff.comb, nulls.diff.avg, by = c("comb", "metric")) %>%
+    dplyr::inner_join(nulls.diff.sd, by = c("comb", "metric")) %>%
+    dplyr::group_by(comb, metric) %>%
+    dplyr::mutate(zscore =((emp.diff - null.diff.mean)/ null.diff.sd))
   
-  names(empNull.stats) <- c("emp.diff.mean", "treatment.diff","nulls.diff.mean", "nulls.diff.sd")
+  # empNull.stats <- emp.diff.comb %>% dplyr::inner_join(nulls.diff.avg, by = 'comb') %>%
+    # dplyr::inner_join(nulls.diff.sd, by = 'comb')
   
-  #calculate z-scores
-  empNull.stats <- empNull.stats %>% mutate(eval.stat = rep(eval.stats, nrow(.))) %>% 
-    relocate(treatment.diff) %>% relocate(eval.stat, .after = treatment.diff) %>%
-    mutate(zscore =((emp.diff.mean - nulls.diff.mean)/ nulls.diff.sd))
+  # names(empNull.stats) <- c("emp.diff.mean", "treatment.diff","nulls.diff.mean", "nulls.diff.sd")
+  
+  # calculate z-scores
+  # empNull.stats <- empNull.stats %>% mutate(eval.stat = rep(eval.stats, nrow(.))) %>% 
+  #   relocate(treatment.diff) %>% relocate(eval.stat, .after = treatment.diff) %>%
+  #   mutate(zscore =((emp.diff.mean - nulls.diff.mean)/ nulls.diff.sd))
   
   # find statistics that need a positive pnorm, and those that need a negative pnorm
-  p.pos <- names(signs[sapply(signs, function(x) x == 1)])
-  p.neg <- names(signs[sapply(signs, function(x) x == -1)])
+  p.pos <- names(signs[sapply(signs, function(x) x == 1)]) %>% paste0(., ".avg")
+  p.neg <- names(signs[sapply(signs, function(x) x == -1)]) %>% paste0(., ".avg")
   
   # obtain p-values
-  if(eval.stats %in% p.pos){
-    empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore, lower.tail = FALSE))
-    
-  }else if(eval.stats %in% p.neg){
-    empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore))
-  }
+  empNull.stats[empNull.stats$metric %in% p.pos, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.pos, "zscore", drop = TRUE], lower.tail = FALSE)
+  empNull.stats[empNull.stats$metric %in% p.neg, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.neg, "zscore", drop = TRUE])
+  # if(eval.stats %in% p.pos){
+  #   empNull.stats <- empNull.stats %>% dplyr::mutate(pvalue = pnorm(zscore, lower.tail = FALSE))
+  #   
+  # }else if(eval.stats %in% p.neg){
+  #   empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore))
+  # }
   
-  return(list(Null.dist = null.results.all, anova.nulls = anova.nulls, pair.nulls = pairwise.nulls, 
+  return(list(null.treatments = null.results.all, anova.nulls = anova.nulls.ls, pair.nulls = pairwise.nulls, 
               emp.nulls = empNull.stats, nulls.diff = null.results.diff.comb))
 }
