@@ -1,5 +1,5 @@
 #' @title Compare model accuracy metrics of Ecological Niche Models (ENMs) built with different set of predictors.
-#' @description \code{ENMnulls.test()} Iteratively builds null ENMs for "k" sets of user-specified model
+#' @description \code{ENMnulls_ANOVA()} Iteratively builds null ENMs for "k" sets of user-specified model
 #' settings based on "k" input ENMevaluation objects, from which all other analysis 
 #' settings are extracted.Summary statistics of the performance metrics for the null ENMs 
 #' are taken (averages and standard deviations) and effect sizes and p-values are calculated by 
@@ -7,13 +7,12 @@
 #' (i.e., from the model built with the empirical data). This is an extension of {ENMnulls()} for comparisons
 #' of two or more predictor variable sets.
 #' 
-#' @param e.list: list of ENMevaluation objects to be compared
+#' @param e.list list of ENMevaluation objects to be compared
 #' @param mod.settings.list named list: model settings corresponding to ENMevaluation objects in e.list 
 #' that specify the settings used for building null models
 #' @param no.iter numeric: number of null model iterations.
 #' @param eval.stats character: model accuarcy metrics that will be used to calculate null model statistics. 
 #' Can be one of “auc”, “cbi”, “or.mtp”, “or.10p”.
-#' @param user.enm ENMdetails object: if implementing a user-specified model. 
 #' @param user.eval.type character: if implementing a user-specified model -- either "knonspatial", "kspatial", 
 #' "testing" or "none".
 #' @param alternative a character string indicating the type of test for post-hoc analyses. Can be one of "two.sided" (default),
@@ -21,11 +20,6 @@
 #' @param userStats.signs named list: user-defined evaluation statistics attributed with either 1 or -1 
 #' to designate whether the expected difference between empirical and null models is positive or negative; 
 #' this is used to calculate the p-value of the z-score when comparing two predictor variable sets. Default is NULL.
-#' @param removeMxTemp boolean: if TRUE, delete all temporary data generated when using maxent.jar for modeling
-#' @param parallel boolean: if TRUE, use parallel processing.
-#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used.
-#' @param parallelType character: either "doParallel" or "doSNOW" (default: "doSNOW").
-#' @param quiet boolean: if TRUE, silence all function messages (but not errors).
 #' 
 #' @details This null ENM technique extends the implementation in Bohl \emph{et al.} (2019)and Kass \emph{et al.} (2020),
 #' which follows the original methodology of Raes & ter Steege (2007). Here we evaluate if observed differences in accuracy metric values 
