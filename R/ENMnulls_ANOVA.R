@@ -185,73 +185,113 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   }
   
   # Combine into one table
-  emp.diff.comb <- dplyr::bind_rows(emp.diff.list)
-  null.results.diff.comb <- dplyr::bind_rows(null.results.diff.list)
+  emp.diff.comb <- dplyr::bind_rows(emp.diff.list)%>% 
+    dplyr::rename(treatment.dif = comb)%>%
+    dplyr::mutate(treatment.dif = as.factor(treatment.dif))
+  
+  null.results.diff.comb <- dplyr::bind_rows(null.results.diff.list) %>% 
+    dplyr::rename(treatment.dif = comb)
   
   # Get averages and sds
-  nulls.diff.avg <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(mean, na.rm = TRUE)
-  nulls.diff.sd <- null.results.diff.comb %>% dplyr::select(-iter) %>% dplyr::group_by(comb) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+  nulls.diff.avg <- null.results.diff.comb %>% dplyr::select(-iter) %>% 
+    dplyr::group_by(treatment.dif) %>% dplyr::summarise_all(mean, na.rm = TRUE)
   
-  #Run a one-way repeated measures ANOVA on null model differences to 
-  #estimate statistical differences among null model treatments
+  nulls.diff.avg.pool <- null.results.diff.comb %>% dplyr::select(-iter, -treatment.dif) %>% 
+    dplyr::summarise_all(mean, na.rm = TRUE)
   
-  if(z >= 3) {
-    # Assign iteration row ids and merging into single data frame for anova test
-    for(i in 1:z) {
-      null.results.all[[i]] <- null.results.all[[i]]%>%
-        dplyr::mutate(iter = as.factor(1:nrow(.)))
+  nulls.diff.sd <- null.results.diff.comb %>% dplyr::select(-iter) %>% 
+    dplyr::group_by(treatment.dif) %>% dplyr::summarise_all(sd, na.rm = TRUE)
+  
+  nulls.diff.sd.pool <- null.results.diff.comb %>% dplyr::select(-iter, -treatment.dif) %>% 
+    dplyr::summarise_all(sd, na.rm = TRUE)
+  
+  #Estimate statistical differences among null model treatments
+  
+  if (z == 2){
+    # Use the rstatix package to implement paired t-test with bonferroni correction for each 
+    # metric in eval.stats
+    pairwise.nulls.ls <- list()
+    
+    for(i in eval.stats) {
+      pairwise.mod <- as.formula(paste(eval.stats.i, "treatment.dif", sep = "~"))
+      
+      pairwise.nulls.ls[[i]] <- null.results.diff.comb %>%
+        rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
+                                 alternative = alternative)
+      
+      emp.diff.comb <- emp.diff.comb %>% 
+        tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
+      nulls.diff.avg <- nulls.diff.avg %>% 
+        tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.mean")
+      nulls.diff.sd <- nulls.diff.sd %>% 
+        tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.sd")
+      
+      empNull.stats <- dplyr::inner_join(emp.diff.comb, nulls.diff.avg, by = c("treatment.dif", "metric")) %>%
+        dplyr::inner_join(nulls.diff.sd, by = c("treatment.dif", "metric")) %>%
+        dplyr::group_by(treatment.dif, metric) %>%
+        dplyr::mutate(zscore =((emp.diff - null.diff.mean)/ null.diff.sd))
+      
+      # find statistics that need a positive pnorm, and those that need a negative pnorm
+      p.pos <- names(signs[sapply(signs, function(x) x == 1)]) %>% paste0(., ".avg")
+      p.neg <- names(signs[sapply(signs, function(x) x == -1)]) %>% paste0(., ".avg")
+      
+      # obtain p-values
+      empNull.stats[empNull.stats$metric %in% p.pos, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.pos, "zscore", drop = TRUE], lower.tail = FALSE)
+      empNull.stats[empNull.stats$metric %in% p.neg, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.neg, "zscore", drop = TRUE])
     }
-    
-    null.results.all <- dplyr::bind_rows(null.results.all, .id = 'treatment')%>%
-      dplyr::mutate(treatment = as.factor(treatment))
-    
+  } else if(z >= 3) {
     # Use the rstatix package to implement repeated measures anova for each 
     # metric in eval.stats
     anova.nulls.ls <- list()
     pairwise.nulls.ls <- list()
     for(i in eval.stats) {
       eval.stats.i <- paste0(i, ".avg")
-      anova.nulls.ls[[i]] <- rstatix::anova_test(data  = null.results.all, 
+      anova.nulls.ls[[i]] <- rstatix::anova_test(data  = null.results.diff.comb, 
                                                  dv = eval.stats.i,
                                                  wid = iter, 
-                                                 within = treatment)
-      #post-hoc tests to examine pairwise differences among predictor sets
-      pairwise.mod <- as.formula(paste(eval.stats.i, "treatment", sep = "~"))
+                                                 within = treatment.dif)
       
-      pairwise.nulls.ls[[i]] <- null.results.all %>%
+      #post-hoc tests to examine pairwise differences among predictor sets
+      pairwise.mod <- as.formula(paste(eval.stats.i, "treatment.dif", sep = "~"))
+      
+      pairwise.nulls.ls[[i]] <- null.results.diff.comb %>%
         rstatix::pairwise_t_test(pairwise.mod, paired = TRUE, 
                                  p.adjust.method = "bonferroni", 
                                  alternative = alternative)
+      
+      
+      #Testing if empirical evaluation metrics are significantly different from null differences.
+      #Calculate z-score and p-values for empirical against null treatment differences 
+      if(anova.nulls.ls[[i]]$p < 0.05){
+        #create output dataframe
+        emp.diff.comb <- emp.diff.comb %>% 
+          tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
+        nulls.diff.avg <- nulls.diff.avg %>% 
+          tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.mean")
+        nulls.diff.sd <- nulls.diff.sd %>% 
+          tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.sd")
+        
+        empNull.stats <- dplyr::inner_join(emp.diff.comb, nulls.diff.avg, by = c("treatment.dif", "metric")) %>%
+          dplyr::inner_join(nulls.diff.sd, by = c("treatment.dif", "metric")) %>%
+          dplyr::group_by(treatment.dif, metric) %>%
+          dplyr::mutate(zscore =((emp.diff - null.diff.mean)/ null.diff.sd))
+        
+      } else if (anova.nulls.ls[[i]]$p >= 0.05){
+        emp.diff.comb <- emp.diff.comb %>% 
+          tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
+        nulls.diff.avg.pool <- nulls.diff.avg.pool %>% 
+          tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.mean.pool")
+        nulls.diff.sd.pool <- nulls.diff.sd.pool %>% 
+          tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.sd.pool")
+        
+        empNull.stats <- dplyr::inner_join(emp.diff.comb, nulls.diff.avg.pool, by = "metric")%>%
+          dplyr::inner_join(nulls.diff.sd.pool, by = "metric") %>%
+          dplyr::mutate(zscore =((emp.diff - null.diff.mean.pool)/ null.diff.sd.pool))
+      }
     }
   }
   pairwise.nulls <- dplyr::bind_rows(pairwise.nulls.ls)
   
-  #Testing if empirical evaluation metrics are significantly different from null differences.
-  
-  #Run a one sample t-test between empirical and null differences for each treatment combination
-  
-  #create output dataframe
-  emp.diff.comb <- emp.diff.comb %>% 
-    tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
-  nulls.diff.avg <- nulls.diff.avg %>% 
-    tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.mean")
-  nulls.diff.sd <- nulls.diff.sd %>% 
-    tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "null.diff.sd")
-
-  empNull.stats <- dplyr::inner_join(emp.diff.comb, nulls.diff.avg, by = c("comb", "metric")) %>%
-    dplyr::inner_join(nulls.diff.sd, by = c("comb", "metric")) %>%
-    dplyr::group_by(comb, metric) %>%
-    dplyr::mutate(zscore =((emp.diff - null.diff.mean)/ null.diff.sd))
-  
-  # empNull.stats <- emp.diff.comb %>% dplyr::inner_join(nulls.diff.avg, by = 'comb') %>%
-    # dplyr::inner_join(nulls.diff.sd, by = 'comb')
-  
-  # names(empNull.stats) <- c("emp.diff.mean", "treatment.diff","nulls.diff.mean", "nulls.diff.sd")
-  
-  # calculate z-scores
-  # empNull.stats <- empNull.stats %>% mutate(eval.stat = rep(eval.stats, nrow(.))) %>% 
-  #   relocate(treatment.diff) %>% relocate(eval.stat, .after = treatment.diff) %>%
-  #   mutate(zscore =((emp.diff.mean - nulls.diff.mean)/ nulls.diff.sd))
   
   # find statistics that need a positive pnorm, and those that need a negative pnorm
   p.pos <- names(signs[sapply(signs, function(x) x == 1)]) %>% paste0(., ".avg")
@@ -260,13 +300,17 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   # obtain p-values
   empNull.stats[empNull.stats$metric %in% p.pos, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.pos, "zscore", drop = TRUE], lower.tail = FALSE)
   empNull.stats[empNull.stats$metric %in% p.neg, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.neg, "zscore", drop = TRUE])
-  # if(eval.stats %in% p.pos){
-  #   empNull.stats <- empNull.stats %>% dplyr::mutate(pvalue = pnorm(zscore, lower.tail = FALSE))
-  #   
-  # }else if(eval.stats %in% p.neg){
-  #   empNull.stats <- empNull.stats %>% mutate(pvalue = pnorm(zscore))
-  # }
   
-  return(list(null.treatments = null.results.all, anova.nulls = anova.nulls.ls, pair.nulls = pairwise.nulls, 
-              emp.nulls = empNull.stats, nulls.diff = null.results.diff.comb))
+  # apply Bonferroni corrections to adjust p-values
+  empNull.stats <- empNull.stats %>% mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = z))
+  
+  if (z == 2 ){
+    return(list(pairwise.nulls = pairwise.nulls, emp.nulls =empNull.stats, 
+                nulls.diff = null.results.diff.comb))
+    
+  } else if (z >= 3){
+    return(list(anova.nulls = anova.nulls.ls, emp.nulls = empNull.stats, pair.nulls = pairwise.nulls, 
+                nulls.diff = null.results.diff.comb))  
+  }
+  
 }
