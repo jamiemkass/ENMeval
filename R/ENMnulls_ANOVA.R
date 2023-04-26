@@ -296,7 +296,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   empNull.stats[empNull.stats$metric %in% p.neg, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.neg, "zscore", drop = TRUE])
   
   # apply Bonferroni corrections to adjust p-values
-  empNull.stats <- empNull.stats %>% mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = z))
+  empNull.stats <- empNull.stats %>% dplyr::mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = z))
   
   if (z == 2 ){
     return(list(pairwise.nulls = pairwise.nulls, emp.nulls =empNull.stats, 
