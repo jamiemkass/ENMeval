@@ -256,7 +256,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
       
       #Testing if empirical evaluation metrics are significantly different from null differences.
       #Calculate z-score and p-values for empirical against null treatment differences 
-      if(anova.nulls.ls[[i]]$p < 0.05){
+      if(anova.nulls.ls[[i]]$ANOVA$p < 0.05){
         #create output dataframe
         emp.diff.comb <- emp.diff.comb %>% 
           tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
@@ -270,7 +270,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
           dplyr::group_by(treatment.dif, metric) %>%
           dplyr::mutate(zscore =((emp.diff - null.diff.mean)/ null.diff.sd))
         
-      } else if (anova.nulls.ls[[i]]$p >= 0.05){
+      } else if (anova.nulls.ls[[i]]$ANOVA$p >= 0.05){
         emp.diff.comb <- emp.diff.comb %>% 
           tidyr::pivot_longer(cols = paste0(eval.stats, ".avg"), names_to = "metric", values_to = "emp.diff")
         nulls.diff.avg.pool <- nulls.diff.avg.pool %>% 
@@ -296,7 +296,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   empNull.stats[empNull.stats$metric %in% p.neg, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.neg, "zscore", drop = TRUE])
   
   # apply Bonferroni corrections to adjust p-values
-  empNull.stats <- empNull.stats %>% dplyr::mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = z))
+  empNull.stats <- empNull.stats %>% mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = z))
   
   if (z == 2 ){
     return(list(pairwise.nulls = pairwise.nulls, emp.nulls =empNull.stats, 
