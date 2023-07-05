@@ -163,7 +163,7 @@
 #' @return An ENMevaluation object. See ?ENMevaluation for details and description of the columns
 #' in the results table.
 #'
-#' @importFrom magrittr %>%
+#' @importFrom magrittr |>
 #' @importFrom foreach %dopar%
 #' @importFrom grDevices rainbow
 #' @importFrom methods new slot validObject
@@ -414,8 +414,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   }
   
   # algorithm-specific errors
-  enm@errors(occs, envs, bg, tune.args, partitions, algorithm, partition.settings, other.settings, 
-             categoricals, doClamp, clamp.directions)
+  enm@errors(occs, envs, bg, tune.args, partitions, algorithm, partition.settings, 
+             other.settings, categoricals, doClamp, clamp.directions)
 
   
   ########################################################### #
@@ -424,33 +424,43 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
-    # make sure envs is a RasterStack -- if RasterLayer, maxent.jar crashes
-    envs <- raster::stack(envs)
-    envs.z <- raster::values(envs)
-    envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
+    envs.z <- terra::values(envs)
+    envs.naMismatch <- sum(apply(envs.z, 1, 
+                                 function(x) !all(is.na(x)) & !all(!is.na(x))))
     if(envs.naMismatch > 0) {
-      if(quiet != TRUE) message(paste0("* Found ", envs.naMismatch, " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables."))
+      if(quiet != TRUE) message(paste0("* Found ", 
+                                       envs.naMismatch, 
+                                       " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables."))
       envs.names <- names(envs)
-      envs <- raster::stack(raster::calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x))
+      envs <- terra::app(envs, 
+                         fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
       names(envs) <- envs.names
     }
     # if no background points specified, generate random ones
     if(is.null(bg)) {
       if(quiet != TRUE) message(paste0("* Randomly sampling ", n.bg, " background points ..."))
-      bg <- as.data.frame(dismo::randomPoints(envs, n = n.bg))
+      bg <- terra::spatSample(envs,
+                              size = n.bg,
+                              xy = TRUE,
+                              na.rm = TRUE,
+                              values = FALSE) |>
+        as.data.frame()
       names(bg) <- names(occs)
     }
     
     # remove cell duplicates
-    occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
-    occs.dups <- duplicated(occs.cellNo[,1])
-    if(sum(occs.dups) > 0) if(quiet != TRUE) message(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell."))
+    occs.cellNo <- terra::extract(envs, occs, cells = TRUE, ID = FALSE)
+    occs.dups <- duplicated(occs.cellNo[,"cell"])
+    if(sum(occs.dups) > 0) if(quiet != TRUE) 
+      message(paste0("* Removed ", 
+                     sum(occs.dups), 
+                     " occurrence localities that shared the same grid cell."))
     occs <- occs[!occs.dups,]
     if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
     
     # bind coordinates to predictor variable values for occs and bg
-    occs.z <- raster::extract(envs, occs)
-    bg.z <- raster::extract(envs, bg)
+    occs.z <- occs.cellNo[!occs.dups,-which(names(occs.cellNo) == "cell")]
+    bg.z <- terra::extract(envs, bg, ID = FALSE)
     occs <- cbind(occs, occs.z)
     bg <- cbind(bg, bg.z)
   }else{
@@ -459,31 +469,38 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       stop("* If inputting variable values without rasters, please make sure to input background coordinates with values as well as occurrences.")
     }
     # for occ and bg coordinates with environmental predictor values (SWD format)
-    if(quiet != TRUE) message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
+    if(quiet != TRUE) 
+      message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
     # make sure both occ and bg have predictor variable values
-    if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.")
+    if(ncol(occs) < 3 | ncol(bg) < 3) 
+      stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.")
   }
   
   # if NA predictor variable values exist for occs or bg, remove these records and modify user.grp accordingly
   occs.z.na <- which(rowSums(is.na(occs)) > 0)
   if(length(occs.z.na) > 0) {
-    if(quiet != TRUE) message(paste0("* Removed ", length(occs.z.na), " occurrence points with NA predictor variable values."))
+    if(quiet != TRUE) 
+      message(paste0("* Removed ", length(occs.z.na), " occurrence points with NA predictor variable values."))
     occs <- occs[-occs.z.na,]
-    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[-occs.z.na]
+    if(!is.null(user.grp)) 
+      user.grp$occs.grp <- user.grp$occs.grp[-occs.z.na]
   }
   
   bg.z.na <- which(rowSums(is.na(bg)) > 0)
   if(length(bg.z.na) > 0) {
-    if(quiet != TRUE) message(paste0("* Removed ", length(bg.z.na), " background points with NA predictor variable values."))
+    if(quiet != TRUE) 
+      message(paste0("* Removed ", length(bg.z.na), " background points with NA predictor variable values."))
     bg <- bg[-bg.z.na,]
-    if(!is.null(user.grp)) user.grp$bg.grp <- user.grp$bg.grp[-bg.z.na]
+    if(!is.null(user.grp)) 
+      user.grp$bg.grp <- user.grp$bg.grp[-bg.z.na]
   }
   
   # make main df with coordinates and predictor variable values
   d <- rbind(occs, bg)
   
   # add presence-background identifier for occs and bg
-  d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
+  d$pb <- c(rep(1, nrow(occs)), 
+            rep(0, nrow(bg)))
   
   # if user-defined partitions, assign grp variable before filtering out records with NA predictor variable values
   # for all other partitioning methods, grp assignments occur after filtering
@@ -501,7 +518,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # add testing data to main df if provided
   if(partitions == "testing") {
     if(!is.null(envs)) {
-      occs.testing.z <- as.data.frame(raster::extract(envs, occs.testing))
+      occs.testing.z <- as.data.frame(terra::extract(envs, occs.testing, ID = FALSE))
       occs.testing.z <- cbind(occs.testing, occs.testing.z)
     }else{
       occs.testing.z <- occs.testing
@@ -516,7 +533,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   
   # find factor rasters or columns and identify them as categoricals
   if(!is.null(envs)) {
-    categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+    categoricals <- unique(c(categoricals, names(envs)[which(terra::is.factor(envs))]))
   }else{
     categoricals <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
   }
@@ -525,10 +542,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      if(quiet != TRUE) message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
+      if(quiet != TRUE) 
+        message(paste0("* Assigning variable ", 
+                       categoricals[i], " to categorical ..."))
       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
-      if(!is.null(user.val.grps)) user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], levels = levels(d[, categoricals[i]]))
-      if(!is.null(occs.testing.z)) occs.testing.z[, categoricals[i]] <- factor(occs.testing.z[, categoricals[i]], levels = levels(d[, categoricals[i]]))
+      if(!is.null(user.val.grps)) 
+        user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], 
+                                                   levels = levels(d[, categoricals[i]]))
+      if(!is.null(occs.testing.z)) 
+        occs.testing.z[, categoricals[i]] <- factor(occs.testing.z[, categoricals[i]], 
+                                                    levels = levels(d[, categoricals[i]]))
     }
   }
   
@@ -579,8 +602,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ###################### #
   
   # unpack occs and bg records for partitioning
-  d.occs <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
-  d.bg <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
+  d.occs <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
+  d.bg <- d |> dplyr::filter(pb == 0) |> dplyr::select(1:2)
   
   # partition occs based on selected partition method
   grps <- switch(partitions, 
@@ -635,7 +658,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
   ################# #
   
   # make table for all tuning parameter combinations
-  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE) %>% tibble::as_tibble()
+  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE) |> tibble::as_tibble()
   # make tune.tbl NULL, not an empty table, if no settings are specified
   # this makes it easier to use tune.i as a parameter in function calls
   # when tune.args does not exist
@@ -714,10 +737,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     if(!is.null(tune.tbl)) val.stats.all$tune.args <- factor(val.stats.all$tune.args, levels = tune.names)
     
     # calculate summary statistics
-    cv.stats.sum <- val.stats.all %>% 
-      dplyr::group_by(tune.args) %>%
-      dplyr::select(-fold) %>% 
-      dplyr::summarize_all(sum.list) %>%
+    cv.stats.sum <- val.stats.all |> 
+      dplyr::group_by(tune.args) |>
+      dplyr::select(-fold) |> 
+      dplyr::summarize_all(sum.list) |>
       dplyr::ungroup() 
     
     # change names (replace _ with .)
@@ -730,7 +753,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       # make tune.args column in training stats factor too for smooth join
       train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
       # eval.stats is the join of tune.tbl, training stats, and cv stats
-      eval.stats <- tune.tbl %>% dplyr::left_join(train.stats.all, by = "tune.args") %>%
+      eval.stats <- tune.tbl |> dplyr::left_join(train.stats.all, by = "tune.args") |>
         dplyr::left_join(cv.stats.sum, by = "tune.args")
     }else{
       # if tune.tbl does not exist, eval.stats is the binding of training stats to cv stats
@@ -744,7 +767,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
     # if no partitions assigned, eval.stats is the join of tune.tbl to training stats
     eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args") 
     if(nrow(val.stats.all) > 0) eval.stats <- dplyr::left_join(eval.stats, val.stats.all, by = "tune.args")
-    if("fold" %in% names(eval.stats)) eval.stats <- eval.stats %>% dplyr::select(-fold)
+    if("fold" %in% names(eval.stats)) eval.stats <- eval.stats |> dplyr::select(-fold)
   }
   
   # calculate number of non-zero parameters in model

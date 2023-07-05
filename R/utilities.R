@@ -97,7 +97,7 @@ rasStackNAs <- function(envs) {
 
 clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL) {
   # find if orig.vals is a raster or not
-  isRas <- inherits(orig.vals, "BasicRaster") == TRUE
+  isRas <- inherits(orig.vals, "SpatRaster") == TRUE
   # error if "none" is included in left or right alongside variable names
   if((("none" %in% left) & length(left) > 1) | (("none" %in% right) & length(right) > 1)) {
     stop('To turn clamping off, specify the argument left, right or both of them to "none".')
