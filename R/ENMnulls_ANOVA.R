@@ -45,6 +45,7 @@
 #' @import dplyr
 #' @import tidyr
 #' @import rstatix
+#' @import stats
 #' @export
 
 ENMnulls_ANOVA <- function(e.list, mod.settings.list, 
@@ -63,6 +64,10 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   
   if(!(requireNamespace("tidyr", quietly = TRUE))) {
     message("Please install tidyr package.")
+  }
+  
+  if(!(requireNamespace("stats", quietly = TRUE))) {
+    message("Please install stats package.")
   }
   
   # z equal number of treatments
@@ -266,8 +271,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
                                                  dv = eval.stats.i,
                                                  wid = iter, 
                                                  within = treatment.dif)
-      p.ls[[i]] <- anova.nulls.ls[[i]]$p
-      
+      p.ls[[i]] <- anova.nulls.ls[[i]]$ANOVA$p
       #post-hoc tests to examine pairwise differences among predictor sets
       pairwise.mod <- as.formula(paste(eval.stats.i, "treatment.dif", sep = "~"))
       
@@ -326,7 +330,7 @@ ENMnulls_ANOVA <- function(e.list, mod.settings.list,
   empNull.stats[empNull.stats$metric %in% p.neg, "pvalue"] <- pnorm(empNull.stats[empNull.stats$metric %in% p.neg, "zscore", drop = TRUE])
   
   # apply Bonferroni corrections to adjust p-values
-  empNull.stats <- empNull.stats %>% mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = z))
+  empNull.stats <- empNull.stats %>% dplyr::mutate(p.adj = stats::p.adjust(pvalue, "bonferroni", n = length(pvalue)))
   
   if (z == 2 ){
     return(list(pairwise.nulls = pairwise.nulls, emp.nulls =empNull.stats, 
