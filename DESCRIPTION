@@ -1,6 +1,6 @@
 Package: ENMeval
 Type: Package
-Title: Automated Tuning and Evaluations of Ecological Niche Models
+Title: Automated Tuning and Evaluations of Ecological Niche Models (enabled addsamplestobackground)
 Version: 2.0.4
 Date: 2022-05-19
 Authors@R: c(
