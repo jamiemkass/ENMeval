@@ -74,7 +74,7 @@ similarity <- function(x, ref, full=FALSE) {
   } else r <- FALSE
   ref <- stats::na.omit(ref)
   if(!methods::is(x, 'data.frame')) {
-    x <- as.data.frame(x)
+    x <- terra::as.data.frame(x, na.rm = FALSE)
   }
   if(is.null(dim(ref))) {
     rng <- as.data.frame(range(ref, na.rm=TRUE))
@@ -99,7 +99,6 @@ similarity <- function(x, ref, full=FALSE) {
   most_similar_vec <- unlist(ifelse(lengths(maxs)==0, NA, maxs))
   
   if(isTRUE(r)) {
-    
     most_dissimilar <- terra::rast(out)
     most_dissimilar[] <- most_dissimilar_vec
     most_dissimilar <- terra::as.factor(most_dissimilar)

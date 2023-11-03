@@ -45,7 +45,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     message("Plotting first raster in stack...")
     envs <- envs[[1]]
   }
-  envs.df <- terra::as.data.frame(envs, xy = TRUE)
+  envs.df <- terra::as.data.frame(envs, xy = TRUE, na.rm = FALSE)
   names(envs.df)[3] <- "value"
   g <- ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = partition), size = pts.size) +
@@ -393,13 +393,13 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
     })
     sim.sel <- switch(sim.type, mess = sim$similarity_min, 
                       most_diff = sim$mod, most_sim = sim$mos)  
+    names(sim.sel) <- paste0("partition", k)
     
     ras.sim[[k]] <- sim.sel
   }
   
   rs.sim <- terra::rast(ras.sim)
-  names(rs.sim) <- gsub("layer|mess", "partition", names(rs.sim))
-  plot.df <- terra::as.data.frame(rs.sim, xy = TRUE) |>
+  plot.df <- terra::as.data.frame(rs.sim, xy = TRUE, na.rm = FALSE) |>
     tidyr::pivot_longer(cols = 3:dplyr::last_col(), names_to = "ras", values_to = sim.type)
   # add buffer
   plot.df <- plot.df |> dplyr::filter(x > min(pts.plot$longitude) - bb.buf, 
