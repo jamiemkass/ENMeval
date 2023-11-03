@@ -7,12 +7,12 @@
 clamp.vars(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL)
 }
 \arguments{
-\item{orig.vals}{RasterStack / matrix / data frame: environmental predictor variables (must be in same geographic 
+\item{orig.vals}{SpatRaster / matrix / data frame: environmental predictor variables (must be in same geographic 
 projection as occurrence data), or predictor variables values for the original records}
 
 \item{ref.vals}{matrix / data frame: predictor variable values for the reference records
 (not including coordinates), used to determine the minimums and maximums -- 
-this should ideally be the occurrences + background (can be made with raster::extract())}
+this should ideally be the occurrences + background (can be made with terra::extract())}
 
 \item{left}{character vector: names of variables to get a minimum clamp; can be "none" to turn
 off minimum clamping}
@@ -23,7 +23,7 @@ off maximum clamping}
 \item{categoricals}{character vector: name or names of categorical environmental variables}
 }
 \value{
-The clamped Raster* object.
+The clamped SpatRaster object.
 }
 \description{
 This function restricts the values of one or more predictor variable rasters
@@ -38,7 +38,7 @@ function default is to clamp all variables on both sides). To turn off clamping 
 enter "none" for either "left" or "right".
 
 Categorical variables need to be declared with the argument "categoricals". These variables
-are excluded from the clamping analysis, but are put back into the RasterStack that is returned.
+are excluded from the clamping analysis, but are put back into the SpatRaster that is returned.
 }
 \author{
 Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago

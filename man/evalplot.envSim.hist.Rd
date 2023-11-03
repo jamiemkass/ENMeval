@@ -38,7 +38,7 @@ the first two columns must be named "longitude" and "latitude"}
 \item{sim.type}{character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 or "most_sim" for most similar variable; uses similarity function from package rmaxent}
 
-\item{categoricals}{character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+\item{categoricals}{character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object}
 
 \item{envs.vars}{character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done

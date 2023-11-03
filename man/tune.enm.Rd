@@ -96,7 +96,7 @@ cv.enm(
 
 \item{mod.full}{model object: the model trained on the full dataset}
 
-\item{envs}{RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.}
+\item{envs}{SpatRaster: environmental predictor variables. These should be in same geographic projection as occurrence data.}
 
 \item{tune.tbl.i}{vector: single set of tuning parameters}
 

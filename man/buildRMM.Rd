@@ -9,7 +9,7 @@ buildRMM(e, envs, rmm = NULL)
 \arguments{
 \item{e}{ENMevaluation object}
 
-\item{envs}{RasterStack: environmental predictor variables used in analysis; needed to pull information on the predictor variables
+\item{envs}{SpatRaster: environmental predictor variables used in analysis; needed to pull information on the predictor variables
 not included in the ENMevaluation object}
 
 \item{rmm}{rangeModelMetadata object: if included, fields are appended to this RMM object as opposed to returning a new RMM object}

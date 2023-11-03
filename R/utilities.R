@@ -1,18 +1,8 @@
-#' Pipe operator
-#'
-#' @name %>%
-#' @rdname pipe
-#' @keywords internal
-#' @export
-#' @importFrom magrittr %>%
-#' @usage lhs \%>\% rhs
-NULL
-
 #' @title Convert old ENMevaluation objects to new ones
 #' @description Converts ENMevaluation objects made with version <=0.3.1 to
 #' new ones made with version >=2.0.0.
 #' @param e ENMevaluation object: the old object to convert
-#' @param envs RasterStack: the original predictor variables used to generate
+#' @param envs SpatRaster: the original predictor variables used to generate
 #' the old ENMevaluation object (these are used to make the new occs and bg slots
 #' which contain the predictor variable values)
 #' @note If bin.output was set to TRUE, \code{`e@results`} will be equivalent to 
@@ -26,17 +16,17 @@ NULL
 ENMevaluation_convert <- function(e, envs) {
   .data <- NULL
   alg <- ifelse(grepl("Maxent", e@algorithm), "maxent.jar", "maxnet")
-  ts <- dplyr::distinct(e@results, fc = .data$features, rm) %>% as.data.frame()
+  ts <- dplyr::distinct(e@results, fc = .data$features, rm) |> as.data.frame()
   targs <- apply(ts, 1, function(x) paste(names(x), x, collapse = "_", sep = "."))
   ts <- cbind(ts, tune.args = targs)
   rs <- cbind(ts, e@results[,-1:-3])
   names(rs)[-1:-3] <- c("auc.train", "auc.val.avg", "auc.val.sd", "auc.diff.avg", "auc.diff.sd", 
                         "or.10p.avg", "or.10p.sd", "or.mtp.avg", "or.mtp.sd", "AICc", 
                         "delta.AICc", "w.AIC", "ncoef")
-  occs <- e@occ.pts %>% dplyr::rename(lon = .data$LON, lat = .data$LAT) %>% as.data.frame()
-  occs <- cbind(occs, raster::extract(envs, occs))
-  bg <- e@bg.pts %>% dplyr::rename(lon = .data$LON, lat = .data$LAT) %>% as.data.frame()
-  bg <- cbind(bg, raster::extract(envs, bg))
+  occs <- e@occ.pts |> dplyr::rename(lon = .data$LON, lat = .data$LAT) |> as.data.frame()
+  occs <- cbind(occs, terra::extract(envs, occs))
+  bg <- e@bg.pts |> dplyr::rename(lon = .data$LON, lat = .data$LAT) |> as.data.frame()
+  bg <- cbind(bg, terra::extract(envs, bg))
   ms <- e@models
   names(ms) <- rs$tune.args
   e_new <- ENMevaluation(algorithm = alg, tune.settings = as.data.frame(ts),
@@ -51,17 +41,22 @@ ENMevaluation_convert <- function(e, envs) {
   return(e_new)
 }
 
-#' @title Find NA cells in a RasterStack
-#' @description Finds cells that are NA for at least one raster in a RasterStack.
-#' @param envs RasterStack
+#' @title convert all raster grid cells to NA that are NA for any one raster in
+#' a multiraster SpatRaster object
+#' @description match all NA cells in SpatRaster object
+#' @param envs SpatRaster object
 #' 
-rasStackNAs <- function(envs) {
-  envs.z <- raster::values(envs)
+multiRasMatchNAs <- function(envs, quiet = TRUE) {
+  envs.z <- terra::values(envs)
   envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
   if(envs.naMismatch > 0) {
-    message(paste0("* Found ", envs.naMismatch, " raster cells that were NA for one or more, but not all, predictor variables. Converting these cells to NA for all predictor variables."))
+    if(quiet == TRUE) message(paste("* Found", 
+                                    envs.naMismatch, 
+                                    "raster cells that were NA for one or more, but not all, predictor variables.",
+                                    "Converting these cells to NA for all predictor variables."))
     envs.names <- names(envs)
-    envs <- raster::stack(raster::calc(envs, fun = function(x) if(sum(is.na(x)) > 0) x * NA else x))
+    envs <- terra::app(envs, 
+                       fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
     names(envs) <- envs.names
   }
   return(envs)
@@ -69,11 +64,11 @@ rasStackNAs <- function(envs) {
 
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
-#' @param orig.vals RasterStack / matrix / data frame: environmental predictor variables (must be in same geographic 
+#' @param orig.vals SpatRaster / matrix / data frame: environmental predictor variables (must be in same geographic 
 #' projection as occurrence data), or predictor variables values for the original records
 #' @param ref.vals matrix / data frame: predictor variable values for the reference records
 #' (not including coordinates), used to determine the minimums and maximums -- 
-#' this should ideally be the occurrences + background (can be made with raster::extract())
+#' this should ideally be the occurrences + background (can be made with terra::extract())
 #' @param left character vector: names of variables to get a minimum clamp; can be "none" to turn
 #' off minimum clamping
 #' @param right character vector: names of variables to get a maximum clamp, can be "none" to turn
@@ -91,8 +86,8 @@ rasStackNAs <- function(envs) {
 #' enter "none" for either "left" or "right".
 #' 
 #' Categorical variables need to be declared with the argument "categoricals". These variables
-#' are excluded from the clamping analysis, but are put back into the RasterStack that is returned.
-#' @return The clamped Raster* object.
+#' are excluded from the clamping analysis, but are put back into the SpatRaster that is returned.
+#' @return The clamped SpatRaster object.
 #' @export
 
 clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL) {
@@ -109,10 +104,12 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
       return(orig.vals)
     }
   }
-  # convert all RasterStack grid cells to NA that are NA for any one raster
+  # convert all SpatRaster grid cells to NA that are NA for any one raster
   # if NAs exist in an input data frame, stop the function and request user to remove manually
   if(isRas == TRUE) {
-    orig.vals <- rasStackNAs(orig.vals)
+    # This is done in ENMevaluate too, but as this can be used as a stand-alone
+    # function, it is repeated here
+    orig.vals <- multiRasMatchNAs(orig.vals)
   }else{
     orig.na <- sum(rowSums(is.na(orig.vals)))
     ref.na <- sum(rowSums(is.na(ref.vals)))
@@ -122,7 +119,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   
   # remove categorical variables from clamping analysis
   if(!is.null(categoricals)) {
-    if(inherits(orig.vals, "BasicRaster") == TRUE) {
+    if(isRas == TRUE) {
       p <- orig.vals[[-which(names(orig.vals) %in% categoricals)]]
     }else{
       p <- orig.vals[,-which(colnames(orig.vals) %in% categoricals)]
@@ -136,10 +133,11 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
                          max = apply(ref.vals, 2, max, na.rm = TRUE))
   # function to clamp the values of the input raster
   adjustRas <- function(pp, toadjust, mm) {
-    raster::stack(lapply(slot(pp, "layers"), function(oldlayer) {
+    terra::rast(lapply(pp, function(oldlayer) {
       layername <- names(oldlayer)
       if (!(layername %in% toadjust)) return(oldlayer)
-      newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) else min(oldlayer, minmaxes[layername, "max"])
+      newlayer <- if(mm == "min") max(oldlayer, minmaxes[layername, "min"]) 
+      else if(mm == "max") min(oldlayer, minmaxes[layername, "max"])
       names(newlayer) <- layername
       return(newlayer)
     }))
@@ -148,8 +146,10 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
     inds <- which(names(pp) %in% toadjust)
     for(i in 1:ncol(pp)) {
       if(i %in% inds) {
-        if(mm == "min") pp[,i] <- ifelse(pp[,i] < minmaxes[i,"min"], minmaxes[i,"min"], pp[,i]) 
-        if(mm == "max") pp[,i] <- ifelse(pp[,i] > minmaxes[i,"max"], minmaxes[i,"max"], pp[,i]) 
+        if(mm == "min") pp[,i] <- ifelse(pp[,i] < minmaxes[i,"min"], 
+                                         minmaxes[i,"min"], pp[,i]) 
+        if(mm == "max") pp[,i] <- ifelse(pp[,i] > minmaxes[i,"max"], 
+                                         minmaxes[i,"max"], pp[,i]) 
       }
     }
     return(pp)
@@ -158,7 +158,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   if(is.null(left)) left <- names(p)
   if(is.null(right)) right <- names(p)
   
-  f <- ifelse(inherits(orig.vals, "BasicRaster") == TRUE, adjustRas, adjustDF)
+  f <- ifelse(isRas, adjustRas, adjustDF)
   # clamp both sides unless left or right is "none"
   if("none" %in% left) {
     out <- f(p, right, "max")
@@ -169,8 +169,8 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   }
   # add back the categorical variable to the stack
   if(!is.null(categoricals)) {
-    if(inherits(orig.vals, "BasicRaster") == TRUE) {
-      out <- raster::addLayer(out, orig.vals[[categoricals]])
+    if(isRas == TRUE) {
+      out <- c(out, orig.vals[[categoricals]])
       out <- out[[names(orig.vals)]]
     }else{
       for(i in 1:length(categoricals)) {
@@ -190,7 +190,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' @param p.occs data frame: raw (maxent.jar) or exponential (maxnet) predictions for
 #' the occurrence localities based on one or more models
 #' @param ncoefs numeric: number of non-zero model coefficients
-#' @param p RasterStack: raw (maxent.jar) or exponential (maxnet) model predictions;
+#' @param p SpatRaster: raw (maxent.jar) or exponential (maxnet) model predictions;
 #' if NULL, AICc will be calculated based on the background points, which already
 #' have predictions that sum to 1 and thus need no correction -- this assumes that
 #' the background points represent a good sample of the study extent 
@@ -255,13 +255,13 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   # differential behavior for summing if p is Raster* or data frame
   if(!is.null(p)) {
-    p.sum <- raster::cellStats(p, sum)  
+    p.sum <- terra::global(p, sum, na.rm = TRUE)  
     # if total does not sum to 1 (this happens when the background does not fully
     # cover the study extent), standardize the study extent predictions so that they sum to 1
     # and use these corrected occurrence predictions as likelihoods
     # (dividing the occurrence predictions by the sum of the study extent predictions
     # achieves the above)
-    for(i in 1:raster::nlayers(p)) if(p.sum[i] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i]
+    for(i in 1:terra::nlyr(p)) if(p.sum[i,] != 1) p.occs[,i] <- p.occs[,i] / p.sum[i,]
   }
   # if more model coefficients than data points, determine AIC to be invalid:
   # this avoids considering overly complex models at all
@@ -329,7 +329,7 @@ calc.10p.trainThresh <- function(pred.train) {
 
 #' @title Calculate Similarity of ENMs in Geographic Space
 #' @description Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
-#' @param predictors RasterStack: at least 2 Maxent raster predictions
+#' @param predictors SpatRaster: at least 2 Maxent raster predictions
 #' @param overlapStat character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details "D" refers to Schoeners \emph{D} (Schoener 1968), while "I" refers to the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
@@ -350,19 +350,48 @@ calc.10p.trainThresh <- function(pred.train) {
 
 #' @export
 calc.niche.overlap <- function(predictors, overlapStat, quiet=FALSE){
-  n <- raster::nlayers(predictors)
+  n <- terra::nlyr(predictors)
   ov <- matrix(nrow = n, ncol = n)
   if(quiet != TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
     if(quiet != TRUE) setTxtProgressBar(pb, i)
     for(j in (i + 1):n){
-      ov[j, i] <- dismo::nicheOverlap(predictors[[i]], predictors[[j]], stat = overlapStat)
+      ov[j, i] <- nicheOverlap_terra(predictors[[i]], predictors[[j]], stat = overlapStat)
     }
   }
   colnames(ov) <- names(predictors)
   rownames(ov) <- names(predictors)
   if(quiet != TRUE) close(pb)
   return(ov)
+}
+
+# Taken from dismo 1.3-14 package and updated for terra
+nicheOverlap_terra <- function (x, y, stat = "I", mask = TRUE, 
+                                checkNegatives = TRUE) {
+  s <- c(x, y)
+  stopifnot(stat %in% c("I", "D"))
+  if (mask) {
+    s <- terra::mask(s, x * y)
+  }
+  if (checkNegatives) {
+    minv <- terra::global(s, "min", na.rm = TRUE)
+    if (any(minv < 0)) {
+      stop("values of \"x\" and \"y\" should be non-negative")
+    }
+  }
+  cs <- terra::global(s, "sum", na.rm = TRUE)
+  if (stat == "I") {
+    r <- terra::lapp(s, fun = function(i, j) (sqrt(i/cs[1,]) - 
+                                            sqrt(j/cs[2,]))^2)
+    H2 <- terra::global(r, "sum", na.rm = TRUE)
+    as.numeric(1 - 0.5 * H2)
+  }
+  else {
+    r <- terra::lapp(s, fun = function(i, j) abs((i/cs[1,]) - 
+                                               (j/cs[2,])))
+    D <- terra::global(r, "sum", na.rm = TRUE)
+    as.numeric(1 - 0.5 * D)
+  }
 }
 
 #' @title Look up ENMdetails abject

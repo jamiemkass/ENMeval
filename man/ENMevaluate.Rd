@@ -30,19 +30,7 @@ ENMevaluate(
   numCores = NULL,
   parallelType = "doSNOW",
   updateProgress = FALSE,
-  quiet = FALSE,
-  occ = NULL,
-  env = NULL,
-  bg.coords = NULL,
-  RMvalues = NULL,
-  fc = NULL,
-  occ.grp = NULL,
-  bg.grp = NULL,
-  method = NULL,
-  bin.output = NULL,
-  rasterPreds = NULL,
-  clamp = NULL,
-  progbar = NULL
+  quiet = FALSE
 )
 }
 \arguments{
@@ -52,7 +40,7 @@ assigned to presence/background localities (without inputting raster data), this
 one column for each predictor variable. See Note for important distinctions between running the function
 with and without rasters.}
 
-\item{envs}{RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.}
+\item{envs}{SpatRaster: environmental predictor variables. These should be in same geographic projection as occurrence data.}
 
 \item{bg}{matrix / data frame: background records with two columns for longitude and latitude of 
 background (or pseudo-absence) localities, in that order. If NULL, points will be randomly sampled across \code{envs} 
@@ -168,7 +156,7 @@ other.settings$validation.bg to "partition", which will calculate AUC with respe
 to the validation background only. The default value for other.settings$validation.bg is "full".
 
 2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using 
-the predicted values of the RasterStack delineating the full study extent, but instead using the predicted
+the predicted values of the SpatRaster delineating the full study extent, but instead using the predicted
 values for the background records. This decision to use the background only for calculating the continuous 
 Boyce index was made to simplify the code and improve running time. The decision for AICc was made in order
 to allow AICc calculations for datasets that do not include raster data. See ?calc.aicc for more details,
@@ -236,13 +224,13 @@ bg.val.pred - numeric: predictions made by mod.k for validation background
 \examples{
 \dontrun{
 occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
-envs <- raster::stack(list.files(path=paste(system.file(package="dismo"), "/ex", sep=""), 
+envs <- terra::rast(list.files(path=paste(system.file(package="dismo"), "/ex", sep=""), 
                                  pattern="grd", full.names=TRUE))
-occs.z <- cbind(occs, raster::extract(envs, occs))
+occs.z <- cbind(occs, terra::extract(envs, occs))
 occs.z$biome <- factor(occs.z$biome)
 bg <- as.data.frame(dismo::randomPoints(envs, 1000))
 names(bg) <- names(occs)
-bg.z <- cbind(bg, raster::extract(envs, bg))
+bg.z <- cbind(bg, terra::extract(envs, bg))
 bg.z$biome <- factor(bg.z$biome)
 
 # set other.settings -- pred.type is only for Maxent models
@@ -269,7 +257,7 @@ eval.results(e.maxnet)
 # (feature class: Linear, regularization multiplier: 2) for our envs data
 mods.maxnet <- eval.models(e.maxnet)
 pred.L2 <- enm.maxnet@predict(mods.maxnet$fc.L_rm.2, envs, os)
-raster::plot(pred.L2)
+terra::plot(pred.L2)
 
 #' # here's a run with maxent.jar -- note that if the R package rJava cannot 
 install or load, or if other issues with Java exist on your computer, 
@@ -285,7 +273,7 @@ eval.results(e.maxent.jar)
 mods.maxent.jar <- eval.models(e.maxent.jar)
 pred.L2 <- dismo::predict(mods.maxent.jar$fc.L_rm.2, envs, args = "outputform=cloglog")
 pred.L2 <- enm.maxent.jar@predict(mods.maxent.jar$fc.L_rm.2, envs, os)
-raster::plot(pred.L2)
+terra::plot(pred.L2)
 
 # this will give you the percent contribution (not deterministic) and
 # permutation importance (deterministic) values of variable importance for
@@ -308,7 +296,7 @@ mods.bioclim <- eval.models(e.bioclim)
 pred.both <- dismo::predict(mods.bioclim$tails.both, envs, tails = "both")
 os <- c(os, list(tails = "both"))
 pred.both <- enm.bioclim@predict(mods.bioclim$tails.both, envs, os)
-raster::plot(pred.both)
+terra::plot(pred.both)
 
 # please see the vignette for more examples of model tuning, 
 # partitioning, plotting functions, and null models

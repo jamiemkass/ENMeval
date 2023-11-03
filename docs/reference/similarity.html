@@ -79,7 +79,7 @@ across variables will be returned.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>If `x` is a `Raster*` object, this function returns a list 
   containing:
-  - `similarity`: a `RasterStack` giving the environmental similarities for
+  - `similarity`: a `SpatRaster` giving the environmental similarities for
   each variable in `x` (only included when `full=TRUE`); 
   - `similarity_min`: a `Raster` layer giving the minimum similarity value 
   across all variables for each location (i.e. the MESS);
@@ -89,7 +89,7 @@ across variables will be returned.</p></dd>
   - `mos`: a factor `Raster` layer indicating which variable was most 
   similar to its reference range.
   If `x` is a `list`, `matrix`, or `data.frame`, the function will return
-  a list as above, but with `RasterStack` and `Raster` objects replaced by 
+  a list as above, but with `SpatRaster` and `Raster` objects replaced by 
   matrix and vectors.</p>
     </div>
     <div class="section level2">

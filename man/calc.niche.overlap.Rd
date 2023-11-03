@@ -7,7 +7,7 @@
 calc.niche.overlap(predictors, overlapStat, quiet = FALSE)
 }
 \arguments{
-\item{predictors}{RasterStack: at least 2 Maxent raster predictions}
+\item{predictors}{SpatRaster: at least 2 Maxent raster predictions}
 
 \item{overlapStat}{character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")}
 

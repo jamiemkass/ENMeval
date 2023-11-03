@@ -30,7 +30,7 @@ evalplot.envSim.map(
 \arguments{
 \item{e}{ENMevaluation object (optional)}
 
-\item{envs}{RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
+\item{envs}{SpatRaster: environmental predictor variables used to build the models in "e"; categorical variables should be 
 removed before input or identified with the argument "categoricals", as they cannot be used to calculate MESS}
 
 \item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
@@ -48,7 +48,7 @@ the first two columns must be named "longitude" and "latitude"}
 \item{sim.type}{character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 or "most_sim" for most similar variable; uses similarity function from package rmaxent}
 
-\item{categoricals}{character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+\item{categoricals}{character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 these must be specified as this function was intended for use with continuous data only}
 
 \item{envs.vars}{character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
@@ -71,7 +71,7 @@ in that order; this is for use only with the "testing" partition option when an 
 
 \item{return.tbl}{boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself}
 
-\item{return.ras}{boolean: if TRUE, return the RasterStack of similarity values used to make the ggplot instead of the plot itself}
+\item{return.ras}{boolean: if TRUE, return the SpatRaster of similarity values used to make the ggplot instead of the plot itself}
 
 \item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
 }
@@ -94,7 +94,7 @@ while partition 2 refers to the fully withheld testing group.
 Rasters are plotted showing the environmental similarity estimates for each 
 partition group. The similarity between environmental values associated with the 
 validation occurrence or background records per partition group and those associated with 
-the entire study extent (specified by the extent of the input RasterStack "envs") are 
+the entire study extent (specified by the extent of the input SpatRaster "envs") are 
 calculated, and the minimum similarity per grid is returned. For option "mess", higher 
 negative values indicate greater environmental difference between the validation occurrences 
 and the study extent, and higher positive values indicate greater similarity. This function 

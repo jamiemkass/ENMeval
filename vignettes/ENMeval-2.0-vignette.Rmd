@@ -67,7 +67,7 @@ We are going to model the climatic niche suitability for our focal species using
 envs.files <- list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
                          pattern='grd', full.names=TRUE)
 
-# Read the raster files into a RasterStack.
+# Read the raster files into a SpatRaster.
 # These variables represent 8 bioclimatic variables and one categorical variable "biome".
 # Find the descriptions of the bioclimatic variables here: 
 # https://www.worldclim.org/data/bioclim.html
@@ -75,9 +75,9 @@ envs <- raster::stack(envs.files)
 # The biome raster has some NAs for cells that have values in the other rasters.
 # Let's mask all rasters to biome to change the value of these cells to NA for all rasters.
 # ENMeval will do this automatically, but let's do it here to avoid the warning message later.
-# We change back from a RasterBrick to RasterStack because of issues with assigning 
+# We change back from a RasterBrick to SpatRaster because of issues with assigning 
 # factor rasters for RasterBricks.
-envs <- raster::mask(envs, envs[[9]]) %>% raster::stack()
+envs <- raster::mask(envs, envs[[9]]) |> raster::stack()
 # Make sure to declare the categorical variable as a factor
 envs$biome <- raster::as.factor(envs$biome)
 # Let's now remove occurrences that are cell duplicates -- these are
@@ -151,7 +151,7 @@ Since our models will compare the environment at occurrence localities to the en
 # We'll now experiment with a different spatial R package called sf (simple features).
 # Let's make our occs into a sf object -- as the coordinate reference system (crs) for these 
 # points is WGS84, a geographic crs (lat/lon) and the same as our envs rasters, we specify it 
-# as the RasterStack's crs.
+# as the SpatRaster's crs.
 occs.sf <- sf::st_as_sf(occs, coords = c("longitude","latitude"), crs = raster::crs(envs))
 
 # Now, we project our point data to an equal-area projection, which converts our 
@@ -164,9 +164,9 @@ occs.sf <- sf::st_transform(occs.sf, crs = eckertIV)
 # (for visualization), and convert back to a form that the raster package 
 # can use. Finally, we reproject the buffers back to WGS84 (lat/lon).
 # We choose 500 km here to avoid sampling the Caribbean islands.
-occs.buf <- sf::st_buffer(occs.sf, dist = 500000) %>% 
-  sf::st_union() %>% 
-  sf::st_sf() %>%
+occs.buf <- sf::st_buffer(occs.sf, dist = 500000) |> 
+  sf::st_union() |> 
+  sf::st_sf() |>
   sf::st_transform(crs = raster::crs(envs))
 plot(envs[[1]], main = names(envs)[1])
 points(occs)
@@ -191,7 +191,7 @@ In the next step, we'll sample 10,000 random points from the background (note th
 # from the biome variable because it is missing some grid cells, and we are trying to 
 # avoid getting background points with NA. If one raster in the stack has NAs where the
 # other rasters have data, ENMeval internally converts these cells to NA.
-bg <- dismo::randomPoints(envs.bg[[9]], n = 10000) %>% as.data.frame()
+bg <- dismo::randomPoints(envs.bg[[9]], n = 10000) |> as.data.frame()
 colnames(bg) <- colnames(occs)
 
 # Notice how we have pretty good coverage (every cell).
@@ -261,7 +261,7 @@ evalplot.envSim.map(sim.type = "most_sim", ref.data = "occs", envs = envs, occs.
 ```
 
 #### 2. Checkerboard1 {#cb1}
-The next two partitioning methods are variants of a 'checkerboard' approach to partition occurrence localities (Radosavljevic & Anderson 2014). These generate checkerboard grids across the study extent and partition the localities into groups based on where they fall on the checkerboard. In contrast to the block method, both checkerboard methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each bin. For these methods, the user needs to provide a raster layer on which to base the underlying checkerboard pattern. Here we simply use the predictor variable RasterStack. Additionally, the user needs to define an *aggregation.factor*. This value specifies the number of grids cells to aggregate when making the underlying checkerboard pattern.
+The next two partitioning methods are variants of a 'checkerboard' approach to partition occurrence localities (Radosavljevic & Anderson 2014). These generate checkerboard grids across the study extent and partition the localities into groups based on where they fall on the checkerboard. In contrast to the block method, both checkerboard methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each bin. For these methods, the user needs to provide a raster layer on which to base the underlying checkerboard pattern. Here we simply use the predictor variable SpatRaster. Additionally, the user needs to define an *aggregation.factor*. This value specifies the number of grids cells to aggregate when making the underlying checkerboard pattern.
 
 The checkerboard1 method partitions the points into *k* = 2 spatial groups using a simple checkerboard pattern.
 
@@ -427,7 +427,7 @@ Once we decide which method of data partitioning we would like to use, we are re
 #### Initial considerations
 Although any algorithm can potentially be specified in ENMeval 2.0 (see below), and `ENMeval` 2.0 has built-in implementations for Maxent and BIOCLIM, we will explain here the tuning procedure for Maxent models (either `maxent.jar` or `maxnet`). For Maxent models (Phillips et al. 2006, Phillips et al. 2008, Phillips et al. 2017), the two main parameters to tune when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature classes (Elith et al. 2011, Merow et al. 2013). The ***regularization multiplier*** (RM) determines the penalty associated with including variables or their transformations in the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the marginal response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. A more detailed description of these parameters is available in the [References and Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
 
-Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the `n.bg` argument. If any of your predictor variables are categorical (e.g., biomes in this dataset), you should define which layer(s) these are using the 'categoricals' argument or assign them as factors in the RasterStack or input table  (like we did here).
+Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the `n.bg` argument. If any of your predictor variables are categorical (e.g., biomes in this dataset), you should define which layer(s) these are using the 'categoricals' argument or assign them as factors in the SpatRaster or input table  (like we did here).
 
 `ENMevaluate()` builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
@@ -558,7 +558,7 @@ Now let's take a look at the output from `ENMevaluate()`, which is an `ENMevalua
 - `results.partitions` A data.frame of evaluation k-fold statistics
 - `models` A list of model objects
 - `variable.importance` A list of data frames with variable importance for each model (when applicable)
-- `predictions` A RasterStack of model predictions
+- `predictions` A SpatRaster of model predictions
 - `taxon.name` A character for taxon name (when specified)
 - `occs` A data frame of the occurrence record coordinates used for model training
 - `occs.testing` A data frame of the coordinates of the fully withheld testing records (when specified)
@@ -579,14 +579,14 @@ We can use helper functions to access the slots in the `ENMevaluation` object.
 ```{r algorithm}
 # Access algorithm, tuning settings, and partition method information.
 eval.algorithm(e.mx)
-eval.tune.settings(e.mx) %>% head()
+eval.tune.settings(e.mx) |> head()
 eval.partition.method(e.mx)
 # Results table with summary statistics for cross validation on test data.
-eval.results(e.mx) %>% head()
+eval.results(e.mx) |> head()
 # Results table with cross validation statistics for each test partition.
-eval.results.partitions(e.mx) %>% head()
+eval.results.partitions(e.mx) |> head()
 # List of models with names corresponding to tune.args column label.
-eval.models(e.mx) %>% str(max.level = 1)
+eval.models(e.mx) |> str(max.level = 1)
 # The "betas" slot in a maxnet model is a named vector of the variable 
 # coefficients and what kind they are (in R formula notation).
 # Note that the html file that is created when maxent.jar is run is **not** kept.
@@ -596,17 +596,17 @@ m1.mx$betas
 # more readable table.
 library(tibble)
 enframe(m1.mx$betas)
-# RasterStack of model predictions (for extent of "envs") with names corresponding 
+# SpatRaster of model predictions (for extent of "envs") with names corresponding 
 # to tune.args column label.
 eval.predictions(e.mx)
 # Original occurrence data coordinates with associated predictor variable values.
-eval.occs(e.mx) %>% head()
+eval.occs(e.mx) |> head()
 # Background data coordinates with associated predictor variable values.
-eval.bg(e.mx) %>% head()
+eval.bg(e.mx) |> head()
 # Partition group assignments for occurrence data.
-eval.occs.grp(e.mx) %>% str()
+eval.occs.grp(e.mx) |> str()
 # Partition group assignments for background data.
-eval.bg.grp(e.mx) %>% str()
+eval.bg.grp(e.mx) |> str()
 ```
 
 Maxent models run with `maxent.jar` have a different structure from models run with `maxnet`, so below is a demonstration of how to extract the "betas" information for `maxent.jar` models. In the case that the user can run `maxent.jar`, please run these lines independently. As many users have issues running the Java version of Maxent, this portion is not automatically evaluated for the vignette to avoid R Markdown knitting errors.
@@ -659,11 +659,11 @@ res <- eval.results(e.mx)
 # Select the model with delta AICc equal to 0, or the one with the lowest AICc score.
 # In practice, models with delta AICc scores less than 2 are usually considered 
 # statistically equivalent.
-opt.aicc <- res %>% filter(delta.AICc == 0)
+opt.aicc <- res |> filter(delta.AICc == 0)
 opt.aicc
 # This dplyr operation executes the sequential criteria explained above.
-opt.seq <- res %>% 
-  filter(or.10p.avg == min(or.10p.avg)) %>% 
+opt.seq <- res |> 
+  filter(or.10p.avg == min(or.10p.avg)) |> 
   filter(auc.val.avg == max(auc.val.avg))
 opt.seq
 ```
@@ -757,9 +757,9 @@ mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100
 
 ```{r}
 # We can inspect the results of each null simulation.
-null.results(mod.null) %>% head()
+null.results(mod.null) |> head()
 # And even inspect the results of each partition of each null simulation.
-null.results.partitions(mod.null) %>% head()
+null.results.partitions(mod.null) |> head()
 # For a summary, we can look at a comparison between the empirical and simulated results.
 null.emp.results(mod.null)
 # Finally, we can make plots of the null model results as a histogram.

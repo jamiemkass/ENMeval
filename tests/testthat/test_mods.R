@@ -1,11 +1,13 @@
 # set to FALSE to run a comprehensive set of tests
-# when TRUE, only some essential tests are run to avoid lagging when submitting to CRAN
+# when TRUE, only some essential tests are run to avoid lagging when 
+# submitting to CRAN
 skip_tests_for_cran <- TRUE
 skip_maxnet <- FALSE
 skip_maxent.jar <- FALSE
 skip_bioclim <- FALSE
 
-# this additionally skips tests for env similarity and difference for the envSim.map tests
+# this additionally skips tests for env similarity and difference for the 
+# envSim.map tests
 skip_simDiff <- FALSE
 
 library(dplyr)
@@ -13,15 +15,14 @@ options(warn=-1)
 
 # read in data
 set.seed(48)
-occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
-envs.orig <- raster::stack(list.files(path=paste(system.file(package='dismo'), '/ex', sep=''), 
+occs <- read.csv(file.path(system.file(package="dismo"), 
+                           "/ex/bradypus.csv"))[,2:3]
+envs.orig <- terra::rast(list.files(path = paste(system.file(package='dismo'), 
+                                                 '/ex', sep=''), 
                                       pattern='grd', full.names=TRUE))
-occs.z <- cbind(occs, raster::extract(envs.orig, occs))
-occs.z$biome <- factor(occs.z$biome)
-bg <- as.data.frame(dismo::randomPoints(envs.orig, 1000))
+bg <- terra::spatSample(envs.orig, size = 1000, xy = TRUE, 
+                        na.rm = TRUE, values = FALSE) |> as.data.frame()
 names(bg) <- names(occs)
-bg.z <- cbind(bg, raster::extract(envs.orig, bg))
-bg.z$biome <- factor(bg.z$biome)
 
 algorithms <- c("maxnet", "maxent.jar", "bioclim")
 no.iter <- 5
@@ -35,8 +36,6 @@ for(alg in algorithms) {
   if(alg == "bioclim") {
     envs <- envs.orig[[-9]]
     cats1 <- NULL
-    occs.z$biome <- NULL
-    bg.z$biome <- NULL
     extrap <- FALSE
   }else{ 
     envs <- envs.orig
@@ -55,7 +54,9 @@ for(alg in algorithms) {
   
   context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
   test_evalplot.stats(e)
-  grps <- get.block(occs, bg)
+  grps <- get.block(e@occs, e@bg)
+  occs.z <- e@occs
+  bg.z <- e@bg
   context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions..."))
   test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with block partitions..."))
@@ -253,11 +254,11 @@ for(alg in algorithms) {
   
   # more than one categorical variable
   if(skip_tests_for_cran == FALSE & alg != "bioclim") {
-    envs.2cat <- raster::addLayer(envs, envs$biome * round(runif(raster::ncell(envs), min = 0, max = 5)))
-    occs.z.2cat <- cbind(occs, raster::extract(envs.2cat, occs))
+    envs.2cat <- c(envs, envs$biome * round(runif(terra::ncell(envs), min = 0, max = 5)))
+    occs.z.2cat <- cbind(occs, terra::extract(envs.2cat, occs))
     occs.z.2cat$biome.1 <- factor(occs.z.2cat$biome.1)
     occs.z.2cat$biome.2 <- factor(occs.z.2cat$biome.2)
-    bg.z.2cat <- cbind(bg, raster::extract(envs.2cat, bg))
+    bg.z.2cat <- cbind(bg, terra::extract(envs.2cat, bg))
     bg.z.2cat$biome.1 <- factor(bg.z.2cat$biome.1)
     bg.z.2cat$biome.2 <- factor(bg.z.2cat$biome.2)
     

@@ -1,7 +1,7 @@
 #' @title Partition group plots
 #' @description Plot occurrence partition groups over an environmental predictor raster.
 #' @param e ENMevaluation object
-#' @param envs RasterStack: environmental predictor variable used to build the models in "e"
+#' @param envs SpatRaster: environmental predictor variable used to build the models in "e"
 #' @param pts matrix / data frame: coordinates for occurrence or background data
 #' @param pts.grp numeric vector: partition groups corresponding to data in "pts"
 #' @param ref.data character: plot occurrences ("occs") or background ("bg"), with default "occs"
@@ -16,8 +16,8 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     pts.plot <- switch(ref.data, occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
     if(e@partition.method == "testing") {
-      pts.plot <- pts.plot %>% dplyr::mutate(partition = as.numeric(as.character(partition))) %>% 
-        dplyr::bind_rows(e@occs.testing %>% dplyr::mutate(partition = 1)) %>%
+      pts.plot <- pts.plot |> dplyr::mutate(partition = as.numeric(as.character(partition))) |> 
+        dplyr::bind_rows(e@occs.testing |> dplyr::mutate(partition = 1)) |>
         dplyr::mutate(partition = factor(partition))
     } 
     names(pts.plot)[1:2] <- c("longitude", "latitude")
@@ -41,11 +41,11 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     pt.cols <- RColorBrewer::brewer.pal(9, "Set1")
   }
   
-  if(raster::nlayers(envs) > 1) {
+  if(terra::nlyr(envs) > 1) {
     message("Plotting first raster in stack...")
     envs <- envs[[1]]
   }
-  envs.df <- raster::as.data.frame(envs, xy = TRUE)
+  envs.df <- terra::as.data.frame(envs, xy = TRUE)
   names(envs.df)[3] <- "value"
   g <- ggplot2::ggplot() + ggplot2::geom_raster(data = envs.df, ggplot2::aes(x = x, y = y, fill = value)) +
     ggplot2::geom_point(data = pts.plot, ggplot2::aes(x = longitude, y = latitude, color = partition), size = pts.size) +
@@ -99,18 +99,18 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   if(ref.data == "bg" & length(unique(bg.grp)) == 1) stop('If background is not partitioned (non-spatial), do not assign ref.data to "bg".')
   
   if(any(is.null(occs.z), is.null(occs.grp))) {
-    pts.plot <- bg.z %>% dplyr::mutate(type = rep(0, nrow(bg.z)), partition = factor(bg.grp))  
+    pts.plot <- bg.z |> dplyr::mutate(type = rep(0, nrow(bg.z)), partition = factor(bg.grp))  
   }else if(any(is.null(bg.z), is.null(bg.grp))) {
-    pts.plot <- occs.z %>% dplyr::mutate(type = rep(1, nrow(occs.z)), partition = factor(occs.grp))  
+    pts.plot <- occs.z |> dplyr::mutate(type = rep(1, nrow(occs.z)), partition = factor(occs.grp))  
   }else{
-    pts.plot <- rbind(occs.z, bg.z) %>% as.data.frame() %>%
+    pts.plot <- rbind(occs.z, bg.z) |> as.data.frame() |>
       dplyr::mutate(type = c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))), partition = factor(c(occs.grp, bg.grp)))
   }
   names(pts.plot)[1:2] <- c("longitude","latitude")
   
   # find factor rasters or columns and identify them as categoricals
   if(!is.null(envs)) {
-    categoricals <- unique(c(categoricals, names(envs)[which(raster::is.factor(envs))]))
+    categoricals <- unique(c(categoricals, names(envs)[which(terra::is.factor(envs))]))
     if(length(categoricals) == 0) categoricals <- NULL
   }else{
     categoricals <- unique(c(categoricals, names(occs.z)[which(sapply(occs.z, is.factor))]))
@@ -131,10 +131,10 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
     if(!is.null(e)) occs.testing.z <- e@occs.testing
     names(occs.testing.z)[1:2] <- c("longitude","latitude")
     occs.testing.z[[categoricals]] <- NULL
-    occs.testing.z <- occs.testing.z %>% dplyr::mutate(type = 1, partition = 2)
+    occs.testing.z <- occs.testing.z |> dplyr::mutate(type = 1, partition = 2)
     pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
     pts.plot[pts.plot$type == 1, "partition"] <- 1
-    pts.plot <- dplyr::bind_rows(pts.plot, occs.testing.z) %>% dplyr::mutate(partition = factor(partition))
+    pts.plot <- dplyr::bind_rows(pts.plot, occs.testing.z) |> dplyr::mutate(partition = factor(partition))
   }
   
   return(pts.plot)
@@ -159,7 +159,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 #' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
-#' @param categoricals character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+#' @param categoricals character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 #' these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object 
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 #' with respect to all variables (optional) 
@@ -192,12 +192,12 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   
   pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
   
-  envs.names <- pts.plot %>% dplyr::select(-longitude, -latitude, -partition, -type) %>% names()
+  envs.names <- pts.plot |> dplyr::select(-longitude, -latitude, -partition, -type) |> names()
   
   if(!is.null(envs.vars)) {
     if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
     envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
-    pts.plot <- pts.plot %>% dplyr::select(-dplyr::all_of(envs.rem))
+    pts.plot <- pts.plot |> dplyr::select(-dplyr::all_of(envs.rem))
   }
   
   test.sim <- list()
@@ -207,13 +207,13 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   }
   
   for(k in 1:nk) {
-    test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
+    test.z <- pts.plot |> dplyr::filter(partition == k) |> dplyr::select(-longitude, -latitude, -partition)
     if(ref.data == "occs") {
-      test.z <- test.z %>% dplyr::filter(type == 1) %>% dplyr::select(-type)
+      test.z <- test.z |> dplyr::filter(type == 1) |> dplyr::select(-type)
     }else if (ref.data == "bg") {
-      test.z <- test.z %>% dplyr::filter(type == 0) %>% dplyr::select(-type)
+      test.z <- test.z |> dplyr::filter(type == 0) |> dplyr::select(-type)
     }
-    train.z <- pts.plot %>% dplyr::filter(partition != k) %>% dplyr::select(-longitude, -latitude, -partition, -type)
+    train.z <- pts.plot |> dplyr::filter(partition != k) |> dplyr::select(-longitude, -latitude, -partition, -type)
     
     sim <- tryCatch({
       similarity(train.z, test.z)
@@ -247,7 +247,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
     envs.tbl <- data.frame(sort(unique(plot.df[,2])), envs.names)
     names(envs.tbl) <- c(sim.type, "env.var")
     envs.tbl$env.var <- factor(envs.tbl$env.var)
-    plot.df <- plot.df %>% dplyr::left_join(envs.tbl, by = sim.type)
+    plot.df <- plot.df |> dplyr::left_join(envs.tbl, by = sim.type)
     plot.df[[sim.type]] <- NULL
     names(plot.df)[2] <- sim.type
     title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")
@@ -289,7 +289,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
 #' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object (optional) 
-#' @param envs RasterStack: environmental predictor variables used to build the models in "e"; categorical variables should be 
+#' @param envs SpatRaster: environmental predictor variables used to build the models in "e"; categorical variables should be 
 #' removed before input or identified with the argument "categoricals", as they cannot be used to calculate MESS
 #' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
 #' the first two columns must be named "longitude" and "latitude"
@@ -300,7 +300,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 #' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
 #' or "most_sim" for most similar variable; uses similarity function from package rmaxent
-#' @param categoricals character vector: names of categorical variables in input RasterStack or data frames to be removed from the analysis;
+#' @param categoricals character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 #' these must be specified as this function was intended for use with continuous data only
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 #' with respect to all variables (optional) 
@@ -313,12 +313,12 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' @param gradient.colors character vector: colors used for ggplot2::scale_fill_gradient2
 #' @param na.color character: color used for NA values
 #' @param return.tbl boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself
-#' @param return.ras boolean: if TRUE, return the RasterStack of similarity values used to make the ggplot instead of the plot itself
+#' @param return.ras boolean: if TRUE, return the SpatRaster of similarity values used to make the ggplot instead of the plot itself
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details Rasters are plotted showing the environmental similarity estimates for each 
 #' partition group. The similarity between environmental values associated with the 
 #' validation occurrence or background records per partition group and those associated with 
-#' the entire study extent (specified by the extent of the input RasterStack "envs") are 
+#' the entire study extent (specified by the extent of the input SpatRaster "envs") are 
 #' calculated, and the minimum similarity per grid is returned. For option "mess", higher 
 #' negative values indicate greater environmental difference between the validation occurrences 
 #' and the study extent, and higher positive values indicate greater similarity. This function 
@@ -355,20 +355,23 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
   
-  if(!is.null(categoricals) & !is.null(envs)) envs <- raster::dropLayer(envs, categoricals)
+  if(!is.null(categoricals) & !is.null(envs)) {
+    envs <- terra::subset(envs, -which(names(envs) == categoricals))
+  }
   
   if(!is.null(envs.vars)) {
-    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
+    if(!quiet) message(paste0("* Similarity values calculated based only on ", 
+                              paste(envs.vars, collapse = ", "), "."))
     envs.names <- names(envs)
     envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
-    pts.plot <- pts.plot %>% dplyr::select(-dplyr::all_of(envs.rem))
+    pts.plot <- pts.plot |> dplyr::select(-dplyr::all_of(envs.rem))
     envs <- envs[[envs.vars]]
   }
   
   if(ref.data == "occs") {
-    pts.plot <- pts.plot %>% dplyr::filter(type == 1) %>% dplyr::select(-type)
+    pts.plot <- pts.plot |> dplyr::filter(type == 1) |> dplyr::select(-type)
   }else if (ref.data == "bg") {
-    pts.plot <- pts.plot %>% dplyr::filter(type == 0) %>% dplyr::select(-type)
+    pts.plot <- pts.plot |> dplyr::filter(type == 0) |> dplyr::select(-type)
   }
   
   ras.sim <- list()
@@ -378,7 +381,8 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   }
   
   for(k in 1:nk) {
-    test.z <- pts.plot %>% dplyr::filter(partition == k) %>% dplyr::select(-longitude, -latitude, -partition)
+    test.z <- pts.plot |> dplyr::filter(partition == k) |> 
+      dplyr::select(-longitude, -latitude, -partition)
     
     sim <- tryCatch({
       similarity(envs, test.z)
@@ -387,24 +391,28 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
       # Choose a return value in case of error
       return(NULL)
     })
-    sim.sel <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
+    sim.sel <- switch(sim.type, mess = sim$similarity_min, 
+                      most_diff = sim$mod, most_sim = sim$mos)  
     
     ras.sim[[k]] <- sim.sel
   }
   
-  rs.sim <- raster::stack(ras.sim)
+  rs.sim <- terra::rast(ras.sim)
   names(rs.sim) <- gsub("layer|mess", "partition", names(rs.sim))
-  plot.df <- raster::as.data.frame(rs.sim, xy = TRUE) %>%
-    tidyr::pivot_longer(cols = 3:ncol(.), names_to = "ras", values_to = sim.type)
+  plot.df <- terra::as.data.frame(rs.sim, xy = TRUE) |>
+    tidyr::pivot_longer(cols = 3:dplyr::last_col(), names_to = "ras", values_to = sim.type)
   # add buffer
-  plot.df <- plot.df %>% dplyr::filter(x > min(pts.plot$longitude) - bb.buf, x < max(pts.plot$longitude) + bb.buf,
-                                       y > min(pts.plot$latitude) - bb.buf, y < max(pts.plot$latitude) + bb.buf)
+  plot.df <- plot.df |> dplyr::filter(x > min(pts.plot$longitude) - bb.buf, 
+                                       x < max(pts.plot$longitude) + bb.buf,
+                                       y > min(pts.plot$latitude) - bb.buf, 
+                                       y < max(pts.plot$latitude) + bb.buf)
   
   if(sim.type != "mess") {
     if(is.null(sim.palette)) sim.palette <- "Set1"
     plot.df$ras <- gsub("_var", "", plot.df$ras)
     plot.df[[sim.type]] <- factor(plot.df[[sim.type]])
-    title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")
+    title <- paste(switch(sim.type, most_diff = "Most different", 
+                          most_sim = "Most similar"), "environmental variable")
   }else{
     title <- "Multivariate environmental similarity" 
   }
@@ -463,20 +471,20 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
 
 evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
-  res <- e@results %>% 
-    tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
+  res <- e@results |> 
+    tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") |>
     dplyr::filter(grepl(exp, metric))
-  avgs <- res %>% 
-    dplyr::filter(grepl("avg", metric)) %>%
-    dplyr::rename(avg = value) %>%
+  avgs <- res |> 
+    dplyr::filter(grepl("avg", metric)) |>
+    dplyr::rename(avg = value) |>
     dplyr::mutate(metric = gsub(".avg", "", metric))
-  sds <- res %>% 
-    dplyr::filter(grepl("sd", metric)) %>%
-    dplyr::rename(sd = value) %>%
+  sds <- res |> 
+    dplyr::filter(grepl("sd", metric)) |>
+    dplyr::rename(sd = value) |>
     dplyr::mutate(metric = gsub(".sd", "", metric))
   join.names <- names(avgs)
   join.names <- join.names[join.names != "avg"]
-  res.avgs <- dplyr::left_join(avgs, sds, by = join.names) %>%
+  res.avgs <- dplyr::left_join(avgs, sds, by = join.names) |>
     dplyr::mutate(lower = avg - sd, upper = avg + sd,
                   metric = factor(metric, levels = stats))
   if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
@@ -545,26 +553,26 @@ evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars 
 
 evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
   exp <- paste(paste0("*", stats), collapse = "|")
-  null.res <- e.null@null.results %>% 
-    tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") %>%
-    dplyr::filter(grepl(exp, metric)) %>%
+  null.res <- e.null@null.results |> 
+    tidyr::pivot_longer(cols = auc.train:ncoef, names_to = "metric", values_to = "value") |>
+    dplyr::filter(grepl(exp, metric)) |>
     dplyr::select(metric, value)
-  null.avgs <- null.res %>% 
-    dplyr::filter(grepl("avg", metric) | metric %in% stats) %>%
-    dplyr::rename(avg = value) %>%
+  null.avgs <- null.res |> 
+    dplyr::filter(grepl("avg", metric) | metric %in% stats) |>
+    dplyr::rename(avg = value) |>
     dplyr::mutate(metric = gsub(".avg", "", metric))
   if(!is.null(metric.levels)) null.avgs$metric <- factor(null.avgs$metric, levels = metric.levels)
-  # null.sds <- null.res %>% 
-  #   dplyr::filter(grepl("sd", metric)) %>%
-  #   dplyr::rename(sd = value) %>%
+  # null.sds <- null.res |> 
+  #   dplyr::filter(grepl("sd", metric)) |>
+  #   dplyr::rename(sd = value) |>
   #   dplyr::mutate(metric = gsub(".sd", "", metric))
-  # null.res.avgs <- dplyr::bind_cols(null.avgs, null.sds %>% dplyr::select(sd))
+  # null.res.avgs <- dplyr::bind_cols(null.avgs, null.sds |> dplyr::select(sd))
   
-  emp.res <- e.null@null.emp.results %>% 
-    dplyr::slice(1) %>%
-    tidyr::pivot_longer(cols = stats, names_to = "metric", values_to = "value") %>%
-    dplyr::select(statistic, metric, value) %>%
-    tidyr::pivot_wider(names_from = statistic, values_from = value) %>%
+  emp.res <- e.null@null.emp.results |> 
+    dplyr::slice(1) |>
+    tidyr::pivot_longer(cols = stats, names_to = "metric", values_to = "value") |>
+    dplyr::select(statistic, metric, value) |>
+    tidyr::pivot_wider(names_from = statistic, values_from = value) |>
     dplyr::rename(avg = emp.mean)
   
   if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
@@ -576,14 +584,14 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
       ggplot2::theme_bw()  
   }else if(plot.type == "histogram") {
     stats.all <- rbind(null.avgs, emp.res)
-    vlines <- null.avgs %>% dplyr::group_by(metric) %>% 
+    vlines <- null.avgs |> dplyr::group_by(metric) |> 
       dplyr::summarize(`0.01 quantile` = quantile(avg, 0.01),
                        `0.05 quantile` = quantile(avg, 0.05),
                        `0.50 quantile` = quantile(avg, 0.5),
                        `0.95 quantile` = quantile(avg, 0.95),
-                       `0.99 quantile` = quantile(avg, 0.99)) %>%
+                       `0.99 quantile` = quantile(avg, 0.99)) |>
       tidyr::pivot_longer(cols = `0.01 quantile`:`0.99 quantile`, names_to = "quantile", values_to = "value")
-    vlines <- rbind(vlines, emp.res %>% dplyr::mutate(quantile = "empirical value") %>% dplyr::rename(value = avg))
+    vlines <- rbind(vlines, emp.res |> dplyr::mutate(quantile = "empirical value") |> dplyr::rename(value = avg))
     g <- ggplot2::ggplot(mapping = ggplot2::aes(x = avg)) + 
       ggplot2::geom_histogram(data = null.avgs, fill = "gray80") +
       ggplot2::geom_vline(data = vlines, ggplot2::aes(xintercept = value, color = quantile, linetype = quantile, size = quantile)) +

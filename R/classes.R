@@ -15,7 +15,7 @@ NULL
 #' @slot results.partitions data frame: evaluation k-fold statistics
 #' @slot models list: model objects
 #' @slot variable.importance list: variable importance data frames (when available)
-#' @slot predictions RasterStack: model predictions
+#' @slot predictions SpatRaster: model predictions
 #' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
 #' @slot occs.testing data frame: when provided, the coordinates of the fully-withheld testing records
@@ -88,7 +88,7 @@ ENMevaluation <- setClass("ENMevaluation",
                                     results.partitions = 'data.frame',
                                     models = 'list',
                                     variable.importance = 'list',
-                                    predictions = 'RasterStack',
+                                    predictions = 'SpatRaster',
                                     taxon.name = 'character',
                                     occs = 'data.frame',
                                     occs.testing = 'data.frame',

@@ -13,7 +13,7 @@ the occurrence localities based on one or more models}
 
 \item{ncoefs}{numeric: number of non-zero model coefficients}
 
-\item{p}{RasterStack: raw (maxent.jar) or exponential (maxnet) model predictions;
+\item{p}{SpatRaster: raw (maxent.jar) or exponential (maxnet) model predictions;
 if NULL, AICc will be calculated based on the background points, which already
 have predictions that sum to 1 and thus need no correction -- this assumes that
 the background points represent a good sample of the study extent}

@@ -214,10 +214,10 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
                    occs.testing.z, user.eval, algorithm, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
-  occs.xy <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(1:2)
-  occs.z <- d %>% dplyr::filter(pb == 1) %>% dplyr::select(dplyr::all_of(envs.names))
-  bg.xy <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(1:2)
-  bg.z <- d %>% dplyr::filter(pb == 0) %>% dplyr::select(dplyr::all_of(envs.names))
+  occs.xy <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
+  occs.z <- d |> dplyr::filter(pb == 1) |> dplyr::select(dplyr::all_of(envs.names))
+  bg.xy <- d |> dplyr::filter(pb == 0) |> dplyr::select(1:2)
+  bg.z <- d |> dplyr::filter(pb == 0) |> dplyr::select(dplyr::all_of(envs.names))
   
   # define number of grp (the value of "k") for occurrences
   nk <- length(unique(d[d$pb == 1, "grp"]))
@@ -235,7 +235,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
   if(!is.null(envs)) {
     pred.envs <- envs
   }else{
-    pred.envs <- d %>% dplyr::select(dplyr::all_of(envs.names))
+    pred.envs <- d |> dplyr::select(dplyr::all_of(envs.names))
   }
   
   # as bioclim can be tuned with different "tails" settings that affect not the 
@@ -248,7 +248,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
   train <- tune.train(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.settings, partitions, quiet)
   # make training stats table
   tune.args.col <- paste(names(tune.tbl.i), tune.tbl.i, collapse = "_", sep = ".")
-  train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) %>% cbind(train)
+  train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) |> cbind(train)
   
   # if no partitions, return results without cv.stats
   if(partitions == "none") {
@@ -258,14 +258,14 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
   
   if(partitions == "testing") {
     bg.val.z <- data.frame()
-    occs.testing.zEnvs <- occs.testing.z %>% dplyr::select(dplyr::all_of(envs.names))
+    occs.testing.zEnvs <- occs.testing.z |> dplyr::select(dplyr::all_of(envs.names))
     if(doClamp == TRUE) {
       occs.testing.zEnvs <- clamp.vars(orig.vals = occs.testing.zEnvs, ref.vals = rbind(occs.z, bg.z), 
                                        left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
                                        categoricals = other.settings$categoricals)
     }
     validate <- tune.validate(enm, occs.z, occs.testing.zEnvs, bg.z, bg.val.z, mod.full, 0, tune.tbl.i, other.settings, partitions, user.eval, quiet)
-    test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, stringsAsFactors = FALSE) %>% cbind(validate)
+    test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, stringsAsFactors = FALSE) |> cbind(validate)
     cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = test.stats.df) 
     return(cv.res)
   }
@@ -275,15 +275,15 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
   
   for(k in 1:nk) {
     # assign partitions for training and validation occurrence data and for background data
-    occs.train.z <- d %>% dplyr::filter(pb == 1, grp != k) %>% dplyr::select(dplyr::all_of(envs.names))
-    bg.train.z <- d %>% dplyr::filter(pb == 0, grp != k) %>% dplyr::select(dplyr::all_of(envs.names))
+    occs.train.z <- d |> dplyr::filter(pb == 1, grp != k) |> dplyr::select(dplyr::all_of(envs.names))
+    bg.train.z <- d |> dplyr::filter(pb == 0, grp != k) |> dplyr::select(dplyr::all_of(envs.names))
     if(is.null(user.val.grps)) {
-      occs.val.z <- d %>% dplyr::filter(pb == 1, grp == k) %>% dplyr::select(dplyr::all_of(envs.names))
-      bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(dplyr::all_of(envs.names))
+      occs.val.z <- d |> dplyr::filter(pb == 1, grp == k) |> dplyr::select(dplyr::all_of(envs.names))
+      bg.val.z <- d |> dplyr::filter(pb == 0, grp == k) |> dplyr::select(dplyr::all_of(envs.names))
     }else{
       # assign partitions for training and validation occurrence data and for background data based on user data
-      occs.val.z <- user.val.grps %>% dplyr::filter(grp == k) %>% dplyr::select(dplyr::all_of(envs.names))
-      bg.val.z <- d %>% dplyr::filter(pb == 0, grp == k) %>% dplyr::select(envs.names)
+      occs.val.z <- user.val.grps |> dplyr::filter(grp == k) |> dplyr::select(dplyr::all_of(envs.names))
+      bg.val.z <- d |> dplyr::filter(pb == 0, grp == k) |> dplyr::select(envs.names)
     }
     
     # if doClamp is on, make sure that the validation data for each validation model is also clamped
@@ -317,7 +317,7 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
     validate <- tune.validate(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, tune.tbl.i, other.settings, partitions, user.eval, quiet)
     
     # put into list as one-row data frame for easy binding
-    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) %>% cbind(validate)
+    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) |> cbind(validate)
   } 
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)

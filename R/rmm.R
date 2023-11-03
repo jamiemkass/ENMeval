@@ -4,7 +4,7 @@
 #' See Merow \emph{et al.} (2019) for more details on the nature of the metadata and the \code{rangeModelMetadata} package.
 #' To improve reproducibility of the study, this metadata object can be used as supplemental information for a manuscript, shared with collaborators, etc.
 #' @param e ENMevaluation object
-#' @param envs RasterStack: environmental predictor variables used in analysis; needed to pull information on the predictor variables
+#' @param envs SpatRaster: environmental predictor variables used in analysis; needed to pull information on the predictor variables
 #' not included in the ENMevaluation object
 #' @param rmm rangeModelMetadata object: if included, fields are appended to this RMM object as opposed to returning a new RMM object
 #' @references Merow, C., Maitner, B. S., Owens, H. L., Kass, J. M., Enquist, B. J., Jetz, W., & Guralnick, R. (2019). Species' range model metadata standards: RMMS. \emph{Global Ecology and Biogeography}, \bold{28}: 1912-1924. \doi{10.1111/geb.12993}
@@ -26,9 +26,9 @@ buildRMM <- function(e, envs, rmm = NULL) {
   # predictor variable metadata ####
   if(!is.null(envs)) {
     rmm$data$environment$variableNames <- names(envs)
-    rmm$data$environment$resolution <- raster::res(envs)[1]
-    rmm$data$environment$extent <- as.character(raster::extent(envs))
-    rmm$data$environment$projection <- as.character(raster::crs(envs)) 
+    rmm$data$environment$resolution <- terra::res(envs)[1]
+    rmm$data$environment$extent <- as.character(terra::ext(envs))
+    rmm$data$environment$projection <- as.character(terra::crs(envs)) 
   }
   
   # settings for tuning

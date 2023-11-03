@@ -7,7 +7,7 @@
 similarity(x, ref, full = FALSE)
 }
 \arguments{
-\item{x}{a `Raster*`, `list`, `matrix`, or `data.frame`
+\item{x}{a `SpatRaster`, `list`, `matrix`, or `data.frame`
 where each layer/column/element represents focal values of an environmental
 variable.}
 
@@ -20,24 +20,26 @@ If `FALSE` (the default), then only the minimum similarity scores
 across variables will be returned.}
 }
 \value{
-If `x` is a `Raster*` object, this function returns a list 
+If `x` is a `SpatRaster` object, this function returns a list 
   containing:
-  - `similarity`: a `RasterStack` giving the environmental similarities for
+  - `similarity`: a `SpatRaster` giving the environmental similarities for
   each variable in `x` (only included when `full=TRUE`); 
-  - `similarity_min`: a `Raster` layer giving the minimum similarity value 
+  - `similarity_min`: a `SpatRaster` giving the minimum similarity value 
   across all variables for each location (i.e. the MESS);
-  - `mod`: a factor `Raster` layer indicating which variable was most 
-  dissimilar to its reference range (i.e. the MoD map, Elith \emph{et al.} 2010); 
-  and
-  - `mos`: a factor `Raster` layer indicating which variable was most 
+  - `mod`: a factor `SpatRaster` indicating which variable was most 
+  dissimilar to its reference range (i.e. the MoD map, 
+  Elith \emph{et al.} 2010); and
+  - `mos`: a factor `SpatRaster` indicating which variable was most 
   similar to its reference range.
   
   If `x` is a `list`, `matrix`, or `data.frame`, the function will return
-  a list as above, but with `RasterStack` and `Raster` objects replaced by 
-  matrix and vectors.
+  a list as above, but with `SpatRaster` objects replaced by matrix and 
+  vectors.
 }
 \description{
-NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
+NOTICE: This function was borrowed from the rmaxent package 
+written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
+(dependencies on Github-only packages are not allowed for CRAN).
 
 Calculate Multivariate Environmental Similarity and most dissimilar/similar 
 variables with respect to a reference dataset, for a set of environmental 

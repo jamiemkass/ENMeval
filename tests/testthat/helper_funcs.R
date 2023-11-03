@@ -11,9 +11,9 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
     expect_true(!is.null(e@models))
     expect_true(!is.null(e@predictions))
     if(type == "swd") {
-      expect_true(raster::nlayers(e@predictions) == 0)  
+      expect_true(terra::nlyr(e@predictions) == 0)  
     }else{
-      expect_true(raster::nlayers(e@predictions) > 0)  
+      expect_true(terra::nlyr(e@predictions) > 0)  
     }
     expect_true(!is.null(e@occs))
     expect_true(!is.null(e@occs.grp))
@@ -116,19 +116,19 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
   
   clamp.envs.p <- lapply(clamps.envs, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
   
-  combs <- expand.grid(x=names(clamp.envs.p), y=names(clamp.envs.p), stringsAsFactors = FALSE) %>% dplyr::filter(x != y)
+  combs <- expand.grid(x=names(clamp.envs.p), y=names(clamp.envs.p), stringsAsFactors = FALSE) |> dplyr::filter(x != y)
   
   test_that("Clamped rasters are different from each other", {
     for(i in 1:nrow(combs)) {
       if(canExtrapolate == TRUE) {
-        expect_false(raster::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)  
+        expect_false(terra::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)  
       }else{
-        expect_true(raster::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)
+        expect_true(terra::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)
       }
     }
   })
   
-  clamps.df <- lapply(clamps.envs, function(x) raster::getValues(x))
+  clamps.df <- lapply(clamps.envs, function(x) terra::values(x))
   clamp.df.p <- lapply(clamps.df, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
   
   test_that("Clamped data frames are different from each other", {
@@ -195,8 +195,8 @@ test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs,
   })
   
   test_that("Data in ENMnulls object slots are not NA (except CBI, which can be NA due to low data)", {
-    expect_true(all(apply(ns@null.results %>% dplyr::select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
-    if(ns@null.partition.method != "none") expect_true(all(apply(ns@null.results %>% dplyr::select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
+    expect_true(all(apply(ns@null.results |> dplyr::select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
+    if(ns@null.partition.method != "none") expect_true(all(apply(ns@null.results |> dplyr::select(!starts_with("cbi")), 2, function(x) sum(is.na(x))) == 0))
   })
 }
 
@@ -237,19 +237,19 @@ test_evalplot.stats <- function(e) {
   }
   
   # defaults
-  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) %>% test_stats(stat1)
+  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
   # two stats
-  evalplot.stats(e, stats = stat2, x.var = "rm", color = "fc", dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) %>% test_stats(stat2)
+  evalplot.stats(e, stats = stat2, x.var = "rm", color = "fc", dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat2)
   # dodge
-  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = TRUE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) %>% test_stats(stat1)
+  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = TRUE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
   # error bars
-  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) %>% test_stats(stat1)
+  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
   # facet labels
-  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat1), metric.levels = NULL, return.tbl = TRUE) %>% test_stats(stat1)
-  evalplot.stats(e, stats = stat2, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat2), metric.levels = NULL, return.tbl = TRUE) %>% test_stats(stat2)
+  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat1), metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat2, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat2), metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat2)
   # metric levels
-  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = stat1, return.tbl = TRUE) %>% test_stats(stat1)
-  evalplot.stats(e, stats = stat2, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = rev(stat2), return.tbl = TRUE) %>% test_stats(stat2)
+  evalplot.stats(e, stats = stat1, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = stat1, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat2, x.var = "rm", color = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = rev(stat2), return.tbl = TRUE) |> test_stats(stat2)
 }
 
 test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL, categoricals = "biome") {
@@ -262,19 +262,19 @@ test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel 
       })
     }
     # with ENMevaluation object
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     if(bg.sel == 1) {
-      evalplot.envSim.hist(e = e, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+      evalplot.envSim.hist(e = e, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     }
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     # with occs and bg data
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     if(bg.sel == 1) {
-      evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist() 
+      evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist() 
     }
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_hist()
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
   }
   
   all_tests_hist("mess")
@@ -287,11 +287,11 @@ test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg
     test_map <- function(i) {
       test_that("Outputs for evalplot.envSim.map have correct form", {
         skip_if(skip_simDiff == TRUE)
-        if(inherits(i, "Raster")) {
+        if(inherits(i, "SpatRaster")) {
           if(is.null(occs.testing.z)) {
-            expect_true(length(unique(e@occs.grp)) == raster::nlayers(i))
+            expect_true(length(unique(e@occs.grp)) == terra::nlyr(i))
           }else{
-            expect_true(2 == raster::nlayers(i))
+            expect_true(2 == terra::nlyr(i))
           }
         }else{
           expect_true(ncol(i) == 4)
@@ -303,17 +303,17 @@ test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg
       })
     }
     # with ENMevaluation object
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
     # with buffer
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
     # with occs and bg data
-    evalplot.envSim.map(occs.z = occs.z, occs.grp = occs.grp, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
+    evalplot.envSim.map(occs.z = occs.z, occs.grp = occs.grp, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
     if(bg.sel == 1) {
-      evalplot.envSim.map(bg.z = bg.z, bg.grp = bg.grp, envs = envs, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) %>% test_map()
+      evalplot.envSim.map(bg.z = bg.z, bg.grp = bg.grp, envs = envs, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
     }
   }
   
@@ -348,16 +348,16 @@ test_evalplot.nulls <- function(ns) {
   
   for(i in c("histogram", "violin")) {
     # one metric 
-    evalplot.nulls(ns, stat1, plot.type = i, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) %>% test_nulls(stat1)
+    evalplot.nulls(ns, stat1, plot.type = i, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_nulls(stat1)
     # two metrics 
-    evalplot.nulls(ns, stat2, plot.type = i, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) %>% test_nulls(stat2)
+    evalplot.nulls(ns, stat2, plot.type = i, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_nulls(stat2)
     # one metric labels
-    evalplot.nulls(ns, stat1, plot.type = i, facet.labels = paste0(stat1, "2"), metric.levels = NULL, return.tbl = TRUE) %>% test_nulls(stat1)
+    evalplot.nulls(ns, stat1, plot.type = i, facet.labels = paste0(stat1, "2"), metric.levels = NULL, return.tbl = TRUE) |> test_nulls(stat1)
     # two metrics labels
-    evalplot.nulls(ns, stat2, plot.type = i, facet.labels = paste0(stat2, "2"), metric.levels = NULL, return.tbl = TRUE) %>% test_nulls(stat2)
+    evalplot.nulls(ns, stat2, plot.type = i, facet.labels = paste0(stat2, "2"), metric.levels = NULL, return.tbl = TRUE) |> test_nulls(stat2)
     # one metric levels
-    evalplot.nulls(ns, stat1, plot.type = i, facet.labels = NULL, metric.levels = stat1, return.tbl = TRUE) %>% test_nulls(stat1)
+    evalplot.nulls(ns, stat1, plot.type = i, facet.labels = NULL, metric.levels = stat1, return.tbl = TRUE) |> test_nulls(stat1)
     # two metrics levels
-    evalplot.nulls(ns, stat2, plot.type = i, facet.labels = NULL, metric.levels = stat2, return.tbl = TRUE) %>% test_nulls(stat2)
+    evalplot.nulls(ns, stat2, plot.type = i, facet.labels = NULL, metric.levels = stat2, return.tbl = TRUE) |> test_nulls(stat2)
   }
 }

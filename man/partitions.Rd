@@ -28,7 +28,7 @@ get.randomkfold(occs, bg, kfolds)
 the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
 options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"}
 
-\item{envs}{RasterStack: environmental predictor variables}
+\item{envs}{SpatRaster: environmental predictor variables}
 
 \item{aggregation.factor}{numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
 if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation}
@@ -57,7 +57,7 @@ Background localities are assigned to each of the four groups based on their pos
 While the \code{get.block} method results in (approximately) equal division of occurrence localities among four groups, the number of background localities (and, consequently, environmental and geographic space) in each group depends on the distribution of occurrence localities across the study area.
 
 The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants of a checkerboard approach to partition occurrence localities. 
-These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) to partition records according to checkerboard grids across the study extent. 
+These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) -- modified to use terra functions -- to partition records according to checkerboard grids across the study extent. 
 The spatial grain of these grids is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor of 2 results in a checkerboard with grid cells four times as large in area as the original input grids). 
 The \code{get.checkerboard1} method partitions data into two groups according to a single checkerboard pattern, and the \code{get.checkerboard2} method partitions data into four groups according to two nested checkerboard grids. 
 In contrast to the \code{get.block} method, both the \code{get.checkerboard1} and \code{get.checkerboard2} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group. 

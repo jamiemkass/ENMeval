@@ -14,7 +14,7 @@
 #' While the \code{get.block} method results in (approximately) equal division of occurrence localities among four groups, the number of background localities (and, consequently, environmental and geographic space) in each group depends on the distribution of occurrence localities across the study area.
 #' 
 #' The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants of a checkerboard approach to partition occurrence localities. 
-#' These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) to partition records according to checkerboard grids across the study extent. 
+#' These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) -- modified to use terra functions -- to partition records according to checkerboard grids across the study extent. 
 #' The spatial grain of these grids is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor of 2 results in a checkerboard with grid cells four times as large in area as the original input grids). 
 #' The \code{get.checkerboard1} method partitions data into two groups according to a single checkerboard pattern, and the \code{get.checkerboard2} method partitions data into four groups according to two nested checkerboard grids. 
 #' In contrast to the \code{get.block} method, both the \code{get.checkerboard1} and \code{get.checkerboard2} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group. 
@@ -30,7 +30,7 @@
 #' 
 #' @param occs matrix / data frame: longitude and latitude (in that order) of occurrence localities
 #' @param bg matrix / data frame: longitude and latitude (in that order) of background localities
-#' @param envs RasterStack: environmental predictor variables
+#' @param envs SpatRaster: environmental predictor variables
 #' @param orientation character vector: the order of spatial partitioning for the \code{get.block} method;
 #' the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
 #' options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"
@@ -240,11 +240,11 @@ get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
   
-  grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
-  w <- dismo::gridSample(occs, grid, n=gridSampleN, chess='white')
-  b <- dismo::gridSample(occs, grid, n=gridSampleN, chess='black')
-  bgw <- dismo::gridSample(bg, grid, n=gridSampleN, chess='white')
-  bgb <- dismo::gridSample(bg, grid, n=gridSampleN, chess='black')
+  grid <- terra::aggregate(envs[[1]], fact=aggregation.factor[1])
+  w <- gridSample_terra(occs, grid, n=gridSampleN, chess='white')
+  b <- gridSample_terra(occs, grid, n=gridSampleN, chess='black')
+  bgw <- gridSample_terra(bg, grid, n=gridSampleN, chess='white')
+  bgb <- gridSample_terra(bg, grid, n=gridSampleN, chess='black')
   
   if(nrow(w) > 0) { w$grp <- 1 }
   if(nrow(b) > 0) { b$grp <- 2 }
@@ -286,20 +286,20 @@ get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 
   rownames(bg) <- 1:nrow(bg)
   
   if (length(aggregation.factor) == 1) aggregation.factor <- rep(aggregation.factor, 2)
-  grid <- raster::aggregate(envs[[1]], fact=aggregation.factor[1])
-  grid2 <- raster::aggregate(grid, aggregation.factor[2])
-  w <- dismo::gridSample(occs, grid, n=gridSampleN, chess='white')
-  b <- dismo::gridSample(occs, grid, n=gridSampleN, chess='black')
-  ww <- dismo::gridSample(w, grid2, n=gridSampleN, chess='white')
-  wb <- dismo::gridSample(w, grid2, n=gridSampleN, chess='black')
-  bw <- dismo::gridSample(b, grid2, n=gridSampleN, chess='white')
-  bb <- dismo::gridSample(b, grid2, n=gridSampleN, chess='black')
-  bgw <- dismo::gridSample(bg, grid, n=gridSampleN, chess='white')
-  bgb <- dismo::gridSample(bg, grid, n=gridSampleN, chess='black')
-  bgww <- dismo::gridSample(bgw, grid2, n=gridSampleN, chess='white')
-  bgwb <- dismo::gridSample(bgw, grid2, n=gridSampleN, chess='black')
-  bgbw <- dismo::gridSample(bgb, grid2, n=gridSampleN, chess='white')
-  bgbb <- dismo::gridSample(bgb, grid2, n=gridSampleN, chess='black')
+  grid <- terra::aggregate(envs[[1]], fact=aggregation.factor[1])
+  grid2 <- terra::aggregate(grid, aggregation.factor[2])
+  w <- gridSample_terra(occs, grid, n=gridSampleN, chess='white')
+  b <- gridSample_terra(occs, grid, n=gridSampleN, chess='black')
+  ww <- gridSample_terra(w, grid2, n=gridSampleN, chess='white')
+  wb <- gridSample_terra(w, grid2, n=gridSampleN, chess='black')
+  bw <- gridSample_terra(b, grid2, n=gridSampleN, chess='white')
+  bb <- gridSample_terra(b, grid2, n=gridSampleN, chess='black')
+  bgw <- gridSample_terra(bg, grid, n=gridSampleN, chess='white')
+  bgb <- gridSample_terra(bg, grid, n=gridSampleN, chess='black')
+  bgww <- gridSample_terra(bgw, grid2, n=gridSampleN, chess='white')
+  bgwb <- gridSample_terra(bgw, grid2, n=gridSampleN, chess='black')
+  bgbw <- gridSample_terra(bgb, grid2, n=gridSampleN, chess='white')
+  bgbb <- gridSample_terra(bgb, grid2, n=gridSampleN, chess='black')
   
   r <- data.frame()
   if (nrow(ww) > 0) ww$grp <- 1; r <- rbind(r, ww)
@@ -361,4 +361,75 @@ get.randomkfold <- function(occs, bg, kfolds){
   bg.grp <- rep(0, nrow(bg))
   out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)	
+}
+
+# Taken from dismo 1.3-14 and modified to make it work with terra
+# xy must be a matrix or data frame of coordinates
+gridSample_terra <- function(xy, r, n=1, chess='') {
+  
+  cell <- terra::cellFromXY(r, xy)
+  uc <- unique(stats::na.omit(cell))
+  
+  chess <- trim(chess)
+  if (chess != '') {
+    chess <- tolower(chess)
+    stopifnot(chess %in% c('black', 'white'))
+    nc <- terra::ncol(r)
+    if (nc %% 2 == 1) {
+      if (chess=='white') {
+        tf <- 1:ceiling(ncell(r)/2) * 2 - 1
+      } else {
+        tf <- 1:ceiling((ncell(r)-1)/2) * 2 
+      }
+    } else {
+      nr <- terra::nrow(r)
+      row1 <- 1:(ceiling(nr / 2)) * 2 - 1
+      row2 <- row1 + 1
+      row2 <- row2[row2 <= nr]
+      
+      if (chess=='white') {
+        col1 <- 1:(ceiling(nc / 2)) * 2 - 1
+        col2 <- col1 + 1
+        col2 <- col2[col2 <= nc]
+      } else {
+        col1 <- 1:(ceiling(nc / 2)) * 2
+        col2 <- col1 - 1
+        col1 <- col1[col1 <= nc]
+      }
+      
+      cells1 <- cellFromRowColCombine_terra(r, row1, col1)
+      cells2 <- cellFromRowColCombine_terra(r, row2, col2)
+      tf <- c(cells1, cells2)
+    }	
+    uc <- uc[uc %in% tf]
+  }
+  
+  cell <- terra::cellFromXY(r, xy)
+  xy <- cbind(xy, cell, runif( nrow(xy)))
+  xy <- stats::na.omit(xy)
+  xy <- unique(xy)
+  
+  
+  xy <-  xy[order(xy[,4]), ]
+  pts <- matrix(nrow=0, ncol=2)
+  for (u in uc) {
+    ss <- subset(xy, xy[,3] == u)
+    pts <- rbind(pts, ss[1:min(n, nrow(ss)), 1:2])
+  }
+  return(pts)
+}
+
+# Taken from raster 3.6-23 and modified for terra functionality to supplement 
+# above function
+cellFromRowColCombine_terra <- function(object, row, col) {
+  # faster without this according to PR #131
+  # object <- raster(object)
+  row[row < 1 | row > terra::nrow(object)] <- NA
+  col[col < 1 | col > terra::ncol(object)] <- NA
+  cols <- rep(col, times=length(row))
+  dim(cols) <- c(length(col), length(row))
+  cols <- t(cols)
+  row <- (row-1) * terra::ncol(object)
+  cols <- cols + row
+  as.vector(t(cols))
 }

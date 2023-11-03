@@ -1,13 +1,15 @@
 #' @title Calculate Multivariate Environmental Similarity
 #'
-#' @description NOTICE: This function was borrowed from the rmaxent package written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
-#  It is included here with John's permission to make ENMeval CRAN-compatible (dependencies on Github-only packages are not allowed for CRAN).
+#' @description NOTICE: This function was borrowed from the rmaxent package 
+#' written by John Baumgartner (https://github.com/johnbaums/rmaxent/).
+#  It is included here with John's permission to make ENMeval CRAN-compatible 
+#' (dependencies on Github-only packages are not allowed for CRAN).
 #' 
 #' Calculate Multivariate Environmental Similarity and most dissimilar/similar 
 #' variables with respect to a reference dataset, for a set of environmental 
 #' variables.
 #'
-#' @param x a `Raster*`, `list`, `matrix`, or `data.frame`
+#' @param x a `SpatRaster`, `list`, `matrix`, or `data.frame`
 #'   where each layer/column/element represents focal values of an environmental
 #'   variable.
 #' @param ref a `list`, `matrix`, or `data.frame` where each
@@ -16,21 +18,21 @@
 #' @param full (logical) should similarity values be returned for all variables?
 #'   If `FALSE` (the default), then only the minimum similarity scores
 #'   across variables will be returned.
-#' @return If `x` is a `Raster*` object, this function returns a list 
+#' @return If `x` is a `SpatRaster` object, this function returns a list 
 #'   containing:
-#'   - `similarity`: a `RasterStack` giving the environmental similarities for
+#'   - `similarity`: a `SpatRaster` giving the environmental similarities for
 #'   each variable in `x` (only included when `full=TRUE`); 
-#'   - `similarity_min`: a `Raster` layer giving the minimum similarity value 
+#'   - `similarity_min`: a `SpatRaster` giving the minimum similarity value 
 #'   across all variables for each location (i.e. the MESS);
-#'   - `mod`: a factor `Raster` layer indicating which variable was most 
-#'   dissimilar to its reference range (i.e. the MoD map, Elith \emph{et al.} 2010); 
-#'   and
-#'   - `mos`: a factor `Raster` layer indicating which variable was most 
+#'   - `mod`: a factor `SpatRaster` indicating which variable was most 
+#'   dissimilar to its reference range (i.e. the MoD map, 
+#'   Elith \emph{et al.} 2010); and
+#'   - `mos`: a factor `SpatRaster` indicating which variable was most 
 #'   similar to its reference range.
 #'   
 #'   If `x` is a `list`, `matrix`, or `data.frame`, the function will return
-#'   a list as above, but with `RasterStack` and `Raster` objects replaced by 
-#'   matrix and vectors.
+#'   a list as above, but with `SpatRaster` objects replaced by matrix and 
+#'   vectors.
 #' @details `similarity` uses the MESS algorithm described in Appendix S3
 #'   of Elith \emph{et al.} 2010.
 #' @references 
@@ -61,13 +63,13 @@ similarity <- function(x, ref, full=FALSE) {
   if(!methods::is(ref, 'data.frame')) {
     ref <- as.data.frame(ref)
   }
-  if(is(x, 'Raster')) {
+  if(is(x, 'SpatRaster')) {
     r <- TRUE
     if(isTRUE(full)) {
-      out <- raster::stack(replicate(
-        raster::nlayers(x), raster::init(x, function(x) NA)))
+      out <- terra::rast(replicate(
+        terra::nlyr(x), terra::init(x, NA)))
     } else {
-      out <- raster::init(x, function(x) NA)
+      out <- terra::init(x, fun = NA)[[1]]
     }
   } else r <- FALSE
   ref <- stats::na.omit(ref)
@@ -98,19 +100,20 @@ similarity <- function(x, ref, full=FALSE) {
   
   if(isTRUE(r)) {
     
-    most_dissimilar <- raster::raster(out)
+    most_dissimilar <- terra::rast(out)
     most_dissimilar[] <- most_dissimilar_vec
-    most_dissimilar <- raster::as.factor(most_dissimilar)
+    most_dissimilar <- terra::as.factor(most_dissimilar)
     levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)), 
                                                var=colnames(sim))
-    most_similar <- raster::raster(out)
+    most_similar <- terra::rast(out)
     most_similar[] <- most_similar_vec
-    most_similar <- raster::as.factor(most_similar)
+    most_similar <- terra::as.factor(most_similar)
     levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)), 
                                             var=colnames(sim))  
     
-    out_min <- raster::raster(out)
+    out_min <- terra::rast(out)
     out_min[] <- min_sim
+    names(out_min) <- "minimum_similarity"
     if(isTRUE(full)) {
       out[] <- sim
       list(similarity=out, similarity_min=out_min, mod=most_dissimilar, 

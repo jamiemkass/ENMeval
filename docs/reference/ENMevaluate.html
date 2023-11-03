@@ -123,7 +123,7 @@ assigned to presence/background localities (without inputting raster data), this
 one column for each predictor variable. See Note for important distinctions between running the function
 with and without rasters.</p></dd>
 <dt>envs</dt>
-<dd><p>RasterStack: environmental predictor variables. These should be in same geographic projection as occurrence data.</p></dd>
+<dd><p>SpatRaster: environmental predictor variables. These should be in same geographic projection as occurrence data.</p></dd>
 <dt>bg</dt>
 <dd><p>matrix / data frame: background records with two columns for longitude and latitude of 
 background (or pseudo-absence) localities, in that order. If NULL, points will be randomly sampled across <code>envs</code> 
@@ -227,7 +227,7 @@ This approach follows Radosavljevic &amp; Anderson (2014).This setting can be ch
 other.settings$validation.bg to "partition", which will calculate AUC with respect 
 to the validation background only. The default value for other.settings$validation.bg is "full".</p>
 <p>2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using 
-the predicted values of the RasterStack delineating the full study extent, but instead using the predicted
+the predicted values of the SpatRaster delineating the full study extent, but instead using the predicted
 values for the background records. This decision to use the background only for calculating the continuous 
 Boyce index was made to simplify the code and improve running time. The decision for AICc was made in order
 to allow AICc calculations for datasets that do not include raster data. See ?calc.aicc for more details,

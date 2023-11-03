@@ -61,7 +61,7 @@ ncoef = number of non-zero beta values (model coefficients)
 
 \item{\code{variable.importance}}{list: variable importance data frames (when available)}
 
-\item{\code{predictions}}{RasterStack: model predictions}
+\item{\code{predictions}}{SpatRaster: model predictions}
 
 \item{\code{taxon.name}}{character: the name of the focal taxon (optional)}
 

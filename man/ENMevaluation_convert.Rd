@@ -9,7 +9,7 @@ ENMevaluation_convert(e, envs)
 \arguments{
 \item{e}{ENMevaluation object: the old object to convert}
 
-\item{envs}{RasterStack: the original predictor variables used to generate
+\item{envs}{SpatRaster: the original predictor variables used to generate
 the old ENMevaluation object (these are used to make the new occs and bg slots
 which contain the predictor variable values)}
 }
