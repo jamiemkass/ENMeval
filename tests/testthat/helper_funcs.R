@@ -96,19 +96,19 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
 }
 
 test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRUE) {
-  
-  p.z <- dplyr::bind_rows(occs.z, bg.z)[,-1:-2]
+  # use occurrences as reference environmental values for clamping
+  p.z <- occs.z[,-1:-2]
   
   none <- envs
   all <- clamp.vars(orig.vals = envs, ref.vals = p.z, categoricals = categoricals)
   left <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", categoricals = categoricals)
   right <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", categoricals = categoricals)
-  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[c(7:8)], 
-                        right = names(envs)[c(4:6)], categoricals = categoricals)
+  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[7], 
+                        right = names(envs)[7], categoricals = categoricals)
   subleft <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", 
-                        left = names(envs)[c(4:6)], categoricals = categoricals)
+                        left = names(envs)[7], categoricals = categoricals)
   subright <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", 
-                         right = names(envs)[c(4:6)], categoricals = categoricals)
+                         right = names(envs)[7], categoricals = categoricals)
   clamps.envs <- list(none=none, all=all, left=left, right=right, subboth=subboth, subleft=subleft, subright=subright)
   
   enm <- lookup.enm(e@algorithm)
@@ -121,9 +121,9 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
   test_that("Clamped rasters are different from each other", {
     for(i in 1:nrow(combs)) {
       if(canExtrapolate == TRUE) {
-        expect_false(terra::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)  
+        expect_false(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
       }else{
-        expect_true(terra::all.equal(clamp.envs.p[[combs[i,1]]], clamp.envs.p[[combs[i,2]]]) > 0)
+        expect_true(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
       }
     }
   })

@@ -54,13 +54,10 @@ for(alg in algorithms) {
   
   context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
   test_evalplot.stats(e)
-  grps <- get.block(e@occs, e@bg)
-  occs.z <- e@occs
-  bg.z <- e@bg
   context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions..."))
-  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with block partitions..."))
-  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, skip_simDiff = skip_simDiff)
   
   context(paste("Testing ENMnulls for", alg, "with block partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -78,11 +75,10 @@ for(alg in algorithms) {
     
     context(paste("Testing evalplot.stats for", alg, "with checkerboard1 partitions..."))
     test_evalplot.stats(e)
-    grps <- get.checkerboard1(occs, envs, bg, aggregation.factor = 2)
     context(paste("Testing evalplot.envSim.hist for", alg, "with checkerboard1 partitions..."))
-    test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
+    test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
     context(paste("Testing evalplot.envSim.map for", alg, "with checkerboard1 partitions..."))
-    test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with checkerboard1 partitions..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -101,11 +97,10 @@ for(alg in algorithms) {
     
     context(paste("Testing evalplot.stats for", alg, "with checkerboard2 partitions..."))
     test_evalplot.stats(e)
-    grps <- get.checkerboard2(occs, envs, bg, aggregation.factor = 2)
     context(paste("Testing evalplot.envSim.hist for", alg, "with checkerboard2 partitions..."))
-    test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp)
+    test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
     context(paste("Testing evalplot.envSim.map for", alg, "with checkerboard2 partitions..."))
-    test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with checkerboard2 partitions..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -123,11 +118,10 @@ for(alg in algorithms) {
     
     context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions..."))
     test_evalplot.stats(e)
-    grps <- get.randomkfold(occs, bg, kfolds = 5)
     context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions..."))
-    test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
+    test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0)
     context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions..."))
-    test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -161,11 +155,10 @@ for(alg in algorithms) {
   
   context(paste("Testing evalplot.stats for", alg, "with testing partition..."))
   test_evalplot.stats(e)
-  grps <- list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg)))
   context(paste("Testing evalplot.envSim.hist for", alg, "with testing partition..."))
-  test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
   context(paste("Testing evalplot.envSim.map for", alg, "with testing partition..."))
-  test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing, skip_simDiff = skip_simDiff)
   
   context(paste("Testing ENMnulls for", alg, "with testing partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -197,9 +190,9 @@ for(alg in algorithms) {
   context(paste("Testing evalplot.stats for", alg, "with user partitions..."))
   test_evalplot.stats(e)
   context(paste("Testing evalplot.envSim.hist for", alg, "with user partitions..."))
-  test_evalplot.envSim.hist(e, occs.z, bg.z, user.grp$occs.grp, user.grp$bg.grp)
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with user partitions..."))
-  test_evalplot.envSim.map(e, envs, occs.z, bg.z, user.grp$occs.grp, user.grp$bg.grp, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, skip_simDiff = skip_simDiff)
   
   context(paste("Testing ENMnulls for", alg, "with user partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
@@ -216,11 +209,10 @@ for(alg in algorithms) {
     
     context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and no raster environmental variables..."))
     test_evalplot.stats(e)
-    grps <- get.randomkfold(occs, bg, kfolds = 5)
     context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and no raster environmental variables..."))
-    test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, categoricals = cats1)
+    test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1)
     context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and no raster environmental variables..."))
-    test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and no raster environmental variables..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -238,11 +230,10 @@ for(alg in algorithms) {
     
     context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and no input background data..."))
     test_evalplot.stats(e)
-    grps <- get.randomkfold(occs, bg, kfolds = 5)
     context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and no input background data..."))
-    test_evalplot.envSim.hist(e, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0)
+    test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0)
     context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and no input background data..."))
-    test_evalplot.envSim.map(e, envs, occs.z, bg.z, grps$occs.grp, grps$bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and no input background data..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -272,11 +263,10 @@ for(alg in algorithms) {
     
     context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and two categorical variables..."))
     test_evalplot.stats(e.2cat)
-    grps <- get.randomkfold(occs, bg, kfolds = 5)
     context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and two categorical variables..."))
-    test_evalplot.envSim.hist(e.2cat, occs.z.2cat, bg.z.2cat, grps$occs.grp, grps$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
+    test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat$occs.grp, e.2cat$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
     context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and two categorical variables..."))
-    test_evalplot.envSim.map(e.2cat, envs.2cat, occs.z.2cat, bg.z.2cat, grps$occs.grp, grps$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat$occs.grp, e.2cat$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and two categorical variables..."))
     ns <- ENMnulls(e.2cat, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -288,9 +278,9 @@ for(alg in algorithms) {
   
   # clamping
   context(paste("Testing clamping function for", alg, "with..."))
-  test_clamp(e, envs, occs.z, bg.z, categoricals = cats1, canExtrapolate = extrap)
+  test_clamp(e, envs, e@occs, e@bg, categoricals = cats1, canExtrapolate = extrap)
   context(paste("Testing clamping function for", alg, "with two categorical variables..."))
-  if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(e.2cat, envs.2cat, occs.z.2cat, bg.z.2cat, categoricals = c("biome.1", "biome.2"))
+  if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, categoricals = c("biome.1", "biome.2"))
   
 }
 
