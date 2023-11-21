@@ -441,12 +441,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, partitio
       names(bg) <- names(occs)
     }
     
-    # remove cell duplicates
-    occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
-    occs.dups <- duplicated(occs.cellNo[,1])
-    if(sum(occs.dups) > 0) if(quiet != TRUE) message(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell."))
-    occs <- occs[!occs.dups,]
-    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
+    ## remove cell duplicates
+    #occs.cellNo <- raster::extract(envs, occs, cellnumbers = TRUE)
+    #occs.dups <- duplicated(occs.cellNo[,1])
+    #if(sum(occs.dups) > 0) if(quiet != TRUE) message(paste0("* Removed ", sum(occs.dups), " occurrence localities that shared the same grid cell."))
+    #occs <- occs[!occs.dups,]
+    #if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
     
     # bind coordinates to predictor variable values for occs and bg
     occs.z <- raster::extract(envs, occs)
