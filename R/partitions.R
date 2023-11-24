@@ -13,12 +13,12 @@
 #' Background localities are assigned to each of the four groups based on their position with respect to these lines. 
 #' While the \code{get.block} method results in (approximately) equal division of occurrence localities among four groups, the number of background localities (and, consequently, environmental and geographic space) in each group depends on the distribution of occurrence localities across the study area.
 #' 
-#' The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants of a checkerboard approach to partition occurrence localities. 
-#' These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) -- modified to use terra functions -- to partition records according to checkerboard grids across the study extent. 
-#' The spatial grain of these grids is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor of 2 results in a checkerboard with grid cells four times as large in area as the original input grids). 
-#' The \code{get.checkerboard1} method partitions data into two groups according to a single checkerboard pattern, and the \code{get.checkerboard2} method partitions data into four groups according to two nested checkerboard grids. 
-#' In contrast to the \code{get.block} method, both the \code{get.checkerboard1} and \code{get.checkerboard2} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group. 
-#' The two \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
+#' The \code{get.checkerboard} methods are variants of a checkerboard approach to partition occurrence localities. 
+#' These methods use the \code{spatSample} function of the \pkg{terra} package (Hijmans 2023) to partition records according to checkerboard squares generated based on the input rasters. 
+#' The spatial grain of these squares is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor with value 2 results in a checkerboard with grid cells four times the area of the original input rasters). 
+#' With one input aggregation factor, \code{get.checkerboard} partitions data into two groups according to a 'basic' checkerboard pattern. With two aggregation factors, \code{get.checkerboard} partitions data into four groups according to 'hierarchical', or nested, checkerboard squares (see Muscarella et al. 2014). 
+#' In contrast to the \code{get.block} method, the \code{get.checkerboard} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group. 
+#' The \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
 #' 
 #' The \code{get.jackknife} method is a special case of \emph{k}-fold cross validation where the number of bins (\emph{k}) is equal to the number of occurrence localities (\emph{n}) in the dataset. 
 #' It is suggested for occurrence datasets of relatively small sample size (generally < 25 localities) (Pearson \emph{et al.} 2007; Shcheglovitova and Anderson 2013).
@@ -34,8 +34,7 @@
 #' @param orientation character vector: the order of spatial partitioning for the \code{get.block} method;
 #' the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups; 
 #' options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"
-#' @param aggregation.factor numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
-#' if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation
+#' @param aggregation.factor numeric or numeric vector: the scale of aggregation for \code{get.checkerboard}; can have one value (for 'basic') or two values (for 'hierarchical') -- see Details.
 #' @param gridSampleN numeric: the number of points sampled from the input raster using gridSample() by the checkerboard partitioning functions
 #' @param kfolds numeric: number of random \emph{k}-folds for \code{get.randomkfold} method
 #' 
@@ -45,12 +44,14 @@
 #' \item{$bg.grp}{ A vector of bin designation for background localities in the same order they were provided.}
 #' 
 #' @note 
-#' The \code{checkerboard1} and \code{checkerboard2} methods are designed to partition occurrence localities into two and four evaluation bins, respectively. 
-#' They may give fewer bins, however, depending on where the occurrence localities fall with respect to the grid cells (e.g., all records happen to fall in the "black" squares). 
-#' A warning is given if the number of bins is < 4 for the \code{checkerboard2} method, and an error is given if all localities fall into a single evaluation bin.
+#' The \code{checkerboard} methods are designed to partition occurrence localities into spatial evaluation bins: two ('basic', for one aggregation factor) or four ('hierarchical', for two aggregation factors). 
+#' They may give fewer bins, however, depending on where the occurrence localities fall with respect to the grid cells (e.g., all records happen to fall in one group of checkerboard squares). 
+#' A warning is given if the number of bins is < 4 for the hierarchical method, and an error is given if all localities fall into a single evaluation bin.
 #' 
 #' @references
-#' Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011). dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
+#' Hijmans, R. J. (2023). terra: Spatial Data Analysis. Available online at: \url{https://cran.r-project.org/package=terra}.
+#' 
+#' Muscarella, R., Galante, P. J., Soley‐Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, 5(11), 1198-1205. \doi{https://doi.org/10.1111/2041-210X.12945} 
 #' 
 #' Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117. \doi{10.1111/j.1365-2699.2006.01594.x}
 #' 
@@ -59,7 +60,7 @@
 #' Shcheglovitova, M. and Anderson, R. P. (2013). Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \doi{10.1016/j.ecolmodel.2013.08.011}
 #' 
 #' @author 
-#' Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jkass@gc.cuny.edu>
+#' Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jamie.m.kass@gmail.com>
 #' 
 #' @examples 
 #' require(raster)
@@ -100,32 +101,33 @@
 #' plot(envs)
 #' points(bg, pch=21, bg=blk.latLat$bg.grp)
 #' 
-#' ### Checkerboard1 partitioning method with aggregation factor of 4
-#' chk1.ag4 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 4)
+#' ### Checkerboard partitioning method with aggregation factor of 4
+#' chk.ag4 <- get.checkerboard(occs, envs, bg, aggregation.factor = 4)
 #' plot(envs)
-#' points(occs, pch=23, bg=chk1.ag4$occs.grp)
+#' points(occs, pch=23, bg=chk.ag4$occs.grp)
 #' plot(envs)
-#' points(bg, pch=21, bg=chk1.ag4$bg.grp)
+#' points(bg, pch=21, bg=chk.ag4$bg.grp)
 #' # Higher aggregation factors result in bigger checkerboard blocks
-#' chk1.ag8 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 8)
+#' chk.ag8 <- get.checkerboard(occs, envs, bg, aggregation.factor = 8)
 #' plot(envs)
-#' points(occs, pch=23, bg=chk1.ag8$occs.grp)
+#' points(occs, pch=23, bg=chk.ag8$occs.grp)
 #' plot(envs)
-#' points(bg, pch=21, bg=chk1.ag8$bg.grp)
+#' points(bg, pch=21, bg=chk.ag8$bg.grp)
 #' 
-#' ### Checkerboard2 partitioning method with aggregation factors of 2, 2
-#' chk2.ag2_2 <- get.checkerboard2(occs, envs, bg, c(2,2))
+#' ### Hierarchical checkerboard partitioning method with aggregation factors 
+#' ### of 2 and 2
+#' chk.ag2_2 <- get.checkerboard(occs, envs, bg, c(2,2))
 #' plot(envs)
-#' points(occs, pch=23, bg=chk2.ag2_2$occs.grp)
+#' points(occs, pch=23, bg=chk.ag2_2$occs.grp)
 #' plot(envs)
-#' points(bg, pch=21, bg=chk2.ag2_2$bg.grp)
+#' points(bg, pch=21, bg=chk.ag2_2$bg.grp)
 #' # Higher aggregation factors result in bigger checkerboard blocks,
 #' # and can vary between hierarchical levels
-#' chk2.ag4_6 <- get.checkerboard2(occs, envs, bg, c(4,6))
+#' chk.ag4_6 <- get.checkerboard(occs, envs, bg, c(4,6))
 #' plot(envs)
-#' points(occs, pch=23, bg=chk2.ag4_6$occs.grp)
+#' points(occs, pch=23, bg=chk.ag4_6$occs.grp)
 #' plot(envs)
-#' points(bg, pch=21, bg=chk2.ag4_6$bg.grp)
+#' points(bg, pch=21, bg=chk.ag4_6$bg.grp)
 #' 
 #' ### Random partitions with 4 folds
 #' # Note that get.randomkkfold does not partition the background
@@ -233,99 +235,101 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
 #' 
 #' @export
 
-get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
+get.checkerboard <- function(occs, envs, bg, aggregation.factor,
+                              gridSampleN = 10000){
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
-  
+  if(length(aggregation.factor) == 1) {
+    message("Generating basic checkerboard partitions...")
+  } else if(length(aggregation.factor) == 2){
+    message("Generating hierarchical checkerboard partitions...")
+  } else {
+    stop("You can only input one (for basic) or two (for hierarchical) aggregation factors.")
+  }
+  occs.v <- as.data.frame(occs) |> terra::vect()
+  bg.v <- as.data.frame(bg) |> terra::vect()
+
+  # make checkerboards  
   grid <- terra::aggregate(envs[[1]], fact=aggregation.factor[1])
-  w <- gridSample_terra(occs, grid, n=gridSampleN, chess='white')
-  b <- gridSample_terra(occs, grid, n=gridSampleN, chess='black')
-  bgw <- gridSample_terra(bg, grid, n=gridSampleN, chess='white')
-  bgb <- gridSample_terra(bg, grid, n=gridSampleN, chess='black')
+  occs.w <- terra::spatSample(occs.v, size = gridSampleN, strata = grid, 
+                              chess='white')
+  occs.b <- terra::spatSample(occs.v, size = gridSampleN, strata = grid, 
+                              chess='black')
+  bg.w <- terra::spatSample(bg.v, size = gridSampleN, strata = grid, 
+                            chess='white')
+  bg.b <- terra::spatSample(bg.v, size = gridSampleN, strata = grid, 
+                            chess='black')
   
-  if(nrow(w) > 0) { w$grp <- 1 }
-  if(nrow(b) > 0) { b$grp <- 2 }
-  r <- rbind(w, b)
-  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
+  # for hierarchical checkerboards, which need two aggregation factors
+  if(length(aggregation.factor) == 2) {
+    grid2 <- terra::aggregate(grid, fact=aggregation.factor[2])
+    occs.ww <- terra::spatSample(occs.w, size = gridSampleN, strata = grid2, 
+                                 chess='white')
+    occs.wb <- terra::spatSample(occs.w, size = gridSampleN, strata = grid2, 
+                                 chess='black')
+    occs.bb <- terra::spatSample(occs.b, size = gridSampleN, strata = grid2, 
+                                 chess='black')
+    occs.bw <- terra::spatSample(occs.b, size = gridSampleN, strata = grid2, 
+                                 chess='white')
+    bg.ww <- terra::spatSample(bg.w, size = gridSampleN, strata = grid2, 
+                               chess='white')
+    bg.wb <- terra::spatSample(bg.w, size = gridSampleN, strata = grid2, 
+                               chess='black')
+    bg.bb <- terra::spatSample(bg.b, size = gridSampleN, strata = grid2, 
+                               chess='black')
+    bg.bw <- terra::spatSample(bg.b, size = gridSampleN, strata = grid2, 
+                               chess='white')
+  }
   
-  if(nrow(bgw) > 0) { bgw$grp <- 1 }
-  if(nrow(bgb) > 0) { bgb$grp <- 2 }
-  bgr <- rbind(bgw, bgb)
-  bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
+  # assemble groups
+  if (length(aggregation.factor) == 1) {
+    occs.w <- terra::crds(occs.w, df = TRUE)
+    occs.b <- terra::crds(occs.b, df = TRUE)
+    if(nrow(occs.w) > 0) { occs.w$grp <- 1 }
+    if(nrow(occs.b) > 0) { occs.b$grp <- 2 }
+    occs.r <- rbind(occs.w, occs.b)
+    occs.grp <- occs.r[order(as.numeric(rownames(occs.r))),]$grp
+    
+    bg.w <- terra::crds(bg.w, df = TRUE)
+    bg.b <- terra::crds(bg.b, df = TRUE)
+    if(nrow(bg.w) > 0) { bg.w$grp <- 1 }
+    if(nrow(bg.b) > 0) { bg.b$grp <- 2 }
+    bg.r <- rbind(bg.w, bg.b)
+    bg.grp <- bg.r[order(as.numeric(rownames(bg.r))),]$grp
+  } else if (length(aggregation.factor) == 2) {
+    occs.ww <- terra::crds(occs.ww, df = TRUE)
+    occs.bw <- terra::crds(occs.bw, df = TRUE)
+    occs.wb <- terra::crds(occs.wb, df = TRUE)
+    occs.bb <- terra::crds(occs.bb, df = TRUE)
+    occs.r <- data.frame()
+    if (nrow(occs.ww) > 0) occs.ww$grp <- 1; occs.r <- rbind(occs.r, occs.ww)
+    if (nrow(occs.wb) > 0) occs.wb$grp <- 2; occs.r <- rbind(occs.r, occs.wb)
+    if (nrow(occs.bw) > 0) occs.bw$grp <- 3; occs.r <- rbind(occs.r, occs.bw)
+    if (nrow(occs.bb) > 0) occs.bb$grp <- 4; occs.r <- rbind(occs.r, occs.bb)
+    occs.grp <- occs.r[order(as.numeric(rownames(occs.r))),]$grp
+    
+    bg.ww <- terra::crds(bg.ww, df = TRUE)
+    bg.bw <- terra::crds(bg.bw, df = TRUE)
+    bg.wb <- terra::crds(bg.wb, df = TRUE)
+    bg.bb <- terra::crds(bg.bb, df = TRUE)
+    bg.r <- data.frame()
+    if (nrow(bg.ww) > 0) bg.ww$grp <- 1; bg.r <- rbind(bg.r, bg.ww)
+    if (nrow(bg.wb) > 0) bg.wb$grp <- 2; bg.r <- rbind(bg.r, bg.wb)
+    if (nrow(bg.bw) > 0) bg.bw$grp <- 3; bg.r <- rbind(bg.r, bg.bw)
+    if (nrow(bg.bb) > 0) bg.bb$grp <- 4; bg.r <- rbind(bg.r, bg.bb)
+    bg.grp <- bg.r[order(as.numeric(rownames(bg.r))),]$grp
+  }
   
   # PATCH IF occs OR BG POINTS FALL INTO A SINGLE BIN
-  noccgrp <- length(unique(occs.grp))
-  nbggrp <- length(unique(bg.grp))
-  if(noccgrp < 2 ){
-    message(paste("Warning: occurrence points fall in only", noccgrp, "bin"))
+  noccs.grp <- length(unique(occs.grp))
+  nbg.grp <- length(unique(bg.grp))
+  if(noccs.grp < 2 ){
+    message(paste("Warning: occurrence points fall in only", noccs.grp, "bin"))
     bg.grp[ ! bg.grp %in% occs.grp] <- NA
     occs.grp <- as.numeric(as.factor(occs.grp))
     bg.grp <- as.numeric(as.factor(bg.grp))
   }
   
-  if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
-    stop("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
-  }
-  
-  out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
-  return(out)
-}
-
-#' @rdname partitions
-#' 
-#' @export
-
-get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000){
-  if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
-  occs <- as.data.frame(occs)
-  rownames(occs) <- 1:nrow(occs)
-  bg <- as.data.frame(bg)
-  rownames(bg) <- 1:nrow(bg)
-  
-  if (length(aggregation.factor) == 1) aggregation.factor <- rep(aggregation.factor, 2)
-  grid <- terra::aggregate(envs[[1]], fact=aggregation.factor[1])
-  grid2 <- terra::aggregate(grid, aggregation.factor[2])
-  w <- gridSample_terra(occs, grid, n=gridSampleN, chess='white')
-  b <- gridSample_terra(occs, grid, n=gridSampleN, chess='black')
-  ww <- gridSample_terra(w, grid2, n=gridSampleN, chess='white')
-  wb <- gridSample_terra(w, grid2, n=gridSampleN, chess='black')
-  bw <- gridSample_terra(b, grid2, n=gridSampleN, chess='white')
-  bb <- gridSample_terra(b, grid2, n=gridSampleN, chess='black')
-  bgw <- gridSample_terra(bg, grid, n=gridSampleN, chess='white')
-  bgb <- gridSample_terra(bg, grid, n=gridSampleN, chess='black')
-  bgww <- gridSample_terra(bgw, grid2, n=gridSampleN, chess='white')
-  bgwb <- gridSample_terra(bgw, grid2, n=gridSampleN, chess='black')
-  bgbw <- gridSample_terra(bgb, grid2, n=gridSampleN, chess='white')
-  bgbb <- gridSample_terra(bgb, grid2, n=gridSampleN, chess='black')
-  
-  r <- data.frame()
-  if (nrow(ww) > 0) ww$grp <- 1; r <- rbind(r, ww)
-  if (nrow(wb) > 0) wb$grp <- 2; r <- rbind(r, wb)
-  if (nrow(bw) > 0) bw$grp <- 3; r <- rbind(r, bw)
-  if (nrow(bb) > 0) bb$grp <- 4; r <- rbind(r, bb)
-  occs.grp <- r[order(as.numeric(rownames(r))),]$grp
-  
-  bgr <- data.frame()
-  if (nrow(bgww) > 0) bgww$grp <- 1; bgr <- rbind(bgr, bgww)
-  if (nrow(bgwb) > 0) bgwb$grp <- 2; bgr <- rbind(bgr, bgwb)
-  if (nrow(bgbw) > 0) bgbw$grp <- 3; bgr <- rbind(bgr, bgbw)
-  if (nrow(bgbb) > 0) bgbb$grp <- 4; bgr <- rbind(bgr, bgbb)
-  bg.grp <- bgr[order(as.numeric(rownames(bgr))),]$grp
-  
-  # PATCH IF occs OR BG POINTS FALL INTO FEWER THAN FOUR BINS
-  noccgrp <- length(unique(occs.grp))
-  nbggrp <- length(unique(bg.grp))
-  if(noccgrp < 4 ){
-    message(paste("Warning: occurrence points fall in only", noccgrp, "bins"))
-    bg.grp[ ! bg.grp %in% occs.grp] <- NA
-    occs.grp <- as.numeric(as.factor(occs.grp))
-    bg.grp <- as.numeric(as.factor(bg.grp))
-  }
-  
-  if(length(unique(bg.grp[!is.na(bg.grp)])) != noccgrp) {
+  if(length(unique(bg.grp[!is.na(bg.grp)])) != noccs.grp) {
     stop("Error: occurrence records but no background points fall in 1 or more evaluation bin(s)")
   }
   
@@ -357,79 +361,9 @@ get.randomkfold <- function(occs, bg, kfolds){
   rownames(occs) <- 1:nrow(occs)
   bg <- as.data.frame(bg)
   rownames(bg) <- 1:nrow(bg)
-  occs.grp <- dismo::kfold(occs, kfolds)
+  occs.grp <- predicts::folds(occs, kfolds)
   bg.grp <- rep(0, nrow(bg))
   out <- list(occs.grp=occs.grp, bg.grp=bg.grp)
   return(out)	
 }
 
-# Taken from dismo 1.3-14 and modified to make it work with terra
-# xy must be a matrix or data frame of coordinates
-gridSample_terra <- function(xy, r, n=1, chess='') {
-  
-  cell <- terra::cellFromXY(r, xy)
-  uc <- unique(stats::na.omit(cell))
-  
-  chess <- trim(chess)
-  if (chess != '') {
-    chess <- tolower(chess)
-    stopifnot(chess %in% c('black', 'white'))
-    nc <- terra::ncol(r)
-    if (nc %% 2 == 1) {
-      if (chess=='white') {
-        tf <- 1:ceiling(ncell(r)/2) * 2 - 1
-      } else {
-        tf <- 1:ceiling((ncell(r)-1)/2) * 2 
-      }
-    } else {
-      nr <- terra::nrow(r)
-      row1 <- 1:(ceiling(nr / 2)) * 2 - 1
-      row2 <- row1 + 1
-      row2 <- row2[row2 <= nr]
-      
-      if (chess=='white') {
-        col1 <- 1:(ceiling(nc / 2)) * 2 - 1
-        col2 <- col1 + 1
-        col2 <- col2[col2 <= nc]
-      } else {
-        col1 <- 1:(ceiling(nc / 2)) * 2
-        col2 <- col1 - 1
-        col1 <- col1[col1 <= nc]
-      }
-      
-      cells1 <- cellFromRowColCombine_terra(r, row1, col1)
-      cells2 <- cellFromRowColCombine_terra(r, row2, col2)
-      tf <- c(cells1, cells2)
-    }	
-    uc <- uc[uc %in% tf]
-  }
-  
-  cell <- terra::cellFromXY(r, xy)
-  xy <- cbind(xy, cell, runif( nrow(xy)))
-  xy <- stats::na.omit(xy)
-  xy <- unique(xy)
-  
-  
-  xy <-  xy[order(xy[,4]), ]
-  pts <- matrix(nrow=0, ncol=2)
-  for (u in uc) {
-    ss <- subset(xy, xy[,3] == u)
-    pts <- rbind(pts, ss[1:min(n, nrow(ss)), 1:2])
-  }
-  return(pts)
-}
-
-# Taken from raster 3.6-23 and modified for terra functionality to supplement 
-# above function
-cellFromRowColCombine_terra <- function(object, row, col) {
-  # faster without this according to PR #131
-  # object <- raster(object)
-  row[row < 1 | row > terra::nrow(object)] <- NA
-  col[col < 1 | col > terra::ncol(object)] <- NA
-  cols <- rep(col, times=length(row))
-  dim(cols) <- c(length(col), length(row))
-  cols <- t(cols)
-  row <- (row-1) * terra::ncol(object)
-  cols <- cols + row
-  as.vector(t(cols))
-}

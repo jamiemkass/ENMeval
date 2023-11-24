@@ -4,7 +4,7 @@
 
 maxent.jar.name <- "maxent.jar"
 
-maxent.jar.fun <- dismo::maxent
+maxent.jar.fun <- predicts::MaxEnt
 
 maxent.jar.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
                           partition.settings, other.settings, 
@@ -20,22 +20,22 @@ maxent.jar.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
       stop("Please input accepted values for 'fc' settings for Maxent.")
     }
   }
-  if(is.null(getOption('dismo_rJavaLoaded'))) {
-    # to avoid trouble on macs
-    Sys.setenv(NOAWT=TRUE)
-    if ( requireNamespace('rJava') ) {
-      rJava::.jpackage('dismo')
-      options(dismo_rJavaLoaded=TRUE)
-    } else {
-      stop('rJava cannot be loaded.')
-    }
-  }
+  # if(is.null(getOption('dismo_rJavaLoaded'))) {
+  #   # to avoid trouble on macs
+  #   Sys.setenv(NOAWT=TRUE)
+  #   if ( requireNamespace('rJava') ) {
+  #     rJava::.jpackage('predicts')
+  #     options(dismo_rJavaLoaded=TRUE)
+  #   } else {
+  #     stop('rJava cannot be loaded.')
+  #   }
+  # }
 }
 
 maxent.jar.msgs <- function(tune.args, other.settings) {
   mxe <- rJava::.jnew("meversion") 
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
-  msg <- paste0("maxent.jar v", v, " from dismo package v", packageVersion('dismo'))
+  msg <- paste0("maxent.jar v", v, " from predicts package v", packageVersion('predicts'))
   return(msg)
 }
 
@@ -57,7 +57,7 @@ maxent.jar.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
 maxent.jar.predict <- function(mod, envs, other.settings) {
   output.format <- paste0("outputformat=", other.settings$pred.type)
   model.clamp <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
-  pred <- dismo::predict(mod, envs, args = c(output.format, model.clamp), na.rm = TRUE)
+  pred <- predict(mod, envs, args = c(output.format, model.clamp), na.rm = TRUE)
   return(pred)
 }
 

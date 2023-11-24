@@ -76,7 +76,7 @@ the remaining data (occurrences and background) are calculated, and the minimum 
 per grid is returned. For option "mess", higher negative values indicate greater 
 environmental difference between the validation occurrences and the study extent, and higher 
 positive values indicate greater similarity. This function uses the `similarity()` function 
-from the package `rmaxent` (https://github.com/johnbaums/rmaxent/) to calculate the 
+from the package `rmaxent` (https://github.com/johnbaums/rmaxent/), updated for `terra`, to calculate the 
 similarities. Please see the below reference for details on MESS.
 }
 \references{

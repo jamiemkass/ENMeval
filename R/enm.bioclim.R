@@ -4,7 +4,7 @@
 
 bioclim.name <- "bioclim"
 
-bioclim.fun <- dismo::bioclim
+bioclim.fun <- predicts::envelope
 
 bioclim.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
                            partition.settings, other.settings, 
@@ -15,7 +15,7 @@ bioclim.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
 }
 
 bioclim.msgs <- function(tune.args, other.settings) {
-  msg <- paste0("BIOCLIM from dismo v", packageVersion('dismo'))
+  msg <- paste0("BIOCLIM from predicts v", packageVersion('predicts'))
   return(msg)
 }
 
@@ -30,8 +30,7 @@ bioclim.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
 # are always clamped for this algorithm
 bioclim.predict <- function(mod, envs, other.settings) {
   # if no tails in other.args, defaults to NULL
-  # useC is set to FALSE to avoid a current error with dismo 1.3-3
-  pred <- dismo::predict(mod, envs, tails = other.settings$tails, na.rm = TRUE, useC = FALSE)
+  pred <- predict(mod, envs, tails = other.settings$tails, na.rm = TRUE)
   return(pred)
 }
 
@@ -46,7 +45,7 @@ bioclim.variable.importance <- function(mod) {
 }
 
 #' @title ENMdetails bioclim
-#' @description This is the ENMdetails implementation for bioclim, implemented by dismo.
+#' @description This is the ENMdetails implementation for the BIOCLIM climate envelope model, implemented by predicts.
 #' @export
 enm.bioclim <- ENMdetails(name = bioclim.name, fun = bioclim.fun, errors = bioclim.errors,
                           msgs = bioclim.msgs, args = bioclim.args,

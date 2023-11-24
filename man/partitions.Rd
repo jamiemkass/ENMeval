@@ -3,17 +3,14 @@
 \name{partitions}
 \alias{partitions}
 \alias{get.block}
-\alias{get.checkerboard1}
-\alias{get.checkerboard2}
+\alias{get.checkerboard}
 \alias{get.jackknife}
 \alias{get.randomkfold}
 \title{Methods to partition data for evaluation}
 \usage{
 get.block(occs, bg, orientation = "lat_lon")
 
-get.checkerboard1(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
-
-get.checkerboard2(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
+get.checkerboard(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
 
 get.jackknife(occs, bg)
 
@@ -30,8 +27,7 @@ options are "lat_lon" (default), "lon_lat", "lon_lon", and "lat_lat"}
 
 \item{envs}{SpatRaster: environmental predictor variables}
 
-\item{aggregation.factor}{numeric vector: the aggregation scale for the \code{get.checkerboard1} and \code{get.checkerboard2} methods;
-if a single number is given and \code{get.checkerboard2} partitioning method is used, the single value is used for both scales of aggregation}
+\item{aggregation.factor}{numeric or numeric vector: the scale of aggregation for \code{get.checkerboard}; can have one value (for 'basic') or two values (for 'hierarchical') -- see Details.}
 
 \item{gridSampleN}{numeric: the number of points sampled from the input raster using gridSample() by the checkerboard partitioning functions}
 
@@ -56,12 +52,12 @@ This method is based on the spatial partitioning technique described in Radosavl
 Background localities are assigned to each of the four groups based on their position with respect to these lines. 
 While the \code{get.block} method results in (approximately) equal division of occurrence localities among four groups, the number of background localities (and, consequently, environmental and geographic space) in each group depends on the distribution of occurrence localities across the study area.
 
-The \code{get.checkerboard1} and \code{get.checkerboard2} methods are variants of a checkerboard approach to partition occurrence localities. 
-These methods use the \code{dismo::gridSample} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011) -- modified to use terra functions -- to partition records according to checkerboard grids across the study extent. 
-The spatial grain of these grids is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor of 2 results in a checkerboard with grid cells four times as large in area as the original input grids). 
-The \code{get.checkerboard1} method partitions data into two groups according to a single checkerboard pattern, and the \code{get.checkerboard2} method partitions data into four groups according to two nested checkerboard grids. 
-In contrast to the \code{get.block} method, both the \code{get.checkerboard1} and \code{get.checkerboard2} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group. 
-The two \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
+The \code{get.checkerboard} methods are variants of a checkerboard approach to partition occurrence localities. 
+These methods use the \code{spatSample} function of the \pkg{terra} package (Hijmans 2023) to partition records according to checkerboard squares generated based on the input rasters. 
+The spatial grain of these squares is determined by resampling (or aggregating) the original environmental input grids based on the user-defined \code{aggregation factor} (e.g., an aggregation factor with value 2 results in a checkerboard with grid cells four times the area of the original input rasters). 
+With one input aggregation factor, \code{get.checkerboard} partitions data into two groups according to a 'basic' checkerboard pattern. With two aggregation factors, \code{get.checkerboard} partitions data into four groups according to 'hierarchical', or nested, checkerboard squares (see Muscarella et al. 2014). 
+In contrast to the \code{get.block} method, the \code{get.checkerboard} methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each group. 
+The \code{get.checkerboard} methods give warnings (and potentially errors) if zero points (occurrence or background) fall in any of the expected bins.
 
 The \code{get.jackknife} method is a special case of \emph{k}-fold cross validation where the number of bins (\emph{k}) is equal to the number of occurrence localities (\emph{n}) in the dataset. 
 It is suggested for occurrence datasets of relatively small sample size (generally < 25 localities) (Pearson \emph{et al.} 2007; Shcheglovitova and Anderson 2013).
@@ -72,9 +68,9 @@ This is equivalent to the method of \emph{k}-fold cross validation currently pro
 Users can also define custom partitions for occurrence and background data in the call to `ENMevaluate` with the "user.grp" parameter.
 }
 \note{
-The \code{checkerboard1} and \code{checkerboard2} methods are designed to partition occurrence localities into two and four evaluation bins, respectively. 
-They may give fewer bins, however, depending on where the occurrence localities fall with respect to the grid cells (e.g., all records happen to fall in the "black" squares). 
-A warning is given if the number of bins is < 4 for the \code{checkerboard2} method, and an error is given if all localities fall into a single evaluation bin.
+The \code{checkerboard} methods are designed to partition occurrence localities into spatial evaluation bins: two ('basic', for one aggregation factor) or four ('hierarchical', for two aggregation factors). 
+They may give fewer bins, however, depending on where the occurrence localities fall with respect to the grid cells (e.g., all records happen to fall in one group of checkerboard squares). 
+A warning is given if the number of bins is < 4 for the hierarchical method, and an error is given if all localities fall into a single evaluation bin.
 }
 \examples{
 require(raster)
@@ -115,32 +111,33 @@ points(occs, pch=23, bg=blk.latLat$occs.grp)
 plot(envs)
 points(bg, pch=21, bg=blk.latLat$bg.grp)
 
-### Checkerboard1 partitioning method with aggregation factor of 4
-chk1.ag4 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 4)
+### Checkerboard partitioning method with aggregation factor of 4
+chk.ag4 <- get.checkerboard(occs, envs, bg, aggregation.factor = 4)
 plot(envs)
-points(occs, pch=23, bg=chk1.ag4$occs.grp)
+points(occs, pch=23, bg=chk.ag4$occs.grp)
 plot(envs)
-points(bg, pch=21, bg=chk1.ag4$bg.grp)
+points(bg, pch=21, bg=chk.ag4$bg.grp)
 # Higher aggregation factors result in bigger checkerboard blocks
-chk1.ag8 <- get.checkerboard1(occs, envs, bg, aggregation.factor = 8)
+chk.ag8 <- get.checkerboard(occs, envs, bg, aggregation.factor = 8)
 plot(envs)
-points(occs, pch=23, bg=chk1.ag8$occs.grp)
+points(occs, pch=23, bg=chk.ag8$occs.grp)
 plot(envs)
-points(bg, pch=21, bg=chk1.ag8$bg.grp)
+points(bg, pch=21, bg=chk.ag8$bg.grp)
 
-### Checkerboard2 partitioning method with aggregation factors of 2, 2
-chk2.ag2_2 <- get.checkerboard2(occs, envs, bg, c(2,2))
+### Hierarchical checkerboard partitioning method with aggregation factors 
+### of 2 and 2
+chk.ag2_2 <- get.checkerboard(occs, envs, bg, c(2,2))
 plot(envs)
-points(occs, pch=23, bg=chk2.ag2_2$occs.grp)
+points(occs, pch=23, bg=chk.ag2_2$occs.grp)
 plot(envs)
-points(bg, pch=21, bg=chk2.ag2_2$bg.grp)
+points(bg, pch=21, bg=chk.ag2_2$bg.grp)
 # Higher aggregation factors result in bigger checkerboard blocks,
 # and can vary between hierarchical levels
-chk2.ag4_6 <- get.checkerboard2(occs, envs, bg, c(4,6))
+chk.ag4_6 <- get.checkerboard(occs, envs, bg, c(4,6))
 plot(envs)
-points(occs, pch=23, bg=chk2.ag4_6$occs.grp)
+points(occs, pch=23, bg=chk.ag4_6$occs.grp)
 plot(envs)
-points(bg, pch=21, bg=chk2.ag4_6$bg.grp)
+points(bg, pch=21, bg=chk.ag4_6$bg.grp)
 
 ### Random partitions with 4 folds
 # Note that get.randomkkfold does not partition the background
@@ -160,7 +157,9 @@ points(bg, pch=21, bg=jack$bg.grp)
 
 }
 \references{
-Hijmans, R. J., Phillips, S., Leathwick, J. and Elith, J. (2011). dismo package for R. Available online at: \url{https://cran.r-project.org/package=dismo}.
+Hijmans, R. J. (2023). terra: Spatial Data Analysis. Available online at: \url{https://cran.r-project.org/package=terra}.
+
+Muscarella, R., Galante, P. J., Soley‐Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, 5(11), 1198-1205. \doi{https://doi.org/10.1111/2041-210X.12945} 
 
 Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117. \doi{10.1111/j.1365-2699.2006.01594.x}
 
@@ -169,5 +168,5 @@ Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of spec
 Shcheglovitova, M. and Anderson, R. P. (2013). Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \doi{10.1016/j.ecolmodel.2013.08.011}
 }
 \author{
-Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jkass@gc.cuny.edu>
+Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jamie.m.kass@gmail.com>
 }

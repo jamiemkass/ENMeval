@@ -11,6 +11,6 @@ An object of class \code{ENMdetails} of length 1.
 enm.bioclim
 }
 \description{
-This is the ENMdetails implementation for bioclim, implemented by dismo.
+This is the ENMdetails implementation for the BIOCLIM climate envelope model, implemented by predicts.
 }
 \keyword{datasets}

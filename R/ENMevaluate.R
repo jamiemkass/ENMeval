@@ -23,8 +23,8 @@
 #' with and without rasters.
 #' @param tune.args named list: model settings to be tuned (i.e., for Maxent models:  \code{list(fc = c("L","Q"), rm = 1:3)})
 #' @param partitions character: name of partitioning technique. Currently available options are
-#' the nonspatial partitions "randomkfold" and "jackknife", and the spatial partitions "block",
-#' "checkerboard1", and "checkerboard2", "testing" for partitioning with fully withheld data (see 
+#' the nonspatial partitions "randomkfold" and "jackknife", the spatial partitions "block" and
+#' "checkerboard", "testing" for partitioning with fully withheld data (see 
 #' argument occs.testing), the "user" option (see argument user.grp), and "none" for no partitioning 
 #' (see \code{?partitions} for details).
 #' @param algorithm character: name of the algorithm used to build models. Currently one of "maxnet",
@@ -103,8 +103,8 @@
 #' to the occurrence and background data tables, users may notice some differences in the results. Occurrence records
 #' that share a raster grid cell are automatically removed when raster data is provided, but without raster data
 #' this functionality cannot operate, and thus any such duplicate occurrence records can remain in the training data.
-#' The Java implementation of Maxent (maxent.jar) should automatically remove these records, but the R implementation 
-#' \code{maxnet} does not, and the \code{bioclim()} function from the R package \code{dismo} does not as well. Therefore,  
+#' The Java implementation of Maxent (maxent.jar implemented with \code{MaxEnt()} from the R package \code{predicts}) should automatically remove these records, but the R implementation 
+#' \code{maxnet} does not, and the \code{envelope()} function from the R package \code{predicts} does not as well. Therefore,  
 #' it is up to the user to remove such records before running \code{ENMevaluate()} when raster data are not included.
 #' 
 #' Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.
@@ -131,12 +131,10 @@
 #' and they determine the order and orientations with which the block partitioning function creates the partition groups. 
 #' For example, "lat_lon" will split the occurrence localities first by latitude, then by longitude. For the checkerboard 
 #' partitions, the aggregation factor specifies how much to aggregate the existing cells in the envs raster
-#' to make new spatial partitions. For example, checkerboard1 with an aggregation factor value of 2 will make the grid cells 
-#' 4 times larger and then assign occurrence and background records to partition groups based on which cell they are in. 
-#' The checkerboard2 partition is hierarchical, so cells are first aggregated to define groups like checkerboard1, but a 
-#' second aggregation is then made to separate the resulting 2 bins into 4 bins. For checkerboard2, two different numbers 
-#' can be used to specify the two levels of the hierarchy, or if a single number is inserted, that value will be used 
-#' for both levels.
+#' to make new spatial partitions. For example, 'basic' checkerboard with an aggregation factor value of 2 will make squares  
+#' 4 times larger than the input rasters and assign occurrence and background records to partition groups based on which square they fall in. 
+#' Using two aggregation factors makes the checkerboard partitions hierarchical, where squares are first aggregated to define groups as in the 'basic' checkerboard, but a 
+#' second aggregation is then made to separate the resulting two bins into four bins (see ?partitions for more details).
 #' 
 #' For user.eval, the accessible variables you have access to in order to run your custom function are below. 
 #' See the vignette for a worked example.\cr*
@@ -172,18 +170,20 @@
 #'
 #' @examples
 #' \dontrun{
-#' occs <- read.csv(file.path(system.file(package="dismo"), "/ex/bradypus.csv"))[,2:3]
-#' envs <- terra::rast(list.files(path=paste(system.file(package="dismo"), "/ex", sep=""), 
-#'                                  pattern="grd", full.names=TRUE))
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#' "/ex/bradypus.csv"))[,2:3]
+#' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), 
+#' "/ex", sep=""), pattern="tif$", full.names=TRUE))
 #' occs.z <- cbind(occs, terra::extract(envs, occs))
 #' occs.z$biome <- factor(occs.z$biome)
-#' bg <- as.data.frame(dismo::randomPoints(envs, 1000))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 1000))
 #' names(bg) <- names(occs)
 #' bg.z <- cbind(bg, terra::extract(envs, bg))
 #' bg.z$biome <- factor(bg.z$biome)
 #' 
 #' # set other.settings -- pred.type is only for Maxent models
-#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", 
+#' validation.bg = "partition")
 #' # set partition.settings -- here's an example for the block method
 #' # see Details for the required settings for other partition methods
 #' ps <- list(orientation = "lat_lat")
@@ -218,9 +218,11 @@
 #' 
 #' # print the tuning results
 #' eval.results(e.maxent.jar)
-#' # raster predictions can be made for maxent.jar models with dismo or ENMeval
+#' # raster predictions can be made for maxent.jar models with predicts or 
+#' ENMeval
 #' mods.maxent.jar <- eval.models(e.maxent.jar)
-#' pred.L2 <- dismo::predict(mods.maxent.jar$fc.L_rm.2, envs, args = "outputform=cloglog")
+#' pred.L2 <- predict(mods.maxent.jar$fc.L_rm.2, envs, 
+#' args = "outputform=cloglog")
 #' pred.L2 <- enm.maxent.jar@predict(mods.maxent.jar$fc.L_rm.2, envs, os)
 #' terra::plot(pred.L2)
 #' 
@@ -233,7 +235,7 @@
 #' # variable here because this algorithm only takes continuous variables, and
 #' # that 2) the way BIOCLIM makes predicted is getting tuned (as opposed to the
 #' way the model is fit like maxnet or maxent.jar), namely, the tails of the 
-#' # distribution that are ignored when predicting (see ?dismo::bioclim)
+#' # distribution that are ignored when predicting (see ?predicts::envelope)
 # e.bioclim <- ENMevaluate(occs, envs[[-9]], bg,
 # tune.args = list(tails = c("low", "high", "both")),
 # partitions = "block", other.settings = os, partition.settings = ps,
@@ -241,12 +243,12 @@
 #' 
 #' # print the tuning results
 #' eval.results(e.bioclim)
-#' # make raster predictions with dismo or ENMeval
+#' # make raster predictions with predicts or ENMeval
 #' mods.bioclim <- eval.models(e.bioclim)
 #' # note: the models for low, high, and both are actually all the same, and
 #' # the only difference for tuning is how they are predicted during
 #' # cross-validation
-#' pred.both <- dismo::predict(mods.bioclim$tails.both, envs, tails = "both")
+#' pred.both <- predict(mods.bioclim$tails.both, envs, tails = "both")
 #' os <- c(os, list(tails = "both"))
 #' pred.both <- enm.bioclim@predict(mods.bioclim$tails.both, envs, os)
 #' terra::plot(pred.both)
@@ -314,8 +316,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }
   
   ## general argument checks
-  all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard1", 
-                      "checkerboard2", "user", "testing", "none")
+  all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard", 
+                      "user", "testing", "none")
   
   if(!(partitions %in% all.partitions)) {
     stop("Please enter an accepted partition method.")
@@ -325,7 +327,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     stop("If doing testing evaluations, please provide testing data (occs.testing).")
   }
   
-  if((partitions == "checkerboard1" | partitions == "checkerboard2") & 
+  if((partitions == "checkerboard") & 
      is.null(envs)) {
     stop('For checkerboard partitioning, predictor variable rasters "envs" are required.')
   }
@@ -373,7 +375,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }
   
   # make sure that validation.bg is only "bg" if the partitions are spatial
-  if(!(partitions %in% c("block","checkerboard1","checkerboard2","user")) & 
+  if(!(partitions %in% c("block","checkerboard","user")) & 
      other.settings$validation.bg == "partition") {
     stop('If using non-spatial partitions, please set validation.bg to "full". The "partition" option only makes sense when partitions represent different regions of the study extent. See ?ENMevaluate for details.')
   }else if(partitions == "user" & other.settings$validation.bg == "partition") {
@@ -581,8 +583,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                  jackknife = get.jackknife(d.occs, d.bg),
                  randomkfold = get.randomkfold(d.occs, d.bg, partition.settings$kfolds),
                  block = get.block(d.occs, d.bg, partition.settings$orientation),
-                 checkerboard1 = get.checkerboard1(d.occs, envs, d.bg, partition.settings$aggregation.factor),
-                 checkerboard2 = get.checkerboard2(d.occs, envs, d.bg, partition.settings$aggregation.factor),
+                 checkerboard = get.checkerboard(d.occs, envs, d.bg, partition.settings$aggregation.factor),
                  user = NULL,
                  testing = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
@@ -593,8 +594,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                           jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
                           randomkfold = paste0("* Model evaluations with random ", partition.settings$kfolds, "-fold cross validation..."),
                           block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", partition.settings$orientation, " orientation..."),
-                          checkerboard1 = "* Model evaluations with checkerboard (2-fold) cross validation...",
-                          checkerboard2 = "* Model evaluations with hierarchical checkerboard (4-fold) cross validation...",
+                          checkerboard = ifelse(length(partition.settings$aggregation.factor) == 1, "* Model evaluations with basic checkerboard (2-fold) cross validation...","* Model evaluations with hierarchical checkerboard (4-fold) cross validation..."),
                           user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
                           testing = "* Model evaluations with testing data...",
                           none = "* Skipping model evaluations (only calculating full model statistics)...")
@@ -766,7 +766,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
   if(partitions != "block") partition.settings$orientation <- NULL
-  if(partitions != "checkerboard1" | partitions != "checkerboard2") partition.settings$aggregation.factor <- NULL
+  if(partitions != "checkerboard") partition.settings$aggregation.factor <- NULL
   if(partitions != "randomkfold") partition.settings$kfolds <- NULL
   if(is.null(partition.settings) | length(partition.settings) == 0) partition.settings <- list()
   if(is.null(clamp.directions)) clamp.directions <- list()

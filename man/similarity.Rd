@@ -34,7 +34,9 @@ If `x` is a `SpatRaster` object, this function returns a list
   
   If `x` is a `list`, `matrix`, or `data.frame`, the function will return
   a list as above, but with `SpatRaster` objects replaced by matrix and 
-  vectors.
+  vectors. If a predictor variable is missing from the "most similar" or
+  "most different" results, it will not be included in the output, and 
+  thus will not plot when ENMeval plotting functions are used.
 }
 \description{
 NOTICE: This function was borrowed from the rmaxent package 
@@ -50,14 +52,14 @@ variables.
   of Elith \emph{et al.} 2010.
 }
 \examples{
-library(dismo)
-library(raster)
-ff <- list.files(system.file('ex', package='dismo'), '\\\\.grd$', 
-                 full.names=TRUE )
-predictors <- stack(grep('biome', ff, value=TRUE, invert=TRUE))
-occ <- read.csv(system.file('ex/bradypus.csv', package='dismo'))[, -1]
-ref <- extract(predictors, occ)
-mess <- similarity(predictors, ref, full=TRUE)
+library(predicts)
+library(terra)
+occs <- read.csv(file.path(system.file(package="predicts"), 
+"/ex/bradypus.csv"))[,2:3]
+predictors <- rast(list.files(path = 
+paste(system.file(package='predicts'), '/ex', sep=''), 
+ref <- extract(predictors, occs)
+mess <- similarity(predictors, ref, full = TRUE)
 
 \dontrun{
 library(rasterVis)

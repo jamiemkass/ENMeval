@@ -36,8 +36,8 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.sett
   bg.pred <- enm@predict(mod.full, bg.z, other.settings)
   
   # training AUC
-  e <- dismo::evaluate(occs.pred, bg.pred)
-  auc.train <- e@auc
+  e <- predicts::pa_evaluate(occs.pred, bg.pred)
+  auc.train <- e@stats$auc
   
   # calculate training CBI with background, not raster -- this is in order
   # to calculate CBI in a standardized way across training and validation data for 
@@ -74,10 +74,10 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
   # (training + validation background for all statistics) 
   # see Radosavljevic & Anderson 2014 for an example of calculating validation AUC with spatial partitions over a shared background
   if(other.settings$validation.bg == "full") {
-    e.train <- dismo::evaluate(occs.train.pred, c(bg.train.pred, bg.val.pred))
-    auc.train <- e.train@auc
-    e.val <- dismo::evaluate(occs.val.pred, c(bg.train.pred, bg.val.pred))
-    auc.val <- e.val@auc
+    e.train <- predicts::pa_evaluate(occs.train.pred, c(bg.train.pred, bg.val.pred))
+    auc.train <- e.train@stats$auc
+    e.val <- predicts::pa_evaluate(occs.val.pred, c(bg.train.pred, bg.val.pred))
+    auc.val <- e.val@stats$auc
     # calculate AUC diff as training AUC minus validation AUC with a shared background
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the full background (do not calculate for jackknife partitions)
@@ -93,10 +93,10 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
     # if validation.bg == "partition", calculate training and validation AUC and CBI based on the partitioned backgrounds only 
     # (training background for training statistics and validation background for validation statistics) 
   }else if(other.settings$validation.bg == "partition") {
-    e.train <- dismo::evaluate(occs.train.pred, bg.train.pred)
-    auc.train <- e.train@auc
-    e.val <- dismo::evaluate(occs.val.pred, bg.val.pred)
-    auc.val <- e.val@auc
+    e.train <- predicts::pa_evaluate(occs.train.pred, bg.train.pred)
+    auc.train <- e.train@stats$auc
+    e.val <- predicts::pa_evaluate(occs.val.pred, bg.val.pred)
+    auc.val <- e.val@stats$auc
     # calculate AUC diff as training AUC minus validation AUC with different backgrounds
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the validation background only (do not calculate for jackknife partitions)

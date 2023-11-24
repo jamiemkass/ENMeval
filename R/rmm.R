@@ -92,15 +92,14 @@ buildRMM <- function(e, envs, rmm = NULL) {
     rmm$model$algorithmCitation <- citation("maxnet")
   }
   if(e@algorithm == "boostedRegressionTrees") {
-    rmm$model$algorithms <- paste(e@algorithm, "using gbm", packageVersion('gbm'), "and dismo", packageVersion("dismo"))
-    rmm$model$algorithmCitation <- c(citation("dismo"), citation("gbm"))
+    rmm$model$algorithms <- paste(e@algorithm, "using gbm", packageVersion('gbm'))
+    rmm$model$algorithmCitation <- c(citation("gbm"))
     rmm$model$algorithm$brt$interactionDepth <- unique(e@tune.settings$tree.complexity)
     rmm$model$algorithm$brt$bagFraction <- unique(e@tune.settings$bag.fraction)
     rmm$model$algorithm$brt$learningRate <- unique(e@tune.settings$learning.rate)
     rmm$model$algorithm$brt$distribution <- "binomial"
     rmm$model$algorithm$brt$nTrees <- sapply(e@models, function(x) x$n.trees)
     rmm$model$algorithm$brt$shrinkage <- sapply(e@models, function(x) x$shrinkage)
-    rmm$model$algorithm$brt$notes <- "nTrees estimated with gbm.step() in dismo R package"
   }
   if(e@algorithm == "randomForest") {
     rmm$model$algorithms <- paste(e@algorithm, "using randomForest", packageVersion('randomForest'))
@@ -110,7 +109,7 @@ buildRMM <- function(e, envs, rmm = NULL) {
     rmm$model$algorithm$randomForest$maxnodes <- "default: maximum possible"
   }
   if(e@algorithm == "bioclim") {
-    rmm$model$algorithms <- paste(e@algorithm, "using dismo", packageVersion("dismo"))
+    rmm$model$algorithms <- paste(e@algorithm, "using envelope() function in predicts", packageVersion("predicts"))
     rmm$model$algorithmCitation <- "Booth, T. H., Nix, H. A., Busby, J. R., & Hutchinson, M. F. (2014). BIOCLIM: the first species distribution modelling package, its early applications and relevance to most current MAXENT studies. Diversity and Distributions, 20(1), 1-9."
   }
   if(e@algorithm == "maxnet" | e@algorithm == "maxent.jar") {

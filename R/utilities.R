@@ -233,7 +233,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
 #' product of the raw occurrence predictions (Warren and Seifert 2011), or the sum of their 
 #' logs, as is implemented here.
 #' 
-#' @seealso \code{maxent} in the \pkg{dismo} package.
+#' @seealso \code{MaxEnt} for the \pkg{predicts} package.
 #' 
 #' @note Returns all \code{NA}s if the number of non-zero coefficients is larger than the
 #' number of observations (occurrence localities).
@@ -330,7 +330,7 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @title Calculate Similarity of ENMs in Geographic Space
 #' @description Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
 #' @param predictors SpatRaster: at least 2 Maxent raster predictions
-#' @param overlapStat character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")
+#' @param overlapStat character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D"), which we updated for \pkg{terra} as no correlate currently exists in the new \pkg{predicts} package
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details "D" refers to Schoeners \emph{D} (Schoener 1968), while "I" refers to the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
@@ -343,7 +343,7 @@ calc.10p.trainThresh <- function(pred.train) {
 #' Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
 #' 
 #' @author 
-#' Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}
+#' Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}, updated for \pkg{terra} package
 #' Robert Muscarella <bob.muscarella@gmail.com>
 #' @seealso 
 #' `nicheOverlap` in the \pkg{dismo} package
@@ -414,16 +414,16 @@ lookup.enm <- function(algorithm) {
 #' @description Internal function to look up the version of the maxent.jar being used.
 #' 
 maxentJARversion <- function() {
-  if (is.null(getOption('dismo_rJavaLoaded'))) {
+  # if (is.null(getOption('dismo_rJavaLoaded'))) {
     # to avoid trouble on macs
     Sys.setenv(NOAWT=TRUE)
     if ( requireNamespace('rJava') ) {
-      rJava::.jpackage('dismo')
-      options(dismo_rJavaLoaded=TRUE)
+      rJava::.jpackage('predicts')
+      # options(dismo_rJavaLoaded=TRUE)
     } else {
       stop('rJava cannot be loaded')
     }
-  }
+  # }
   mxe <- rJava::.jnew("meversion")
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
   return(v)

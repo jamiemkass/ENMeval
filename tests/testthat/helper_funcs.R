@@ -97,18 +97,20 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
 
 test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRUE) {
   # use occurrences as reference environmental values for clamping
-  p.z <- occs.z[,-1:-2]
+  # restrict to small subset in Amazon to ensure lots of extrapolation for 
+  # transfers
+  p.z <- occs.z[8:13,-1:-2]
   
   none <- envs
   all <- clamp.vars(orig.vals = envs, ref.vals = p.z, categoricals = categoricals)
   left <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", categoricals = categoricals)
   right <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", categoricals = categoricals)
-  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[7], 
-                        right = names(envs)[7], categoricals = categoricals)
+  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[4], 
+                        right = names(envs)[4], categoricals = categoricals)
   subleft <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", 
-                        left = names(envs)[7], categoricals = categoricals)
+                        left = names(envs)[4], categoricals = categoricals)
   subright <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", 
-                         right = names(envs)[7], categoricals = categoricals)
+                         right = names(envs)[4], categoricals = categoricals)
   clamps.envs <- list(none=none, all=all, left=left, right=right, subboth=subboth, subleft=subleft, subright=subright)
   
   enm <- lookup.enm(e@algorithm)

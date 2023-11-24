@@ -15,13 +15,12 @@ options(warn=-1)
 
 # read in data
 set.seed(48)
-occs <- read.csv(file.path(system.file(package="dismo"), 
+occs <- read.csv(file.path(system.file(package="predicts"), 
                            "/ex/bradypus.csv"))[,2:3]
-envs.orig <- terra::rast(list.files(path = paste(system.file(package='dismo'), 
+envs.orig <- terra::rast(list.files(path = paste(system.file(package='predicts'), 
                                                  '/ex', sep=''), 
-                                      pattern='grd', full.names=TRUE))
-bg <- terra::spatSample(envs.orig, size = 1000, xy = TRUE, 
-                        na.rm = TRUE, values = FALSE) |> as.data.frame()
+                                      pattern='tif$', full.names=TRUE))
+bg <- predicts::backgroundSample(envs.orig, n = 1000) |> as.data.frame()
 names(bg) <- names(occs)
 
 algorithms <- c("maxnet", "maxent.jar", "bioclim")

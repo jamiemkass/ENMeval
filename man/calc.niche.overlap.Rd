@@ -9,7 +9,7 @@ calc.niche.overlap(predictors, overlapStat, quiet = FALSE)
 \arguments{
 \item{predictors}{SpatRaster: at least 2 Maxent raster predictions}
 
-\item{overlapStat}{character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D")}
+\item{overlapStat}{character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D"), which we updated for \pkg{terra} as no correlate currently exists in the new \pkg{predicts} package}
 
 \item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
 }
@@ -33,6 +33,6 @@ Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche eq
 `nicheOverlap` in the \pkg{dismo} package
 }
 \author{
-Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}
+Based on \pkg{dismo}::\code{nicheOverlap}, which is based on \pkg{SDMTools}::\code{Istat}, updated for \pkg{terra} package
 Robert Muscarella <bob.muscarella@gmail.com>
 }

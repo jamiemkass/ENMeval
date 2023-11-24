@@ -18,8 +18,9 @@ License: GPL
 Encoding: UTF-8
 Depends: methods, R (>= 3.5.0)
 Imports: 
-    raster,
-    dismo,
+    terra,
+    predicts,
+    maxnet,
     doSNOW,
     doParallel,
     parallel,
@@ -27,7 +28,6 @@ Imports:
     utils,
     stats,
     grDevices,
-    maxnet,
     dplyr,
     tidyr,
     ggplot2,
@@ -45,7 +45,6 @@ Suggests:
     spocc,
     RColorBrewer,
     rasterVis,
-    sp,
     sf,
     blockCV,
     devtools,

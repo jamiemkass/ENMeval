@@ -81,5 +81,5 @@ Warren, D. L., & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the
 Warren, D. L., Wright, A. N., Seifert, S. N., and Shaffer, H. B. (2014). Incorporating model complexity and sampling bias into ecological niche models of climate change risks faced by 90 California vertebrate species of concern. \emph{Diversity and Distributions}, \bold{20}: 334-343. \url{https://doi.org/10.1111/ddi.12160}
 }
 \seealso{
-\code{maxent} in the \pkg{dismo} package.
+\code{MaxEnt} for the \pkg{predicts} package.
 }

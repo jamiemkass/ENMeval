@@ -175,8 +175,8 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' per grid is returned. For option "mess", higher negative values indicate greater 
 #' environmental difference between the validation occurrences and the study extent, and higher 
 #' positive values indicate greater similarity. This function uses the `similarity()` function 
-#' from the package `rmaxent` (https://github.com/johnbaums/rmaxent/) to calculate the 
-#' similarities. Please see the below reference for details on MESS. 
+#' from the package `rmaxent` (https://github.com/johnbaums/rmaxent/), updated for `terra`, to calculate the 
+#' similarities. Please see the below reference for details on MESS.
 #' @return A ggplot of environmental similarities between the occurrence or background data 
 #' for each partition and the rest of the data (all other occurrences and background data).
 #' @references 
@@ -244,9 +244,10 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
                      "partitions and all other background partitions.)")
   
   if(sim.type != "mess") {
-    envs.tbl <- data.frame(sort(unique(plot.df[,2])), envs.names)
+    facts <- sort(unique(plot.df[,2]))
+    envs.tbl <- data.frame(facts, envs.names[facts])
     names(envs.tbl) <- c(sim.type, "env.var")
-    envs.tbl$env.var <- factor(envs.tbl$env.var)
+    envs.tbl$env.var <- factor(envs.tbl$env.var, levels = envs.tbl$env.var)
     plot.df <- plot.df |> dplyr::left_join(envs.tbl, by = sim.type)
     plot.df[[sim.type]] <- NULL
     names(plot.df)[2] <- sim.type
