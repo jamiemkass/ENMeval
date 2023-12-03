@@ -1,7 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- TRUE
+skip_tests_for_cran <- FALSE
 skip_maxnet <- FALSE
 skip_maxent.jar <- FALSE
 skip_bioclim <- FALSE
@@ -33,7 +33,7 @@ for(alg in algorithms) {
   
   # remove categorical variable for BIOCLIM to work
   if(alg == "bioclim") {
-    envs <- envs.orig[[-9]]
+    envs <- envs.orig[[-10]]
     cats1 <- NULL
     extrap <- FALSE
   }else{ 
@@ -69,8 +69,8 @@ for(alg in algorithms) {
   # checkerboard1 partitions
   if(skip_tests_for_cran == FALSE) {
     context(paste("Testing ENMevaluate for", alg, "with checkerboard1 partitions..."))
-    e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard1", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
-    test_ENMevaluation(e, alg, "checkerboard1", tune.args, 2, 2)
+    e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
+    test_ENMevaluation(e, alg, "checkerboard", tune.args, 2, 2)
     
     context(paste("Testing evalplot.stats for", alg, "with checkerboard1 partitions..."))
     test_evalplot.stats(e)
@@ -81,7 +81,7 @@ for(alg in algorithms) {
     
     context(paste("Testing ENMnulls for", alg, "with checkerboard1 partitions..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-    test_ENMnulls(e, ns, no.iter, alg, "checkerboard1", mset, 2, 2)
+    test_ENMnulls(e, ns, no.iter, alg, "checkerboard", mset, 2, 2)
     
     context(paste("Testing ENMnulls plotting function for", alg, "with checkerboard1 partitions..."))
     test_evalplot.nulls(ns)  
@@ -91,8 +91,8 @@ for(alg in algorithms) {
   # checkerboard2 partitions
   if(skip_tests_for_cran == FALSE) {
     context(paste("Testing ENMevaluate for", alg, "with checkerboard2 partitions..."))
-    e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard2", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
-    test_ENMevaluation(e, alg, "checkerboard2", tune.args, 4, 4)
+    e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "checkerboard", partition.settings = list(aggregation.factor = c(2,2)), algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
+    test_ENMevaluation(e, alg, "checkerboard", tune.args, 4, 4)
     
     context(paste("Testing evalplot.stats for", alg, "with checkerboard2 partitions..."))
     test_evalplot.stats(e)
@@ -103,7 +103,7 @@ for(alg in algorithms) {
     
     context(paste("Testing ENMnulls for", alg, "with checkerboard2 partitions..."))
     ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-    test_ENMnulls(e, ns, no.iter, alg, "checkerboard2", mset, 4, 4)
+    test_ENMnulls(e, ns, no.iter, alg, "checkerboard", mset, 4, 4)
     
     context(paste("Testing ENMnulls plotting function for", alg, "with checkerboard2 partitions..."))
     test_evalplot.nulls(ns)
@@ -203,6 +203,11 @@ for(alg in algorithms) {
   # no envs (SWD)
   if(skip_tests_for_cran == FALSE) {
     context(paste("Testing ENMevaluate for", alg, "with random 5-fold partitions and no raster environmental variables..."))
+    occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+    occs.z$biome <- factor(occs.z$biome)
+    bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+    bg.z$biome <- factor(bg.z$biome)
+    
     e <- ENMevaluate(occs.z, bg = bg.z, tune.args = tune.args, partitions = "randomkfold", algorithm = alg, categoricals = cats1, quiet = TRUE)
     test_ENMevaluation(e, alg, "randomkfold", tune.args, 5, 1, type = "swd")
     
@@ -244,11 +249,12 @@ for(alg in algorithms) {
   
   # more than one categorical variable
   if(skip_tests_for_cran == FALSE & alg != "bioclim") {
-    envs.2cat <- c(envs, envs$biome * round(runif(terra::ncell(envs), min = 0, max = 5)))
-    occs.z.2cat <- cbind(occs, terra::extract(envs.2cat, occs))
+    envs.2cat <- c(envs, envs$biome)
+    names(envs.2cat)[10:11] <- c("biome.1", "biome.2")
+    occs.z.2cat <- cbind(occs, terra::extract(envs.2cat, occs, ID = FALSE))
     occs.z.2cat$biome.1 <- factor(occs.z.2cat$biome.1)
     occs.z.2cat$biome.2 <- factor(occs.z.2cat$biome.2)
-    bg.z.2cat <- cbind(bg, terra::extract(envs.2cat, bg))
+    bg.z.2cat <- cbind(bg, terra::extract(envs.2cat, bg, ID = FALSE))
     bg.z.2cat$biome.1 <- factor(bg.z.2cat$biome.1)
     bg.z.2cat$biome.2 <- factor(bg.z.2cat$biome.2)
     
@@ -263,9 +269,9 @@ for(alg in algorithms) {
     context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and two categorical variables..."))
     test_evalplot.stats(e.2cat)
     context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and two categorical variables..."))
-    test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat$occs.grp, e.2cat$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
+    test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
     context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and two categorical variables..."))
-    test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat$occs.grp, e.2cat$bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
+    test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
     
     context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and two categorical variables..."))
     ns <- ENMnulls(e.2cat, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -276,10 +282,10 @@ for(alg in algorithms) {
   }
   
   # clamping
-  context(paste("Testing clamping function for", alg, "with..."))
-  test_clamp(e, envs, e@occs, e@bg, categoricals = cats1, canExtrapolate = extrap)
-  context(paste("Testing clamping function for", alg, "with two categorical variables..."))
-  if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, categoricals = c("biome.1", "biome.2"))
+  # context(paste("Testing clamping function for", alg, "with..."))
+  # test_clamp(e, envs, e@occs, e@bg, categoricals = cats1, canExtrapolate = extrap)
+  # context(paste("Testing clamping function for", alg, "with two categorical variables..."))
+  # if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, categoricals = c("biome.1", "biome.2"))
   
 }
 

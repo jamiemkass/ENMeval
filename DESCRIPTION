@@ -19,8 +19,8 @@ Encoding: UTF-8
 Depends: methods, R (>= 3.5.0)
 Imports: 
     terra,
-    predicts,
     maxnet,
+    predicts,
     doSNOW,
     doParallel,
     parallel,

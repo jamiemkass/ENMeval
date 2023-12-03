@@ -86,7 +86,7 @@ envs$biome <- raster::as.factor(envs$biome)
 # or may not want to do this based on the aims of your study.
 # Another way to space occurrence records a defined distance from each other to avoid
 # spatial autocorrelation is with spatial thinning (Aiello-Lammens et al. 2015).
-occs.cells <- raster::extract(envs[[1]], occs, cellnumbers = TRUE)
+occs.cells <- terra::extract(envs[[1]], occs, cellnumbers = TRUE, ID = FALSE)
 occs.cellDups <- duplicated(occs.cells[,1])
 occs <- occs[!occs.cellDups,]
 
@@ -115,7 +115,7 @@ Although the `mess()` function from the dismo package is frequently used, here w
 # our "reference".
 # We remove the categorical variable for these operations because the math only makes sense 
 # for continuous variables -- the function will not work with categorical variables.
-occs.z <- raster::extract(envs[[-9]], occs)
+occs.z <- terra::extract(envs[[-9]], occs, ID = FALSE)
 # Now we use the similarity() function (borrowed from the rmaxent package) to calculate 
 # environmental similarity metrics of our predictor variable extent compared to the reference
 # points.
@@ -237,8 +237,8 @@ evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg) +
 # predictions with each partition as the reference.
 # First we need to extract the predictor variable values at our occurrence and 
 # background localities.
-occs.z <- cbind(occs, raster::extract(envs, occs))
-bg.z <- cbind(bg, raster::extract(envs, bg))
+occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
                      occs.grp = block$occs.grp, bg.grp = block$bg.grp, categoricals = "biome")
 evalplot.envSim.hist(sim.type = "most_diff", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
@@ -345,7 +345,7 @@ occs.testing <- data.frame(longitude = -runif(10, 55, 65), latitude = runif(10, 
 evalplot.grps(pts = rbind(occs, occs.testing), 
               pts.grp = c(rep(1, nrow(occs)), rep(2, nrow(occs.testing))), envs = envs.bg)
 # Next, let's extract the predictor variable values for our testing points.
-occs.testing.z <- cbind(occs.testing, raster::extract(envs, occs.testing))
+occs.testing.z <- cbind(occs.testing, terra::extract(envs, occs.testing, ID = FALSE))
 # We use the same background groups as random partitions here because the background used 
 # for testing data is also from the full study extent. We use here the occs.testing.z 
 # parameter to add information for our testing localities, and we set the partitions 
@@ -498,8 +498,8 @@ e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
 # For this implementation, assigning the categorical variable to factor with the argument 
 # "categoricals" is easier, as ENMevaluate() internally assigns the levels based on both 
 # occs and bg, avoiding any errors associated with different factor levels when combining data.
-occs.z <- cbind(occs, raster::extract(envs, occs))
-bg.z <- cbind(bg, raster::extract(envs, bg))
+occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, 
                      partitions = "block")
 ```

@@ -53,19 +53,19 @@ buildRMM <- function(e, envs, rmm = NULL) {
     rmm$model$partition$notes <- "background points also partitioned"
     rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
   }
-  if(e@partition.method == "checkerboard1") {
+  if(e@partition.method == "checkerboard" & length(e@partition.settings$aggregation.factor) == 1) {
     rmm$model$partition$partitionSet <- "binary checkerboard"
     rmm$model$partition$partitionRule <- "two spatial partitions in a checkerboard formation that subdivide geographic space equally but do not ensure a balanced number of occurrence localities across partitions"
     rmm$model$partition$notes <- "background points also partitioned"
     rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
   }
-  if(e@partition.method == "checkerboard2") {
+  if(e@partition.method == "checkerboard" & length(e@partition.settings$aggregation.factor) == 2) {
     rmm$model$partition$partitionSet <- "hierarchical checkerboard"
     rmm$model$partition$partitionRule <- "four spatial partitions with two levels of spatial aggregation in a checkerboard formation that subdivide geographic space equally but do not ensure a balanced number of occurrence localities across partitions"
     rmm$model$partition$notes <- "background points also partitioned"
     rmm$model$partition$occurrenceSubsampling <- "k-fold cross validation"
   }
-  if(e@partition.method == "checkerboard1" | e@partition.method == "checkerboard2") {
+  if(e@partition.method == "checkerboard") {
     rmm$model$partition$notes <- paste('aggregation factor =', e@partition.settings$aggregation.factor)
   }
   if(e@partition.method == "testing") {

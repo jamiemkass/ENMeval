@@ -24,9 +24,9 @@ ENMevaluation_convert <- function(e, envs) {
                         "or.10p.avg", "or.10p.sd", "or.mtp.avg", "or.mtp.sd", "AICc", 
                         "delta.AICc", "w.AIC", "ncoef")
   occs <- e@occ.pts |> dplyr::rename(lon = .data$LON, lat = .data$LAT) |> as.data.frame()
-  occs <- cbind(occs, terra::extract(envs, occs))
+  occs <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
   bg <- e@bg.pts |> dplyr::rename(lon = .data$LON, lat = .data$LAT) |> as.data.frame()
-  bg <- cbind(bg, terra::extract(envs, bg))
+  bg <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
   ms <- e@models
   names(ms) <- rs$tune.args
   e_new <- ENMevaluation(algorithm = alg, tune.settings = as.data.frame(ts),

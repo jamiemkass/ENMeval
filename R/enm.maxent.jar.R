@@ -55,9 +55,10 @@ maxent.jar.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
 }
 
 maxent.jar.predict <- function(mod, envs, other.settings) {
+  require(predicts)
   output.format <- paste0("outputformat=", other.settings$pred.type)
   model.clamp <- ifelse(other.settings$doClamp == TRUE, "doclamp=true", "doclamp=false")
-  pred <- predict(mod, envs, args = c(output.format, model.clamp), na.rm = TRUE)
+  pred <- predict(mod, envs, args = c(output.format, model.clamp))
   return(pred)
 }
 

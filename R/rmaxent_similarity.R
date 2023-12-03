@@ -50,7 +50,7 @@
 #' "/ex/bradypus.csv"))[,2:3]
 #' predictors <- rast(list.files(path = 
 #' paste(system.file(package='predicts'), '/ex', sep=''), 
-#' ref <- extract(predictors, occs)
+#' ref <- extract(predictors, occs, ID = FALSE)
 #' mess <- similarity(predictors, ref, full = TRUE)
 #' 
 #' \dontrun{

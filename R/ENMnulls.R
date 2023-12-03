@@ -59,8 +59,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
                         randomkfold = "knonspatial",
                         jackknife = "knonspatial",
                         block = "kspatial",
-                        checkerboard1 = "kspatial",
-                        checkerboard2 = "kspatial",
+                        checkerboard = "kspatial",
                         testing = "testing",
                         none = "none")  
   }else{

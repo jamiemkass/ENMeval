@@ -357,7 +357,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
   
   if(!is.null(categoricals) & !is.null(envs)) {
-    envs <- terra::subset(envs, -which(names(envs) == categoricals))
+    envs <- terra::subset(envs, -which(names(envs) %in% categoricals))
   }
   
   if(!is.null(envs.vars)) {

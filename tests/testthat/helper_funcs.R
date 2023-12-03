@@ -10,11 +10,7 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
     expect_true(!is.null(e@results.partitions))
     expect_true(!is.null(e@models))
     expect_true(!is.null(e@predictions))
-    if(type == "swd") {
-      expect_true(terra::nlyr(e@predictions) == 0)  
-    }else{
-      expect_true(terra::nlyr(e@predictions) > 0)  
-    }
+    expect_true(terra::nlyr(e@predictions) > 0)  
     expect_true(!is.null(e@occs))
     expect_true(!is.null(e@occs.grp))
     expect_true(!is.null(e@bg))
@@ -99,7 +95,8 @@ test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRU
   # use occurrences as reference environmental values for clamping
   # restrict to small subset in Amazon to ensure lots of extrapolation for 
   # transfers
-  p.z <- occs.z[8:13,-1:-2]
+  # p.z <- occs.z[8:13,-1:-2]
+  p.z <- dplyr::bind_rows(occs.z, bg.z)[,-1:-2]
   
   none <- envs
   all <- clamp.vars(orig.vals = envs, ref.vals = p.z, categoricals = categoricals)

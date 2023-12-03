@@ -29,8 +29,9 @@ bioclim.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
 # NOTE: clamping is not needed for BIOCLIM predictions because predictions
 # are always clamped for this algorithm
 bioclim.predict <- function(mod, envs, other.settings) {
+  require(predicts)
   # if no tails in other.args, defaults to NULL
-  pred <- predict(mod, envs, tails = other.settings$tails, na.rm = TRUE)
+  pred <- predict(mod, envs, tails = other.settings$tails)
   return(pred)
 }
 

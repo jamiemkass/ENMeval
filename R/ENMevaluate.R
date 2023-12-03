@@ -43,7 +43,7 @@
 #' the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
 #' for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
 #' When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
-#' When no predictor variables are input and data frames of variable values are used instead (SWD format),
+#' When no predictor variables are input and data frames of coordinates and variable values are used instead (SWD format),
 #' validation data is clamped before making model predictions when clamping is on.
 #' @param clamp.directions named list: specifies the direction ("left" for minimum, "right" for maximum) 
 #' of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).
@@ -164,7 +164,7 @@
 #' @importFrom foreach %dopar%
 #' @importFrom grDevices rainbow
 #' @importFrom methods new slot validObject
-#' @importFrom stats pnorm predict quantile runif sd quantile
+#' @importFrom stats pnorm quantile runif sd quantile
 #' @importFrom utils citation combn packageVersion setTxtProgressBar txtProgressBar
 #'
 #'
@@ -174,11 +174,11 @@
 #' "/ex/bradypus.csv"))[,2:3]
 #' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), 
 #' "/ex", sep=""), pattern="tif$", full.names=TRUE))
-#' occs.z <- cbind(occs, terra::extract(envs, occs))
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
 #' occs.z$biome <- factor(occs.z$biome)
 #' bg <- as.data.frame(predicts::backgroundSample(envs, n = 1000))
 #' names(bg) <- names(occs)
-#' bg.z <- cbind(bg, terra::extract(envs, bg))
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 #' bg.z$biome <- factor(bg.z$biome)
 #' 
 #' # set other.settings -- pred.type is only for Maxent models
@@ -409,7 +409,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
     # convert all raster grid cells to NA that are NA for any one raster
-    envs <- multiRasMatchNAs(envs, quiet)
+    ## MAYBE DONT DO THIS -- CONVERTS CHARACTER CAT VARS TO NUMERIC
+    # envs <- multiRasMatchNAs(envs, quiet)
     # if no background points specified, generate random ones
     if(is.null(bg)) {
       if(quiet != TRUE) message(paste0("* Randomly sampling ", n.bg, 
