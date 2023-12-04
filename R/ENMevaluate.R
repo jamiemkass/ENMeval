@@ -298,8 +298,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     partition.settings <- list(orientation = "lat_lon", aggregation.factor = 2, 
                                kfolds = 5)
   other.settings <- c(other.settings, list(abs.auc.diff = TRUE, 
-                                                     pred.type = "cloglog", 
-                                                     validation.bg = "full"))
+                                           pred.type = "cloglog", 
+                                           validation.bg = "full"))
   # add whether to use ecospat to other.settings to avoid multiple calls to 
   # require()
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
@@ -400,7 +400,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   enm@errors(occs, envs, bg, tune.args, partitions, algorithm, 
              partition.settings, other.settings, categoricals, doClamp, 
              clamp.directions)
-
+  
   
   ########################################################### #
   # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
@@ -516,16 +516,33 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      if(quiet != TRUE) 
-        message(paste0("* Assigning variable ", 
-                       categoricals[i], " to categorical ..."))
+        if(algorithm == "maxent.jar") {
+          if(quiet != TRUE) {
+            message(paste0("* Assigning variable ", categoricals[i], 
+                         " to categorical and changing to integer for maxent.jar..."))
+          }
+          d[, categoricals[i]] <- as.numeric(d[, categoricals[i]])
+        }else{
+          if(quiet != TRUE) {
+            message(paste0("* Assigning variable ", categoricals[i], 
+                         " to categorical ..."))
+          }
+        }
       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
-      if(!is.null(user.val.grps)) 
+      if(!is.null(user.val.grps)) {
+        if(algorithm == "maxent.jar") {
+          user.val.grps[, categoricals[i]] <- as.numeric(user.val.grps[, categoricals[i]])
+        }
         user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], 
                                                    levels = levels(d[, categoricals[i]]))
-      if(!is.null(occs.testing.z)) 
+      }
+      if(!is.null(occs.testing.z)) {
+        if(algorithm == "maxent.jar") {
+          occs.testing.z[, categoricals[i]] <- as.numeric(occs.testing.z[, categoricals[i]])
+        }
         occs.testing.z[, categoricals[i]] <- factor(occs.testing.z[, categoricals[i]], 
                                                     levels = levels(d[, categoricals[i]]))
+      }
     }
   }
   

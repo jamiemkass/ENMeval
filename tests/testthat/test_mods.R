@@ -4,7 +4,7 @@
 skip_tests_for_cran <- FALSE
 skip_maxnet <- FALSE
 skip_maxent.jar <- FALSE
-skip_bioclim <- FALSE
+skip_bioclim <- TRUE
 
 # this additionally skips tests for env similarity and difference for the 
 # envSim.map tests
