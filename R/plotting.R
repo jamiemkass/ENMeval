@@ -130,7 +130,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
     if(is.null(e) & is.null(occs.testing.z)) stop("If using fully withheld testing data, input either an ENMevaluation object or occs.testing.z.")
     if(!is.null(e)) occs.testing.z <- e@occs.testing
     names(occs.testing.z)[1:2] <- c("longitude","latitude")
-    occs.testing.z[[categoricals]] <- NULL
+    if(!is.null(categoricals)) occs.testing.z[[categoricals]] <- NULL
     occs.testing.z <- occs.testing.z |> dplyr::mutate(type = 1, partition = 2)
     pts.plot$partition <- as.numeric(as.character(pts.plot$partition))
     pts.plot[pts.plot$type == 1, "partition"] <- 1

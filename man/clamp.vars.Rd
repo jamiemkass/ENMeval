@@ -2,7 +2,8 @@
 % Please edit documentation in R/utilities.R
 \name{clamp.vars}
 \alias{clamp.vars}
-\title{Clamp predictor variables}
+\title{convert all raster grid cells to NA that are NA for any one raster in
+a multiraster SpatRaster object}
 \usage{
 clamp.vars(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL)
 }
@@ -21,11 +22,15 @@ off minimum clamping}
 off maximum clamping}
 
 \item{categoricals}{character vector: name or names of categorical environmental variables}
+
+\item{envs}{SpatRaster object}
 }
 \value{
 The clamped SpatRaster object.
 }
 \description{
+match all NA cells in SpatRaster object
+
 This function restricts the values of one or more predictor variable rasters
 to stay within the bounds of the input occurrence and background data (argument "ref.vals").
 This is termed "clamping", and is mainly used to avoid making extreme extrapolations

@@ -135,7 +135,7 @@ bounds of the predictor variables. Clamping avoids extreme predictions for envir
 the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
 for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
 When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
-When no predictor variables are input and data frames of variable values are used instead (SWD format),
+When no predictor variables are input and data frames of coordinates and variable values are used instead (SWD format),
 validation data is clamped before making model predictions when clamping is on.}
 
 \item{partition.settings}{named list: used to specify certain settings for partitioning schema.

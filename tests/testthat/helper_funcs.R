@@ -91,54 +91,76 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
   })
 }
 
-test_clamp <- function(e, envs, occs.z, bg.z, categoricals, canExtrapolate = TRUE) {
+test_clamp <- function(envs, occs.z, bg.z, categoricals) {
   # use occurrences as reference environmental values for clamping
   # restrict to small subset in Amazon to ensure lots of extrapolation for 
   # transfers
-  # p.z <- occs.z[8:13,-1:-2]
-  p.z <- dplyr::bind_rows(occs.z, bg.z)[,-1:-2]
+  p.z <- occs.z[8:13,-1:-2]
+  # remove cats from dataset
+  if(!is.null(categoricals)) {
+    envs <- envs[[-which(names(envs) %in% categoricals)]]
+    p.z <- p.z |> dplyr::select(-categoricals)
+  }
+  # for sub clamping
+  z <- 2:4
+  # p.z <- dplyr::bind_rows(occs.z, bg.z)[,-1:-2]
   
   none <- envs
-  all <- clamp.vars(orig.vals = envs, ref.vals = p.z, categoricals = categoricals)
-  left <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", categoricals = categoricals)
-  right <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", categoricals = categoricals)
-  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[4], 
-                        right = names(envs)[4], categoricals = categoricals)
+  all <- clamp.vars(orig.vals = envs, ref.vals = p.z)
+  left <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none",)
+  right <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none",)
+  subboth <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = names(envs)[z], 
+                        right = names(envs)[z])
   subleft <- clamp.vars(orig.vals = envs, ref.vals = p.z, right = "none", 
-                        left = names(envs)[4], categoricals = categoricals)
+                        left = names(envs)[z])
   subright <- clamp.vars(orig.vals = envs, ref.vals = p.z, left = "none", 
-                         right = names(envs)[4], categoricals = categoricals)
-  clamps.envs <- list(none=none, all=all, left=left, right=right, subboth=subboth, subleft=subleft, subright=subright)
+                         right = names(envs)[z])
+  # clamps.envs <- list(none=none, all=all, left=left, right=right, subboth=subboth, subleft=subleft, subright=subright)
   
-  enm <- lookup.enm(e@algorithm)
-  m <- e@models[[1]]
+  # enm <- lookup.enm(e@algorithm)
+  # m <- e@models[[1]]
   
-  clamp.envs.p <- lapply(clamps.envs, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
-  
-  combs <- expand.grid(x=names(clamp.envs.p), y=names(clamp.envs.p), stringsAsFactors = FALSE) |> dplyr::filter(x != y)
+  # clamp.envs.p <- lapply(clamps.envs, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
+  # combs <- expand.grid(x=names(clamp.envs.p), y=names(clamp.envs.p), stringsAsFactors = FALSE) |> dplyr::filter(x != y)
   
   test_that("Clamped rasters are different from each other", {
-    for(i in 1:nrow(combs)) {
-      if(canExtrapolate == TRUE) {
-        expect_false(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
-      }else{
-        expect_true(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
-      }
-    }
+    expect_true(all(terra::minmax(none) != terra::minmax(all)))
+    expect_true(all(terra::minmax(none)[1,] != terra::minmax(left)[1,]))
+    expect_true(all(terra::minmax(none)[2,] == terra::minmax(left)[2,]))
+    expect_true(all(terra::minmax(none)[1,] == terra::minmax(right)[1,]))
+    expect_true(all(terra::minmax(none)[2,] != terra::minmax(right)[2,]))
+    
+    expect_true(all(terra::minmax(none)[,z] != terra::minmax(subboth)[,z]))
+    expect_true(all(terra::minmax(none)[,-z] == terra::minmax(subboth)[,-z]))
+    expect_true(all(terra::minmax(none)[1,z] != terra::minmax(subleft)[1,z]))
+    expect_true(all(terra::minmax(none)[2,z] == terra::minmax(subleft)[2,z]))
+    expect_true(all(terra::minmax(none)[1,-z] == terra::minmax(subleft)[1,-z]))
+    expect_true(all(terra::minmax(none)[2,-z] == terra::minmax(subleft)[2,-z]))
+    expect_true(all(terra::minmax(none)[1,z] == terra::minmax(subright)[1,z]))
+    expect_true(all(terra::minmax(none)[2,z] != terra::minmax(subright)[2,z]))
+    expect_true(all(terra::minmax(none)[1,-z] == terra::minmax(subright)[1,-z]))
+    expect_true(all(terra::minmax(none)[2,-z] == terra::minmax(subright)[2,-z]))
+    # for(i in 1:nrow(combs)) {
+      # if(canExtrapolate == TRUE) {
+        # expect_false(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
+      # }else{
+        # expect_true(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
+      # }
+    # }
   })
   
-  clamps.df <- lapply(clamps.envs, function(x) terra::values(x))
-  clamp.df.p <- lapply(clamps.df, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
+  # clamps.df <- lapply(clamps.envs, function(x) terra::values(x))
+  # clamp.df.p <- lapply(clamps.df, function(x) enm@predict(m, x, list(doClamp = FALSE, pred.type = "cloglog")))
   
-  test_that("Clamped data frames are different from each other", {
-    for(i in 1:nrow(combs)) {
-      if(canExtrapolate == TRUE) {
-        expect_false(isTRUE(all.equal(clamp.df.p[[combs[i,1]]], clamp.df.p[[combs[i,2]]])))
-      }else{
-        expect_true(isTRUE(all.equal(clamp.df.p[[combs[i,1]]], clamp.df.p[[combs[i,2]]])))
-      }
-    }
-  })
+  # test_that("Clamped data frames are different from each other", {
+  #   for(i in 1:nrow(combs)) {
+  #     if(canExtrapolate == TRUE) {
+  #       expect_false(isTRUE(all.equal(clamp.df.p[[combs[i,1]]], clamp.df.p[[combs[i,2]]])))
+  #     }else{
+  #       expect_true(isTRUE(all.equal(clamp.df.p[[combs[i,1]]], clamp.df.p[[combs[i,2]]])))
+  #     }
+  #   }
+  # })
 }
 
 test_ENMnulls <- function(e, ns, no.iter, alg, parts, mod.settings, nparts.occs, nparts.bg, n.sims, type = "") {

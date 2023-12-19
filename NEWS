@@ -1,3 +1,8 @@
+ENMeval 2.0.5
+===========
+o  Updated to use terra instead of raster, and predicts instead of dismo. This was done to end use of depracated packages sp, rgdal, and rgeos.
+o  Made changes to simplify unit tests.
+
 ENMeval 2.0.4
 ===========
 * This update makes a bunch of bug fixes and enhancements brought to me by the user community. Thank you for helping me improve the software!*

@@ -77,7 +77,7 @@ bounds of the predictor variables. Clamping avoids extreme predictions for envir
 the range of the training data. If free extrapolation is a study aim, this should be set to FALSE, but
 for most applications leaving this at the default of TRUE is advisable to avoid unrealistic predictions. 
 When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
-When no predictor variables are input and data frames of variable values are used instead (SWD format),
+When no predictor variables are input and data frames of coordinates and variable values are used instead (SWD format),
 validation data is clamped before making model predictions when clamping is on.}
 
 \item{clamp.directions}{named list: specifies the direction ("left" for minimum, "right" for maximum) 
@@ -225,11 +225,11 @@ occs <- read.csv(file.path(system.file(package="predicts"),
 "/ex/bradypus.csv"))[,2:3]
 envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), 
 "/ex", sep=""), pattern="tif$", full.names=TRUE))
-occs.z <- cbind(occs, terra::extract(envs, occs))
+occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
 occs.z$biome <- factor(occs.z$biome)
 bg <- as.data.frame(predicts::backgroundSample(envs, n = 1000))
 names(bg) <- names(occs)
-bg.z <- cbind(bg, terra::extract(envs, bg))
+bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 bg.z$biome <- factor(bg.z$biome)
 
 # set other.settings -- pred.type is only for Maxent models
