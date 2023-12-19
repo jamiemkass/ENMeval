@@ -1,7 +1,10 @@
 ENMeval 2.0.5
 ===========
-o  Updated to use terra instead of raster, and predicts instead of dismo. This was done to end use of depracated packages sp, rgdal, and rgeos.
+o  Updated to use terra and predicts functions instead of raster and dismo. This was done to end use of depracated packages sp, rgdal, and rgeos.
+o  Simplified checkerboard partition functionality to remove numbers from function names (checkerboard1, checkerboard2) and switch from "basic" and "hierarchical" based on parameter inputs. Left the old functions in as well to avoid existing code breaking, but will phase out with next version.
+o  Switched to native R pipes instead of magrittr.
 o  Made changes to simplify unit tests.
+o  Added GNU General Public License v3.0.
 
 ENMeval 2.0.4
 ===========

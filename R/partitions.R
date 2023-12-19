@@ -337,6 +337,18 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
   return(out)
 }
 
+#' @export
+get.checkerboard1 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000) {
+  message("This function is deprecated and will be phased out with the next ENMeval version. Please use get.checkerbaord instead.")
+  return(get.checkerboard(occs, envs, bg, aggregation.factor, gridSampleN = 10000))
+}
+
+#' @export
+get.checkerboard2 <- function(occs, envs, bg, aggregation.factor, gridSampleN = 10000) {
+  message("This function is deprecated and will be phased out with the next ENMeval version. Please use get.checkerbaord instead.")
+  return(get.checkerboard(occs, envs, bg, aggregation.factor, gridSampleN = 10000))
+}
+
 #' @rdname partitions
 #' 
 #' @export
