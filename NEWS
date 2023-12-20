@@ -1,7 +1,8 @@
 ENMeval 2.0.5
 ===========
-o  Updated to use terra and predicts functions instead of raster and dismo. This was done to end use of depracated packages sp, rgdal, and rgeos.
+o  Updated to use terra and predicts functions instead of raster and dismo, which rely on deprecated pkgs sp, rgdal, and rgeos. This includes the multivariate environmental similarity functions originally from rmaxent and the RMM functionality. Thus, in place of dismo::maxent, we now use predicts::MaxEnt, and in place of dismo::bioclim we now use predicts::envelope. As the predict methods for these functions are not currently exported by the predicts pkg, ENMeval has to load predicts when making predictions for maxent.jar and BIOCLIM models.
 o  Simplified checkerboard partition functionality to remove numbers from function names (checkerboard1, checkerboard2) and switch from "basic" and "hierarchical" based on parameter inputs. Left the old functions in as well to avoid existing code breaking, but will phase out with next version.
+o  Removed functionality for deprecated parameters from v1.
 o  Switched to native R pipes instead of magrittr.
 o  Made changes to simplify unit tests.
 o  Added GNU General Public License v3.0.
