@@ -247,8 +247,8 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
   }
   if(length(names(occs)) > 2) stop("Please input occs with only two columns: longitude and latitude.")
   if(length(names(bg)) > 2) stop("Please input bg with only two columns: longitude and latitude.")
-  occs.v <- as.data.frame(occs) |> terra::vect(geom = names(occs))
-  bg.v <- as.data.frame(bg) |> terra::vect(geom = names(bg))
+  occs.v <- as.data.frame(occs) |> terra::vect(geom = colnames(occs))
+  bg.v <- as.data.frame(bg) |> terra::vect(geom = colnames(bg))
 
   # make checkerboards  
   grid <- terra::aggregate(envs[[1]], fact=aggregation.factor[1])
