@@ -35,7 +35,7 @@ maxent.jar.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
 maxent.jar.msgs <- function(tune.args, other.settings) {
   mxe <- rJava::.jnew("meversion") 
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
-  msg <- paste0("maxent.jar v", v, " from predicts package v", packageVersion('predicts'))
+  msg <- paste0("maxent.jar v", v, " using the predicts package v", packageVersion('predicts'))
   return(msg)
 }
 
@@ -43,14 +43,14 @@ maxent.jar.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   out <- list()
   out$x <- rbind(occs.z, bg.z)
   out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
-  out$args <- c("noremoveDuplicates", "noautofeature")
+  out$args <- c("noremoveDuplicates", "noautofeature", other.settings$other.args)
   if(!grepl("L", tune.tbl.i$fc)) out$args <- c(out$args, "nolinear")
   if(!grepl("Q", tune.tbl.i$fc)) out$args <- c(out$args, "noquadratic")
   if(!grepl("H", tune.tbl.i$fc)) out$args <- c(out$args, "nohinge")
   if(!grepl("P", tune.tbl.i$fc)) out$args <- c(out$args, "noproduct")
   if(!grepl("T", tune.tbl.i$fc)) out$args <- c(out$args, "nothreshold") else out$args <- c(out$args, "threshold")
   out$args <- c(out$args, paste0("betamultiplier=", tune.tbl.i$rm, sep=""))
-  out <- c(out, other.settings$other.args)
+  out$path <- other.settings$path
   return(out)
 }
 
