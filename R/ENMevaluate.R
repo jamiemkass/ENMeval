@@ -289,7 +289,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # coerce occs and bg to df
   occs <- as.data.frame(occs)
   if(!is.null(bg)) bg <- as.data.frame(bg)
-  # extract species name and coordinates
   
   # fill in these arguments with defaults if they are NULL
   if(is.null(partition.settings)) 
@@ -338,6 +337,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
         stop('For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
       }
     }
+  }
+  
+  # environmental raster data checks
+  if(class(envs) != "SpatRaster") {
+    stop('From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
+  }
+  if(terra::nlyr(envs) < 2 & algorithm %in% c("maxent.jar", "maxnet")) {
+    stop('Maxent is generally not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
+  }
+  if(terra::nlyr(envs) < 2 & algorithm == "bioclim") {
+    stop('BIOCLIM is not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
   }
   
   # if occs.testing input, coerce partitions to 'testing'
