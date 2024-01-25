@@ -4,7 +4,19 @@
 \alias{maxnet.predictRaster}
 \title{Predict raster for maxnet}
 \usage{
-maxnet.predictRaster(m, envs, type = "cloglog", doClamp = TRUE, other.settings)
+maxnet.predictRaster(m, envs, predType = "cloglog", doClamp = TRUE, ...)
+}
+\arguments{
+\item{m}{maxnet object}
+
+\item{envs}{SpatRaster}
+
+\item{predType}{character: the type of maxnet prediction to make; the default
+is "cloglog"}
+
+\item{doClamp}{Boolean: whether to clamp predictions or not}
+
+\item{...}{any additional parameters}
 }
 \description{
 As maxnet does not have native functionality for making 

@@ -6,9 +6,12 @@
 \usage{
 loadENMevaluation(filename)
 }
+\arguments{
+\item{filename}{character: path to the .rds file to load}
+}
 \description{
 Load an ENMevaluation object as an .rds file. This is necessary
-to use instead of readRDS() because wrapped terra SpatRasters require 
-unwrap() after loading for the raster data. This convenience function does 
+to use instead of \code{readRDS()} because wrapped terra SpatRasters require 
+\code{unwrap()} after loading for the raster data. This convenience function does 
 that for you.
 }

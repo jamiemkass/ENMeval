@@ -6,9 +6,14 @@
 \usage{
 saveENMevaluation(e, filename)
 }
+\arguments{
+\item{e}{ENMevaluation object}
+
+\item{filename}{character: path to the file to create with .rds extension}
+}
 \description{
 Save an ENMevaluation object as an .rds file. This is necessary
-to use instead of saveRDS() because terra SpatRasters require wrap() before
+to use instead of \code{saveRDS()} because terra SpatRasters require \code{wrap()} before
 saving to preserve the connections to the raster data. This convenience 
 function does that for you.
 }

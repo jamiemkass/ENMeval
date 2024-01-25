@@ -451,7 +451,7 @@ maxnet.predictRaster <- function(m, envs, predType = "cloglog", doClamp = TRUE,
 
 #' @title Save ENMevaluation object
 #' @description Save an ENMevaluation object as an .rds file. This is necessary
-#' to use instead of saveRDS() because terra SpatRasters require wrap() before
+#' to use instead of \code{saveRDS()} because terra SpatRasters require \code{wrap()} before
 #' saving to preserve the connections to the raster data. This convenience 
 #' function does that for you.
 #' @param e ENMevaluation object
@@ -468,8 +468,8 @@ saveENMevaluation <- function(e, filename) {
 
 #' @title Load ENMevaluation object
 #' @description Load an ENMevaluation object as an .rds file. This is necessary
-#' to use instead of readRDS() because wrapped terra SpatRasters require 
-#' unwrap() after loading for the raster data. This convenience function does 
+#' to use instead of \code{readRDS()} because wrapped terra SpatRasters require 
+#' \code{unwrap()} after loading for the raster data. This convenience function does 
 #' that for you.
 #' @param filename character: path to the .rds file to load
 #' @export

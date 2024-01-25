@@ -177,6 +177,9 @@ it is up to the user to remove such records before running \code{ENMevaluate()} 
 Below are descriptions of the parameters used in the other.settings, partition.settings, and user.eval arguments.
 
 For other.settings, the options are:\cr*
+path - character: the folder path designating where maxent.jar files should be saved\cr*
+addsamplestobackground - boolean: whether or not to add occurrences to the background
+when modeling with maxnet -- the default is TRUE.\cr*
 abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr*
 pred.type - character: specifies which prediction type should be used to generate maxnet or 
 maxent.jar prediction rasters (default: "cloglog").\cr*
@@ -186,7 +189,9 @@ spatial partitions only) to calculate each with respect to the partitioned backg
 (i.e., training occurrences are compared to training background, and validation occurrences 
 compared to validation background).\cr*
 other.args - named list: any additional model arguments not specified for tuning; this can
-include arguments for maxent.jar, which are described in the software's Help file.\cr
+include arguments for maxent.jar, which are described in the software's Help file, such as
+"jackknife=TRUE" for a variable importance jackknife plot or "responsecurves=TRUE" for response
+curve plots -- note the the "path" must be specified (see above).\cr
 
 For partition.settings, the current options are:\cr*
 orientation - character: one of "lat_lon" (default), "lon_lat", "lat_lat", or "lon_lon" (required for block partition).\cr* 
@@ -256,16 +261,26 @@ eval.results(e.maxnet)
 # here's an example where we make a prediction based on the L2 model
 # (feature class: Linear, regularization multiplier: 2) for our envs data
 mods.maxnet <- eval.models(e.maxnet)
-pred.L2 <- enm.maxnet@predict(mods.maxnet$fc.L_rm.2, envs, os)
+pred.L2 <- maxnet.predictRaster(mods.maxnet$fc.L_rm.2, envs)
 terra::plot(pred.L2)
 
-#' # here's a run with maxent.jar -- note that if the R package rJava cannot 
-install or load, or if other issues with Java exist on your computer, 
-maxent.jar will not function
-e.maxnet <- ENMevaluate(occs, envs, bg, 
+# here's a run with maxent.jar -- note that if the R package rJava cannot 
+# install or load, or if you have other issues with Java on your computer, 
+# maxent.jar will not function
+e.maxent.jar <- ENMevaluate(occs, envs, bg, 
 tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
 partitions = "block", other.settings = os, partition.settings = ps,
 algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE)
+
+# here's a run of maxent.jar with a path specified for saving the html and 
+# plot files -- you can also turn on jackknife variable importance or 
+# response curves, etc., to have these plots saved there
+e.maxent.jar <- ENMevaluate(occs, envs, bg, 
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+partitions = "block", other.settings = os, partition.settings = ps,
+algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE,
+other.settings = list(path = "analyses/mxnt_results", 
+other.args = c("jackknife=TRUE", "responsecurves=TRUE")))
 
 # print the tuning results
 eval.results(e.maxent.jar)
@@ -274,7 +289,7 @@ ENMeval
 mods.maxent.jar <- eval.models(e.maxent.jar)
 pred.L2 <- predict(mods.maxent.jar$fc.L_rm.2, envs, 
 args = "outputform=cloglog")
-pred.L2 <- enm.maxent.jar@predict(mods.maxent.jar$fc.L_rm.2, envs, os)
+pred.L2 <- maxnet.predictRaster(mods.maxent.jar$fc.L_rm.2, envs, os)
 terra::plot(pred.L2)
 
 # this will give you the percent contribution (not deterministic) and
@@ -296,8 +311,6 @@ mods.bioclim <- eval.models(e.bioclim)
 # the only difference for tuning is how they are predicted during
 # cross-validation
 pred.both <- predict(mods.bioclim$tails.both, envs, tails = "both")
-os <- c(os, list(tails = "both"))
-pred.both <- enm.bioclim@predict(mods.bioclim$tails.both, envs, os)
 terra::plot(pred.both)
 
 # please see the vignette for more examples of model tuning, 
