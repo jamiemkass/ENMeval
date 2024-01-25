@@ -10,10 +10,13 @@ ENMnulls_ANOVA(
   eval.stats = c("auc.val", "auc.diff", "cbi.val", "or.mtp", "or.10p"),
   alternative = "two.sided",
   no.iter,
-  user.eval.type = NULL
+  user.eval.type = NULL,
+  userStats.signs = NULL
 )
 }
 \arguments{
+\item{e.list}{list of ENMevaluation objects to be compared}
+
 \item{mod.settings.list}{named list: model settings corresponding to ENMevaluation objects in e.list 
 that specify the settings used for building null models}
 
@@ -28,23 +31,9 @@ Can be one of “auc”, “cbi”, “or.mtp”, “or.10p”.}
 \item{user.eval.type}{character: if implementing a user-specified model -- either "knonspatial", "kspatial", 
 "testing" or "none".}
 
-\item{e.list:}{list of ENMevaluation objects to be compared}
-
-\item{user.enm}{ENMdetails object: if implementing a user-specified model.}
-
 \item{userStats.signs}{named list: user-defined evaluation statistics attributed with either 1 or -1 
 to designate whether the expected difference between empirical and null models is positive or negative; 
 this is used to calculate the p-value of the z-score when comparing two predictor variable sets. Default is NULL.}
-
-\item{removeMxTemp}{boolean: if TRUE, delete all temporary data generated when using maxent.jar for modeling}
-
-\item{parallel}{boolean: if TRUE, use parallel processing.}
-
-\item{numCores}{numeric: number of cores to use for parallel processing; if NULL, all available cores will be used.}
-
-\item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW").}
-
-\item{quiet}{boolean: if TRUE, silence all function messages (but not errors).}
 }
 \value{
 An \code{ENMnull}An ENMnull object with slots containing evaluation summary statistics 
@@ -53,7 +42,7 @@ empirical and null models. This comparison table includes T-statistics for pairw
 and F-statistic (ANOVA) of these differences and their associated p-values (under a normal distribution).
 }
 \description{
-\code{ENMnulls.test()} Iteratively builds null ENMs for "k" sets of user-specified model
+\code{ENMnulls_ANOVA()} Iteratively builds null ENMs for "k" sets of user-specified model
 settings based on "k" input ENMevaluation objects, from which all other analysis 
 settings are extracted.Summary statistics of the performance metrics for the null ENMs 
 are taken (averages and standard deviations) and effect sizes and p-values are calculated by 
