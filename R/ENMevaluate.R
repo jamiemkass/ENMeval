@@ -205,7 +205,7 @@
 #' # here's an example where we make a prediction based on the L2 model
 #' # (feature class: Linear, regularization multiplier: 2) for our envs data
 #' mods.maxnet <- eval.models(e.maxnet)
-#' pred.L2 <- enm.maxnet@predict(mods.maxnet$fc.L_rm.2, envs, os)
+#' pred.L2 <- maxnet.predictRaster(mods.maxnet$fc.L_rm.2, envs)
 #' terra::plot(pred.L2)
 #' 
 #' #' # here's a run with maxent.jar -- note that if the R package rJava cannot 
@@ -223,7 +223,7 @@
 #' mods.maxent.jar <- eval.models(e.maxent.jar)
 #' pred.L2 <- predict(mods.maxent.jar$fc.L_rm.2, envs, 
 #' args = "outputform=cloglog")
-#' pred.L2 <- enm.maxent.jar@predict(mods.maxent.jar$fc.L_rm.2, envs, os)
+#' pred.L2 <- maxnet.predictRaster(mods.maxent.jar$fc.L_rm.2, envs, os)
 #' terra::plot(pred.L2)
 #' 
 #' # this will give you the percent contribution (not deterministic) and
@@ -249,8 +249,6 @@
 #' # the only difference for tuning is how they are predicted during
 #' # cross-validation
 #' pred.both <- predict(mods.bioclim$tails.both, envs, tails = "both")
-#' os <- c(os, list(tails = "both"))
-#' pred.both <- enm.bioclim@predict(mods.bioclim$tails.both, envs, os)
 #' terra::plot(pred.both)
 #' 
 #' # please see the vignette for more examples of model tuning, 

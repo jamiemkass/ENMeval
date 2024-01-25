@@ -428,3 +428,57 @@ maxentJARversion <- function() {
   v <- try(rJava::.jcall(mxe, "S", "meversion"))
   return(v)
 }
+
+#' @title Predict raster for maxnet
+#' @description As maxnet does not have native functionality for making 
+#' prediction rasters, this function does it. It is a wrapper for the internal
+#' enm.maxnet@predict function, which is not really intended for use outside
+#' the package.
+#' @param m maxnet object
+#' @param envs SpatRaster
+#' @param predType character: the type of maxnet prediction to make; the default
+#' is "cloglog"
+#' @param doClamp Boolean: whether to clamp predictions or not
+#' @param ... any additional parameters
+#' @export
+#' 
+maxnet.predictRaster <- function(m, envs, predType = "cloglog", doClamp = TRUE, 
+                                 ...) {
+  os <- list(doClamp = doClamp, predType = type, ...)
+  p <- enm.maxnet@predict(m, envs, os)
+  return(p)
+}
+
+#' @title Save ENMevaluation object
+#' @description Save an ENMevaluation object as an .rds file. This is necessary
+#' to use instead of saveRDS() because terra SpatRasters require wrap() before
+#' saving to preserve the connections to the raster data. This convenience 
+#' function does that for you.
+#' @param e ENMevaluation object
+#' @param filename character: path to the file to create with .rds extension
+#' @export
+#' 
+saveENMevaluation <- function(e, filename) {
+  if(strsplit(filename, "\\.")[[1]][2] != "rds") {
+    stop("Please use the .rds extension for the filename.")
+  }
+  e@predictions <- terra::wrap(e@predictions)
+  saveRDS(e, filename)
+}
+
+#' @title Load ENMevaluation object
+#' @description Load an ENMevaluation object as an .rds file. This is necessary
+#' to use instead of readRDS() because wrapped terra SpatRasters require 
+#' unwrap() after loading for the raster data. This convenience function does 
+#' that for you.
+#' @param filename character: path to the .rds file to load
+#' @export
+#' 
+loadENMevaluation <- function(filename) {
+  if(strsplit(filename, "\\.")[[1]][2] != "rds") {
+    stop("Please use the .rds extension for the filename.")
+  }
+  e <- readRDS(filename)
+  e@predictions <- terra::unwrap(e@predictions)
+  return(e)
+}

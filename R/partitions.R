@@ -63,12 +63,12 @@
 #' Robert Muscarella <bob.muscarella@gmail.com> and Jamie M. Kass <jamie.m.kass@gmail.com>
 #' 
 #' @examples 
-#' require(raster)
+#' library(terra)
 #' 
 #' set.seed(1)
 #' 
 #' ### Create environmental extent (raster)
-#' envs <- raster(matrix(nrow=25, ncol=25))
+#' envs <- rast(matrix(nrow=25, ncol=25))
 #' 
 #' ### Create occurrence localities
 #' set.seed(1)

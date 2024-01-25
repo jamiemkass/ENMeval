@@ -73,12 +73,12 @@ They may give fewer bins, however, depending on where the occurrence localities 
 A warning is given if the number of bins is < 4 for the hierarchical method, and an error is given if all localities fall into a single evaluation bin.
 }
 \examples{
-require(raster)
+library(terra)
 
 set.seed(1)
 
 ### Create environmental extent (raster)
-envs <- raster(matrix(nrow=25, ncol=25))
+envs <- rast(matrix(nrow=25, ncol=25))
 
 ### Create occurrence localities
 set.seed(1)

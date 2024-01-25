@@ -61,8 +61,14 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
 }
 
 
-
-
+#' Internal plotting function
+#'
+#' This function preps data for plotting.
+#'
+#' @examples \dontrun{
+#' plot.sim.dataPrep()
+#' }
+#' @keywords internal
 plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet) {
   
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
