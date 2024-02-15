@@ -470,7 +470,8 @@ There are multiple ways to run the function `ENMevaluate()`, and we will go over
 
 ```{r evalExamples, eval = FALSE}
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with 
-# the original Java software.
+# the original Java software. You may need to run rJava::.jpackage('predicts') before
+# running the model.
 tune.args <- list(fc = c("L", "LQ"), rm = 1:2)
 e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", 
                        tune.args = tune.args, partitions = "block")
@@ -616,7 +617,7 @@ Maxent models run with `maxent.jar` have a different structure from models run w
 # Please run independently.
 
 # For maxent.jar models, we can access this information in the lambdas slot.
-m1.mxjar <- eval.models(e.mxjar)[["fc.LQH_rm.1"]]
+m1.mxjar <- e.mxjar@models$fc.LQ_rm.1
 m1.mxjar@lambdas
 
 # The notation used here is difficult to decipher, so check out the 
@@ -692,8 +693,10 @@ This is how to view the marginal response curves for `maxent.jar` models.
 # NOTE -- This code is not evaluated and so will display no output in this vignette.
 # Please run independently.
 
-# maxent.jar models use the dismo::response() function for this
-dismo::response(eval.models(e.mxjar)[[opt.seq$tune.args]])
+# maxent.jar models use the predicts::partialResponse() function for this
+pr <- predicts::partialResponse(e.mxjar@models[[as.vector(opt.seq$tune.args)]],
+                                var = "bio5")
+plot(pr, type = "l", las = 1)
 ```
 
 Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions >3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate()`.
