@@ -43,7 +43,7 @@ We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](htt
 ```{r occDownload}
 # Load packages -- the order here is important because some pkg functions overwrite others.
 library(ENMeval)
-library(raster)
+library(terra)
 library(dplyr)
 
 # Set a random seed in order to be able to reproduce this analysis.
@@ -53,33 +53,33 @@ set.seed(48)
 # but here we will load in some pre-downloaded data.
 # bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords = TRUE)
 # occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
-occs <- readRDS("bvariegatus.rds")
+occs <- readRDS("vignettes/bvariegatus.rds")
 
 # Removing occurrences that have the same coordinates is good practice to
 # avoid pseudoreplication.
 occs <- occs[!duplicated(occs),]
 ```
 
-We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `dismo` package from WorldClim 1.4. These climatic data are based on 50-year averages from 1950-2000.
+We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `predicts` package from WorldClim 1.4. These climatic data are based on 50-year averages from 1950-2000.
 
 ```{r envDownload, warning = FALSE, message = FALSE}
-# Locate the predictor raster files from the dismo folder.
-envs.files <- list.files(path = paste(system.file(package='dismo'), '/ex', sep = ''), 
-                         pattern = 'grd', full.names = TRUE)
+# Locate the predictor raster files from the predicts folder.
+envs.files <- list.files(path = paste(system.file(package='predicts'), '/ex', sep = ''),
+                         pattern = 'tif$', full.names = TRUE)
 
 # Read the raster files into a SpatRaster.
-# These variables represent 8 bioclimatic variables and one categorical variable "biome".
+# These variables represent 9 bioclimatic variables and one categorical variable "biome".
 # Find the descriptions of the bioclimatic variables here: 
 # https://www.worldclim.org/data/bioclim.html
-envs <- raster::stack(envs.files)
+envs <- terra::rast(envs.files)
 # The biome raster has some NAs for cells that have values in the other rasters.
 # Let's mask all rasters to biome to change the value of these cells to NA for all rasters.
 # ENMeval will do this automatically, but let's do it here to avoid the warning message later.
 # We change back from a RasterBrick to SpatRaster because of issues with assigning 
 # factor rasters for RasterBricks.
-envs <- raster::mask(envs, envs[[9]]) |> raster::stack()
+envs <- terra::mask(envs, envs[[10]])
 # Make sure to declare the categorical variable as a factor
-envs$biome <- raster::as.factor(envs$biome)
+envs$biome <- terra::as.factor(envs$biome)
 # Let's now remove occurrences that are cell duplicates -- these are
 # occurrences that share a grid cell in the predictor variable rasters.
 # Although Maxent does this by default, keep in mind that for other algorithms you may
@@ -108,18 +108,18 @@ points(occs, col = 'red')
 
 Now let's take a look at which areas of this extent are climatically different with respect to the areas associated with the occurrence points. To do this, we'll use the Multivariate Environmental Similarity surface, or MESS (Elith et al. 2010). Higher positive values indicate increasing similarity, while higher negative values indicate dissimilarity. Other methods besides MESS have also been proposed and warrant exploration (e.g., Owens et al. 2013, Mesgaran et al. 2014). This is important to investigate when considering model transfer to other times or places, as environments that are extremely dissimilar to those used to train the model in the present can result in projections with high uncertainty (Wenger & Olden 2012, Wright et al. 2015, Soley-Guardia 2019).
 
-Although the `mess()` function from the dismo package is frequently used, here we will use tools from the package [`rmaxent`](https://github.com/johnbaums/rmaxent) (Baumgartner & Wilson 2021) because it also plots maps of the most similar and dissimilar variables -- this functionality is currently included in `ENMeval` in the `similarity()` function. We will demonstrate the `ENMeval` plotting functions for environmental similarity later.
+Although the `mess()` function from the `predicts` package is frequently used, here we will use tools from the package [`rmaxent`](https://github.com/johnbaums/rmaxent) (Baumgartner & Wilson 2021) because it also plots maps of the most similar and dissimilar variables -- this functionality is currently included in `ENMeval` in the `similarity()` function. We will demonstrate the `ENMeval` plotting functions for environmental similarity later.
 
 ```{r}
 # First we extract the climatic variable values at the occurrence points -- these values are 
 # our "reference".
 # We remove the categorical variable for these operations because the math only makes sense 
 # for continuous variables -- the function will not work with categorical variables.
-occs.z <- terra::extract(envs[[-9]], occs, ID = FALSE)
+occs.z <- terra::extract(envs[[-10]], occs, ID = FALSE)
 # Now we use the similarity() function (borrowed from the rmaxent package) to calculate 
 # environmental similarity metrics of our predictor variable extent compared to the reference
 # points.
-occs.sim <- similarity(envs[[-9]], occs.z)
+occs.sim <- similarity(envs[[-10]], occs.z)
 occs.mess <- occs.sim$similarity_min
 # This is the MESS plot -- increasingly negative values represent increasingly different 
 # climatic conditions from the reference (our occurrences), while increasingly positive 
@@ -132,17 +132,17 @@ occs.sp <- sp::SpatialPoints(occs)
 rasterVis::levelplot(occs.mess, main = "Environmental similarity", margin = FALSE) + 
   latticeExtra::layer(sp.points(occs.sp, col="black"))
 # Continuous plotting can be done as demonstrated below by specifiying a scale
-myScale <- seq(cellStats(occs.mess, min), cellStats(occs.mess, max), length.out = 100)
+myScale <- seq(terra::minmax(occs.mess)[1], terra::minmax(occs.mess)[2], length.out = 100)
 rasterVis::levelplot(occs.mess, main = "Environmental similarity", at = myScale, margin = FALSE) + 
-  latticeExtra::layer(sp.points(occs.sp, col="black"))
+  latticeExtra::layer(sp::sp.points(occs.sp, col="black"))
 # Here we define some good colors for representing categorical variables
 cols <- RColorBrewer::brewer.pal(8, "Set1")
 # This map shows the variable for each grid cell that is most different from the reference
 rasterVis::levelplot(occs.sim$mod, col.regions = cols, main = "Most different variable") + 
-  latticeExtra::layer(sp.points(occs.sp, col="black"))
+  latticeExtra::layer(sp::sp.points(occs.sp, col="black"))
 # This map shows the variable for each grid cell that is most similar to the reference
 rasterVis::levelplot(occs.sim$mos, col.regions = cols, main = "Most similar variable") + 
-  latticeExtra::layer(sp.points(occs.sp, col="black"))
+  latticeExtra::layer(sp::sp.points(occs.sp, col="black"))
 ```
 
 Since our models will compare the environment at occurrence localities to the environment at background localities, we need to sample random points from a background extent. Now we will specify the study extent that defines where we sample background data by cropping our global predictor variable rasters to a smaller region. To help ensure we do not include areas that are suitable for our species but are unoccupied due to limitations like dispersal constraints, we will conservatively define the background extent as an area surrounding our occurrence localities (VanDerWal et al. 2009, Merow et al. 2013). We will do this by buffering a bounding box that includes all occurrence localities. Some other methods of background extent delineation (e.g., minimum convex hulls) are more conservative because they better characterize the geographic space holding the points. In any case, this is one of the many things that you will need to carefully consider for your own study.
@@ -152,7 +152,7 @@ Since our models will compare the environment at occurrence localities to the en
 # Let's make our occs into a sf object -- as the coordinate reference system (crs) for these 
 # points is WGS84, a geographic crs (lat/lon) and the same as our envs rasters, we specify it 
 # as the SpatRaster's crs.
-occs.sf <- sf::st_as_sf(occs, coords = c("longitude","latitude"), crs = raster::crs(envs))
+occs.sf <- sf::st_as_sf(occs, coords = c("longitude","latitude"), crs = terra::crs(envs))
 
 # Now, we project our point data to an equal-area projection, which converts our 
 # degrees to meters, which is ideal for buffering (the next step). 
@@ -161,7 +161,7 @@ eckertIV <- "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 occs.sf <- sf::st_transform(occs.sf, crs = eckertIV)
 
 # Buffer all occurrences by 500 km, union the polygons together 
-# (for visualization), and convert back to a form that the raster package 
+# (for visualization), and convert back to a form that the terra package 
 # can use. Finally, we reproject the buffers back to WGS84 (lat/lon).
 # We choose 500 km here to avoid sampling the Caribbean islands.
 occs.buf <- sf::st_buffer(occs.sf, dist = 500000) |> 
@@ -174,9 +174,9 @@ points(occs)
 plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
 
 # Crop environmental rasters to match the study extent
-envs.bg <- raster::crop(envs, occs.buf)
+envs.bg <- terra::crop(envs, occs.buf)
 # Next, mask the rasters to the shape of the buffers
-envs.bg <- raster::mask(envs.bg, occs.buf)
+envs.bg <- terra::mask(envs.bg, occs.buf)
 plot(envs.bg[[1]], main = names(envs)[1])
 points(occs)
 plot(occs.buf, border = "blue", lwd = 3, add = TRUE)
@@ -191,7 +191,7 @@ In the next step, we'll sample 10,000 random points from the background (note th
 # from the biome variable because it is missing some grid cells, and we are trying to 
 # avoid getting background points with NA. If one raster in the stack has NAs where the
 # other rasters have data, ENMeval internally converts these cells to NA.
-bg <- predicts::backgroundSample(envs.bg[[9]], n = 10000) |> as.data.frame()
+bg <- predicts::backgroundSample(envs.bg[[10]], n = 10000) |> as.data.frame()
 colnames(bg) <- colnames(occs)
 
 # Notice how we have pretty good coverage (every cell).
@@ -403,7 +403,7 @@ library(sf)
 # package sf and assign the correct coordinate reference system.
 occsBg.sf <- sf::st_as_sf(rbind(occs, bg), coords = c("longitude","latitude"), 
                           crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-raster::crs(envs.bg) <- raster::crs(occsBg.sf)
+terra::crs(envs.bg) <- terra::crs(occsBg.sf)
 # Here, we implement the spatialBlock function from the blockCV package.
 # The required inputs are similar to ENMeval partitioning functions, but here you assign
 # the size of blocks in meters with the argument theRange (here set at 1000 km), and the 
@@ -470,7 +470,8 @@ There are multiple ways to run the function `ENMevaluate()`, and we will go over
 
 ```{r evalExamples, eval = FALSE}
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with 
-# the original Java software.
+# the original Java software. You may need to run rJava::.jpackage('predicts') before
+# running the model.
 tune.args <- list(fc = c("L", "LQ"), rm = 1:2)
 e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", 
                        tune.args = tune.args, partitions = "block")
@@ -616,7 +617,7 @@ Maxent models run with `maxent.jar` have a different structure from models run w
 # Please run independently.
 
 # For maxent.jar models, we can access this information in the lambdas slot.
-m1.mxjar <- eval.models(e.mxjar)[["fc.LQH_rm.1"]]
+m1.mxjar <- e.mxjar@models$fc.LQ_rm.1
 m1.mxjar@lambdas
 
 # The notation used here is difficult to decipher, so check out the 
@@ -692,8 +693,10 @@ This is how to view the marginal response curves for `maxent.jar` models.
 # NOTE -- This code is not evaluated and so will display no output in this vignette.
 # Please run independently.
 
-# maxent.jar models use the dismo::response() function for this
-dismo::response(eval.models(e.mxjar)[[opt.seq$tune.args]])
+# maxent.jar models use the predicts::partialResponse() function for this
+pr <- predicts::partialResponse(e.mxjar@models[[as.vector(opt.seq$tune.args)]],
+                                var = "bio5")
+plot(pr, type = "l", las = 1)
 ```
 
 Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions >3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate()`.
@@ -703,7 +706,7 @@ These predictions are for the entire extent of the input predictor variable rast
 ```{r plotPred}
 # We can select the model predictions for our optimal model the same way we did for the 
 # model object above.
-pred.seq <- eval.predictions(e.mx)[[opt.seq$tune.args]]
+pred.seq <- eval.predictions(e.mx)[[as.vector(opt.seq$tune.args)]]
 plot(pred.seq)
 
 # We can also plot the binned background points with the occurrence points on top to 
@@ -781,9 +784,9 @@ rmm$model$selectionRules <- "lowest 10 percentile omission rate,
 break ties with average validation AUC"
 # We can also enter our optimal model settings and the details of our optimal 
 # model's prediction.
-rmm$model$finalModelSettings <- "LQ4"
-rmm$prediction$continuous$minVal <- cellStats(pred.seq, min)
-rmm$prediction$continuous$maxVal <- cellStats(pred.seq, max)
+rmm$model$finalModelSettings <- "LQ2"
+rmm$prediction$continuous$minVal <- terra::global(pred.seq, min)
+rmm$prediction$continuous$maxVal <- terra::global(pred.seq, max)
 rmm$prediction$continuous$units <- "suitability (cloglog transformation)"
 # This is just an example -- there may be more fields relevant to fill in for your study.
 ```
