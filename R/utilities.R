@@ -444,7 +444,7 @@ maxentJARversion <- function() {
 #' 
 maxnet.predictRaster <- function(m, envs, predType = "cloglog", doClamp = TRUE, 
                                  ...) {
-  os <- list(doClamp = doClamp, predType = type, ...)
+  os <- list(doClamp = doClamp, pred.type = predType, ...)
   p <- enm.maxnet@predict(m, envs, os)
   return(p)
 }
