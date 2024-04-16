@@ -16,3 +16,5 @@ doc
 Meta
 #docs
 docs
+# generate when cheking vignette file
+rmm_mx1.csv

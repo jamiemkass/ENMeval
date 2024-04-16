@@ -354,15 +354,19 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }
   }
   
-  # environmental raster data checks
-  if(class(envs) != "SpatRaster") {
-    stop('From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
-  }
-  if(terra::nlyr(envs) < 2 & algorithm %in% c("maxent.jar", "maxnet")) {
-    stop('Maxent is generally not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
-  }
-  if(terra::nlyr(envs) < 2 & algorithm == "bioclim") {
-    stop('BIOCLIM is not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
+  if(!is.null(envs)) {
+    # environmental raster data checks
+    if(class(envs) != "SpatRaster") {
+      stop('From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
+    }
+    if (class(envs) == "SpatRaster") {
+      if(terra::nlyr(envs) < 2 & algorithm %in% c("maxent.jar", "maxnet")) {
+        stop('Maxent is generally not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
+      }
+      if(terra::nlyr(envs) < 2 & algorithm == "bioclim") {
+        stop('BIOCLIM is not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
+      }
+    }
   }
   
   # if occs.testing input, coerce partitions to 'testing'
