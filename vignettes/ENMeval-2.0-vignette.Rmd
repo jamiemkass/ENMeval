@@ -119,7 +119,7 @@ occs.z <- terra::extract(envs[[-10]], occs, ID = FALSE)
 # Now we use the similarity() function (borrowed from the rmaxent package) to calculate 
 # environmental similarity metrics of our predictor variable extent compared to the reference
 # points.
-occs.sim <- similarity(envs[[-10]], occs.z)
+occs.sim <- ENMeval::similarity(envs[[-10]], occs.z)
 occs.mess <- occs.sim$similarity_min
 # This is the MESS plot -- increasingly negative values represent increasingly different 
 # climatic conditions from the reference (our occurrences), while increasingly positive 
@@ -473,6 +473,7 @@ There are multiple ways to run the function `ENMevaluate()`, and we will go over
 # the original Java software. You may need to run rJava::.jpackage('predicts') before
 # running the model.
 tune.args <- list(fc = c("L", "LQ"), rm = 1:2)
+rJava::.jpackage('predicts')
 e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", 
                        tune.args = tune.args, partitions = "block")
 
@@ -619,13 +620,18 @@ Maxent models run with `maxent.jar` have a different structure from models run w
 # For maxent.jar models, we can access this information in the lambdas slot.
 m1.mxjar <- e.mxjar@models$fc.LQ_rm.1
 m1.mxjar@lambdas
+```
 
+
+```{r, eval = FALSE}
 # The notation used here is difficult to decipher, so check out the 
 # [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package.
-# available on Github for the `parse_lambdas()` function that makes it easier to read.
-devtools::install_github("johnbaums/rmaxent")
-rmaxent::parse_lambdas(m1.mxjar)
+# available on Github for the `parse_lambdas()` function.
+parse_lambdas(m1.mxjar)
+```
 
+
+```{r, eval = FALSE}
 # We can also get a long list of results statistics from the results slot.
 m1.mxjar@results
 ```
