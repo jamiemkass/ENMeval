@@ -16,15 +16,11 @@ Install with: `devtools::install_packages("jamiemkass/ENMeval")`
 
 The `ENMeval` package features a single function that performs model tuning based on user specifications, including methods for partitioning data for cross-validation (random, leave-one-out, spatial, custom), and evaluates models using predefined performance metrics (AUC, Continuous Boyce Index, omission rates) with the option to insert others. The package includes functionality for three models: [maxent.jar](https://doi.org/10.1016/j.ecolmodel.2005.03.026) (Java implementation of Maxent), [maxnet](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) (R implementation of Maxent), and [BIOCLIM](https://doi.org/10.1111/ddi.12144) (climate envelope method). Users can also specify other algorithms by customizing an **ENMdetails** object (`?ENMdetails`). The package also offers comprehensive metadata output, null model evaluations, visualization tools, and an extensive  [tutorial](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html) that walks you through a full analysis workflow. Many features in `ENMeval` were created in response to user requests -- thank you for your input! Version >=2.0.0 represents an extensive restructure and expansion of previous versions, and 2.0.5 is a big move from `raster` and `dismo` functions to those of `terra` and `predicts`. 
 
-`ENMeval` >=2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)]() from the [maxnet R package](https://cran.r-project.org/package=maxnet) and the Java software maxent.jar [(Phillips *et al.* 2006)](), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/), as well as  implemented with the [dismo R package](https://cran.r-project.org/package=dismo). 
-
-
-
-For a more detailed description of version >=2.0.0, please reference the new publication in Methods in Ecology and Evolution:
+For a more detailed description of `ENMeval`, please reference the most recent publication:
 
 [Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., & Anderson, R. P. (2021). ENMeval 2.0: redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution, 12: 1602-1608.](https://doi.org/10.1111/2041-210X.13628)
 
-For the original package version, please reference the 2014 publication in Methods in Ecology and Evolution:
+For the original package version, please reference this older publication:
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](https://doi.org/10.1111/2041-210X.12261)
 
