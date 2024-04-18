@@ -7,9 +7,6 @@
 
 ## R package for automated tuning and evaluations of ecological niche models
 
-NOTE: `ENMeval` is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
-Install with: `devtools::install_packages("jamiemkass/ENMeval")`
-
 [`ENMeval`](https://jamiemkass.github.io/ENMeval/index.html) is an R package that performs automated tuning and evaluations of ecological niche models / species distribution models. These models make predictions of species' niche relationships and potential geographic distributions based on presence data, environmental predictor variables, and a sample of available environmental conditions (i.e., background data). 
 
 "Model tuning" is commonly used for machine-learning models. It means building candidate models with a range of complexity settings, evaluating the accuracy of each one (here with cross-validation), then selecting optimal settings for your data based on those of the best-performing model. This exercise is important because it is difficult to predict in advance how complex your model needs to be to make accurate and ecologically realistic predictions for your species. Too much model complexity leads to overfitting, where your model fits your data very well but it cannot predict new data accurately. Model tuning helps maximize predictive ability while avoiding model overfitting. 
@@ -26,8 +23,11 @@ For the original package version, please reference this older publication:
 
 NOTES:
 
-1. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) on the package's Github Pages website. 
+1. `ENMeval` is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
+Install with: `devtools::install_packages("jamiemkass/ENMeval")`
 
-2. Please make sure to use the most recent version of [maxent.jar](https://biodiversityinformatics.amnh.org/open_source/maxent/) , as bug fixes are occassionally made.
+2. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) on the package's Github Pages website. 
 
-3. Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet). The output from this differs from that of the original Java program and so some features are not compatible (e.g., variable importance, html output).
+3. Please make sure to use the most recent version of [maxent.jar](https://biodiversityinformatics.amnh.org/open_source/maxent/) , as bug fixes are occasionally made.
+
+4. Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet). The output from this differs from that of the original Java program and so some features are not compatible (e.g., variable importance, html output).
