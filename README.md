@@ -3,18 +3,22 @@
 [![R-CMD-check](https://github.com/jamiemkass/ENMeval/workflows/R-CMD-check/badge.svg)](https://github.com/jamiemkass/ENMeval/actions)
 
 
-# ENMeval version 2.0.4
+# ENMeval version 2.0.5
 
 ## R package for automated tuning and evaluations of ecological niche models
 
-NOTE: ENMeval is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
+NOTE: `ENMeval` is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
 Install with: `devtools::install_packages("jamiemkass/ENMeval")`
 
-[`ENMeval`](https://jamiemkass.github.io/ENMeval/index.html) is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version >=2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new **ENMdetails** object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive [vignette](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html) with a complete analysis walkthrough, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests -- thank you for your input!
+[`ENMeval`](https://jamiemkass.github.io/ENMeval/index.html) is an R package that performs automated tuning and evaluations of ecological niche models / species distribution models. These models make predictions of species' niche relationships and potential geographic distributions based on presence data, environmental predictor variables, and a sample of available environmental conditions (i.e., background data). 
 
-`ENMeval` >=2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) from the [maxnet R package](https://cran.r-project.org/package=maxnet) and the Java software maxent.jar [(Phillips *et al.* 2006)](https://doi.org/10.1016/j.ecolmodel.2005.03.026), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/), as well as BIOCLIM implemented with the [dismo R package](https://cran.r-project.org/package=dismo). 
+"Model tuning" is commonly used for machine-learning models. It means building candidate models with a range of complexity settings, evaluating the accuracy of each one (here with cross-validation), then selecting optimal settings for your data based on those of the best-performing model. This exercise is important because it is difficult to predict in advance how complex your model needs to be to make accurate and ecologically realistic predictions for your species. Too much model complexity leads to overfitting, where your model fits your data very well but it cannot predict new data accurately. Model tuning helps maximize predictive ability while avoiding model overfitting. 
 
-Model tuning refers to the process of building models with varying complexity settings, then choosing optimal settings based on some criteria. As it is difficult to predict in advance what level of complexity best fits your data and results in the most ecologically realistic response for your species, model tuning and evaluations are essential for ENM studies. This process helps researchers maximize predictive ability and avoid overfitting with models that are too complex. 
+The `ENMeval` package features a single function that performs model tuning based on user specifications, including methods for partitioning data for cross-validation (random, leave-one-out, spatial, custom), and evaluates models using predefined performance metrics (AUC, Continuous Boyce Index, omission rates) with the option to insert others. The package includes functionality for three models: [maxent.jar](https://doi.org/10.1016/j.ecolmodel.2005.03.026) (Java implementation of Maxent), [maxnet](https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049) (R implementation of Maxent), and [BIOCLIM](https://doi.org/10.1111/ddi.12144) (climate envelope method). Users can also specify other algorithms by customizing an **ENMdetails** object (`?ENMdetails`). The package also offers comprehensive metadata output, null model evaluations, visualization tools, and an extensive  [tutorial](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html) that walks you through a full analysis workflow. Many features in `ENMeval` were created in response to user requests -- thank you for your input! Version >=2.0.0 represents an extensive restructure and expansion of previous versions, and 2.0.5 is a big move from `raster` and `dismo` functions to those of `terra` and `predicts`. 
+
+`ENMeval` >=2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet [(Phillips *et al.* 2017)]() from the [maxnet R package](https://cran.r-project.org/package=maxnet) and the Java software maxent.jar [(Phillips *et al.* 2006)](), available [here](http://biodiversityinformatics.amnh.org/open_source/maxent/), as well as  implemented with the [dismo R package](https://cran.r-project.org/package=dismo). 
+
+
 
 For a more detailed description of version >=2.0.0, please reference the new publication in Methods in Ecology and Evolution:
 
@@ -28,6 +32,6 @@ NOTES:
 
 1. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) on the package's Github Pages website. 
 
-2. Please make sure to use the most recent version of [maxent.jar](https://biodiversityinformatics.amnh.org/open_source/maxent/) (currently 3.4.4), as recent bug fixes were made.
+2. Please make sure to use the most recent version of [maxent.jar](https://biodiversityinformatics.amnh.org/open_source/maxent/) , as bug fixes are occassionally made.
 
 3. Note that as of version 0.3.0, the default implementation uses the ['maxnet' R package](https://cran.r-project.org/package=maxnet). The output from this differs from that of the original Java program and so some features are not compatible (e.g., variable importance, html output).
