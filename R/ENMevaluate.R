@@ -226,10 +226,11 @@
 #' # response curves, etc., to have these plots saved there
 #' e.maxent.jar <- ENMevaluate(occs, envs, bg, 
 #' tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
-#' partitions = "block", other.settings = os, partition.settings = ps,
+#' partitions = "block", partition.settings = ps,
 #' algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE,
 #' other.settings = list(path = "analyses/mxnt_results", 
 #' other.args = c("jackknife=TRUE", "responsecurves=TRUE")))
+#' 
 #' 
 #' # print the tuning results
 #' eval.results(e.maxent.jar)
