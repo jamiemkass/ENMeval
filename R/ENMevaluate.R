@@ -279,10 +279,7 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, 
                         partitions = NULL, algorithm = NULL, 
                         partition.settings = NULL, 
-                        other.settings = list(removeduplicates = TRUE,
-                                              abs.auc.diff = TRUE, 
-                                              pred.type = "cloglog", 
-                                              validation.bg = "full"), 
+                        other.settings = list(), 
                         categoricals = NULL, doClamp = TRUE, 
                         clamp.directions = NULL, user.enm = NULL, 
                         user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
@@ -315,6 +312,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(is.null(partition.settings)) 
     partition.settings <- list(orientation = "lat_lon", aggregation.factor = 2, 
                                kfolds = 5)
+  # add these defaults to other.settings if not entered by user
+  if(is.null(other.settings$removeduplicates)) other.settings$removeduplicates = TRUE
+  if(is.null(other.settings$abs.auc.diff)) other.settings$abs.auc.diff <- TRUE
+  if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
+  if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
   # add whether to use ecospat to other.settings to avoid multiple calls to 
   # require()
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
@@ -460,10 +462,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                        " occurrence localities that shared the same grid cell."))
       occs <- occs[!occs.dups,]
       if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]  
+      occs.z <- occs.cellNo[!occs.dups,-which(names(occs.cellNo) == "cell")]
+    }else{
+      occs.z <- terra::extract(envs, occs, ID = FALSE)  
     }
     
     # bind coordinates to predictor variable values for occs and bg
-    occs.z <- occs.cellNo[!occs.dups,-which(names(occs.cellNo) == "cell")]
     bg.z <- terra::extract(envs, bg, ID = FALSE)
     occs <- cbind(occs, occs.z)
     bg <- cbind(bg, bg.z)
