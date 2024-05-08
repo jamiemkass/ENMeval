@@ -111,6 +111,8 @@
 #' 
 #' For other.settings, the options are:\cr*
 #' path - character: the folder path designating where maxent.jar files should be saved\cr*
+#' removeduplicates - boolean: whether or not to remove grid-cell duplicates for occurrences 
+#' (this controls behavior for maxent.jar and ENMeval)\cr*
 #' addsamplestobackground - boolean: whether or not to add occurrences to the background
 #' when modeling with maxnet -- the default is TRUE.\cr*
 #' abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr*
@@ -277,7 +279,10 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, 
                         partitions = NULL, algorithm = NULL, 
                         partition.settings = NULL, 
-                        other.settings = NULL, 
+                        other.settings = list(removeduplicates = TRUE,
+                                              abs.auc.diff = TRUE, 
+                                              pred.type = "cloglog", 
+                                              validation.bg = "full"), 
                         categoricals = NULL, doClamp = TRUE, 
                         clamp.directions = NULL, user.enm = NULL, 
                         user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
@@ -310,9 +315,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(is.null(partition.settings)) 
     partition.settings <- list(orientation = "lat_lon", aggregation.factor = 2, 
                                kfolds = 5)
-  other.settings <- c(other.settings, list(abs.auc.diff = TRUE, 
-                                           pred.type = "cloglog", 
-                                           validation.bg = "full"))
   # add whether to use ecospat to other.settings to avoid multiple calls to 
   # require()
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
@@ -449,14 +451,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }
     
     # remove cell duplicates
-    occs.cellNo <- terra::extract(envs, occs, cells = TRUE, ID = FALSE)
-    occs.dups <- duplicated(occs.cellNo[,"cell"])
-    if(sum(occs.dups) > 0) if(quiet != TRUE) 
-      message(paste0("* Removed ", 
-                     sum(occs.dups), 
-                     " occurrence localities that shared the same grid cell."))
-    occs <- occs[!occs.dups,]
-    if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]
+    if(other.settings$removeduplicates == TRUE) {
+      occs.cellNo <- terra::extract(envs, occs, cells = TRUE, ID = FALSE)
+      occs.dups <- duplicated(occs.cellNo[,"cell"])
+      if(sum(occs.dups) > 0) if(quiet != TRUE) 
+        message(paste0("* Removed ", 
+                       sum(occs.dups), 
+                       " occurrence localities that shared the same grid cell."))
+      occs <- occs[!occs.dups,]
+      if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]  
+    }
     
     # bind coordinates to predictor variable values for occs and bg
     occs.z <- occs.cellNo[!occs.dups,-which(names(occs.cellNo) == "cell")]

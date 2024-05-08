@@ -7,6 +7,7 @@ o  Added new save and load functions for ENMevaluation objects (saveENMevaluatio
 o  Brought back the maxnet.predictRaster function and simplified it.
 o  Simplified checkerboard partition functionality to remove numbers from function names (checkerboard1, checkerboard2) and switch from "basic" and "hierarchical" based on parameter inputs. Left the old functions in as well to avoid existing code breaking, but will phase out with next version.
 o  Now you can set addsamplestobackground = FALSE in other.settings for maxnet models.
+o  Now you can set removeduplicates = FALSE in other.settings to turn off the removal of grid-cell duplicates for occurrences.
 o  Removed functionality for deprecated parameters from v1.
 o  Switched to native R pipes instead of magrittr.
 o  Made changes to simplify unit tests.
