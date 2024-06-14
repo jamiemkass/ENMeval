@@ -69,6 +69,12 @@ for(alg in algorithms) {
   context(paste("Testing ENMnulls for", alg, "with block partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
   test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
+  context(paste("Testing ENMnulls in parallel (doSNOW) for", alg, "with block partitions..."))
+  ns.snow <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doSNOW")
+  test_ENMnulls(e, ns.snow, no.iter, alg, "block", mset, 4, 4)
+  context(paste("Testing ENMnulls in parallel (doParallel) for", alg, "with block partitions..."))
+  ns.par <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doParallel")
+  test_ENMnulls(e, ns.par, no.iter, alg, "block", mset, 4, 4)
   
   context(paste("Testing evalplot.nulls for", alg, "with block partitions..."))
   test_evalplot.nulls(ns)

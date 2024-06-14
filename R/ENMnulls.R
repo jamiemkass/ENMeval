@@ -265,7 +265,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   }
   
   if(parallel == TRUE) {
-    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .packages = c("dplyr", "ENMeval")) %dopar% {
+    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .export = c("e"), .packages = c("dplyr", "ENMeval")) %dopar% {
       null_i(i)
     }
   }else{
