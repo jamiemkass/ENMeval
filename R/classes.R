@@ -297,7 +297,7 @@ setMethod("show",
             tune.spacing <- "\n                 "
             cat(" tune settings: ", paste0(names(tune.args.df), ": ", apply(tune.args.df, 2, function(x) paste(unique(x), collapse = ",")), collapse = tune.spacing), "\n")
             cat(" overlap: ", !is.null(object@overlap), "\n")
-            cat("Refer to ?ENMevaluation for information on slots.", sep = "")
+            cat("Refer to ?ENMevaluation for information on slots.\n", sep = "")
             invisible(NULL)
           })
 
@@ -510,7 +510,7 @@ setMethod("show",
           definition = function(object) {
             cat("An object of class: ", class(object), "\n")
             cat(" Name: ", object@name, "\n")
-            cat("Refer to ?ENMdetails for information on slots, and to the vignette for how to construct a custom object.", sep = "")
+            cat("Refer to ?ENMdetails for information on slots, and to the vignette for how to construct a custom object.\n", sep = "")
             invisible(NULL)
           })
 
@@ -698,7 +698,7 @@ setMethod("show",
             tune.spacing <- "\n                  "
             cat(" model settings: ", paste0(names(tune.args.df), ": ", apply(tune.args.df, 2, function(x) paste(unique(x), collapse = ",")), collapse = tune.spacing), "\n")
             # print(object@null.mod.settings[,-ncol(object@null.mod.settings)], row.names = FALSE)
-            cat("Refer to ?ENMnull for information on slots.", sep = "")
+            cat("Refer to ?ENMnull for information on slots.\n", sep = "")
             invisible(NULL)
           })
 

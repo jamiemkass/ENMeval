@@ -51,18 +51,14 @@ maxnet.predict <- function(mod, envs, other.settings) {
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "SpatRaster") == TRUE) {
-    envs.pts <- terra::values(envs) |> as.data.frame()
-    mxnet.p <- predict(mod, envs.pts, type = other.settings$pred.type, 
-                       clamp = other.settings$doClamp,
-                       other.settings$other.args)
-    envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
-    pred <- terra::rast(cbind(terra::crds(envs, na.rm = FALSE), 
-                              envs.pts$pred), type = "xyz")
-    names(pred) <- "pred"
+    pred <- maxnet.predictRaster(mod, envs, other.settings$pred.type,
+                                 other.settings$doClamp, 
+                                 other.settings$other.args)
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
     pred <- predict(mod, envs, type = other.settings$pred.type, na.rm = TRUE, 
-                    clamp = other.settings$doClamp, other.settings$other.args) |> as.numeric()
+                    clamp = other.settings$doClamp, 
+                    other.settings$other.args) |> as.numeric()
   }
   return(pred)
 }

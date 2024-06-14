@@ -434,19 +434,23 @@ maxentJARversion <- function() {
 #' prediction rasters, this function does it. It is a wrapper for the internal
 #' enm.maxnet@predict function, which is not really intended for use outside
 #' the package.
-#' @param m maxnet object
+#' @param mod maxnet object
 #' @param envs SpatRaster
-#' @param predType character: the type of maxnet prediction to make; the default
+#' @param pred.type character: the type of maxnet prediction to make; the default
 #' is "cloglog"
 #' @param doClamp Boolean: whether to clamp predictions or not
 #' @param ... any additional parameters
 #' @export
 #' 
-maxnet.predictRaster <- function(m, envs, predType = "cloglog", doClamp = TRUE, 
-                                 ...) {
-  os <- list(doClamp = doClamp, pred.type = predType, ...)
-  p <- enm.maxnet@predict(m, envs, os)
-  return(p)
+maxnet.predictRaster <- function(mod, envs, pred.type = "cloglog", 
+                                 doClamp = TRUE, ...) {
+  envs.pts <- terra::values(envs) |> as.data.frame()
+  mxnet.p <- predict(mod, envs.pts, type = pred.type, clamp = doClamp, ...)
+  envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
+  pred <- terra::rast(cbind(terra::crds(envs, na.rm = FALSE), 
+                            envs.pts$pred), type = "xyz")
+  names(pred) <- "pred"
+  return(pred)
 }
 
 #' @title Save ENMevaluation object
