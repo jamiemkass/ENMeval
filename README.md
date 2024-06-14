@@ -24,7 +24,7 @@ For the original package version, please reference this older publication:
 NOTES:
 
 1. `ENMeval` is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
-Install with: `devtools::install_packages("jamiemkass/ENMeval")`
+Install with: `devtools::install_github("jamiemkass/ENMeval")`
 
 2. The vignette is not included in the CRAN version of the package due to file size constraints, but is [available](https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) on the package's Github Pages website. 
 
