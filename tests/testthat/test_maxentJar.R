@@ -239,7 +239,7 @@ if(skip_tests_for_cran == FALSE) {
 }
 
 # more than one categorical variable
-if(skip_tests_for_cran == FALSE & alg != "bioclim") {
+if(skip_tests_for_cran == FALSE) {
   envs.2cat <- c(envs, envs$biome)
   names(envs.2cat)[10:11] <- c("biome.1", "biome.2")
   occs.z.2cat <- cbind(occs, terra::extract(envs.2cat, occs, ID = FALSE))
