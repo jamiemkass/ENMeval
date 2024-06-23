@@ -293,7 +293,7 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
     
     # find the original row names and sort the spatSample
     # output table to match the original occs table
-    occs.rn <- cbind(occs, rownames(occs))
+    occs.rn <- cbind(occs, 1:nrow(occs))
     names(occs.rn) <- c(names(occs.r)[1:2], "row")
     occs.r.m <- merge(occs.r, occs.rn, by = c("x", "y"))
     occs.r <- occs.r.m[order(as.numeric(occs.r.m$row)),]
@@ -306,7 +306,7 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
     if(nrow(bg.b) > 0) { bg.b$grp <- 2 }
     bg.r <- rbind(bg.w, bg.b)
     
-    bg.rn <- cbind(bg, rownames(bg))
+    bg.rn <- cbind(bg, 1:nrow(bg))
     names(bg.rn) <- c(names(bg.r)[1:2], "row")
     bg.r.m <- merge(bg.r, bg.rn, by = c("x", "y"))
     bg.r <- bg.r.m[order(as.numeric(bg.r.m$row)),]
@@ -324,7 +324,7 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
     if (nrow(occs.bw) > 0) occs.bw$grp <- 3; occs.r <- rbind(occs.r, occs.bw)
     if (nrow(occs.bb) > 0) occs.bb$grp <- 4; occs.r <- rbind(occs.r, occs.bb)
     
-    occs.rn <- cbind(occs, rownames(occs))
+    occs.rn <- cbind(occs, 1:nrow(occs))
     names(occs.rn) <- c(names(occs.r)[1:2], "row")
     occs.r.m <- merge(occs.r, occs.rn, by = c("x", "y"))
     occs.r <- occs.r.m[order(as.numeric(occs.r.m$row)),]
@@ -341,7 +341,7 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
     if (nrow(bg.bw) > 0) bg.bw$grp <- 3; bg.r <- rbind(bg.r, bg.bw)
     if (nrow(bg.bb) > 0) bg.bb$grp <- 4; bg.r <- rbind(bg.r, bg.bb)
     
-    bg.rn <- cbind(bg, rownames(bg))
+    bg.rn <- cbind(bg, 1:nrow(bg))
     names(bg.rn) <- c(names(bg.r)[1:2], "row")
     bg.r.m <- merge(bg.r, bg.rn, by = c("x", "y"))
     bg.r <- bg.r.m[order(as.numeric(bg.r.m$row)),]
