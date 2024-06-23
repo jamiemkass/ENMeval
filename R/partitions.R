@@ -286,17 +286,33 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
   if (length(aggregation.factor) == 1) {
     occs.w <- terra::crds(occs.w, df = TRUE)
     occs.b <- terra::crds(occs.b, df = TRUE)
+    
     if(nrow(occs.w) > 0) { occs.w$grp <- 1 }
     if(nrow(occs.b) > 0) { occs.b$grp <- 2 }
     occs.r <- rbind(occs.w, occs.b)
-    occs.grp <- occs.r[order(as.numeric(rownames(occs.r))),]$grp
+    
+    # find the original row names and sort the spatSample
+    # output table to match the original occs table
+    occs.rn <- cbind(occs, rownames(occs))
+    names(occs.rn) <- c(names(occs.r)[1:2], "row")
+    occs.r.m <- merge(occs.r, occs.rn, by = c("x", "y"))
+    occs.r <- occs.r.m[order(as.numeric(occs.r.m$row)),]
+    
+    occs.grp <- occs.r$grp
     
     bg.w <- terra::crds(bg.w, df = TRUE)
     bg.b <- terra::crds(bg.b, df = TRUE)
     if(nrow(bg.w) > 0) { bg.w$grp <- 1 }
     if(nrow(bg.b) > 0) { bg.b$grp <- 2 }
     bg.r <- rbind(bg.w, bg.b)
-    bg.grp <- bg.r[order(as.numeric(rownames(bg.r))),]$grp
+    
+    bg.rn <- cbind(bg, rownames(bg))
+    names(bg.rn) <- c(names(bg.r)[1:2], "row")
+    bg.r.m <- merge(bg.r, bg.rn, by = c("x", "y"))
+    bg.r <- bg.r.m[order(as.numeric(bg.r.m$row)),]
+    
+    bg.grp <- bg.r$grp
+    
   } else if (length(aggregation.factor) == 2) {
     occs.ww <- terra::crds(occs.ww, df = TRUE)
     occs.bw <- terra::crds(occs.bw, df = TRUE)
@@ -307,7 +323,11 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
     if (nrow(occs.wb) > 0) occs.wb$grp <- 2; occs.r <- rbind(occs.r, occs.wb)
     if (nrow(occs.bw) > 0) occs.bw$grp <- 3; occs.r <- rbind(occs.r, occs.bw)
     if (nrow(occs.bb) > 0) occs.bb$grp <- 4; occs.r <- rbind(occs.r, occs.bb)
-    occs.grp <- occs.r[order(as.numeric(rownames(occs.r))),]$grp
+    
+    occs.r.m <- merge(occs.r, occs.rn, by = c("x", "y"))
+    occs.r <- occs.r.m[order(as.numeric(occs.r.m$row)),]
+    
+    occs.grp <- occs.r$grp
     
     bg.ww <- terra::crds(bg.ww, df = TRUE)
     bg.bw <- terra::crds(bg.bw, df = TRUE)
@@ -318,7 +338,11 @@ get.checkerboard <- function(occs, envs, bg, aggregation.factor,
     if (nrow(bg.wb) > 0) bg.wb$grp <- 2; bg.r <- rbind(bg.r, bg.wb)
     if (nrow(bg.bw) > 0) bg.bw$grp <- 3; bg.r <- rbind(bg.r, bg.bw)
     if (nrow(bg.bb) > 0) bg.bb$grp <- 4; bg.r <- rbind(bg.r, bg.bb)
-    bg.grp <- bg.r[order(as.numeric(rownames(bg.r))),]$grp
+    
+    bg.r.m <- merge(bg.r, bg.rn, by = c("x", "y"))
+    bg.r <- bg.r.m[order(as.numeric(bg.r.m$row)),]
+    
+    bg.grp <- bg.r$grp
   }
   
   # PATCH IF occs OR BG POINTS FALL INTO A SINGLE BIN
