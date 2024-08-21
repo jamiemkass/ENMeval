@@ -54,7 +54,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
     ggplot2::coord_equal() + theme.custom
   
   if(return.tbl == TRUE) {
-    return(list(envs.df = envs.df, pts.plot = pts.plot))
+    return(list(envs.df = tibble::as_tibble(envs.df), pts.plot = tibble::as_tibble(pts.plot)))
   }else{
     return(g)  
   }
@@ -280,7 +280,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   g
   
   if(return.tbl == TRUE) {
-    return(plot.df)
+    return(tibble::as_tibble(plot.df))
   }else{
     return(g)  
   }
@@ -448,7 +448,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   g
   
   if(return.tbl == TRUE) {
-    return(plot.df)
+    return(tibble::as_tibble(plot.df))
   }else if(return.ras == TRUE) {
     return(rs.sim)
   }else{
@@ -517,7 +517,7 @@ evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars 
     }
     g
     if(return.tbl == TRUE) {
-      return(res.avgs)
+      return(tibble::as_tibble(res.avgs))
     }else{
       return(g)  
     }
@@ -534,7 +534,7 @@ evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars 
     }
     g
     if(return.tbl == TRUE) {
-      return(res)
+      return(tibble::as_tibble(res))
     }else{
       return(g)  
     }
@@ -630,7 +630,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
     }
   }
   if(return.tbl == TRUE) {
-    return(list(null.avgs = null.avgs, empirical.results = emp.res))
+    return(list(null.avgs = tibble::as_tibble(null.avgs), empirical.results = tibble::as_tibble(emp.res)))
   }else{
     return(g)  
   }
