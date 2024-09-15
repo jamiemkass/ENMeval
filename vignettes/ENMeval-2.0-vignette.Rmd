@@ -1,10 +1,10 @@
 ---
-title: "ENMeval 2.0 Vignette"
+title: "ENMeval 2.0.5 Vignette"
 author: "Jamie M. Kass, Robert Muscarella, Gonzalo E. Pinilla-Buitrago, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ENMeval 2.0 Vignette}
+  %\VignetteIndexEntry{ENMeval 2.0.5 Vignette}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -29,16 +29,18 @@ knitr::opts_chunk$set(collapse = TRUE, message = FALSE, warning = FALSE, eval = 
 
 ## Introduction {#intro}
 
+* To align with the new `ENMeval` 2.0.5, this version updates the vignette by replacing `raster` functions with those from `terra`, and `dismo` functions with those from `predicts`. These updates were made by G. E. Pinilla-Buitrago.
+
 [`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models (ENMs, a.k.a. species distribution models or SDMs), which can estimate species' ranges and niche characteristics using data on species occurrences and environmental variables (Franklin 2010, Peterson et al. 2011, Guisan et al. 2017). 
 
 Some of the most frequently used ENMs are machine learning algorithms with settings that can be "tuned" to determine optimal levels of model complexity (Hastie et al. 2009, Radosavljevic & Anderson 2014, Hallgren et al. 2019). In implementation, this means building models of varying settings, then evaluating them and comparing their performance to select the optimal settings. Such tuning exercises can result in models that balance goodness-of-fit (i.e., avoiding overfitting) and predictive ability. Model evaluation is often done with cross-validation, which consists of partitioning the data into groups, building a model with all the groups but one, evaluating this model on the left-out group, then repeating the process until all groups have been left out once (Hastie et al. 2009, Roberts et al. 2017).
 
-`ENMeval` has one primary function, `ENMevaluate()`, which runs the tuning analysis and evaluations, returning an `ENMevaluation` object that contains the results. These results include a table of evaluation statistics, fitted model objects, and prediction rasters for each combination of model settings. The older versions of `ENMeval` (0.3.0 and earlier; Muscarella et al. 2014) implemented only the ENM presence-background algorithm Maxent through the Java software [maxent.jar](http://biodiversityinformatics.amnh.org/open_source/maxent/) and the R package  [`maxnet`](https://cran.r-project.org/package=maxnet), but `ENMeval` 2.0 offers functionality for adding and customizing the implementations of ENM algorithms and their evaluations. This new version also features automatic generation of metadata, a null model for calculating effect size and significance of performance metrics, various plotting tools, options for parallel computing, and more.  
-In this updated vignette, we detail a full ENM analysis: acquisition and processing of input data, sampling background data, deciding on partitioning methods, tuning models, examining results and selecting optimal model settings, building null models to test for significance of performance metrics, and more using `ENMeval` 2.0 and other relevant R packages. In addition to this vignette, there are other excellent tutorials on ENMs, some of which can be found in the [References and Resources](#resources) section.
+`ENMeval` has one primary function, `ENMevaluate`, which runs the tuning analysis and evaluations, returning an `ENMevaluation` object that contains the results. These results include a table of evaluation statistics, fitted model objects, and prediction rasters for each combination of model settings. The older versions of `ENMeval` (0.3.0 and earlier; Muscarella et al. 2014) implemented only the ENM presence-background algorithm Maxent through the Java software [maxent.jar](http://biodiversityinformatics.amnh.org/open_source/maxent/) and the R package  [`maxnet`](https://cran.r-project.org/package=maxnet), but `ENMeval` 2.0.x offers functionality for adding and customizing the implementations of ENM algorithms and their evaluations. This new version also features automatic generation of metadata, a null model for calculating effect size and significance of performance metrics, various plotting tools, options for parallel computing, and more.  
+In this updated vignette, we detail a full ENM analysis: acquisition and processing of input data, sampling background data, deciding on partitioning methods, tuning models, examining results and selecting optimal model settings, building null models to test for significance of performance metrics, and more using `ENMeval` 2.0.x and other relevant R packages. In addition to this vignette, there are other excellent tutorials on ENMs, some of which can be found in the [References and Resources](#resources) section.
 
 ## Data Acquisition & Pre-processing {#data}
 
-We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the brown-throated sloth. Along the way, if you notice you cannot load a particular package, simply install it with `install.packages()`, then try `library()` again.
+We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](https://en.wikipedia.org/wiki/Brown-throated_sloth), the brown-throated sloth. Along the way, if you notice you cannot load a particular package, simply install it with `install.packages`, then try `library` again.
 
 ```{r occDownload}
 # Load packages -- the order here is important because some pkg functions overwrite others.
@@ -53,7 +55,7 @@ set.seed(48)
 # but here we will load in some pre-downloaded data.
 # bv <- spocc::occ('Bradypus variegatus', 'gbif', limit=300, has_coords = TRUE)
 # occs <- as.data.frame(bv$gbif$data$Bradypus_variegatus[,2:3])
-occs <- readRDS("vignettes/bvariegatus.rds")
+occs <- readRDS("bvariegatus.rds")
 
 # Removing occurrences that have the same coordinates is good practice to
 # avoid pseudoreplication.
@@ -108,7 +110,7 @@ points(occs, col = 'red')
 
 Now let's take a look at which areas of this extent are climatically different with respect to the areas associated with the occurrence points. To do this, we'll use the Multivariate Environmental Similarity surface, or MESS (Elith et al. 2010). Higher positive values indicate increasing similarity, while higher negative values indicate dissimilarity. Other methods besides MESS have also been proposed and warrant exploration (e.g., Owens et al. 2013, Mesgaran et al. 2014). This is important to investigate when considering model transfer to other times or places, as environments that are extremely dissimilar to those used to train the model in the present can result in projections with high uncertainty (Wenger & Olden 2012, Wright et al. 2015, Soley-Guardia 2019).
 
-Although the `mess()` function from the `predicts` package is frequently used, here we will use tools from the package [`rmaxent`](https://github.com/johnbaums/rmaxent) (Baumgartner & Wilson 2021) because it also plots maps of the most similar and dissimilar variables -- this functionality is currently included in `ENMeval` in the `similarity()` function. We will demonstrate the `ENMeval` plotting functions for environmental similarity later.
+Although the `mess` function from the `predicts` package is frequently used, here we will use tools from the package [`rmaxent`](https://github.com/johnbaums/rmaxent) (Baumgartner & Wilson 2021) because it also plots maps of the most similar and dissimilar variables -- this functionality is currently included in `ENMeval` in the `similarity` function. We will demonstrate the `ENMeval` plotting functions for environmental similarity later.
 
 ```{r}
 # First we extract the climatic variable values at the occurrence points -- these values are 
@@ -200,7 +202,7 @@ points(bg, pch = 20, cex = 0.2)
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
-A run of `ENMevaluate()` begins by using one of seven methods to partition occurrence localities into validation and training bins (folds) for *k*-fold cross-validation (Fielding & Bell 1997, Hastie et al. 2009, Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()` based on what the user inputs for the `partitions` argument, but this can also be done externally using the partitioning functions. In this section, we explain and illustrate these different functions. We also demonstrate how to make informative plots of partitions and the environmental similarity of partitions to the background or study extent.
+A run of `ENMevaluate` begins by using one of seven methods to partition occurrence localities into validation and training bins (folds) for *k*-fold cross-validation (Fielding & Bell 1997, Hastie et al. 2009, Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate` based on what the user inputs for the `partitions` argument, but this can also be done externally using the partitioning functions. In this section, we explain and illustrate these different functions. We also demonstrate how to make informative plots of partitions and the environmental similarity of partitions to the background or study extent.
 
 1. [Spatial Block](#block)
 2. [Spatial Checkerboard](#cb1)
@@ -213,7 +215,7 @@ A run of `ENMevaluate()` begins by using one of seven methods to partition occur
 The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence and background records into evaluation bins based on spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the validation and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009, Wenger & Olden 2012, Roberts et al. 2017). Other spatial partitioning methods for ENMs can be found in the R package `blockCV` (Valavi et al. 2019), which we demonstrate below for use with `ENMeval`.
 
 #### 1. Block {#block}
-First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four spatial groups of equal numbers (or as close as possible). Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines -- the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups. The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point. In `ENMeval` 2.0, users can additionally specify different orientations for the blocking with the `orientation` argument.
+First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four spatial groups of equal numbers (or as close as possible). Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines -- the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups. The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point. In `ENMeval` 2.0.x, users can additionally specify different orientations for the blocking with the `orientation` argument.
 
 ```{r part.block}
 block <- get.block(occs, bg, orientation = "lat_lon")
@@ -221,7 +223,7 @@ block <- get.block(occs, bg, orientation = "lat_lon")
 table(block$occs.grp)
 # We can plot our partitions on one of our predictor variable rasters to visualize 
 # where they fall in space.
-# The ENMeval 2.0 plotting functions use ggplot2 (Wickham 2016), a popular plotting 
+# The ENMeval 2.0.x plotting functions use ggplot2 (Wickham 2016), a popular plotting 
 # package for R with many online resources.
 # We can add to the ggplots with other ggplot functions in an additive way, making 
 # these plots easily customizable.
@@ -373,7 +375,7 @@ occs.grp <- kmeans$cluster
 evalplot.grps(pts = occs, pts.grp = occs.grp, envs = envs.bg)
 ```
 
-When using the user-defined partitioning method, we need to supply `ENMevaluate()` with group identifiers for both occurrence AND background records If we want to use all background records for each group, we can set the background to zero.
+When using the user-defined partitioning method, we need to supply `ENMevaluate` with group identifiers for both occurrence AND background records If we want to use all background records for each group, we can set the background to zero.
 
 ```{r part.user2}
 # Assign all background records
@@ -393,7 +395,7 @@ bg.grp <- apply(d, 1, function(x) which(x == min(x)))
 evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
-We can also use other packages to partition our data. As an example, we next show how to use the R package [`blockCV`](https://CRAN.R-project.org/package=blockCV) (Valavi et al. 2019) to generate spatial partitions to input into `ENMevaluate()`. We use the `spatialBlock()` function to generate blocks similar to the checkerboard partition in `ENMeval`, except that we choose here to select partitions randomly over these blocks. This package offers other kinds of block partitioning methods as well. Using other packages in this way expands the variety of partitions you can use to evaluate models in `ENMeval`, and we highly encourage experimenting with a plurality of tools.
+We can also use other packages to partition our data. As an example, we next show how to use the R package [`blockCV`](https://CRAN.R-project.org/package=blockCV) (Valavi et al. 2019) to generate spatial partitions to input into `ENMevaluate`. We use the `spatialBlock` function to generate blocks similar to the checkerboard partition in `ENMeval`, except that we choose here to select partitions randomly over these blocks. This package offers other kinds of block partitioning methods as well. Using other packages in this way expands the variety of partitions you can use to evaluate models in `ENMeval`, and we highly encourage experimenting with a plurality of tools.
 
 ```{r}
 library(blockCV)
@@ -422,14 +424,14 @@ evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 Selecting which of these data partitioning methods to use should be based on the research objectives and the characteristics of the study system. Refer to the [References and Resources](#resources) section for studies and resources to consult for more information concerning partitioning for model evaluation.
 
 ## Running ENMeval {#eval}
-Once we decide which method of data partitioning we would like to use, we are ready to start building models. We now move on to the main function in `ENMeval`: `ENMevaluate()`.
+Once we decide which method of data partitioning we would like to use, we are ready to start building models. We now move on to the main function in `ENMeval`: `ENMevaluate`.
 
 #### Initial considerations
-Although any algorithm can potentially be specified in ENMeval 2.0 (see below), and `ENMeval` 2.0 has built-in implementations for Maxent and BIOCLIM, we will explain here the tuning procedure for Maxent models (either `maxent.jar` or `maxnet`). For Maxent models (Phillips et al. 2006, Phillips et al. 2008, Phillips et al. 2017), the two main parameters to tune when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature classes (Elith et al. 2011, Merow et al. 2013). The ***regularization multiplier*** (RM) determines the penalty associated with including variables or their transformations in the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the marginal response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. A more detailed description of these parameters is available in the [References and Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
+Although any algorithm can potentially be specified in `ENMeval` 2.0.x (see below), and the package has built-in implementations for Maxent and BIOCLIM, we will explain here the tuning procedure for Maxent models (either `maxent.jar` or `maxnet`). For Maxent models (Phillips et al. 2006, Phillips et al. 2008, Phillips et al. 2017), the two main parameters to tune when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature classes (Elith et al. 2011, Merow et al. 2013). The ***regularization multiplier*** (RM) determines the penalty associated with including variables or their transformations in the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the marginal response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. A more detailed description of these parameters is available in the [References and Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
 
 Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the `n.bg` argument. If any of your predictor variables are categorical (e.g., biomes in this dataset), you should define which layer(s) these are using the 'categoricals' argument or assign them as factors in the SpatRaster or input table  (like we did here).
 
-`ENMevaluate()` builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
+`ENMevaluate` builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
 ```{r enmeval1, results='hide'}
 e.mx.l <- ENMevaluate(occs = occs, envs = envs, bg = bg, 
@@ -455,7 +457,7 @@ e.mx
 
 When building many models, the function may take a long time to run. Of course this depends on the size of your dataset and the computer you are using. When working on big projects, running the command in parallel (`parallel = TRUE`) can be considerably faster. Note that running parallel can also be slower when working on small datasets.
 
-We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap = TRUE` and `overlapStat`, which support Moran's I or Schoener's D (Warren et al. 2008). Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap()` function.
+We can also calculate one of two niche overlap statistics while running `ENMevaluate` by setting the arguments `overlap = TRUE` and `overlapStat`, which support Moran's I or Schoener's D (Warren et al. 2008). Note that you can also calculate this value at a later stage using the separate `calc.niche.overlap` function.
 
 ```{r maxnet2.overlap, results='hide'}
 overlap <- calc.niche.overlap(e.mx@predictions, overlapStat = "D")
@@ -466,7 +468,7 @@ overlap[1:5,]
 ```
 
 #### Different parameterizations
-There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
+There are multiple ways to run the function `ENMevaluate`, and we will go over how to specify each parameterization and what the effects are on the results.
 
 ```{r evalExamples, eval = FALSE}
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with 
@@ -498,7 +500,7 @@ e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
 # created, so will run faster; also, both cbi.train and cbi.val will be calculated on the 
 # point data (training and validation background) instead of on the "envs" rasters (default).
 # For this implementation, assigning the categorical variable to factor with the argument 
-# "categoricals" is easier, as ENMevaluate() internally assigns the levels based on both 
+# "categoricals" is easier, as ENMevaluate internally assigns the levels based on both 
 # occs and bg, avoiding any errors associated with different factor levels when combining data.
 occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
@@ -506,7 +508,7 @@ e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.a
                      partitions = "block")
 ```
 
-You can also specify your own custom validation statistics for `ENMevaluate()` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the internal function `tune.validate()`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in (Peterson et al. 2008) and implemented by the R package `kuenm` (Cobos et al. 2019), which is currently only available on Github.
+You can also specify your own custom validation statistics for `ENMevaluate` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the internal function `tune.validate`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in (Peterson et al. 2008) and implemented by the R package `kuenm` (Cobos et al. 2019), which is currently only available on Github.
 
 ```{r eval = FALSE}
 # First, make sure you install kuenm from Github.
@@ -523,7 +525,7 @@ proc <- function(vars) {
   return(out)
 }
 
-# Now we can run ENMevaluate() with the argument "user.eval", and simply give it the 
+# Now we can run ENMevaluate with the argument "user.eval", and simply give it the 
 # custom function.
 e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", 
                          tune.args = list(fc = "L", rm = 1:2), 
@@ -541,13 +543,13 @@ e.mx.proc@results
 e.mx.proc@results.partitions
 ```
 
-Yet another way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). 
+Yet another way to run `ENMevaluate` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). 
 
-Users can construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`. To be able to specify the model with the `algorithm` argument in `ENMevaluate()`, a small modification needs to be made to add it to list in the `lookup.enm()` internal function found in "R/utilities.R". We plan to work with other research groups to identify best practices for tuning other algorithms with presence-background/pseudoabsence data and implement new algorithms in ENMeval in the future.
+Users can construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate`. To be able to specify the model with the `algorithm` argument in `ENMevaluate`, a small modification needs to be made to add it to list in the `lookup.enm` internal function found in "R/utilities.R". We plan to work with other research groups to identify best practices for tuning other algorithms with presence-background/pseudoabsence data and implement new algorithms in ENMeval in the future.
 
 
 #### Exploring the results
-Now let's take a look at the output from `ENMevaluate()`, which is an `ENMevaluation` object, in more detail (also see `?ENMevaluation`).  It contains the following slots:
+Now let's take a look at the output from `ENMevaluate`, which is an `ENMevaluation` object, in more detail (also see `?ENMevaluation`).  It contains the following slots:
 
 - `algorithm` A character vector showing which algorithm was used
 - `tune.settings` A data.frame of settings that were tuned
@@ -638,7 +640,7 @@ m1.mxjar@results
 
 ## Visualizing tuning results {#plot}
 
-`ENMeval` 2.0 has a built-in plotting function (`eval.plot`) to visualize the results of the different models you tuned in a ggplot. Here, we will plot average validation AUC and omission rates for the models we tuned. The x-axis is the regularization multiplier, and the color of the points and lines represents the feature class.
+`ENMeval` 2.0.x has a built-in plotting function (`eval.plot`) to visualize the results of the different models you tuned in a ggplot. Here, we will plot average validation AUC and omission rates for the models we tuned. The x-axis is the regularization multiplier, and the color of the points and lines represents the feature class.
 
 ```{r plot.res}
 evalplot.stats(e = e.mx, stats = "or.mtp", color = "fc", x.var = "rm")
@@ -658,7 +660,7 @@ evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "rm", x.var = "
 
 ## Model selection {#select}
 
-Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models without considering cross-validation results using AICc (Warren & Seifert 2011; but see Velasco & González-Salazar 2019) and a sequential method that uses cross-validation results by selecting models with the lowest average test omission rate, and to break ties, with the highest average validation AUC (Radosavljevic & Anderson 2014, Kass et al. 2020). Lobo et al. (2008) and others have pointed out that validation AUC is inappropriate as an absolute performance measure of presence-background ENMs, but it is valid to use for relative comparisons of models constructed with the same data. It is important to note that `ENMeval` 2.0 also returns the continuous Boyce Index (Hirzel et al. 2006) for training, validation, and fully withheld testing data by default using the R package `ecospat` (Di Cola et al. 2017), so this metric can be used to select optimal models as well.
+Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models without considering cross-validation results using AICc (Warren & Seifert 2011; but see Velasco & González-Salazar 2019) and a sequential method that uses cross-validation results by selecting models with the lowest average test omission rate, and to break ties, with the highest average validation AUC (Radosavljevic & Anderson 2014, Kass et al. 2020). Lobo et al. (2008) and others have pointed out that validation AUC is inappropriate as an absolute performance measure of presence-background ENMs, but it is valid to use for relative comparisons of models constructed with the same data. It is important to note that `ENMeval` 2.0.x also returns the continuous Boyce Index (Hirzel et al. 2006) for training, validation, and fully withheld testing data by default using the R package `ecospat` (Di Cola et al. 2017), so this metric can be used to select optimal models as well.
 
 ```{r evaluations}
 # Overall results
@@ -705,7 +707,7 @@ pr <- predicts::partialResponse(e.mxjar@models[[as.vector(opt.seq$tune.args)]],
 plot(pr, type = "l", las = 1)
 ```
 
-Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions >3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate()`.
+Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions >3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate`.
 
 These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
 
@@ -752,7 +754,7 @@ plot(eval.predictions(e.mx)[['fc.LQH_rm.1']], ylim = c(-30,20), xlim = c(-90,-30
 
 We were able to calculate performance metrics for our model, such as omission rates and AUC, but we do not know how they compare to the same metrics calculated on null models built with random data. This information would allow us to determine the significance and effect sizes of these metrics. If the metrics we calculated for our empirical model were not significantly different from those calculated for a series of null models, we would have not have high confidence that they meaningfully represent how well our empirical model performed. Raes & ter Steege (2007) first introduced the concept of a null ENM and demonstrated how it can be applied. This approach sampled random occurrence records from the study extent and evaluated null models with random cross-validation. Since then some enhancements have been made to this original approach. One such modification was implemented by Bohl et al. (2019), who proposed evaluating models on the same withheld occurrence data as the empirical model. This approach allows for direct comparisons between null performance metrics and those of the emprical models. Kass et al. (2020) further extended this method by configuring it to calculate null performance metrics using spatial partitions.
 
-`ENMeval` 2.0 has the functionality to run null ENMs using the Bohl et al. method with the Kass et al. extension and visualize the performance of the empirical model against the null model averages.
+`ENMeval` 2.0.x has the functionality to run null ENMs using the Bohl et al. method with the Kass et al. extension and visualize the performance of the empirical model against the null model averages.
 
 ```{r, echo = FALSE}
 mod.null <- readRDS("mod_null.rds")
@@ -779,7 +781,7 @@ evalplot.nulls(mod.null, stats = c("or.10p", "auc.val"), plot.type = "violin")
 
 ## Metadata {#metadata}
 
-The last point this vignette will discuss is extremely important for all scientific research: reproducibility. `ENMeval` 2.0 now catalogs details of the analysis essential for reproducibility in a `rangeModelMetadata` object, accessible from the output ENMevaluation object. The framework and philosophy behind `rangeModelMetadata` is described by Merow et al. (2019), and other related efforts to define crucial metadata standards and rating systems for ENMs have come out since (e.g., Araújo et al. 2019, Feng et al. 2019, Zurell et al. 2020). Metadata generated by `ENMeval` can be saved to a CSV file for sharing with collaborators or for use in supplemental information for a manuscript, etc.
+The last point this vignette will discuss is extremely important for all scientific research: reproducibility. `ENMeval` 2.0.x now catalogs details of the analysis essential for reproducibility in a `rangeModelMetadata` object, accessible from the output `ENMevaluation` object. The framework and philosophy behind `rangeModelMetadata` is described by Merow et al. (2019), and other related efforts to define crucial metadata standards and rating systems for ENMs have come out since (e.g., Araújo et al. 2019, Feng et al. 2019, Zurell et al. 2020). Metadata generated by `ENMeval` can be saved to a CSV file for sharing with collaborators or for use in supplemental information for a manuscript, etc.
 
 ```{r}
 # Generate a rangeModelMetadata object based on the information stored in the 

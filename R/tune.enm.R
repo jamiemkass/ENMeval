@@ -30,7 +30,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.train <- function(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.settings, partitions, quiet) {
+tune.train <- function(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, partitions, quiet) {
   # get model predictions for training data
   occs.pred <- enm@predict(mod.full, occs.z, other.settings)
   bg.pred <- enm@predict(mod.full, bg.z, other.settings)
@@ -143,75 +143,69 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, m
 }
 
 #' @rdname tune.enm
-tune.parallel <- function(d, envs, enm, partitions, tune.tbl, doClamp, 
-                          other.settings, partition.settings, user.val.grps, 
-                          occs.testing.z, numCores, parallelType, user.eval, 
-                          algorithm, quiet) {
-  # set up parallel processing functionality
-  allCores <- parallel::detectCores()
-  if (is.null(numCores)) {
-    numCores <- allCores
-  }
-  cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
-  n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
-  if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
-  if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
-  
-  if(parallelType == "doParallel") {
-    doParallel::registerDoParallel(cl)
-    opts <- NULL
-  } else if(parallelType == "doSNOW") {
-    doSNOW::registerDoSNOW(cl)
-    if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
-  }
-  numCoresUsed <- foreach::getDoParWorkers()
-  if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
-  if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
-  
-  results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
-    cv.enm(d, envs, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
-           partition.settings, user.val.grps, occs.testing.z, user.eval, 
-           algorithm, quiet)
-  }
-  if(quiet != TRUE) close(pb)
-  parallel::stopCluster(cl)
-  return(results)
-}
-
-#' @rdname tune.enm
-tune.regular <- function(d, envs, enm, partitions, tune.tbl, doClamp, 
-                         other.settings, partition.settings, user.val.grps, 
-                         occs.testing.z, updateProgress, user.eval, algorithm, 
-                         quiet) {
-  results <- list()
-  n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
-  
-  # set up the console progress bar
-  if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
-  
-  for(i in 1:n) {
-    # and (optionally) the shiny progress bar (updateProgress)
-    if(n > 1) {
-      if(is.function(updateProgress)) {
-        text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
-        updateProgress(detail = text)
-      }
-      if(quiet != TRUE) setTxtProgressBar(pb, i)
+tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+                 partition.settings, user.val.grps, occs.testing.z, 
+                 numCores, parallel, parallelType, user.eval, algorithm, 
+                 updateProgress, quiet) {
+  if(parallel == TRUE) {
+    # set up parallel processing functionality
+    allCores <- parallel::detectCores()
+    if (is.null(numCores)) {
+      numCores <- allCores
     }
-    # set the current tune settings
-    tune.tbl.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, envs, enm, partitions, tune.tbl.i, doClamp,
-                           other.settings, partition.settings, user.val.grps, 
-                           occs.testing.z, user.eval, algorithm, quiet)
+    cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
+    n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
+    if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
+    if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
+    
+    if(parallelType == "doParallel") {
+      doParallel::registerDoParallel(cl)
+      opts <- NULL
+    } else if(parallelType == "doSNOW") {
+      doSNOW::registerDoSNOW(cl)
+      if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
+    }
+    numCoresUsed <- foreach::getDoParWorkers()
+    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
+    if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
+    
+    results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
+      cv.enm(d, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
+             partition.settings, user.val.grps, occs.testing.z, user.eval, 
+             algorithm, quiet)
+    }
+    parallel::stopCluster(cl)
+  }else{
+    results <- list()
+    n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
+    
+    # set up the console progress bar
+    if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
+    
+    for(i in 1:n) {
+      # and (optionally) the shiny progress bar (updateProgress)
+      if(n > 1) {
+        if(is.function(updateProgress)) {
+          text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
+          updateProgress(detail = text)
+        }
+        if(quiet != TRUE) setTxtProgressBar(pb, i)
+      }
+      # set the current tune settings
+      tune.tbl.i <- tune.tbl[i,]
+      results[[i]] <- cv.enm(d, enm, partitions, tune.tbl.i, doClamp,
+                             other.settings, partition.settings, user.val.grps, 
+                             occs.testing.z, user.eval, algorithm, quiet)
+    }
   }
   if(quiet != TRUE) close(pb)
   return(results)
 }
 
 #' @rdname tune.enm
-cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp, 
-                   other.settings, partition.settings, user.val.grps, 
-                   occs.testing.z, user.eval, algorithm, quiet) {
+cv.enm <- function(d, enm, partitions, tune.tbl.i, doClamp, other.settings, 
+                   partition.settings, user.val.grps, occs.testing.z, 
+                   user.eval, algorithm, quiet) {
   envs.names <- names(d[, 3:(ncol(d)-2)])
   # unpack predictor variable values for occs and bg
   occs.xy <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
@@ -232,20 +226,20 @@ cv.enm <- function(d, envs, enm, partitions, tune.tbl.i, doClamp,
   
   # make full model prediction as raster using raster envs (if raster envs exists) 
   # or full model prediction table using the occs and bg values (if raster envs does not exist)
-  if(!is.null(envs)) {
-    pred.envs <- envs
-  }else{
-    pred.envs <- d |> dplyr::select(dplyr::all_of(envs.names))
-  }
+  # if(!is.null(envs)) {
+  #   pred.envs <- envs
+  # }else{
+  #   pred.envs <- d |> dplyr::select(dplyr::all_of(envs.names))
+  # }
   
   # as bioclim can be tuned with different "tails" settings that affect not the 
   # model but the prediction, these settings need to be moved from tune.tbl.i
   # to other.settings as eval.predict() does not accept tune.args
   if(algorithm == "bioclim") other.settings$tails <- tune.tbl.i$tails
   
-  mod.full.pred <- enm@predict(mod.full, pred.envs, other.settings)
+  mod.full.pred <- enm@predict(mod.full, rbind(occs.z, bg.z), other.settings)
   # get evaluation statistics for training data
-  train <- tune.train(enm, occs.z, bg.z, mod.full, envs, tune.tbl.i, other.settings, partitions, quiet)
+  train <- tune.train(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, partitions, quiet)
   # make training stats table
   tune.args.col <- paste(names(tune.tbl.i), tune.tbl.i, collapse = "_", sep = ".")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) |> cbind(train)

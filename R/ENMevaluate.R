@@ -45,6 +45,10 @@
 #' When predictor variables are input, they are clamped internally before making model predictions when clamping is on.
 #' When no predictor variables are input and data frames of coordinates and variable values are used instead (SWD format),
 #' validation data is clamped before making model predictions when clamping is on.
+#' @param raster.preds boolean: if TRUE (default), return model prediction rasters. If this is FALSE,
+#' the predictions slot in the ENMevaluation object will be empty, which is the same as if no raster 
+#' data is input. You can still make model prediction rasters using the model objects in the models slot
+#' with the predict() function.
 #' @param clamp.directions named list: specifies the direction ("left" for minimum, "right" for maximum) 
 #' of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).
 #' @param user.enm ENMdetails object: a custom ENMdetails object used to build models. 
@@ -279,8 +283,8 @@
 ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL, 
                         partitions = NULL, algorithm = NULL, 
                         partition.settings = NULL, 
-                        other.settings = list(), 
-                        categoricals = NULL, doClamp = TRUE, 
+                        other.settings = list(), categoricals = NULL, 
+                        doClamp = TRUE, raster.preds = TRUE,
                         clamp.directions = NULL, user.enm = NULL, 
                         user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
                         n.bg = 10000, overlap = FALSE, 
@@ -689,17 +693,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # when tune.args does not exist
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
-  if(parallel) {
-    results <- tune.parallel(d, envs, enm, partitions, tune.tbl, doClamp, 
-                             other.settings, partition.settings, user.val.grps, 
-                             occs.testing.z, numCores, parallelType, user.eval, 
-                             algorithm, quiet)  
-  }else{
-    results <- tune.regular(d, envs, enm, partitions, tune.tbl, doClamp, 
-                            other.settings, partition.settings, user.val.grps, 
-                            occs.testing.z, updateProgress, user.eval, 
-                            algorithm, quiet)
-  }
+  results <- tune(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+                  partition.settings, user.val.grps, occs.testing.z, 
+                  numCores, parallel, parallelType, user.eval, algorithm, 
+                  updateProgress, quiet)  
   
   ##################### #
   # ASSEMBLE RESULTS #### 
@@ -726,8 +723,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # gather all model prediction rasters into a stack and name them
   # if envs is null, make an empty stack
-  if(!is.null(envs)) {
-    mod.full.pred.all <- terra::rast(lapply(results, function(x) x$mod.full.pred))
+  if(!is.null(envs) & raster.preds == TRUE) {
+    f <- function(x) enm@predict(x$mod.full, envs, other.settings)
+    message("Making model prediction rasters...")
+    mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
   }else{
     mod.full.pred.all <- terra::rast()
