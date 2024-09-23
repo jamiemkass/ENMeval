@@ -536,9 +536,8 @@ e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
 e.mx.proc <- readRDS("e_mx_proc.rds")
 ```
 
+We can see the new performance statistic averages in the `results` slot. Notice that some model settings have NA values for validation statistics -- this is because one or more models were NULL when built during cross-validation. If this is the case, it means the training data used by the model (which was missing the withheld fold) may have provided insufficient information for model convergence given the assigned settings. Other cross-validation methods might result in fewer model errors because they partition the data differently. To see the model performance for all the folds, look at the `results.partitions` slot.
 ```{r}
-# We can see the new performance statistic averages in the results and 
-# results.partitions tables.
 e.mx.proc@results
 e.mx.proc@results.partitions
 ```
@@ -640,7 +639,7 @@ m1.mxjar@results
 
 ## Visualizing tuning results {#plot}
 
-`ENMeval` 2.0.x has a built-in plotting function (`eval.plot`) to visualize the results of the different models you tuned in a ggplot. Here, we will plot average validation AUC and omission rates for the models we tuned. The x-axis is the regularization multiplier, and the color of the points and lines represents the feature class.
+`ENMeval` 2.0.x has a built-in plotting function (`eval.plot`) to visualize the results of the different models you tuned in a ggplot. Here, we will plot average validation AUC and omission rates for the models we tuned. The x-axis is the regularization multiplier, and the color of the points and lines represents the feature class. Notice that models with NA scores for cross-validation are not plotted here, so hinge models with rm 2 and higher are not shown because they had errors during cross-validation.
 
 ```{r plot.res}
 evalplot.stats(e = e.mx, stats = "or.mtp", color = "fc", x.var = "rm")
@@ -660,7 +659,7 @@ evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "rm", x.var = "
 
 ## Model selection {#select}
 
-Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models without considering cross-validation results using AICc (Warren & Seifert 2011; but see Velasco & González-Salazar 2019) and a sequential method that uses cross-validation results by selecting models with the lowest average test omission rate, and to break ties, with the highest average validation AUC (Radosavljevic & Anderson 2014, Kass et al. 2020). Lobo et al. (2008) and others have pointed out that validation AUC is inappropriate as an absolute performance measure of presence-background ENMs, but it is valid to use for relative comparisons of models constructed with the same data. It is important to note that `ENMeval` 2.0.x also returns the continuous Boyce Index (Hirzel et al. 2006) for training, validation, and fully withheld testing data by default using the R package `ecospat` (Di Cola et al. 2017), so this metric can be used to select optimal models as well.
+Once we have our results, we will want to select one or more models that we think are optimal across all the models we ran. For this example, we will demonstrate how to select models without considering cross-validation results using AICc (Warren & Seifert 2011; but see Velasco & González-Salazar 2019) and a sequential method that uses cross-validation results by selecting models with the lowest average 10 percentile omission rate, and to break ties, with the highest average validation Continuous Boyce Index (Hirzel et al. 2006) calculated with the function from the R package `ecospat` (Di Cola et al. 2017). Concerning AUC, Lobo et al. (2008) and others have pointed out that validation AUC is inappropriate as an absolute performance measure of presence-background ENMs, but it is valid to use for relative comparisons of models constructed with the same data (Radosavljevic & Anderson 2014). Thus, it can be used as well to choose models, though it is typically correlated with CBI.
 
 ```{r evaluations}
 # Overall results
@@ -670,10 +669,12 @@ res <- eval.results(e.mx)
 # statistically equivalent.
 opt.aicc <- res |> filter(delta.AICc == 0)
 opt.aicc
-# This dplyr operation executes the sequential criteria explained above.
+# This dplyr operation executes the sequential criteria explained above, but
+# first removes settings with NA values for omission rate.
 opt.seq <- res |> 
+  filter(!is.na(or.10p.avg)) |>
   filter(or.10p.avg == min(or.10p.avg)) |> 
-  filter(auc.val.avg == max(auc.val.avg))
+  filter(cbi.val.avg == max(cbi.val.avg))
 opt.seq
 ```
 
@@ -714,7 +715,7 @@ These predictions are for the entire extent of the input predictor variable rast
 ```{r plotPred}
 # We can select the model predictions for our optimal model the same way we did for the 
 # model object above.
-pred.seq <- eval.predictions(e.mx)[[as.vector(opt.seq$tune.args)]]
+pred.seq <- eval.predictions(e.mx)[[as.character(opt.seq$tune.args)]]
 plot(pred.seq, col = terrain.colors(100))
 
 # We can also plot the binned background points with the occurrence points on top to 
@@ -723,7 +724,7 @@ points(eval.bg(e.mx), pch = 3, col = eval.bg.grp(e.mx), cex = 0.5)
 points(eval.occs(e.mx), pch = 21, bg = eval.occs.grp(e.mx))
 ```
 
-Let us now explore how model complexity changes the predictions in our example. We will compare the simple model built with only linear feature classes and the highest regularization multiplier value we used (fc='L', rm=5) with the complex model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  rm=1). We will first examine the marginal response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. Deciding on whether a model that is more simple or complex is appropriate for your study is not straightforward, but guides exist in the literature (e.g., Merow et al. 2014). 
+Let us now explore how model complexity changes the predictions in our example. We will compare the simple model built with only linear feature classes and the highest regularization multiplier value we used (fc='L', rm=5) with the complex model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (fc='LQH', rm=1). We will first examine the marginal response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. Deciding on whether a model that is more simple or complex is appropriate for your study is not straightforward, but guides exist in the literature (e.g., Merow et al. 2014). 
 
 ```{r plot.pred2}
 # First, let's examine the non-zero model coefficients in the betas slot.
@@ -772,7 +773,7 @@ mod.null <- readRDS("mod_null.rds")
 ```{r, eval = FALSE}
 # We first run the null simulations with 100 iterations to get a reasonable null distribution 
 # for comparisons with the empirical values
-mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "H", rm = 3), no.iter = 100)
+mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQH", rm = 3), no.iter = 100)
 ```
 
 ```{r}
@@ -783,12 +784,12 @@ null.results.partitions(mod.null) |> head()
 # For a summary, we can look at a comparison between the empirical and simulated results.
 null.emp.results(mod.null)
 # Finally, we can make plots of the null model results as a histogram. In this
-# example, the empirical validation AUC value (solid red line) is significantly 
+# example, the empirical validation CBI value (solid red line) is significantly 
 # higher than random, as it is higher than the 99th quantile of the null values
 # (dashed purple line). For reference, this plot also includes the null 95th 
 # quantile (dashed blue line) and the null mean (solid blue line). For more 
 # details, please see ?evalplot.nulls.
-evalplot.nulls(mod.null, stats = c("or.10p", "auc.val"), plot.type = "histogram")
+evalplot.nulls(mod.null, stats = c("or.10p", "cbi.val"), plot.type = "histogram")
 # Or we can visualize the results with a violin plot. The red point shows the 
 # empirical value and the shape shows the density of the null distribution
 # with lines denoting the quantiles.
