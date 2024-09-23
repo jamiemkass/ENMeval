@@ -567,7 +567,8 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
   null.avgs <- null.res |> 
     dplyr::filter(grepl("avg", metric) | metric %in% stats) |>
     dplyr::rename(avg = value) |>
-    dplyr::mutate(metric = gsub(".avg", "", metric))
+    dplyr::mutate(metric = gsub(".avg", "", metric)) |>
+    dplyr::mutate(metric = factor(metric, levels = stats))
   if(!is.null(metric.levels)) null.avgs$metric <- factor(null.avgs$metric, levels = metric.levels)
   # null.sds <- null.res |> 
   #   dplyr::filter(grepl("sd", metric)) |>
@@ -580,7 +581,8 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
     tidyr::pivot_longer(cols = stats, names_to = "metric", values_to = "value") |>
     dplyr::select(statistic, metric, value) |>
     tidyr::pivot_wider(names_from = statistic, values_from = value) |>
-    dplyr::rename(avg = emp.mean)
+    dplyr::rename(avg = emp.mean) |>
+    dplyr::mutate(metric = factor(metric, levels = stats))
   
   if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
   

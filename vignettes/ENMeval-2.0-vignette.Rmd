@@ -793,7 +793,7 @@ evalplot.nulls(mod.null, stats = c("or.10p", "cbi.val"), plot.type = "histogram"
 # Or we can visualize the results with a violin plot. The red point shows the 
 # empirical value and the shape shows the density of the null distribution
 # with lines denoting the quantiles.
-evalplot.nulls(mod.null, stats = c("or.10p", "auc.val"), plot.type = "violin")
+evalplot.nulls(mod.null, stats = c("or.10p", "cbi.val"), plot.type = "violin")
 ```
 
 ## Metadata {#metadata}
