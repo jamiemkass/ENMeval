@@ -64,27 +64,22 @@ occs <- readRDS("bvariegatus.rds")
 occs <- occs[!duplicated(occs),]
 ```
 
-We are going to model the climatic niche suitability for our focal species using climate data from [WorldClim](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 9 bioclimatic variables at 10 arcmin resolution (about 20 km across at the equator) included in the `predicts` package from WorldClim 1.4. These climatic data are based on 50-year averages from 1950-2000.
+We are going to model the climatic niche suitability for our focal species using long-term summarized climate data from [WorldClim 2.1](http://www.worldclim.org/). WorldClim has a range of variables available at various resolutions; for simplicity, here we'll use the 19 bioclimatic variables at 5 arcmin resolution (about 10 km across at the equator) downloadable using the `geodata` package. Many of these variables are often highly correlated, and modeling with correlated variables can lead to inaccurate results (even with machine-learning methods that are robust to collinearity), so we will remove those with the highest variance inflation factor (VIF), a measure of variable correlation.
 
 ```{r envDownload, warning = FALSE, message = FALSE}
-# Locate the predictor raster files from the predicts folder.
-envs.files <- list.files(path = paste(system.file(package='predicts'), '/ex', sep = ''),
-                         pattern = 'tif$', full.names = TRUE)
-
-# Read the raster files into a SpatRaster.
-# These variables represent 9 bioclimatic variables and one categorical variable "biome".
-# We will remove the categorical variable for this vignette for simplification,
-# but ENMeval provides functionality for categorical variables (see documentation).
+# Download global raster data for bioclimatic variables from WorldClim 2.1, then
+# simplify their names and crop them to our extent of interest.
 # Find the descriptions of the bioclimatic variables here: 
 # https://www.worldclim.org/data/bioclim.html
-envs <- terra::rast(envs.files)
-# Remove the "bipme" variable for this demonstration. This biome variable has
-# NA values for cells that have values for the climatic variables, so if you
-# decide to use it, make sure to mask the raster stack to it before analysis.
-# Note that ENMevaluate will do this internally anyway.
-# Also, if you use categorical variables, make sure to declare them as factors
-# with terra::as.factor.
-envs$biome <- NULL
+envs <- geodata::worldclim_global(var = "bio", res = 5, path = ".")
+names(envs) <- paste("bio", 1:19, sep = "")
+extent <- ext(-125, -32, -56, 40)
+envs <- crop(envs, extent)
+# Now we will remove those variables from consideration that have a high VIF.
+envs.vif <- usdm::vifstep(envs)
+envs.rem <- envs.vif@excluded
+envs <- envs[[!(names(envs) %in% envs.rem)]]
+
 # Let's now remove occurrences that are cell duplicates -- these are
 # occurrences that share a grid cell in the predictor variable rasters.
 # Although Maxent does this by default, keep in mind that for other algorithms you may
@@ -108,7 +103,7 @@ points(occs)
 occs <- filter(occs, latitude > -20, longitude < -45)
 
 # Plot the subsetted occurrences to make sure we filtered correctly.
-points(occs, col = 'red')
+points(occs)
 ```
 
 Now let's take a look at which areas of this extent are climatically different with respect to the areas associated with the occurrence points. To do this, we'll use the Multivariate Environmental Similarity surface, or MESS (Elith et al. 2010). Higher positive values indicate increasing similarity, while higher negative values indicate dissimilarity. Other methods besides MESS have also been proposed and warrant exploration (e.g., Owens et al. 2013, Mesgaran et al. 2014). This is important to investigate when considering model transfer to other times or places, as environments that are extremely dissimilar to those used to train the model in the present can result in projections with high uncertainty (Wenger & Olden 2012, Wright et al. 2015, Soley-Guardia 2019).
@@ -116,9 +111,13 @@ Now let's take a look at which areas of this extent are climatically different w
 Although the `mess` function from the `predicts` package is frequently used, here we will use tools from the package [`rmaxent`](https://github.com/johnbaums/rmaxent) (Baumgartner & Wilson 2021) because it also plots maps of the most similar and dissimilar variables -- this functionality is currently included in `ENMeval` in the `similarity` function. We will demonstrate the `ENMeval` plotting functions for environmental similarity later.
 
 ```{r}
-# First we extract the climatic variable values at the occurrence points -- these values are 
-# our "reference".
+# First we extract the climatic variable values at the occurrence points -- 
+# these values are our "reference". Let's first remove the occurrences with
+# NA values for our environmental variable rasters.
 occs.z <- terra::extract(envs, occs, ID = FALSE)
+occs.na <- which(rowSums(is.na(occs.z)) > 0)
+occs <- occs[-occs.na,]
+occs.z <- na.omit(occs.z)
 # Now we use the similarity() function (borrowed from the rmaxent package) to calculate 
 # environmental similarity metrics of our predictor variable extent compared to the reference
 # points.
@@ -130,7 +129,7 @@ occs.mess <- occs.sim$similarity_min
 plot(occs.mess, main = "Environmental similarity")
 points(occs)
 # Here we define some good colors for representing categorical variables
-cols <- RColorBrewer::brewer.pal(8, "Set1")
+cols <- RColorBrewer::brewer.pal(10, "Set3")
 # This map shows the variable for each grid cell that is most different from the reference
 plot(occs.sim$mod, col = cols, main = "Most different variable")
 # This map shows the variable for each grid cell that is most similar to the reference
@@ -241,12 +240,14 @@ evalplot.envSim.hist(sim.type = "most_sim", ref.data = "occs", occs.z = occs.z, 
 evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
                     bg.z = bg.z, occs.grp = block$occs.grp, 
                     bg.grp = block$bg.grp, bb.buf = 7)
-evalplot.envSim.map(sim.type = "most_diff", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = block$occs.grp, 
-                    bg.grp = block$bg.grp, bb.buf = 7)
-evalplot.envSim.map(sim.type = "most_sim", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = block$occs.grp, 
-                    bg.grp = block$bg.grp, bb.buf = 7)
+evalplot.envSim.map(sim.type = "most_diff", ref.data = "occs", envs = envs, 
+                    occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = block$occs.grp, bg.grp = block$bg.grp, 
+                    sim.palette = "Set3", bb.buf = 7)
+evalplot.envSim.map(sim.type = "most_sim", ref.data = "occs", envs = envs, 
+                    occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = block$occs.grp, bg.grp = block$bg.grp, 
+                    sim.palette = "Set3", bb.buf = 7)
 ```
 
 #### 2. Basic checkerboard {#cb1}
@@ -445,9 +446,10 @@ e.mx.l
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
 
 ```{r maxnet2, results='hide'}
+tune.args <- list(fc = c("L","LQ","LQH","H"), rm = 1:5)
 e.mx <- ENMevaluate(occs = occs, envs = envs, bg = bg, 
                     algorithm = 'maxnet', partitions = 'block', 
-                    tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5))
+                    tune.args = tune.args)
 ```
 
 ```{r}
@@ -473,7 +475,6 @@ There are multiple ways to run the function `ENMevaluate`, and we will go over h
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with 
 # the original Java software. You may need to run rJava::.jpackage('predicts') before
 # running the model.
-tune.args <- list(fc = c("L", "LQ"), rm = 1:2)
 rJava::.jpackage('predicts')
 e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", 
                        tune.args = tune.args, partitions = "block")
@@ -701,7 +702,7 @@ This is how to view the marginal response curves for `maxent.jar` models.
 # Please run independently.
 
 # maxent.jar models use the predicts::partialResponse() function for this
-pr <- predicts::partialResponse(e.mxjar@models[[as.vector(opt.seq$tune.args)]],
+pr <- predicts::partialResponse(e.mxjar@models[[opt.seq$tune.args]],
                                 var = "bio5")
 plot(pr, type = "l", las = 1)
 ```
@@ -738,15 +739,24 @@ length(mod.complex$betas)
 # spikes (from hinge terms).
 plot(mod.simple, type = "cloglog")
 plot(mod.complex, type = "cloglog")
+# To get the data for the marginal response curves from a maxnet model, use the 
+# following code. You can then plot them any way you want.
+mod.complex.mrc <-maxnet::response.plot(mod.complex, 
+                                        v = "bio2", 
+                                        type = "cloglog",
+                                        plot = FALSE)
+library(ggplot2)
+ggplot(mod.complex.mrc, aes(x = bio2, y = pred)) + 
+  geom_line() + ylab("cloglog prediction") + theme_bw()
 # Finally, let's cut the plotting area into two rows to visualize the predictions 
 # side-by-side.
 par(mfrow = c(2,1), mar = c(2,1,2,0))
 # The simplest model: linear features only and high regularization.
 plot(eval.predictions(e.mx)[['fc.L_rm.5']], ylim = c(-30,20), xlim = c(-90,-30), 
-     legend = FALSE, main = 'L_5 prediction')
+     main = 'L_5 prediction', col = terrain.colors(100))
 # The most complex model: linear, quadratic, and hinge features with low regularization
 plot(eval.predictions(e.mx)[['fc.LQH_rm.1']], ylim = c(-30,20), xlim = c(-90,-30), 
-     legend = FALSE, main = 'LQH_1 prediction')
+     main = 'LQH_1 prediction', col = terrain.colors(100))
 ```
 
 ## Null models {#null}
@@ -762,7 +772,7 @@ mod.null <- readRDS("mod_null.rds")
 ```{r, eval = FALSE}
 # We first run the null simulations with 100 iterations to get a reasonable null distribution 
 # for comparisons with the empirical values
-mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "LQ", rm = 5), no.iter = 100)
+mod.null <- ENMnulls(e.mx, mod.settings = list(fc = "H", rm = 3), no.iter = 100)
 ```
 
 ```{r}
