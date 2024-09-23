@@ -57,7 +57,9 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, 
 }
 
 #' @rdname tune.enm
-tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, tune.tbl.i, other.settings, partitions, user.eval, quiet) {
+tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, 
+                          mod.k, nk, tune.tbl.i, other.settings, partitions, 
+                          user.eval, quiet) {
   # get model predictions for training and validation data for partition k
   occs.train.pred <- enm@predict(mod.k, occs.train.z, other.settings)
   occs.val.pred <- enm@predict(mod.k, occs.val.z, other.settings)
@@ -224,14 +226,6 @@ cv.enm <- function(d, enm, partitions, tune.tbl.i, doClamp, other.settings,
   
   if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters or inputting more background points.')
   
-  # make full model prediction as raster using raster envs (if raster envs exists) 
-  # or full model prediction table using the occs and bg values (if raster envs does not exist)
-  # if(!is.null(envs)) {
-  #   pred.envs <- envs
-  # }else{
-  #   pred.envs <- d |> dplyr::select(dplyr::all_of(envs.names))
-  # }
-  
   # as bioclim can be tuned with different "tails" settings that affect not the 
   # model but the prediction, these settings need to be moved from tune.tbl.i
   # to other.settings as eval.predict() does not accept tune.args
@@ -283,8 +277,10 @@ cv.enm <- function(d, enm, partitions, tune.tbl.i, doClamp, other.settings,
     # if doClamp is on, make sure that the validation data for each validation model is also clamped
     # this means for each partition, making sure no values in validation data are more extreme than those in training data
     if(doClamp == TRUE) {
-      val.z <- clamp.vars(orig.vals = rbind(occs.val.z, bg.val.z), ref.vals = rbind(occs.train.z, bg.train.z), 
-                          left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
+      val.z <- clamp.vars(orig.vals = rbind(occs.val.z, bg.val.z), 
+                          ref.vals = rbind(occs.train.z, bg.train.z), 
+                          left = other.settings$clamp.directions$left, 
+                          right = other.settings$clamp.directions$right, 
                           categoricals = other.settings$categoricals)
       occs.val.z <- val.z[1:nrow(occs.val.z),]
       if(nrow(bg.val.z) > 0) bg.val.z <- val.z[(nrow(occs.val.z)+1):nrow(bg.val.z),]  
@@ -303,20 +299,29 @@ cv.enm <- function(d, enm, partitions, tune.tbl.i, doClamp, other.settings,
     
     # if model is NULL for some reason, continue but report to user
     if(is.null(mod.k)) {
-      if(quiet != TRUE) message(paste0("\nThe model for settings ", paste(names(tune.tbl.i), tune.tbl.i, collapse = ", "), " for partition ", 
-                                       k, " failed (resulted in NULL). Consider changing partitions. Cross validation averages will ignore this model."))
-      next
+      if(quiet != TRUE) message(paste0("\nThe results were NULL for model with settings ", 
+                                       paste(names(tune.tbl.i), 
+                                             tune.tbl.i, 
+                                             collapse = ", "), 
+                                       " for partition ", k, 
+                                       ". These settings will have NA results."))
+      validate <- data.frame(auc.val = NA, auc.diff = NA, cbi.val = NA, 
+                             or.mtp = NA, or.10p = NA)
+    }else{
+      validate <- tune.validate(enm, occs.train.z, occs.val.z, bg.train.z, 
+                                bg.val.z, mod.k, nk, tune.tbl.i, other.settings, 
+                                partitions, user.eval, quiet)  
     }
     
-    validate <- tune.validate(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, tune.tbl.i, other.settings, partitions, user.eval, quiet)
-    
     # put into list as one-row data frame for easy binding
-    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, stringsAsFactors = FALSE) |> cbind(validate)
+    cv.stats[[k]] <- data.frame(tune.args = tune.args.col, fold = k, 
+                                stringsAsFactors = FALSE) |> cbind(validate)
   } 
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)
   
-  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = cv.stats.df)
+  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
+                 train.stats = train.stats.df, cv.stats = cv.stats.df)
   
   return(cv.res)
 }

@@ -234,11 +234,11 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     })
     
     if(is.null(null.e.i)) {
-      results.na <- e@results[1,] |> dplyr::mutate(dplyr::across(auc.train:ncoef, ~NA))
+      results.na <- emp.mod.res |> dplyr::mutate(dplyr::across(auc.train:ncoef, ~NA))
       mod.settings.i <- paste(names(mod.settings), mod.settings, collapse = "_", sep = ".")
       if(nrow(e@results.partitions) > 0) {
         nc <- ncol(e@results.partitions)
-        results.partitions.na <- e@results.partitions |> dplyr::filter(tune.args == mod.settings.i) |> dplyr::mutate(dplyr::across(3:nc, ~NA)) |> dplyr::mutate(iter = i)  
+        results.partitions.na <- e@results.partitions |> dplyr::filter(tune.args == emp.mod.res$tune.args) |> dplyr::mutate(dplyr::across(3:nc, ~NA)) |> dplyr::mutate(iter = i)  
       }else{
         results.partitions.na <- e@results.partitions
       }

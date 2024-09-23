@@ -1,10 +1,9 @@
 # Mac OS files
 .DS_Store
-
-# History files
+# history files
 .Rhistory
 .Rapp.history
-# Example code in package build process
+# example code in package build process
 *-Ex.R
 # RStudio files
 .Rproj.user/
@@ -16,5 +15,7 @@ doc
 Meta
 #docs
 docs
-# generate when cheking vignette file
+# generate when checking vignette file
 rmm_mx1.csv
+# raster data
+vignettes/climate
