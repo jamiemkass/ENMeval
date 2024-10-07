@@ -63,8 +63,8 @@
 #' the ENMevaluation object and output metadata (rmm), but not necessary for analysis.
 #' @param n.bg numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental  
 #' raster data (default: 10000) if background records were not already provided.
-#' @param overlap boolean: if TRUE, calculate niche overlap statistics (Warren \emph{et al.} 2008).
-#' @param overlapStat character: niche overlap statistics to be calculated -- 
+#' @param overlap boolean: if TRUE, calculate range overlap statistics (Warren \emph{et al.} 2008).
+#' @param overlapStat character: range overlap statistics to be calculated -- 
 #' "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.
 #' @param user.val.grps matrix / data frame: user-defined validation record coordinates and predictor variable values. 
 #' This is used internally by \code{ENMnulls()} to force each null model to evaluate with empirical validation data,
@@ -389,7 +389,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }
   
   if(is.null(tune.args) & overlap == TRUE) {
-    if(quiet != TRUE) message('* As no tuning arguments were specified, turning off niche overlap.')
+    if(quiet != TRUE) message('* As no tuning arguments were specified, turning off range overlap.')
     overlap <- FALSE
   }
   
@@ -846,17 +846,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # write to existing RMM if input by user
   e@rmm <- buildRMM(e, envs, rmm)
   
-  # if niche overlap selected, calculate and add the resulting matrix to results
+  # if range overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
     nr <- terra::nlyr(e@predictions)
     if(nr == 0) {
-      if(quiet != TRUE) message("Warning: calculate niche overlap without model prediction rasters.")
+      if(quiet != TRUE) message("Warning: calculate range overlap without model prediction rasters.")
     }else if(nr == 1) {
-      if(quiet != TRUE) message("Warning: only 1 model prediction raster found. Need at least 2 rasters to calculate niche overlap. Increase number of tuning arguments and run again.") 
+      if(quiet != TRUE) message("Warning: only 1 model prediction raster found. Need at least 2 rasters to calculate range overlap. Increase number of tuning arguments and run again.") 
     }else{
       for(ovStat in overlapStat) {
-        if(quiet != TRUE) message(paste0("Calculating niche overlap for statistic ", ovStat, "..."))
-        # turn negative values to 0 for niche overlap calculations
+        if(quiet != TRUE) message(paste0("Calculating range overlap for statistic ", ovStat, "..."))
+        # turn negative values to 0 for range overlap calculations
         predictions.noNegs <- terra::rast(lapply(e@predictions, function(x) {x[x<0] <- 0; x}))
         overlap.mat <- calc.niche.overlap(predictions.noNegs, ovStat, quiet)
         e@overlap[[ovStat]] <- overlap.mat

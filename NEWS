@@ -13,6 +13,7 @@ o  Removed functionality for deprecated parameters from v1.
 o  Switched to native R pipes instead of magrittr.
 o  Made changes to simplify unit tests.
 o  Added GNU General Public License v3.0.
+o  Changed "niche overlap" to "range overlap" because the overlap is calculated in geographic space.
 
 ENMeval 2.0.4
 ===========
