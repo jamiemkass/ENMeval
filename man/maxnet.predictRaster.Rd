@@ -4,10 +4,10 @@
 \alias{maxnet.predictRaster}
 \title{Predict raster for maxnet}
 \usage{
-maxnet.predictRaster(m, envs, pred.type = "cloglog", doClamp = TRUE, ...)
+maxnet.predictRaster(mod, envs, pred.type = "cloglog", doClamp = TRUE, ...)
 }
 \arguments{
-\item{m}{maxnet object}
+\item{mod}{maxnet object}
 
 \item{envs}{SpatRaster}
 

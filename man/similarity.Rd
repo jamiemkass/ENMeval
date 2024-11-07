@@ -52,20 +52,10 @@ variables.
   of Elith \emph{et al.} 2010.
 }
 \examples{
-library(predicts)
 library(terra)
-occs <- read.csv(file.path(system.file(package="predicts"), 
-"/ex/bradypus.csv"))[,2:3]
-predictors <- rast(list.files(path = 
-paste(system.file(package='predicts'), '/ex', sep=''), 
-ref <- extract(predictors, occs, ID = FALSE)
-mess <- similarity(predictors, ref, full = TRUE)
+library(ENMeval)
 
 \dontrun{
-library(rasterVis)
-library(RColorBrewer)
-levelplot(mess$mod, col.regions=brewer.pal(8, 'Set1'))
-levelplot(mess$mos, col.regions=brewer.pal(8, 'Set1'))
 }
 }
 \references{

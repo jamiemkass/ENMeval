@@ -7,6 +7,7 @@
 \alias{cv.enm}
 \alias{tune.train}
 \alias{tune.validate}
+\alias{tune}
 \title{Iterate tuning of ENMs}
 \usage{
 tune.train(
@@ -14,7 +15,6 @@ tune.train(
   occs.z,
   bg.z,
   mod.full,
-  envs,
   tune.tbl.i,
   other.settings,
   partitions,
@@ -36,9 +36,8 @@ tune.validate(
   quiet
 )
 
-tune.parallel(
+tune(
   d,
-  envs,
   enm,
   partitions,
   tune.tbl,
@@ -48,32 +47,16 @@ tune.parallel(
   user.val.grps,
   occs.testing.z,
   numCores,
+  parallel,
   parallelType,
   user.eval,
   algorithm,
-  quiet
-)
-
-tune.regular(
-  d,
-  envs,
-  enm,
-  partitions,
-  tune.tbl,
-  doClamp,
-  other.settings,
-  partition.settings,
-  user.val.grps,
-  occs.testing.z,
   updateProgress,
-  user.eval,
-  algorithm,
   quiet
 )
 
 cv.enm(
   d,
-  envs,
   enm,
   partitions,
   tune.tbl.i,
@@ -95,8 +78,6 @@ cv.enm(
 \item{bg.z}{data.frame: the envs values for the coordinates at the full dataset background records}
 
 \item{mod.full}{model object: the model trained on the full dataset}
-
-\item{envs}{SpatRaster: environmental predictor variables. These should be in same geographic projection as occurrence data.}
 
 \item{tune.tbl.i}{vector: single set of tuning parameters}
 
@@ -149,6 +130,8 @@ and does not have any current use when running \code{ENMevaluate()} independentl
 coordinates at the testing occurrence records}
 
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
+
+\item{parallel}{boolean: if TRUE, run with parallel processing.}
 
 \item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
 

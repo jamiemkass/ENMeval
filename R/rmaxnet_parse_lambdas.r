@@ -34,25 +34,17 @@
 #' @importFrom stats setNames
 #' @export
 #' @examples
-#' # Below we use the dismo::maxent example to fit a Maxent model:
-#' if (require(dismo) && require(rJava) && 
-#'     file.exists(system.file('java/maxent.jar', package='dismo'))) {
-#'   fnames <- list.files(system.file('ex', package="dismo"), '\\.grd$', 
-#'                        full.names=TRUE )
-#'   predictors <- stack(fnames)
-#'   occurrence <- system.file('ex/bradypus.csv', package='dismo')
-#'   occ <- read.table(occurrence, header=TRUE, sep=',')[,-1]
-#'   me <- maxent(predictors, occ, path=file.path(tempdir(), 'example'), 
-#'                factors='biome')
-#' 
-#'   # ... and then parse the lambdas information:
-#'   lam <- parse_lambdas(me)
-#'   lam
-#'   str(lam, 1)
-#'   
-#'   parse_lambdas(file.path(tempdir(), 'example/species.lambdas'))
-#'   
-#' }
+#' # Below we use the predicts::MaxEnt example to fit a model:
+#' library(predicts)
+#' occs <- read.csv(file.path(system.file(package="predicts"),
+#' "/ex/bradypus.csv"))[,2:3]
+#' predictors <- rast(file.path(system.file(package='predicts'), '/ex/bio.tif'))
+#' me <- MaxEnt(predictors, occs)
+#' # ... and then parse the lambdas information:
+#' lam <- parse_lambdas(me)
+#' lam
+#' str(lam, 1)
+
 parse_lambdas <- function(lambdas) {
   if(methods::is(lambdas, 'MaxEnt_model')) {
     lambdas <- lambdas@lambdas

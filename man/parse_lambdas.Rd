@@ -35,25 +35,16 @@ of features, as well as the fitted model's entropy and other values required
 for predicting to new data.
 }
 \examples{
-# Below we use the dismo::maxent example to fit a Maxent model:
-if (require(dismo) && require(rJava) && 
-    file.exists(system.file('java/maxent.jar', package='dismo'))) {
-  fnames <- list.files(system.file('ex', package="dismo"), '\\\\.grd$', 
-                       full.names=TRUE )
-  predictors <- stack(fnames)
-  occurrence <- system.file('ex/bradypus.csv', package='dismo')
-  occ <- read.table(occurrence, header=TRUE, sep=',')[,-1]
-  me <- maxent(predictors, occ, path=file.path(tempdir(), 'example'), 
-               factors='biome')
-
-  # ... and then parse the lambdas information:
-  lam <- parse_lambdas(me)
-  lam
-  str(lam, 1)
-  
-  parse_lambdas(file.path(tempdir(), 'example/species.lambdas'))
-  
-}
+# Below we use the predicts::MaxEnt example to fit a model:
+library(predicts)
+occs <- read.csv(file.path(system.file(package="predicts"),
+"/ex/bradypus.csv"))[,2:3]
+predictors <- rast(file.path(system.file(package='predicts'), '/ex/bio.tif'))
+me <- MaxEnt(predictors, occs)
+# ... and then parse the lambdas information:
+lam <- parse_lambdas(me)
+lam
+str(lam, 1)
 }
 \references{
 * Wilson, P. W. (2009) [_Guidelines for computing MaxEnt model output values from a lambdas file_](http://gis.humboldt.edu/OLM/Courses/GSP_570/Learning\%20Modules/10\%20BlueSpray_Maxent_Uncertinaty/MaxEnt\%20lambda\%20files.pdf).

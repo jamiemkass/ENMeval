@@ -293,6 +293,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                         numCores = NULL,  parallelType = "doSNOW", 
                         updateProgress = FALSE, quiet = FALSE) {
   
+  
   # record start time
   start.time <- proc.time()
   

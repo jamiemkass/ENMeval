@@ -4,6 +4,8 @@
 \alias{partitions}
 \alias{get.block}
 \alias{get.checkerboard}
+\alias{get.checkerboard1}
+\alias{get.checkerboard2}
 \alias{get.jackknife}
 \alias{get.randomkfold}
 \title{Methods to partition data for evaluation}
@@ -11,6 +13,10 @@
 get.block(occs, bg, orientation = "lat_lon")
 
 get.checkerboard(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
+
+get.checkerboard1(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
+
+get.checkerboard2(occs, envs, bg, aggregation.factor, gridSampleN = 10000)
 
 get.jackknife(occs, bg)
 

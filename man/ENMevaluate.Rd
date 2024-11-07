@@ -12,9 +12,10 @@ ENMevaluate(
   partitions = NULL,
   algorithm = NULL,
   partition.settings = NULL,
-  other.settings = NULL,
+  other.settings = list(),
   categoricals = NULL,
   doClamp = TRUE,
+  raster.preds = TRUE,
   clamp.directions = NULL,
   user.enm = NULL,
   user.grp = NULL,
@@ -80,6 +81,11 @@ When predictor variables are input, they are clamped internally before making mo
 When no predictor variables are input and data frames of coordinates and variable values are used instead (SWD format),
 validation data is clamped before making model predictions when clamping is on.}
 
+\item{raster.preds}{boolean: if TRUE (default), return model prediction rasters. If this is FALSE,
+the predictions slot in the ENMevaluation object will be empty, which is the same as if no raster 
+data is input. You can still make model prediction rasters using the model objects in the models slot
+with the predict() function.}
+
 \item{clamp.directions}{named list: specifies the direction ("left" for minimum, "right" for maximum) 
 of clamping for predictor variables -- (e.g., \code{list(left = c("bio1","bio5"), right = c("bio10","bio15"))}).}
 
@@ -100,9 +106,9 @@ the ENMevaluation object and output metadata (rmm), but not necessary for analys
 \item{n.bg}{numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental
 raster data (default: 10000) if background records were not already provided.}
 
-\item{overlap}{boolean: if TRUE, calculate niche overlap statistics (Warren \emph{et al.} 2008).}
+\item{overlap}{boolean: if TRUE, calculate range overlap statistics (Warren \emph{et al.} 2008).}
 
-\item{overlapStat}{character: niche overlap statistics to be calculated -- 
+\item{overlapStat}{character: range overlap statistics to be calculated -- 
 "D" (Schoener's D) and or "I" (Hellinger's I) -- see ?calc.niche.overlap for more details.}
 
 \item{user.val.grps}{matrix / data frame: user-defined validation record coordinates and predictor variable values. 
@@ -178,6 +184,8 @@ Below are descriptions of the parameters used in the other.settings, partition.s
 
 For other.settings, the options are:\cr*
 path - character: the folder path designating where maxent.jar files should be saved\cr*
+removeduplicates - boolean: whether or not to remove grid-cell duplicates for occurrences 
+(this controls behavior for maxent.jar and ENMeval)\cr*
 addsamplestobackground - boolean: whether or not to add occurrences to the background
 when modeling with maxnet -- the default is TRUE.\cr*
 abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff (default: TRUE)\cr*
@@ -277,10 +285,11 @@ algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE)
 # response curves, etc., to have these plots saved there
 e.maxent.jar <- ENMevaluate(occs, envs, bg, 
 tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
-partitions = "block", other.settings = os, partition.settings = ps,
+partitions = "block", partition.settings = ps,
 algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE,
 other.settings = list(path = "analyses/mxnt_results", 
 other.args = c("jackknife=TRUE", "responsecurves=TRUE")))
+
 
 # print the tuning results
 eval.results(e.maxent.jar)

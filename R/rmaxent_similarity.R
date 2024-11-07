@@ -43,20 +43,18 @@
 #' @importFrom methods is
 #' @importFrom stats na.omit
 #' @examples
-#' library(predicts)
 #' library(terra)
-#' occs <- read.csv(file.path(system.file(package="predicts"), 
-#' "/ex/bradypus.csv"))[,2:3]
-#' predictors <- rast(list.files(path = 
-#' paste(system.file(package='predicts'), '/ex', sep=''), 
-#' ref <- extract(predictors, occs, ID = FALSE)
-#' mess <- similarity(predictors, ref, full = TRUE)
+#' library(ENMeval)
+# occs <- read.csv(file.path(system.file(package="predicts"),
+# "/ex/bradypus.csv"))[,2:3]
+# predictors <- rast(file.path(system.file(package='predicts'), '/ex/bio.tif'))
+# ref <- extract(predictors, occs, ID = FALSE)
+# mess <- similarity(predictors, ref, full = TRUE)
 #' 
 #' \dontrun{
-#' library(rasterVis)
-#' library(RColorBrewer)
-#' levelplot(mess$mod, col.regions=brewer.pal(8, 'Set1'))
-#' levelplot(mess$mos, col.regions=brewer.pal(8, 'Set1'))
+# library(RColorBrewer)
+# plot(mess$mod, col=brewer.pal(8, 'Set1'))
+# plot(mess$mos, col=brewer.pal(8, 'Set1'))
 #' }
 #' @export
 
@@ -67,8 +65,7 @@ similarity <- function(x, ref, full=FALSE) {
   if(is(x, 'SpatRaster')) {
     r <- TRUE
     if(isTRUE(full)) {
-      out <- terra::rast(replicate(
-        terra::nlyr(x), terra::init(x, NA)))
+      out <- terra::init(x, NA)
     } else {
       out <- terra::init(x, fun = NA)[[1]]
     }
@@ -78,9 +75,9 @@ similarity <- function(x, ref, full=FALSE) {
     x <- terra::as.data.frame(x, na.rm = FALSE)
   }
   if(is.null(dim(ref))) {
-    rng <- as.data.frame(range(ref, na.rm=TRUE))
+    rng <- as.data.frame(range(ref, na.rm = TRUE))
   } else {
-    rng <- as.data.frame(apply(ref, 2, range, na.rm=TRUE))
+    rng <- as.data.frame(apply(ref, 2, range, na.rm = TRUE))
   }
   pct_less <- mapply(function(x, ref) {
     findInterval(x, sort(ref))/length(ref)
@@ -100,18 +97,18 @@ similarity <- function(x, ref, full=FALSE) {
   most_similar_vec <- unlist(ifelse(lengths(maxs)==0, NA, maxs))
   
   if(isTRUE(r)) {
-    most_dissimilar <- terra::rast(out)
+    most_dissimilar <- out[[1]]
     most_dissimilar[] <- most_dissimilar_vec
     most_dissimilar <- terra::as.factor(most_dissimilar)
     levels(most_dissimilar)[[1]] <- data.frame(ID=seq_len(ncol(sim)), 
-                                               var=colnames(sim))
-    most_similar <- terra::rast(out)
+                                               most_dissimilar=colnames(sim))
+    most_similar <- out[[1]]
     most_similar[] <- most_similar_vec
     most_similar <- terra::as.factor(most_similar)
     levels(most_similar)[[1]] <- data.frame(ID=seq_len(ncol(sim)), 
-                                            var=colnames(sim))  
+                                            most_similar=colnames(sim))  
     
-    out_min <- terra::rast(out)
+    out_min <- out[[1]]
     out_min[] <- min_sim
     names(out_min) <- "minimum_similarity"
     if(isTRUE(full)) {
