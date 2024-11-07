@@ -714,7 +714,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     tune.names <- enm@name
   }else{
     # define tuned settings names and bind them to the tune table
-    tune.tbl <- dplyr::mutate_all(tune.tbl, as.factor)
+    tune.tbl.char <- names(tune.tbl)[sapply(tune.tbl, is.character)]
+    for(i in tune.tbl.char) tune.tbl[,i] <- factor(tune.tbl[[i]])
     tune.names <- train.stats.all$tune.args
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
