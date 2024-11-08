@@ -475,7 +475,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }else{
     # if no bg included, stop
     if(is.null(bg)) stop("* If inputting variable values without rasters, please make sure to input background coordinates with values as well as occurrences.")
-    # for occ and bg coordinates with environmental predictor values 
+    # for occ and bg coordinates with x, y, and environmental predictor values 
     # (SWD format)
     if(quiet != TRUE) 
       message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
