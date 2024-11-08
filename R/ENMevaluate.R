@@ -558,7 +558,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
             message(paste0("* Assigning variable ", categoricals[i], 
                          " to categorical and changing to integer for maxent.jar..."))
           }
-          d[, categoricals[i]] <- as.numeric(d[, categoricals[i]])
+          d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), 
+                                         levels = 1:length(levels(d[, categoricals[i]])))
         }else{
           if(quiet != TRUE) {
             message(paste0("* Assigning variable ", categoricals[i], 
@@ -723,6 +724,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if envs is null, make an empty stack
   if(!is.null(envs) & raster.preds == TRUE) {
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
+    # necessary to convert levels of envs categoricals to numbers for maxent.jar
+    # predictions, else error
+    if(!is.null(categoricals)) {
+      for(i in 1:length(categoricals)) {
+        lev.df <- terra::levels(envs[[categoricals[i]]])
+        lev.df[[1]][,2] <- 1:nrow(terra::levels(envs[[categoricals[i]]])[[1]])
+        levels(envs[[categoricals[i]]]) <- lev.df[[1]]
+      }  
+    }
     message("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names

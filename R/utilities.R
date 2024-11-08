@@ -466,3 +466,20 @@ loadENMevaluation <- function(filename) {
   e@predictions <- terra::unwrap(e@predictions)
   return(e)
 }
+
+
+# multiRasMatchNAs <- function(envs, quiet = TRUE) {
+#   envs.z <- terra::values(envs)
+#   envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
+#   if(envs.naMismatch > 0) {
+#     if(quiet == TRUE) message(paste("* Found", 
+#                                     envs.naMismatch, 
+#                                     "raster cells that were NA for one or more, but not all, predictor variables.",
+#                                     "Converting these cells to NA for all predictor variables."))
+#     envs.names <- names(envs)
+#     envs <- terra::app(envs, 
+#                        fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
+#     names(envs) <- envs.names
+#   }
+#   return(envs)
+# }
