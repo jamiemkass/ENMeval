@@ -81,8 +81,6 @@
 #' @param parallelType character: either "doParallel" or "doSNOW" (default: "doSNOW") .
 #' @param updateProgress boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors).
-#' @param occ,env,bg.coords,RMvalues,fc,occ.grp,bg.grp,method,bin.output,rasterPreds,clamp,progbar These arguments from previous versions are backward-compatible to avoid unnecessary errors for older scripts, but in a later version
-#' these arguments will be permanently deprecated.
 #' 
 #' @details There are a few methodological details in the implementation of ENMeval >=2.0.0 that are important to mention.
 #' There is also a brief discussion of some points relevant to null models in ?ENMnulls.
@@ -365,10 +363,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   if(!is.null(envs)) {
     # environmental raster data checks
-    if(class(envs) != "SpatRaster") {
+    if(inherits(envs, "SpatRaster") == FALSE) {
       stop('From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
-    }
-    if (class(envs) == "SpatRaster") {
+    }else{
       if(terra::nlyr(envs) < 2 & algorithm %in% c("maxent.jar", "maxnet")) {
         stop('Maxent is generally not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
       }

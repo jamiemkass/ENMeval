@@ -84,7 +84,7 @@ library(terra)
 set.seed(1)
 
 ### Create environmental extent (raster)
-envs <- rast(matrix(nrow=25, ncol=25))
+envs <- rast(nrow = 25, ncol = 25, xmin = 0, xmax = 1, ymin = 0, ymax = 1)
 
 ### Create occurrence localities
 set.seed(1)
@@ -139,7 +139,7 @@ plot(envs)
 points(bg, pch=21, bg=chk.ag2_2$bg.grp)
 # Higher aggregation factors result in bigger checkerboard blocks,
 # and can vary between hierarchical levels
-chk.ag4_6 <- get.checkerboard(occs, envs, bg, c(4,6))
+chk.ag4_6 <- get.checkerboard(occs, envs, bg, c(3,4))
 plot(envs)
 points(occs, pch=23, bg=chk.ag4_6$occs.grp)
 plot(envs)

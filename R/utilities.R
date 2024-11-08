@@ -41,26 +41,6 @@ ENMevaluation_convert <- function(e, envs) {
   return(e_new)
 }
 
-#' @title convert all raster grid cells to NA that are NA for any one raster in
-#' a multiraster SpatRaster object
-#' @description match all NA cells in SpatRaster object
-#' @param envs SpatRaster object
-#' 
-# multiRasMatchNAs <- function(envs, quiet = TRUE) {
-#   envs.z <- terra::values(envs)
-#   envs.naMismatch <- sum(apply(envs.z, 1, function(x) !all(is.na(x)) & !all(!is.na(x))))
-#   if(envs.naMismatch > 0) {
-#     if(quiet == TRUE) message(paste("* Found", 
-#                                     envs.naMismatch, 
-#                                     "raster cells that were NA for one or more, but not all, predictor variables.",
-#                                     "Converting these cells to NA for all predictor variables."))
-#     envs.names <- names(envs)
-#     envs <- terra::app(envs, 
-#                        fun = function(x) if(sum(is.na(x)) > 0) x * NA else x)
-#     names(envs) <- envs.names
-#   }
-#   return(envs)
-# }
 
 #' @title Clamp predictor variables
 #' @author Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago
@@ -108,8 +88,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   # if NAs exist in an input data frame, stop the function and request user to remove manually
   if(isRas == TRUE) {
     # This is done in ENMevaluate too, but as this can be used as a stand-alone
-    # function, it is repeated here
-    # orig.vals <- multiRasMatchNAs(orig.vals)
+    # function, it is repeated here (call to multiRasMatchNAs)
   }else{
     orig.na <- sum(rowSums(is.na(orig.vals)))
     ref.na <- sum(rowSums(is.na(ref.vals)))
