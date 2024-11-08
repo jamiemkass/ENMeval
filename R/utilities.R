@@ -440,6 +440,7 @@ maxentJARversion <- function() {
 #' is "cloglog"
 #' @param doClamp Boolean: whether to clamp predictions or not
 #' @param ... any additional parameters
+#' @import maxnet
 #' @export
 #' 
 maxnet.predictRaster <- function(mod, envs, pred.type = "cloglog", 

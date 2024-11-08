@@ -322,8 +322,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(is.null(other.settings$abs.auc.diff)) other.settings$abs.auc.diff <- TRUE
   if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
   if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
-  # add whether to use ecospat to other.settings to avoid multiple calls to 
-  # require()
+  # add whether to use ecospat to other.settings to avoid multiple requires
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
   
   # make sure taxon name column is not included
