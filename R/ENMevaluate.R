@@ -559,7 +559,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                          " to categorical and changing to integer for maxent.jar..."))
           }
           d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), 
-                                         levels = 1:length(levels(d[, categoricals[i]])))
+                                         levels = 1:nrow(terra::levels(envs[[categoricals[i]]])[[1]]))
         }else{
           if(quiet != TRUE) {
             message(paste0("* Assigning variable ", categoricals[i], 
@@ -815,7 +815,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
+    # if maxent.jar, convert categorical values to numeric in occs table first
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, d[d$pb == 1, 1:(ncol(d)-2)], aic.settings))
     aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }
