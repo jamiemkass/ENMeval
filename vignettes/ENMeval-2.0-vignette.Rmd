@@ -13,7 +13,7 @@ editor_options:
 
 ```{r setup, echo = FALSE, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, message = FALSE, warning = FALSE, eval = TRUE, comment = "#>", fig.width = 7, fig.height = 7)
-options(terra.pal = map.pal("plasma", 100))
+options(terra.pal = terra::map.pal("plasma", 100))
 ```
 
 - [Introduction](#intro)
