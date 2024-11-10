@@ -1,7 +1,5 @@
 #' Automated runs and evaluations of ecological niche models 
 #'  
-#' @importFrom geodata worldclim_global
-#' @importFrom usdm vifstep
 #' @details See README for details.
 #' 
 #' @keywords niche ENM SDM NULL
