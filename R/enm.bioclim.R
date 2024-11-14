@@ -31,7 +31,7 @@ bioclim.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
 #' @importFrom predicts predict
 bioclim.predict <- function(mod, envs, other.settings) {
   # if no tails in other.args, defaults to NULL
-  pred <- predict(mod, envs, tails = other.settings$tails)
+  pred <- predicts::predict(mod, envs, tails = other.settings$tails)
   return(pred)
 }
 

@@ -12,10 +12,8 @@ editor_options:
 ---
 
 ```{r setup, echo = FALSE, include = FALSE}
-library(knitr)
-library(terra)
 knitr::opts_chunk$set(collapse = TRUE, message = FALSE, warning = FALSE, eval = TRUE, comment = "#>", fig.width = 7, fig.height = 7)
-options(terra.pal = map.pal("plasma", 100))
+options(terra.pal = terra::map.pal("plasma", 100))
 ```
 
 - [Introduction](#intro)
@@ -47,6 +45,13 @@ We'll start by downloading an occurrence dataset for [*Bradypus variegatus*](htt
 ```{r occDownload}
 # Load packages -- the order here is important because some pkg functions overwrite others.
 library(ENMeval)
+library(geodata)
+library(usdm)
+library(blockCV)
+library(sf)
+library(tibble)
+library(ggplot2)
+library(knitr)
 library(terra)
 library(dplyr)
 
@@ -158,7 +163,7 @@ occs.sf <- sf::st_transform(occs.sf, crs = eckertIV)
 occs.buf <- sf::st_buffer(occs.sf, dist = 500000) |> 
   sf::st_union() |> 
   sf::st_sf() |>
-  sf::st_transform(crs = raster::crs(envs))
+  sf::st_transform(crs = terra::crs(envs))
 plot(envs[[1]], main = names(envs)[1])
 points(occs)
 # To add sf objects to a plot, use add = TRUE
@@ -390,7 +395,7 @@ Alternatively, we may think of various ways to partition background data. This d
 # distance of each background point to them. We then find which center had the minimum 
 # distance for each record and assign that record to this centroid group.
 centers <- kmeans$center
-d <- raster::pointDistance(bg, centers, lonlat = TRUE)
+d <- terra::distance(as.matrix(bg), centers, lonlat = TRUE)
 bg.grp <- apply(d, 1, function(x) which(x == min(x)))
 evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
@@ -398,9 +403,6 @@ evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 We can also use other packages to partition our data. As an example, we next show how to use the R package [`blockCV`](https://CRAN.R-project.org/package=blockCV) (Valavi et al. 2019) to generate spatial partitions to input into `ENMevaluate`. We use the `spatialBlock` function to generate blocks similar to the checkerboard partition in `ENMeval`, except that we choose here to select partitions randomly over these blocks. This package offers other kinds of block partitioning methods as well. Using other packages in this way expands the variety of partitions you can use to evaluate models in `ENMeval`, and we highly encourage experimenting with a plurality of tools.
 
 ```{r}
-library(blockCV)
-library(sf)
-
 # First, we convert our occurrence and background records to spatial point data with the 
 # package sf and assign the correct coordinate reference system.
 occsBg.sf <- sf::st_as_sf(rbind(occs, bg), coords = c("longitude","latitude"), 
@@ -597,8 +599,7 @@ m1.mx <- eval.models(e.mx)[["fc.LQH_rm.1"]]
 m1.mx$betas
 # the enframe function from the tibble package makes this named vector into a 
 # more readable table.
-library(tibble)
-enframe(m1.mx$betas)
+tibble::enframe(m1.mx$betas)
 # SpatRaster of model predictions (for extent of "envs") with names corresponding 
 # to tune.args column label.
 eval.predictions(e.mx)
@@ -746,7 +747,6 @@ mod.complex.mrc <-maxnet::response.plot(mod.complex,
                                         v = "bio2", 
                                         type = "cloglog",
                                         plot = FALSE)
-library(ggplot2)
 ggplot(mod.complex.mrc, aes(x = bio2, y = pred)) + 
   geom_line() + ylab("cloglog prediction") + theme_bw()
 # Finally, let's cut the plotting area into two rows to visualize the predictions 

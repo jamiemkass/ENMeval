@@ -28,13 +28,13 @@ Following Shao and Wu (1989):
 where \emph{n} = the number of \emph{k}-fold iterations.
 }
 \references{
-Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15. \url{https://doi.org/10.1093/biomet/61.1.1}
+Miller, R. G. (1974) The jackknife - a review. \emph{Biometrika}, \bold{61}: 1-15. \doi{10.1093/biomet/61.1.1}
   
-Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66. \url{https://doi.org/10.1111/j.2517-6161.1985.tb01330.x}
+Parr, W. C. (1985) Jackknifing differentiable statistical functionals. \emph{Journal of the Royal Statistics Society, Series B}, \bold{47}: 56-66. \doi{10.1111/j.2517-6161.1985.tb01330.x}
   
-Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197. \url{https://doi.org/10.1214/aos/1176347263}
+Shao J. and Wu, C. F. J. (1989) A general theory for jackknife variance estimation. \emph{Annals of Statistics}, \bold{17}: 1176-1197. \doi{10.1214/aos/1176347263}
   
-Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \url{https://doi.org/10.1016/j.ecolmodel.2013.08.011}
+Shcheglovitova, M. and Anderson, R. P. (2013) Estimating optimal complexity for ecological niche models: a jackknife approach for species with small sample sizes. \emph{Ecological Modelling}, \bold{269}: 9-17. \doi{10.1016/j.ecolmodel.2013.08.011}
 }
 \author{
 Robert Muscarella <bob.muscarella@gmail.com>

@@ -163,9 +163,9 @@
 #' 
 #' @references 
 #' 
-#' Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \url{https://doi.org/10.1111/2041-210X.12261}
+#' Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \doi{10.1111/2041-210X.12261}
 #' 
-#' Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
+#' Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \doi{10.1111/j.1558-5646.2008.00482.x}
 #' 
 #' @return An ENMevaluation object. See ?ENMevaluation for details and description of the columns
 #' in the results table.
@@ -475,7 +475,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }else{
     # if no bg included, stop
     if(is.null(bg)) stop("* If inputting variable values without rasters, please make sure to input background coordinates with values as well as occurrences.")
-    # for occ and bg coordinates with environmental predictor values 
+    # for occ and bg coordinates with x, y, and environmental predictor values 
     # (SWD format)
     if(quiet != TRUE) 
       message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
@@ -552,6 +552,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {
+    
+    # make categorical levels list
+    cat.levs <- list()
+    for(i in 1:length(categoricals)) {
+      if(!is.null(envs)) {
+        cat.levs[[i]] <- terra::levels(envs[[categoricals[i]]])[[1]][,2]
+      }else{
+        cat.levs[[i]] <- levels(d[, categoricals[i]])
+      }  
+    }
+    
     for(i in 1:length(categoricals)) {
         if(algorithm == "maxent.jar") {
           if(quiet != TRUE) {
@@ -559,7 +570,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                          " to categorical and changing to integer for maxent.jar..."))
           }
           d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), 
-                                         levels = 1:length(levels(d[, categoricals[i]])))
+                                         levels = 1:length(cat.levs[[i]]))
         }else{
           if(quiet != TRUE) {
             message(paste0("* Assigning variable ", categoricals[i], 
@@ -729,7 +740,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     if(!is.null(categoricals)) {
       for(i in 1:length(categoricals)) {
         lev.df <- terra::levels(envs[[categoricals[i]]])
-        lev.df[[1]][,2] <- 1:nrow(terra::levels(envs[[categoricals[i]]])[[1]])
+        lev.df[[1]][,2] <- 1:length(cat.levs[[i]])
         levels(envs[[categoricals[i]]]) <- lev.df[[1]]
       }  
     }
@@ -815,7 +826,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }else{
       pred.all.raw <- NULL
     }
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs[,-c(1,2)], aic.settings))
+    # if maxent.jar, convert categorical values to numeric in occs table first
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, d[d$pb == 1, 1:(ncol(d)-2)], aic.settings))
     aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
     eval.stats <- dplyr::bind_cols(eval.stats, aic)
   }

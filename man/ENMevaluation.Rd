@@ -85,27 +85,27 @@ For references on performance metrics, see the following:
 
 In general for ENMeval: 
 
-Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \url{https://doi.org/10.1111/2041-210X.12261}
+Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, \bold{5}: 1198-1205. \doi{10.1111/2041-210X.12261}
 
 \emph{AUC}
 
-Fielding, A. H., & Bell, J. F. (1997). A review of methods for the assessment of prediction errors in conservation presence/absence models. \emph{Environmental Conservation}, \bold{24}: 38-49. \url{https://doi.org/10.1017/S0376892997000088}
+Fielding, A. H., & Bell, J. F. (1997). A review of methods for the assessment of prediction errors in conservation presence/absence models. \emph{Environmental Conservation}, \bold{24}: 38-49. \doi{10.1017/S0376892997000088}
 
-Jiménez‐Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. \emph{Global Ecology and Biogeography}, \bold{21}: 498-507. \url{https://doi.org/10.1111/j.1466-8238.2011.00683.x}
+Jiménez‐Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. \emph{Global Ecology and Biogeography}, \bold{21}: 498-507. \doi{10.1111/j.1466-8238.2011.00683.x}
 
 \emph{AUC diff}
 
-Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \url{https://doi.org/10.1111/j.1558-5646.2008.00482.x}
+Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. \emph{Evolution}, \bold{62}: 2868-2883. \doi{10.1111/j.1558-5646.2008.00482.x}
 
-Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}(4), 629-643. \url{https://doi.org/10.1111/jbi.12227} 
+Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}(4), 629-643. \doi{10.1111/jbi.12227} 
 
 \emph{Omission rates}
 
-Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}(4), 629-643. \url{https://doi.org/10.1111/jbi.12227}
+Radosavljevic, A., & Anderson, R. P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. \emph{Journal of Biogeography}, \bold{41}(4), 629-643. \doi{10.1111/jbi.12227}
 
 \emph{Continuous Boyce Index}
 
-Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., & Guisan, A. (2006). Evaluating the ability of habitat suitability models to predict species presences. \emph{Ecological Modelling}, \bold{199}: 142-152. \url{https://doi.org/10.1016/j.ecolmodel.2006.05.017}
+Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., & Guisan, A. (2006). Evaluating the ability of habitat suitability models to predict species presences. \emph{Ecological Modelling}, \bold{199}: 142-152. \doi{10.1016/j.ecolmodel.2006.05.017}
 }
 \author{
 Jamie M. Kass, \email{jamie.m.kass@gmail.com}, Bob Muscarella, \email{bob.muscarella@gmail.com}

@@ -1,6 +1,5 @@
 #' Automated runs and evaluations of ecological niche models 
 #'  
-#' 
 #' @details See README for details.
 #' 
 #' @keywords niche ENM SDM NULL

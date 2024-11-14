@@ -47,8 +47,8 @@ maxnet.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   return(out)
 }
 
-#' @import maxnet
 maxnet.predict <- function(mod, envs, other.settings) {
+  requireNamespace("maxnet", quitely = TRUE)
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "SpatRaster") == TRUE) {
