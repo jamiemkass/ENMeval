@@ -1,37 +1,57 @@
-#' @title Generate null ecological niche models (ENMs) and compare null with empirical performance metrics
-#' @description \code{ENMnulls()} iteratively builds null ENMs for a single set of 
-#' user-specified model settings based on an input ENMevaluation object, from which all other analysis 
-#' settings are extracted. Summary statistics of the performance metrics for the null ENMs are taken
-#' (averages and standard deviations) and effect sizes and \emph{p}-values are calculated by comparing these 
-#' summary statistics to the empirical values of the performance metrics (i.e., from the model built with
-#' the empirical data). See the references below for more details on this method.
+#' @title Generate null ecological niche models (ENMs) and compare null with 
+#' empirical performance metrics
+#' @description \code{ENMnulls()} iteratively builds null ENMs for a single set 
+#' of user-specified model settings based on an input ENMevaluation object, 
+#' from which all other analysis settings are extracted. Summary statistics of 
+#' the performance metrics for the null ENMs are taken (averages and standard 
+#' deviations) and effect sizes and \emph{p}-values are calculated by comparing 
+#' these summary statistics to the empirical values of the performance metrics 
+#' (i.e., from the model built with the empirical data). See the references 
+#' below for more details on this method.
 #' 
 #' @param e ENMevaluation object
-#' @param mod.settings named list: one set of model settings with which to build null ENMs
+#' @param mod.settings named list: one set of model settings with which to 
+#' build null ENMs
 #' @param no.iter numeric: number of null model iterations
-#' @param eval.stats character vector: the performance metrics that will be used to calculate null model statistics
+#' @param eval.stats character vector: the performance metrics that will be 
+#' used to calculate null model statistics
 #' @param user.enm ENMdetails object: if implementing a user-specified model
-#' @param user.eval.type character: if implementing a user-specified model, specify here which
-#' evaluation type to use -- either "knonspatial", "kspatial", "testing", or "none"
-#' @param userStats.signs named list: user-defined evaluation statistics attributed with
-#' either 1 or -1 to designate whether the expected difference between empirical and null models is 
-#' positive or negative; this is used to calculate the p-value of the z-score
-#' @param removeMxTemp boolean: if TRUE, delete all temporary data generated when using maxent.jar for modeling
+#' @param user.eval.type character: if implementing a user-specified model, 
+#' specify here which evaluation type to use -- either "knonspatial", 
+#' "kspatial", "testing", or "none"
+#' @param userStats.signs named list: user-defined evaluation statistics 
+#' attributed with either 1 or -1 to designate whether the expected difference 
+#' between empirical and null models is positive or negative; this is used to 
+#' calculate the p-value of the z-score. For example, for AUC, the difference 
+#' should be positive (the empirical model should have a higher score), whereas 
+#' for omission rate it should be negative (the empirical model should have a 
+#' lower score).
+#' @param removeMxTemp boolean: if TRUE, delete all temporary data generated 
+#' when using maxent.jar for modeling
 #' @param parallel boolean: if TRUE, use parallel processing
-#' @param numCores numeric: number of cores to use for parallel processing; if NULL, all available cores will be used
-#' @param parallelType character:: either "doParallel" or "doSNOW" (default: "doSNOW") 
-#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
+#' @param numCores numeric: number of cores to use for parallel processing; 
+#' if NULL, all available cores will be used
+#' @param parallelType character:: either "doParallel" or "doSNOW" 
+#' (default: "doSNOW") 
+#' @param quiet boolean: if TRUE, silence all function messages 
+#' (but not errors)
 #' 
-#' @details This null ENM technique is based on the implementation in Bohl \emph{et al.} (2019),
-#' which follows the original methodology of Raes & ter Steege (2007) but makes an important modification:
-#' instead of evaluating each null model on random validation data, here we evaluate the null models on the same withheld
-#' validation data used to evaluate the empirical model. Bohl \emph{et al.} (2019) demonstrates this approach using a single
-#' defined withheld partition group, but Kass \emph{et al.} (2020) extended it to use spatial partitions by drawing null occurrences
-#' from the area of the predictor raster data defining each partition. Please see the vignette for a brief example: <
+#' @details This null ENM technique is based on the implementation in Bohl 
+#' \emph{et al.} (2019), which follows the original methodology of Raes & ter 
+#' Steege (2007) but makes an important modification: instead of evaluating 
+#' each null model on random validation data, here we evaluate the null models 
+#' on the same withheld validation data used to evaluate the empirical model. 
+#' Bohl \emph{et al.} (2019) demonstrates this approach using a single defined 
+#' withheld partition group, but Kass \emph{et al.} (2020) extended it to use 
+#' spatial partitions by drawing null occurrences from the area of the predictor 
+#' raster data defining each partition. Please see the vignette for a brief 
+#' example.
 #' 
-#' This function avoids using raster data to speed up each iteration, and instead samples null occurrences from the 
-#' partitioned background records. Thus, you should avoid running this when your background records are not well 
-#' sampled across the study extent, as this limits the extent that null occurrences can be sampled from.
+#' This function avoids using raster data to speed up each iteration, and 
+#' instead samples null occurrences from the partitioned background records. 
+#' Thus, you should avoid running this when your background records are not well 
+#' sampled across the study extent, as this limits the extent that null 
+#' occurrences can be sampled from.
 #' 
 #' @references 
 #' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. \url{https://doi.org/10.1111/jbi.13573}
