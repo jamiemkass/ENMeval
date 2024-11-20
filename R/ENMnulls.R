@@ -11,15 +11,17 @@
 #' 
 #' @param e ENMevaluation object
 #' @param mod.settings named list: one set of model settings with which to 
-#' build null ENMs
-#' @param no.iter numeric: number of null model iterations
+#' build null ENMs.
+#' @param no.iter numeric: number of null model iterations.
 #' @param eval.stats character vector: the performance metrics that will be 
-#' used to calculate null model statistics
-#' @param user.enm ENMdetails object: if implementing a user-specified model
+#' used to calculate null model statistics.
+#' @param user.enm ENMdetails object: if implementing a user-specified model.
+#' @param user.eval function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
+#' The function must first be defined and then input as the argument \code{user.eval}.
 #' @param user.eval.type character: if implementing a user-specified model, 
 #' specify here which evaluation type to use -- either "knonspatial", 
-#' "kspatial", "testing", or "none"
-#' @param userStats.signs named list: user-defined evaluation statistics 
+#' "kspatial", "testing", or "none".
+#' @param userStats.signs named list: user-defined evaluation statistics
 #' attributed with either 1 or -1 to designate whether the expected difference 
 #' between empirical and null models is positive or negative; this is used to 
 #' calculate the p-value of the z-score. For example, for AUC, the difference 
@@ -27,14 +29,14 @@
 #' for omission rate it should be negative (the empirical model should have a 
 #' lower score).
 #' @param removeMxTemp boolean: if TRUE, delete all temporary data generated 
-#' when using maxent.jar for modeling
-#' @param parallel boolean: if TRUE, use parallel processing
+#' when using maxent.jar for modeling.
+#' @param parallel boolean: if TRUE, use parallel processing.
 #' @param numCores numeric: number of cores to use for parallel processing; 
-#' if NULL, all available cores will be used
+#' if NULL, all available cores will be used.
 #' @param parallelType character:: either "doParallel" or "doSNOW" 
-#' (default: "doSNOW") 
+#' (default: "doSNOW").
 #' @param quiet boolean: if TRUE, silence all function messages 
-#' (but not errors)
+#' (but not errors).
 #' 
 #' @details This null ENM technique is based on the implementation in Bohl 
 #' \emph{et al.} (2019), which follows the original methodology of Raes & ter 
@@ -70,7 +72,7 @@
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
 ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
-                     user.enm = NULL, user.eval.type = NULL, userStats.signs = NULL, 
+                     user.enm = NULL, user.eval = NULL, user.eval.type = NULL, userStats.signs = NULL, 
                      removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
   
   # assign evaluation type based on partition method
@@ -242,7 +244,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
     
     args.i <- list(occs = null.occs.i.z, bg = e@bg, tune.args = mod.settings, categoricals = categoricals, partitions = partitions,
                    algorithm = e@algorithm, other.settings = e@other.settings, partition.settings = e@partition.settings,
-                   occs.testing = e@occs.testing, user.val.grps = user.val.grps, user.grp = user.grp, 
+                   occs.testing = e@occs.testing, user.val.grps = user.val.grps, user.grp = user.grp, user.eval = user.eval,
                    doClamp = e@doClamp, clamp.directions = clamp.directions.i, quiet = TRUE)
     
     null.e.i <- tryCatch({
