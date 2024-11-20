@@ -11,6 +11,7 @@ ENMnulls(
   no.iter,
   eval.stats = c("auc.val", "auc.diff", "cbi.val", "or.mtp", "or.10p"),
   user.enm = NULL,
+  user.eval = NULL,
   user.eval.type = NULL,
   userStats.signs = NULL,
   removeMxTemp = TRUE,
@@ -24,20 +25,23 @@ ENMnulls(
 \item{e}{ENMevaluation object}
 
 \item{mod.settings}{named list: one set of model settings with which to 
-build null ENMs}
+build null ENMs.}
 
-\item{no.iter}{numeric: number of null model iterations}
+\item{no.iter}{numeric: number of null model iterations.}
 
 \item{eval.stats}{character vector: the performance metrics that will be 
-used to calculate null model statistics}
+used to calculate null model statistics.}
 
-\item{user.enm}{ENMdetails object: if implementing a user-specified model}
+\item{user.enm}{ENMdetails object: if implementing a user-specified model.}
+
+\item{user.eval}{function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
+The function must first be defined and then input as the argument \code{user.eval}.}
 
 \item{user.eval.type}{character: if implementing a user-specified model, 
 specify here which evaluation type to use -- either "knonspatial", 
-"kspatial", "testing", or "none"}
+"kspatial", "testing", or "none".}
 
-\item{userStats.signs}{named list: user-defined evaluation statistics 
+\item{userStats.signs}{named list: user-defined evaluation statistics
 attributed with either 1 or -1 to designate whether the expected difference 
 between empirical and null models is positive or negative; this is used to 
 calculate the p-value of the z-score. For example, for AUC, the difference 
@@ -46,18 +50,18 @@ for omission rate it should be negative (the empirical model should have a
 lower score).}
 
 \item{removeMxTemp}{boolean: if TRUE, delete all temporary data generated 
-when using maxent.jar for modeling}
+when using maxent.jar for modeling.}
 
-\item{parallel}{boolean: if TRUE, use parallel processing}
+\item{parallel}{boolean: if TRUE, use parallel processing.}
 
 \item{numCores}{numeric: number of cores to use for parallel processing; 
-if NULL, all available cores will be used}
+if NULL, all available cores will be used.}
 
 \item{parallelType}{character:: either "doParallel" or "doSNOW" 
-(default: "doSNOW")}
+(default: "doSNOW").}
 
 \item{quiet}{boolean: if TRUE, silence all function messages 
-(but not errors)}
+(but not errors).}
 }
 \value{
 An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
