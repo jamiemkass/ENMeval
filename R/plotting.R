@@ -9,6 +9,36 @@
 #' @param return.tbl boolean: if TRUE, return the data frames used to make the ggplot instead of the plot itself
 #' @details This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
 #' It can be run with an existing ENMevaluation object, or alternatively with occurrence or background coordinates and the corresponding partitions.
+#' 
+#' @examples
+#' \dontrun{
+#' library(terra)
+#' library(ENMeval)
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#'                            "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#'                                    "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' 
+#' parts <- get.block(occs, bg, orientation = "lat_lon")
+#' 
+#' # now, plot the partition groups for occurrence and background points
+#' evalplot.grps(envs = envs, pts = occs, pts.grp = parts$occs.grp)
+#' evalplot.grps(envs = envs, pts = bg, pts.grp = parts$bg.grp)
+#' 
+#' # you can also plot with an ENMevaluation object
+#' ps <- list(orientation = "lat_lon")
+#' e <- ENMevaluate(occs, envs, bg, 
+#'                  tune.args = list(fc = c("L","LQ"), rm = 1:3), 
+#'                  partitions = "block", partition.settings = ps, 
+#'                  algorithm = "maxnet", categoricals = "biome", 
+#'                  parallel = TRUE)
+#' 
+#' evalplot.grps(e = e, envs = envs, ref.data = "occs")
+#' evalplot.grps(e = e, envs = envs, ref.data = "bg")
+#' }
+#' 
 #' @export
 
 evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data = "occs", pts.size = 1.5, return.tbl = FALSE) {
@@ -69,7 +99,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
 #' plot.sim.dataPrep()
 #' }
 #' @keywords internal
-plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet) {
+plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet) {
   
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
     stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
@@ -116,14 +146,14 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   
   # find factor rasters or columns and identify them as categoricals
   if(!is.null(envs)) {
-    categoricals <- unique(c(categoricals, names(envs)[which(terra::is.factor(envs))]))
+    categoricals <- unique(names(envs)[which(terra::is.factor(envs))])
     if(length(categoricals) == 0) categoricals <- NULL
   }else{
-    categoricals <- unique(c(categoricals, names(occs.z)[which(sapply(occs.z, is.factor))]))
+    categoricals <- unique(names(occs.z)[which(sapply(occs.z, is.factor))])
     if(length(categoricals) == 0) categoricals <- NULL
   }
   
-  # if categoricals argument was specified, convert these columns to factor class
+  # remove categorical variables for plotting
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
       if(!quiet) message(paste0("* Ignoring categorical variable ", categoricals[i], "..."))
@@ -163,7 +193,6 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' the first two columns must be named "longitude" and "latitude"
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
-#' @param categoricals character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 #' these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object 
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 #' with respect to all variables (optional) 
@@ -185,14 +214,36 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' Baumgartner J, Wilson P (2021). _rmaxent: Tools for working with Maxent in R_. R package version 0.8.5.9000, <URL: https://github.com/johnbaums/rmaxent>.
 #' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \doi{doi:10.1111/j.2041-210X.2010.00036.x}
 #' 
+#' @examples
+#' \dontrun{
+#' # first, let's tune some models
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#' "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#' "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#'  
+#' ps <- list(orientation = "lat_lat")
+#' 
+#' e <- ENMevaluate(occs, envs, bg, 
+#'                tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
+#'                partitions = "block", partition.settings = ps, 
+#'                algorithm = "maxnet", categoricals = "biome", 
+#'                parallel = TRUE)
+#' 
+#' # now, plot the environmental similarity of each partition to the others               
+#' evalplot.envSim.hist(e)
+#' }
+#' 
 #' @export
 
 evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
                                  bg.grp = NULL, ref.data = "occs", 
-                                 categoricals = NULL, envs.vars = NULL, occs.testing.z = NULL,
+                                 envs.vars = NULL, occs.testing.z = NULL,
                                  hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
   
-  pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
+  pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet)
   
   envs.names <- pts.plot |> dplyr::select(-longitude, -latitude, -partition, -type) |> names()
   
@@ -220,7 +271,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
     sim <- tryCatch({
       predicts::mess(train.z, test.z)
     }, error = function(cond) {
-      message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
+      message('Error: there may be at least one categorical variable in the predictor data that is not attributed as a factor. Please convert these variable(s) to factor.')
       # Choose a return value in case of error
       return(NULL)
     })
@@ -269,8 +320,8 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' object or the argument occs.testing.z. In the resulting plot, partition 1 refers to the training data,
 #' while partition 2 refers to the fully withheld testing group.
 #' @param e ENMevaluation object (optional) 
-#' @param envs SpatRaster: environmental predictor variables used to build the models in "e"; categorical variables should be 
-#' removed before input or identified with the argument "categoricals", as they cannot be used to calculate MESS
+#' @param envs SpatRaster: environmental predictor variables used to build the models in "e"; categorical variables will be 
+#' removed before internally as they cannot be used to calculate MESS
 #' @param occs.z data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
 #' the first two columns must be named "longitude" and "latitude"
 #' @param occs.grp numeric vector: partition groups for occurrence records (optional)
@@ -278,8 +329,6 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' the first two columns must be named "longitude" and "latitude"
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
-#' @param categoricals character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
-#' these must be specified as this function was intended for use with continuous data only
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 #' with respect to all variables (optional) 
 #' @param bb.buf numeric: distance used to buffer (extend) the mapping extent in map units; for latitude/longitude, this is in degrees (optional)
@@ -310,6 +359,9 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' 
 #' @examples
 #' \dontrun{
+#' library(terra)
+#' library(ENMeval)
+#' 
 #' # first, let's tune some models
 #' occs <- read.csv(file.path(system.file(package="predicts"), 
 #' "/ex/bradypus.csv"))[,2:3]
@@ -319,19 +371,22 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' names(bg) <- names(occs)
 #'  
 #' ps <- list(orientation = "lat_lat")
-
+#' 
 #' e <- ENMevaluate(occs, envs, bg, 
 #'                tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
 #'                partitions = "block", partition.settings = ps, 
 #'                algorithm = "maxnet", categoricals = "biome", 
 #'                parallel = TRUE)
+#' 
+#' # now, plot the environmental similarity of each partition to the others               
+#' evalplot.envSim.map(e, envs)
 #' }
 #' 
 #' @export
 
 evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
                                 bg.grp = NULL, ref.data = "occs", 
-                                categoricals = NULL, envs.vars = NULL, bb.buf = 0, occs.testing.z = NULL,
+                                envs.vars = NULL, bb.buf = 0, occs.testing.z = NULL,
                                 plot.bg.pts = FALSE, sim.palette = NULL, 
                                 pts.size = 1.5, gradient.colors = c("red","white","blue"), na.color = "gray",
                                 return.tbl = FALSE, return.ras = FALSE, quiet = FALSE) {
@@ -349,9 +404,10 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   
   if(!is.numeric(bb.buf)) stop("Please ensure bb.buf is a number.")
   
-  pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, categoricals, occs.testing.z, quiet)
+  pts.plot <- plot.sim.dataPrep(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet)
   
-  if(!is.null(categoricals) & !is.null(envs)) {
+  categoricals <- unique(names(envs)[which(terra::is.factor(envs))])
+  if(length(categoricals) != 0 & !is.null(envs)) {
     envs <- terra::subset(envs, -which(names(envs) %in% categoricals))
   }
   
@@ -383,7 +439,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
     sim <- tryCatch({
       predicts::mess(envs, test.z)
     }, error = function(cond) {
-      message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
+      message('Error: there may be at least one categorical variable in the predictor data that is not attributed as a factor. Please convert these variable(s) to factor.')
       # Choose a return value in case of error
       return(NULL)
     })

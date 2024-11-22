@@ -36,3 +36,33 @@ Plot occurrence partition groups over an environmental predictor raster.
 This function serves as a quick way to visualize occurrence or background partitions over the extent of an environmental predictor raster.
 It can be run with an existing ENMevaluation object, or alternatively with occurrence or background coordinates and the corresponding partitions.
 }
+\examples{
+\dontrun{
+library(terra)
+library(ENMeval)
+occs <- read.csv(file.path(system.file(package="predicts"), 
+                           "/ex/bradypus.csv"))[,2:3]
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+                                   "/ex", sep=""), pattern="tif$", full.names=TRUE))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+
+parts <- get.block(occs, bg, orientation = "lat_lon")
+
+# now, plot the partition groups for occurrence and background points
+evalplot.grps(envs = envs, pts = occs, pts.grp = parts$occs.grp)
+evalplot.grps(envs = envs, pts = bg, pts.grp = parts$bg.grp)
+
+# you can also plot with an ENMevaluation object
+ps <- list(orientation = "lat_lon")
+e <- ENMevaluate(occs, envs, bg, 
+                 tune.args = list(fc = c("L","LQ"), rm = 1:3), 
+                 partitions = "block", partition.settings = ps, 
+                 algorithm = "maxnet", categoricals = "biome", 
+                 parallel = TRUE)
+
+evalplot.grps(e = e, envs = envs, ref.data = "occs")
+evalplot.grps(e = e, envs = envs, ref.data = "bg")
+}
+
+}

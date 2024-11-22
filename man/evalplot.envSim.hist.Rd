@@ -11,7 +11,6 @@ evalplot.envSim.hist(
   occs.grp = NULL,
   bg.grp = NULL,
   ref.data = "occs",
-  categoricals = NULL,
   envs.vars = NULL,
   occs.testing.z = NULL,
   hist.bins = 30,
@@ -32,9 +31,7 @@ the first two columns must be named "longitude" and "latitude"}
 
 \item{bg.grp}{numeric vector: partition groups for background records (optional)}
 
-\item{ref.data}{character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"}
-
-\item{categoricals}{character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
+\item{ref.data}{character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object}
 
 \item{envs.vars}{character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
@@ -72,6 +69,29 @@ the remaining data (training occurrences and background) are calculated with the
 per grid cell is returned. Higher negative values indicate a greater environmental difference between the validation occurrences and the study extent, and higher 
 positive values indicate greater similarity. This function uses the `mess()` function 
 from the package `predicts`. Please see the below reference for details on MESS.
+}
+\examples{
+\dontrun{
+# first, let's tune some models
+occs <- read.csv(file.path(system.file(package="predicts"), 
+"/ex/bradypus.csv"))[,2:3]
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+"/ex", sep=""), pattern="tif$", full.names=TRUE))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+ 
+ps <- list(orientation = "lat_lat")
+
+e <- ENMevaluate(occs, envs, bg, 
+               tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
+               partitions = "block", partition.settings = ps, 
+               algorithm = "maxnet", categoricals = "biome", 
+               parallel = TRUE)
+
+# now, plot the environmental similarity of each partition to the others               
+evalplot.envSim.hist(e)
+}
+
 }
 \references{
 Baumgartner J, Wilson P (2021). _rmaxent: Tools for working with Maxent in R_. R package version 0.8.5.9000, <URL: https://github.com/johnbaums/rmaxent>.

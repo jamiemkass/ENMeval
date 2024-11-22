@@ -12,7 +12,6 @@ evalplot.envSim.map(
   occs.grp = NULL,
   bg.grp = NULL,
   ref.data = "occs",
-  categoricals = NULL,
   envs.vars = NULL,
   bb.buf = 0,
   occs.testing.z = NULL,
@@ -29,8 +28,8 @@ evalplot.envSim.map(
 \arguments{
 \item{e}{ENMevaluation object (optional)}
 
-\item{envs}{SpatRaster: environmental predictor variables used to build the models in "e"; categorical variables should be 
-removed before input or identified with the argument "categoricals", as they cannot be used to calculate MESS}
+\item{envs}{SpatRaster: environmental predictor variables used to build the models in "e"; categorical variables will be 
+removed before internally as they cannot be used to calculate MESS}
 
 \item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
 the first two columns must be named "longitude" and "latitude"}
@@ -43,9 +42,6 @@ the first two columns must be named "longitude" and "latitude"}
 \item{bg.grp}{numeric vector: partition groups for background records (optional)}
 
 \item{ref.data}{character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"}
-
-\item{categoricals}{character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
-these must be specified as this function was intended for use with continuous data only}
 
 \item{envs.vars}{character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
 with respect to all variables (optional)}
@@ -99,6 +95,9 @@ reference for details on MESS.
 }
 \examples{
 \dontrun{
+library(terra)
+library(ENMeval)
+
 # first, let's tune some models
 occs <- read.csv(file.path(system.file(package="predicts"), 
 "/ex/bradypus.csv"))[,2:3]
@@ -108,11 +107,15 @@ bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 names(bg) <- names(occs)
  
 ps <- list(orientation = "lat_lat")
+
 e <- ENMevaluate(occs, envs, bg, 
                tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
                partitions = "block", partition.settings = ps, 
                algorithm = "maxnet", categoricals = "biome", 
                parallel = TRUE)
+
+# now, plot the environmental similarity of each partition to the others               
+evalplot.envSim.map(e, envs)
 }
 
 }
