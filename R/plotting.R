@@ -163,8 +163,6 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' the first two columns must be named "longitude" and "latitude"
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
-#' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
-#' or "most_sim" for most similar variable; uses similarity function from package rmaxent
 #' @param categoricals character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 #' these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object 
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
@@ -175,14 +173,12 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' @param return.tbl boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details Histograms are plotted showing the environmental similarity estimates for each 
-#' partition group. The similarity between environmental values associated with the 
+#' partition group in relation to the others. The similarity between environmental values associated with the 
 #' validation occurrence or background records per partition group and those associated with 
-#' the remaining data (occurrences and background) are calculated, and the minimum similarity 
-#' per grid is returned. For option "mess", higher negative values indicate greater 
-#' environmental difference between the validation occurrences and the study extent, and higher 
-#' positive values indicate greater similarity. This function uses the `similarity()` function 
-#' from the package `rmaxent` (https://github.com/johnbaums/rmaxent/), updated for `terra`, to calculate the 
-#' similarities. Please see the below reference for details on MESS.
+#' the remaining data (training occurrences and background) are calculated with the MESS algorithm, and the minimum similarity 
+#' per grid cell is returned. Higher negative values indicate a greater environmental difference between the validation occurrences and the study extent, and higher 
+#' positive values indicate greater similarity. This function uses the `mess()` function 
+#' from the package `predicts`. Please see the below reference for details on MESS.
 #' @return A ggplot of environmental similarities between the occurrence or background data 
 #' for each partition and the rest of the data (all other occurrences and background data).
 #' @references 
@@ -192,7 +188,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' @export
 
 evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
-                                 bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
+                                 bg.grp = NULL, ref.data = "occs", 
                                  categoricals = NULL, envs.vars = NULL, occs.testing.z = NULL,
                                  hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
   
@@ -222,16 +218,14 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
     train.z <- pts.plot |> dplyr::filter(partition != k) |> dplyr::select(-longitude, -latitude, -partition, -type)
     
     sim <- tryCatch({
-      similarity(train.z, test.z)
+      predicts::mess(train.z, test.z)
     }, error = function(cond) {
       message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
       # Choose a return value in case of error
       return(NULL)
     })
-    sim.sel <- switch(sim.type, mess = sim$similarity_min, most_diff = sim$mod, most_sim = sim$mos)  
-    
-    test.sim[[k]] <- data.frame(partition = k, sim.sel)
-    names(test.sim[[k]])[2] <- sim.type  
+    test.sim[[k]] <- data.frame(partition = k, sim)
+    names(test.sim[[k]])[2] <- "mess"  
   }
   
   if(nk > 9) {
@@ -249,35 +243,14 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
                      switch(ref.data, occs = "occurrence", bg = "background"),
                      "partitions and all other background partitions.)")
   
-  if(sim.type != "mess") {
-    facts <- sort(unique(plot.df[,2]))
-    envs.tbl <- data.frame(facts, envs.names[facts])
-    names(envs.tbl) <- c(sim.type, "env.var")
-    envs.tbl$env.var <- factor(envs.tbl$env.var, levels = envs.tbl$env.var)
-    plot.df <- plot.df |> dplyr::left_join(envs.tbl, by = sim.type)
-    plot.df[[sim.type]] <- NULL
-    names(plot.df)[2] <- sim.type
-    title <- paste(switch(sim.type, most_diff = "Most different", most_sim = "Most similar"), "environmental variable")
-    
-    g <- ggplot2::ggplot(plot.df, ggplot2::aes_string(x = sim.type, fill = "partition")) + 
-      ggplot2::stat_count() +
-      ggplot2::facet_grid(ggplot2::vars(partition)) + 
-      ggplot2::scale_fill_manual(values = pt.cols) +
-      ggplot2::theme_classic() +
-      ggplot2::geom_vline(xintercept = 0) +
-      ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
-      ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text.y = ggplot2::element_blank())
-  }else if(sim.type == "mess"){
-    g <- ggplot2::ggplot(plot.df, ggplot2::aes(x = mess, fill = partition)) + 
-      ggplot2::geom_histogram(bins = hist.bins) +
-      ggplot2::facet_grid(ggplot2::vars(partition)) + 
-      ggplot2::scale_fill_manual(values = pt.cols) +
-      ggplot2::theme_classic() +
-      ggplot2::geom_vline(xintercept = 0) +
-      ggplot2::ggtitle(paste("Multivariate environmental similarity", plot.text, collapse = "\n")) +
-      ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text.y = ggplot2::element_blank())  
-  }
-  g
+  g <- ggplot2::ggplot(plot.df, ggplot2::aes(x = mess, fill = partition)) + 
+    ggplot2::geom_histogram(bins = hist.bins) +
+    ggplot2::facet_grid(ggplot2::vars(partition)) + 
+    ggplot2::scale_fill_manual(values = pt.cols) +
+    ggplot2::theme_classic() +
+    ggplot2::geom_vline(xintercept = 0) +
+    ggplot2::ggtitle(paste("Multivariate environmental similarity", plot.text, collapse = "\n")) +
+    ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text.y = ggplot2::element_blank())  
   
   if(return.tbl == TRUE) {
     return(tibble::as_tibble(plot.df))
@@ -305,8 +278,6 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' the first two columns must be named "longitude" and "latitude"
 #' @param bg.grp numeric vector: partition groups for background records (optional)
 #' @param ref.data character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
-#' @param sim.type character: either "mess" for Multivariate Environmental Similarity Surface, "most_diff" for most different variable,
-#' or "most_sim" for most similar variable; uses similarity function from package rmaxent
 #' @param categoricals character vector: names of categorical variables in input SpatRaster or data frames to be removed from the analysis;
 #' these must be specified as this function was intended for use with continuous data only
 #' @param envs.vars character vector: names of a predictor variable to plot similarities for; if left NULL, calculations are done
@@ -323,14 +294,13 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' @param return.ras boolean: if TRUE, return the SpatRaster of similarity values used to make the ggplot instead of the plot itself
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details Rasters are plotted showing the environmental similarity estimates for each 
-#' partition group. The similarity between environmental values associated with the 
+#' partition group in relation to the others. The similarity between environmental values associated with the 
 #' validation occurrence or background records per partition group and those associated with 
 #' the entire study extent (specified by the extent of the input SpatRaster "envs") are 
-#' calculated, and the minimum similarity per grid is returned. For option "mess", higher 
+#' calculated with the MESS algorithm, and the minimum similarity per grid cell is returned. Higher 
 #' negative values indicate greater environmental difference between the validation occurrences 
 #' and the study extent, and higher positive values indicate greater similarity. This function 
-#' uses the `similarity()` function from the package `rmaxent` 
-#' (https://github.com/johnbaums/rmaxent/) to calculate the similarities. Please see the below 
+#' uses the `mess()` function from the package `predicts` to calculate the similarities. Please see the below 
 #' reference for details on MESS. 
 #' @return A ggplot of environmental similarities between the occurrence or background data 
 #' for each partition and all predictor variable values in the extent.
@@ -338,10 +308,29 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
 #' Baumgartner J, Wilson P (2021). _rmaxent: Tools for working with Maxent in R_. R package version 0.8.5.9000, <URL: https://github.com/johnbaums/rmaxent>.
 #' Elith, J., Kearney, M., and Phillips, S. (2010) The art of modelling range-shifting species. \emph{Methods in Ecology and Evolution}, \bold{1}: 330-342. \doi{doi:10.1111/j.2041-210X.2010.00036.x}
 #' 
+#' @examples
+#' \dontrun{
+#' # first, let's tune some models
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#' "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#' "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#'  
+#' ps <- list(orientation = "lat_lat")
+
+#' e <- ENMevaluate(occs, envs, bg, 
+#'                tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
+#'                partitions = "block", partition.settings = ps, 
+#'                algorithm = "maxnet", categoricals = "biome", 
+#'                parallel = TRUE)
+#' }
+#' 
 #' @export
 
 evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
-                                bg.grp = NULL, ref.data = "occs", sim.type = "mess", 
+                                bg.grp = NULL, ref.data = "occs", 
                                 categoricals = NULL, envs.vars = NULL, bb.buf = 0, occs.testing.z = NULL,
                                 plot.bg.pts = FALSE, sim.palette = NULL, 
                                 pts.size = 1.5, gradient.colors = c("red","white","blue"), na.color = "gray",
@@ -392,44 +381,34 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
       dplyr::select(-longitude, -latitude, -partition)
     
     sim <- tryCatch({
-      similarity(envs, test.z)
+      predicts::mess(envs, test.z)
     }, error = function(cond) {
       message('Error: there may be a categorical variable present in the predictor variable data. Please make sure to declare all categorical variables with the "categoricals" argument.')
       # Choose a return value in case of error
       return(NULL)
     })
-    sim.sel <- switch(sim.type, mess = sim$similarity_min, 
-                      most_diff = sim$mod, most_sim = sim$mos)  
-    names(sim.sel) <- paste0("partition", k)
+    names(sim) <- paste0("partition", k)
     
-    ras.sim[[k]] <- sim.sel
+    ras.sim[[k]] <- sim
   }
   
   rs.sim <- terra::rast(ras.sim)
   plot.df <- terra::as.data.frame(rs.sim, xy = TRUE, na.rm = FALSE) |>
-    tidyr::pivot_longer(cols = 3:dplyr::last_col(), names_to = "ras", values_to = sim.type)
+    tidyr::pivot_longer(cols = 3:dplyr::last_col(), names_to = "ras", values_to = "mess")
   # add buffer
   plot.df <- plot.df |> dplyr::filter(x > min(pts.plot$longitude) - bb.buf, 
-                                       x < max(pts.plot$longitude) + bb.buf,
-                                       y > min(pts.plot$latitude) - bb.buf, 
-                                       y < max(pts.plot$latitude) + bb.buf)
+                                      x < max(pts.plot$longitude) + bb.buf,
+                                      y > min(pts.plot$latitude) - bb.buf, 
+                                      y < max(pts.plot$latitude) + bb.buf)
   
-  if(sim.type != "mess") {
-    if(is.null(sim.palette)) sim.palette <- "Set1"
-    plot.df$ras <- gsub("_var", "", plot.df$ras)
-    plot.df[[sim.type]] <- factor(plot.df[[sim.type]])
-    title <- paste(switch(sim.type, most_diff = "Most different", 
-                          most_sim = "Most similar"), "environmental variable")
-  }else{
-    title <- "Multivariate environmental similarity" 
-  }
+  title <- "Multivariate environmental similarity" 
   
   plot.text <- paste("\n(Values represent environmental similarity between", 
                      switch(ref.data, occs = "occurrence", bg = "background"),
                      "partitions and all raster cells with values.)")
   
   g <- ggplot2::ggplot() +
-    ggplot2::geom_raster(data = plot.df, ggplot2::aes_string(x = "x", y = "y", fill = sim.type))
+    ggplot2::geom_raster(data = plot.df, ggplot2::aes_string(x = "x", y = "y", fill = "mess"))
   if(ref.data == "bg" & plot.bg.pts == FALSE) {
     g <- g + ggplot2::facet_wrap(ggplot2::vars(ras), ncol = 2) +
       ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
@@ -440,12 +419,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
       ggplot2::ggtitle(paste(title, plot.text, collapse = "\n")) +
       ggplot2::theme_classic()
   }
-  if(sim.type != "mess") {
-    g <- g + ggplot2::scale_fill_brewer(palette = sim.palette, na.value = "white", breaks = levels(plot.df[[sim.type]]))
-  }else{
-    g <- g + ggplot2::scale_fill_gradient2(low = gradient.colors[1], mid = gradient.colors[2], high = gradient.colors[3], na.value = na.color)
-  }
-  g
+  g <- g + ggplot2::scale_fill_gradient2(low = gradient.colors[1], mid = gradient.colors[2], high = gradient.colors[3], na.value = na.color)
   
   if(return.tbl == TRUE) {
     return(tibble::as_tibble(plot.df))
@@ -474,6 +448,28 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
 #' Error bars represent the standard deviation of a statistic around the mean. 
 #' Currently, this function can only plot two tuning parameters at a time.
 #' @return A ggplot of evaluation statistics. 
+#' 
+#' @examples
+#' \dontrun{
+#' # first, let's tune some models
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#' "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#' "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#'  
+#' ps <- list(orientation = "lat_lat")
+
+#' e <- ENMevaluate(occs, envs, bg, 
+#'                tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
+#'                partitions = "block", partition.settings = ps, 
+#'                algorithm = "maxnet", categoricals = "biome", 
+#'                parallel = TRUE)
+#'                
+#' evalplot.stats(e, c("cbi.val", "or.mtp"), x.var = "rm", color.var = "fc", 
+#'              error.bars = FALSE)
+#' }
 #' @export
 
 evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = FALSE) {
@@ -555,6 +551,39 @@ evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars 
 #' the quantiles and the empirical value is plotted as a red point along the vertical axis. 
 #' For histogram plots, the null distribution is displayed as a histogram with vertical lines showing the quantiles 
 #' and the empirical value as a vertical red line on the distribution.
+#' 
+#' @examples
+#' \dontrun{
+#' # first, let's tune some models
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#'                            "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#'                                    "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' 
+#' ps <- list(orientation = "lat_lat")
+#' 
+#' e <- ENMevaluate(occs, envs, bg, 
+#'                  tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), partitions = "block", 
+#'                  partition.settings = ps, algorithm = "maxnet", categoricals = "biome",
+#'                  parallel = TRUE)
+#' 
+#' d <- eval.results(e)
+#' 
+#' # here, we will choose an optimal model based on validation CBI, but you can
+#' # choose yourself what evaluation statistics to use
+#' opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
+#' 
+#' # now we can run our null models 
+#' # NOTE: you should use at least 100 iterations in practice -- this is just an
+#' # example
+#' nulls <- ENMnulls(e, mod.settings = list(fc = opt$fc, rm = opt$rm), no.iter = 10)
+#' 
+#' # let's plot the null model results
+#' evalplot.nulls(nulls, stats = c("cbi.val", "auc.val"), plot.type = "violin")
+#' }
+#' 
 #' @return A ggplot of null model statistics. 
 #' @export
 

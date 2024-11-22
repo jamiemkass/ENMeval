@@ -139,7 +139,6 @@ d <- eval.results(e)
 # here, we will choose an optimal model based on validation CBI, but you can
 # choose yourself what evaluation statistics to use
 opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
-opt.args <- opt$tune.args
 
 # now we can run our null models, and we can specify to include estimates for
 # our user-specified variables too, but we need to make sure we note what sign

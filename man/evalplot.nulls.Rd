@@ -40,3 +40,36 @@ the quantiles and the empirical value is plotted as a red point along the vertic
 For histogram plots, the null distribution is displayed as a histogram with vertical lines showing the quantiles 
 and the empirical value as a vertical red line on the distribution.
 }
+\examples{
+\dontrun{
+# first, let's tune some models
+occs <- read.csv(file.path(system.file(package="predicts"), 
+                           "/ex/bradypus.csv"))[,2:3]
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+                                   "/ex", sep=""), pattern="tif$", full.names=TRUE))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+
+ps <- list(orientation = "lat_lat")
+
+e <- ENMevaluate(occs, envs, bg, 
+                 tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), partitions = "block", 
+                 partition.settings = ps, algorithm = "maxnet", categoricals = "biome",
+                 parallel = TRUE)
+
+d <- eval.results(e)
+
+# here, we will choose an optimal model based on validation CBI, but you can
+# choose yourself what evaluation statistics to use
+opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
+
+# now we can run our null models 
+# NOTE: you should use at least 100 iterations in practice -- this is just an
+# example
+nulls <- ENMnulls(e, mod.settings = list(fc = opt$fc, rm = opt$rm), no.iter = 10)
+
+# let's plot the null model results
+evalplot.nulls(nulls, stats = c("cbi.val", "auc.val"), plot.type = "violin")
+}
+
+}
