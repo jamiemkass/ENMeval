@@ -67,6 +67,71 @@
 #' This comparison table includes z-scores of these differences and their associated p-values (under a normal distribution).
 #' See ?ENMnull for more details.
 #' 
+#' 
+#' @examples
+#' \dontrun{
+#' library(ENMeval)
+#' 
+#' # first, let's tune some models
+#' occs <- read.csv(file.path(system.file(package="predicts"), 
+#' "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#'                                    "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' 
+#' ps <- list(orientation = "lat_lat")
+#' 
+#' # as an example, let's use two user-specified evaluation metrics
+#' conf.and.cons <- function(vars) {
+#'   observations <- c(
+#'     rep(x = 1, times = length(vars$occs.train.pred)),
+#'     rep(x = 0, times = length(vars$bg.train.pred)),
+#'     rep(x = 1, times = length(vars$occs.val.pred)),
+#'     rep(x = 0, times = length(vars$bg.val.pred))
+#'   )
+#'   predictions <- c(vars$occs.train.pred, vars$bg.train.pred, vars$occs.val.pred, vars$bg.val.pred)
+#'   evaluation_mask <- c(
+#'     rep(x = FALSE, times = length(vars$occs.train.pred) + length(vars$bg.train.pred)),
+#'     rep(x = TRUE, times = length(vars$occs.val.pred) + length(vars$bg.val.pred))
+#'   )
+#'   measures <- confcons::measures(observations = observations, predictions = predictions, evaluation_mask = evaluation_mask, df = TRUE)[, c("CPP_eval", "DCPP")]
+#'   colnames(measures) <- c("confidence", "consistency")
+#'   return(measures)
+#' }
+#' 
+#' e <- ENMevaluate(occs, envs, bg, 
+#'                  tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), partitions = "block", 
+#'                  partition.settings = ps, algorithm = "maxnet", categoricals = "biome",
+#'                  user.eval  = conf.and.cons, parallel = TRUE)
+#' 
+#' d <- eval.results(e)
+#' 
+#' # here, we will choose an optimal model based on validation CBI, but you can
+#' # choose yourself what evaluation statistics to use
+#' opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
+#' opt.args <- opt$tune.args
+#' 
+#' # now we can run our null models, and we can specify to include estimates for
+#' # our user-specified variables too, but we need to make sure we note what sign
+#' # we expect these statistics to be 
+#' # NOTE: you should use at least 100 iterations in practice -- this is just an
+#' # example
+#' nulls <- ENMnulls(e, 
+#'                   mod.settings = list(fc = opt$fc, rm = opt$rm),
+#'                   no.iter = 10, 
+#'                   user.eval = conf.and.cons,
+#'                   eval.stats = c("cbi.val", "confidence", "consistency"),
+#'                   userStats.signs = c("confidence" = 1, "consistency" = 1))
+#' 
+#' # here are the results of all the null iterations
+#' null.results(nulls)
+#' # and here are the comparisons between the null and empirical values for
+#' # the evaluation statistics, including the z-score and p-value
+#' # for more details, see Bohl et al. 2019
+#' null.emp.results(nulls)
+#' }
+#' 
 #' @export
 #'
 

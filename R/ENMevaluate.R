@@ -176,7 +176,6 @@
 #' @importFrom stats pnorm quantile runif sd quantile
 #' @importFrom utils citation combn packageVersion setTxtProgressBar txtProgressBar
 #'
-#'
 #' @examples
 #' \dontrun{
 #' library(terra)
@@ -188,7 +187,7 @@
 #' "/ex", sep=""), pattern="tif$", full.names=TRUE))
 #' occs.z <- cbind(occs, extract(envs, occs, ID = FALSE))
 #' occs.z$biome <- factor(occs.z$biome)
-#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 1000))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 #' names(bg) <- names(occs)
 #' bg.z <- cbind(bg, extract(envs, bg, ID = FALSE))
 #' bg.z$biome <- factor(bg.z$biome)
@@ -216,7 +215,7 @@
 #' # and you can also extract the data for plotting to make your own custom plots
 #' mods.maxnet <- eval.models(e.maxnet)
 #' m <- mods.maxnet$fc.LQH_rm.2
-#' plot(m, type = "cloglog)
+#' plot(m, type = "cloglog")
 #' rcurve_data <- maxnet::response.plot(m, "bio1", type = "cloglog", plot = FALSE)
 #' 
 #' # there is currently no native function to make raster model predictions for
@@ -244,11 +243,11 @@
 #' other.settings = list(path = "analyses/mxnt_results", 
 #' other.args = c("jackknife=TRUE", "responsecurves=TRUE")))
 #' 
-#' 
 #' # print the tuning results
 #' eval.results(e.maxent.jar)
+#' 
 #' # raster predictions can be made for maxent.jar models with predicts or 
-#' ENMeval
+#' # ENMeval
 #' mods.maxent.jar <- eval.models(e.maxent.jar)
 #' pred.L2 <- predict(mods.maxent.jar$fc.L_rm.2, envs, 
 #' args = "outputform=cloglog")
@@ -861,6 +860,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # remove the doClamp = FALSE recorded in other.settings to avoid confusion
   other.settings$doClamp <- NULL
+  
+  # # turn character fields in eval.stats back to character from factor
+  # for(i in tune.tbl.char) eval.stats[,i] <- as.character(eval.stats[[i]])
   
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),

@@ -22,9 +22,9 @@ names(bg) <- names(occs)
 
 # define SWD tables for testing
 occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
-occs.z$biome <- factor(occs.z$biome, levels = levels(envs$biome))
+occs.z$biome <- factor(occs.z$biome)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
-bg.z$biome <- factor(bg.z$biome, levels = levels(envs$biome))
+bg.z$biome <- factor(bg.z$biome)
 
 alg <- "maxent.jar"
 no.iter <- 5
