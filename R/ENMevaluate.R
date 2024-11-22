@@ -733,8 +733,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     tune.names <- enm@name
   }else{
     # define tuned settings names and bind them to the tune table
-    tune.tbl.char <- names(tune.tbl)[sapply(tune.tbl, is.character)]
-    for(i in tune.tbl.char) tune.tbl[,i] <- factor(tune.tbl[[i]])
     tune.names <- train.stats.all$tune.args
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
   }
@@ -860,9 +858,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # remove the doClamp = FALSE recorded in other.settings to avoid confusion
   other.settings$doClamp <- NULL
-  
-  # # turn character fields in eval.stats back to character from factor
-  # for(i in tune.tbl.char) eval.stats[,i] <- as.character(eval.stats[[i]])
   
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),

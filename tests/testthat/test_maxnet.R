@@ -33,7 +33,7 @@ no.iter <- 5
 cats1 <- "biome"
 
 # define tune args
-tune.args <- list(fc = c("L"), rm = 2:3)
+tune.args <- list(fc = c("L","Q"), rm = 2:3)
 mset <- lapply(tune.args, function(x) x[1])
 
 
