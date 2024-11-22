@@ -48,3 +48,24 @@ Different colors represent the categories or values of another tuning parameter.
 Error bars represent the standard deviation of a statistic around the mean. 
 Currently, this function can only plot two tuning parameters at a time.
 }
+\examples{
+\dontrun{
+# first, let's tune some models
+occs <- read.csv(file.path(system.file(package="predicts"), 
+"/ex/bradypus.csv"))[,2:3]
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+"/ex", sep=""), pattern="tif$", full.names=TRUE))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+ 
+ps <- list(orientation = "lat_lat")
+e <- ENMevaluate(occs, envs, bg, 
+               tune.args = list(fc = c("L","LQ","LQH"), rm = 1:5), 
+               partitions = "block", partition.settings = ps, 
+               algorithm = "maxnet", categoricals = "biome", 
+               parallel = TRUE)
+               
+evalplot.stats(e, c("cbi.val", "or.mtp"), x.var = "rm", color.var = "fc", 
+             error.bars = FALSE)
+}
+}

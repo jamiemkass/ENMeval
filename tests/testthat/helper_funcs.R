@@ -141,11 +141,11 @@ test_clamp <- function(envs, occs.z, bg.z, categoricals) {
     expect_true(all(terra::minmax(none)[1,-z] == terra::minmax(subright)[1,-z]))
     expect_true(all(terra::minmax(none)[2,-z] == terra::minmax(subright)[2,-z]))
     # for(i in 1:nrow(combs)) {
-      # if(canExtrapolate == TRUE) {
-        # expect_false(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
-      # }else{
-        # expect_true(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
-      # }
+    # if(canExtrapolate == TRUE) {
+    # expect_false(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
+    # }else{
+    # expect_true(all(abs(terra::minmax(clamp.envs.p[[combs[i,1]]] - clamp.envs.p[[combs[i,2]]])) < 1e-7))
+    # }
     # }
   })
   
@@ -274,73 +274,60 @@ test_evalplot.stats <- function(e) {
 }
 
 test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL, categoricals = "biome") {
-  all_tests_hist <- function(sim.type) {
     test_hist <- function(i) {
       test_that("Outputs for evalplot.envSim.hist have correct form", {
         expect_true(ncol(i) == 2)
         expect_true(names(i)[1] == "partition")
-        expect_true(names(i)[2] == sim.type)
       })
     }
     # with ENMevaluation object
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     if(bg.sel == 1) {
-      evalplot.envSim.hist(e = e, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+      evalplot.envSim.hist(e = e, ref.data = "bg", categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     }
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
-    evalplot.envSim.hist(e = e, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(e = e, ref.data = "occs", categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     # with occs and bg data
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
     if(bg.sel == 1) {
-      evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist() 
+      evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "bg", categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist() 
     }
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
-    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
-  }
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", categoricals = categoricals, envs.vars = c("bio1", "bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
+    evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = occs.grp, bg.grp = bg.grp, ref.data = "occs", categoricals = categoricals, hist.bins = 50, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_hist()
   
-  all_tests_hist("mess")
-  all_tests_hist("most_diff")
-  all_tests_hist("most_sim")  
 }
 
-test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL, categoricals = "biome", skip_simDiff = TRUE) { 
-  all_tests_map <- function(sim.type, skip_simDiff) {
-    test_map <- function(i) {
-      test_that("Outputs for evalplot.envSim.map have correct form", {
-        skip_if(skip_simDiff == TRUE)
-        if(inherits(i, "SpatRaster")) {
-          if(is.null(occs.testing.z)) {
-            expect_true(length(unique(e@occs.grp)) == terra::nlyr(i))
-          }else{
-            expect_true(2 == terra::nlyr(i))
-          }
+test_evalplot.envSim.map <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL, categoricals = "biome") { 
+  test_map <- function(i) {
+    test_that("Outputs for evalplot.envSim.map have correct form", {
+      if(inherits(i, "SpatRaster")) {
+        if(is.null(occs.testing.z)) {
+          expect_true(length(unique(e@occs.grp)) == terra::nlyr(i))
         }else{
-          expect_true(ncol(i) == 4)
-          expect_true(names(i)[1] == "x")
-          expect_true(names(i)[2] == "y")
-          expect_true(names(i)[3] == "ras")
-          expect_true(names(i)[4] == sim.type)  
+          expect_true(2 == terra::nlyr(i))
         }
-      })
-    }
-    # with ENMevaluation object
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, envs.vars = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    # with buffer
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    # with occs and bg data
-    evalplot.envSim.map(occs.z = occs.z, occs.grp = occs.grp, envs = envs, ref.data = "occs", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    if(bg.sel == 1) {
-      evalplot.envSim.map(bg.z = bg.z, bg.grp = bg.grp, envs = envs, ref.data = "bg", sim.type = sim.type, categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
-    }
+      }else{
+        expect_true(ncol(i) == 4)
+        expect_true(names(i)[1] == "x")
+        expect_true(names(i)[2] == "y")
+        expect_true(names(i)[3] == "ras")
+      }
+    })
+  }
+  # with ENMevaluation object
+  evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", categoricals = categoricals, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", categoricals = categoricals, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", categoricals = categoricals, envs.vars = c("bio1","bio12"), return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", categoricals = categoricals, envs.vars = c("bio1","bio12"), return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  # with buffer
+  evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", categoricals = categoricals, bb.buf = 5, return.tbl = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  evalplot.envSim.map(e = e, envs = envs, ref.data = "occs", categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  # with occs and bg data
+  evalplot.envSim.map(occs.z = occs.z, occs.grp = occs.grp, envs = envs, ref.data = "occs", categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
+  if(bg.sel == 1) {
+    evalplot.envSim.map(bg.z = bg.z, bg.grp = bg.grp, envs = envs, ref.data = "bg", categoricals = categoricals, bb.buf = 5, return.ras = TRUE, quiet = TRUE, occs.testing.z = occs.testing.z) |> test_map()
   }
   
-  all_tests_map("mess", skip_simDiff = FALSE)
-  all_tests_map("most_diff", skip_simDiff)
-  all_tests_map("most_sim", skip_simDiff)  
 }
 
 test_evalplot.nulls <- function(ns) {

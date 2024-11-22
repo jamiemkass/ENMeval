@@ -231,15 +231,18 @@ bg.val.pred - numeric: predictions made by mod.k for validation background
 }
 \examples{
 \dontrun{
+library(terra)
+library(ENMeval)
+
 occs <- read.csv(file.path(system.file(package="predicts"), 
 "/ex/bradypus.csv"))[,2:3]
-envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), 
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
 "/ex", sep=""), pattern="tif$", full.names=TRUE))
-occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+occs.z <- cbind(occs, extract(envs, occs, ID = FALSE))
 occs.z$biome <- factor(occs.z$biome)
-bg <- as.data.frame(predicts::backgroundSample(envs, n = 1000))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 names(bg) <- names(occs)
-bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+bg.z <- cbind(bg, extract(envs, bg, ID = FALSE))
 bg.z$biome <- factor(bg.z$biome)
 
 # set other.settings -- pred.type is only for Maxent models
@@ -261,13 +264,19 @@ algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
 # print the tuning results
 eval.results(e.maxnet)
 
+# you can plot the marginal response curves of a maxnet object with plot(), 
+# and you can also extract the data for plotting to make your own custom plots
+mods.maxnet <- eval.models(e.maxnet)
+m <- mods.maxnet$fc.LQH_rm.2
+plot(m, type = "cloglog")
+rcurve_data <- maxnet::response.plot(m, "bio1", type = "cloglog", plot = FALSE)
+
 # there is currently no native function to make raster model predictions for
 # maxnet models, but ENMeval can be used to make them like this:
 # here's an example where we make a prediction based on the L2 model
 # (feature class: Linear, regularization multiplier: 2) for our envs data
-mods.maxnet <- eval.models(e.maxnet)
-pred.L2 <- maxnet.predictRaster(mods.maxnet$fc.L_rm.2, envs)
-terra::plot(pred.L2)
+pred.LQH2 <- maxnet.predictRaster(m, envs)
+plot(pred.L2)
 
 # here's a run with maxent.jar -- note that if the R package rJava cannot 
 # install or load, or if you have other issues with Java on your computer, 
@@ -287,27 +296,30 @@ algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE,
 other.settings = list(path = "analyses/mxnt_results", 
 other.args = c("jackknife=TRUE", "responsecurves=TRUE")))
 
-
 # print the tuning results
 eval.results(e.maxent.jar)
+
 # raster predictions can be made for maxent.jar models with predicts or 
-ENMeval
+# ENMeval
 mods.maxent.jar <- eval.models(e.maxent.jar)
 pred.L2 <- predict(mods.maxent.jar$fc.L_rm.2, envs, 
 args = "outputform=cloglog")
 pred.L2 <- maxnet.predictRaster(mods.maxent.jar$fc.L_rm.2, envs, os)
-terra::plot(pred.L2)
+plot(pred.L2)
 
 # this will give you the percent contribution (not deterministic) and
 # permutation importance (deterministic) values of variable importance for
 # Maxent models, and it only works with maxent.jar
 eval.variable.importance(e.maxent.jar)
 
-# here's a run with BIOCLIM -- note that 1) we need to remove the categorical
-# variable here because this algorithm only takes continuous variables, and
-# that 2) the way BIOCLIM makes predicted is getting tuned (as opposed to the
-way the model is fit like maxnet or maxent.jar), namely, the tails of the 
-# distribution that are ignored when predicting (see ?predicts::envelope)
+# here's a run with BIOCLIM. Note that we need to remove the categorical
+# variable here because this algorithm only takes continuous variables. We 
+# also should point out that the way BIOCLIM is tuned is by comparing 
+# performance for different ways to make predictions (as opposed to comparing 
+# performance for models fit in different ways like for maxnet or maxent.jar). 
+# Namely, BIOCLIM can ignore different tails of the distribution when making 
+# predictions, and this is what is tuned in ENMevaluate (see 
+# ?predicts::envelope).
 
 # print the tuning results
 eval.results(e.bioclim)
@@ -317,7 +329,7 @@ mods.bioclim <- eval.models(e.bioclim)
 # the only difference for tuning is how they are predicted during
 # cross-validation
 pred.both <- predict(mods.bioclim$tails.both, envs, tails = "both")
-terra::plot(pred.both)
+plot(pred.both)
 
 # please see the vignette for more examples of model tuning, 
 # partitioning, plotting functions, and null models

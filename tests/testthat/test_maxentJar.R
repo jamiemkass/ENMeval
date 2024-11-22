@@ -1,7 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- TRUE
+skip_tests_for_cran <- FALSE
 
 # this additionally skips tests for env similarity and difference for the 
 # envSim.map tests
@@ -22,9 +22,9 @@ names(bg) <- names(occs)
 
 # define SWD tables for testing
 occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
-occs.z$biome <- factor(occs.z$biome, levels = levels(envs$biome))
+occs.z$biome <- factor(occs.z$biome)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
-bg.z$biome <- factor(bg.z$biome, levels = levels(envs$biome))
+bg.z$biome <- factor(bg.z$biome)
 
 alg <- "maxent.jar"
 no.iter <- 5
@@ -32,7 +32,7 @@ no.iter <- 5
 cats1 <- "biome"
 
 # define tune args
-tune.args <- list(fc = c("L"), rm = 2:3)
+tune.args <- list(fc = c("L","Q"), rm = 2:3)
 mset <- lapply(tune.args, function(x) x[1])
 
 # block partitions

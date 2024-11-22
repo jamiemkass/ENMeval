@@ -1,7 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- TRUE
+skip_tests_for_cran <- FALSE
 
 # this additionally skips tests for env similarity and difference for the 
 # envSim.map tests
@@ -47,9 +47,9 @@ test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
 context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
 test_evalplot.stats(e)
 context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions..."))
-test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
+test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
 context(paste("Testing evalplot.envSim.map for", alg, "with block partitions..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1, skip_simDiff = skip_simDiff)
+test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
 
 context(paste("Testing ENMnulls for", alg, "with block partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -71,7 +71,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using doSNOW..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using doSNOW..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with block partitions using doSNOW..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doSNOW")
@@ -94,7 +94,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using doParallel..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using doParallel..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with block partitions using doParallel..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doParallel")
@@ -115,7 +115,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with checkerboard1 partitions..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with checkerboard1 partitions..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with checkerboard1 partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -137,7 +137,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with checkerboard2 partitions..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
   context(paste("Testing evalplot.envSim.map for", alg, "with checkerboard2 partitions..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with checkerboard2 partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -158,7 +158,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0)
   context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -195,7 +195,7 @@ test_evalplot.stats(e)
 context(paste("Testing evalplot.envSim.hist for", alg, "with testing partition..."))
 test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
 context(paste("Testing evalplot.envSim.map for", alg, "with testing partition..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing, categoricals = cats1, skip_simDiff = skip_simDiff)
+test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing, categoricals = cats1)
 
 context(paste("Testing ENMnulls for", alg, "with testing partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -229,7 +229,7 @@ test_evalplot.stats(e)
 context(paste("Testing evalplot.envSim.hist for", alg, "with user partitions..."))
 test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
 context(paste("Testing evalplot.envSim.map for", alg, "with user partitions..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1, skip_simDiff = skip_simDiff)
+test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, categoricals = cats1)
 
 context(paste("Testing ENMnulls for", alg, "with user partitions..."))
 ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
@@ -250,7 +250,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and no raster environmental variables..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1)
   context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and no raster environmental variables..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and no raster environmental variables..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
@@ -271,7 +271,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and no input background data..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0)
   context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and no input background data..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1, skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1)
   
   context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and no input background data..."))
   ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
