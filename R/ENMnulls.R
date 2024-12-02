@@ -16,8 +16,10 @@
 #' @param eval.stats character vector: the performance metrics that will be 
 #' used to calculate null model statistics.
 #' @param user.enm ENMdetails object: if implementing a user-specified model.
-#' @param user.eval function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
-#' The function must first be defined and then input as the argument \code{user.eval}.
+#' @param user.eval function: custom function for specifying performance metrics 
+#' not included in \pkg{ENMeval}.
+#' The function must first be defined and then input as the argument 
+#' \code{user.eval}.
 #' @param user.eval.type character: if implementing a user-specified model, 
 #' specify here which evaluation type to use -- either "knonspatial", 
 #' "kspatial", "testing", or "none".
@@ -56,16 +58,27 @@
 #' occurrences can be sampled from.
 #' 
 #' @references 
-#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. \doi{10.1111/jbi.13573}
+#' Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach 
+#' to quantify performance and significance for ecological niche models of 
+#' species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. 
+#' \doi{10.1111/jbi.13573}
 #' 
-#' Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & Sánchez-Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. \emph{Ecography}, \bold{43}: 341-352. \doi{10.1111/ecog.04886}
+#' Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., 
+#' Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & 
+#' Sánchez-Cordero, V. (2020). Biotic predictors with phenological information 
+#' improve range estimates for migrating monarch butterflies in Mexico. 
+#' \emph{Ecography}, \bold{43}: 341-352. \doi{10.1111/ecog.04886}
 #' 
-#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. \emph{Ecography}, \bold{30}: 727-736. \doi{10.1111/j.2007.0906-7590.05041.x}
+#' Raes, N., & ter Steege, H. (2007). A null-model for significance testing of 
+#' presence-only species distribution models. \emph{Ecography}, \bold{30}: 
+#' 727-736. \doi{10.1111/j.2007.0906-7590.05041.x}
 #' 
-#' @return An \code{ENMnull} object with slots containing evaluation summary statistics for the null models 
-#' and their cross-validation results, as well as differences in results between the empirical and null models. 
-#' This comparison table includes z-scores of these differences and their associated p-values (under a normal distribution).
-#' See ?ENMnull for more details.
+#' @return An \code{ENMnull} object with slots containing evaluation summary 
+#' statistics for the null models and their cross-validation results, as well 
+#' as differences in results between the empirical and null models. 
+#' This comparison table includes z-scores of these differences and their 
+#' associated p-values (under a normal distribution). See ?ENMnull for more 
+#' details.
 #' 
 #' 
 #' @examples
@@ -76,7 +89,8 @@
 #' occs <- read.csv(file.path(system.file(package="predicts"), 
 #' "/ex/bradypus.csv"))[,2:3]
 #' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
-#'                                    "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#'                                    "/ex", sep=""), 
+#'                                    pattern="tif$", full.names=TRUE))
 #' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 #' names(bg) <- names(occs)
 #' 
@@ -90,19 +104,26 @@
 #'     rep(x = 1, times = length(vars$occs.val.pred)),
 #'     rep(x = 0, times = length(vars$bg.val.pred))
 #'   )
-#'   predictions <- c(vars$occs.train.pred, vars$bg.train.pred, vars$occs.val.pred, vars$bg.val.pred)
+#'   predictions <- c(vars$occs.train.pred, vars$bg.train.pred, 
+#'   vars$occs.val.pred, vars$bg.val.pred)
 #'   evaluation_mask <- c(
-#'     rep(x = FALSE, times = length(vars$occs.train.pred) + length(vars$bg.train.pred)),
-#'     rep(x = TRUE, times = length(vars$occs.val.pred) + length(vars$bg.val.pred))
+#'     rep(x = FALSE, times = length(vars$occs.train.pred) + 
+#'     length(vars$bg.train.pred)),
+#'     rep(x = TRUE, times = length(vars$occs.val.pred) + 
+#'     length(vars$bg.val.pred))
 #'   )
-#'   measures <- confcons::measures(observations = observations, predictions = predictions, evaluation_mask = evaluation_mask, df = TRUE)[, c("CPP_eval", "DCPP")]
-#'   colnames(measures) <- c("confidence", "consistency")
-#'   return(measures)
+#'   measures <- confcons::measures(observations = observations, 
+#'   predictions = predictions, 
+#'   evaluation_mask = evaluation_mask, df = TRUE)
+#'   measures.metrics <- measures[, c("CPP_eval", "DCPP")]
+#'   colnames(measures.metrics) <- c("confidence", "consistency")
+#'   return(measures.metrics)
 #' }
 #' 
 #' e <- ENMevaluate(occs, envs, bg, 
-#'                  tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), partitions = "block", 
-#'                  partition.settings = ps, algorithm = "maxnet", categoricals = "biome",
+#'                  tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), 
+#'                  partitions = "block", partition.settings = ps, 
+#'                  algorithm = "maxnet", categoricals = "biome",
 #'                  user.eval  = conf.and.cons, parallel = TRUE)
 #' 
 #' d <- eval.results(e)
@@ -112,8 +133,8 @@
 #' opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
 #' 
 #' # now we can run our null models, and we can specify to include estimates for
-#' # our user-specified variables too, but we need to make sure we note what sign
-#' # we expect these statistics to be 
+#' # our user-specified variables too, but we need to make sure we note what 
+#' # sign we expect these statistics to be 
 #' # NOTE: you should use at least 100 iterations in practice -- this is just an
 #' # example
 #' nulls <- ENMnulls(e, 
