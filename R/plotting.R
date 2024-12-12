@@ -722,3 +722,436 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
     return(g)  
   }
 }
+
+#' @title Plot Response Curve for Maxent or Maxnet Models
+#' @description This function plots a response curve for a given environmental variable based on a Maxent.jar
+#' or maxnet model. It allows plotting clamping on or off and supports multiple variables via
+#' a wrapper that combines plots using the patchwork package.
+#' @param mod A Maxent.jar or maxnet model object.
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param fun If maxent.jar a function to compute constant values for other variables (default is `mean`). Maxnet models always use mean.
+#' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
+#' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
+#' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @return A ggplot object of the response curve.
+#' @author Gonzalo E. Pinilla- Buitrago 
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e.maxnet <- ENMevaluate(occs, envs, bg, 
+#'                        tune.args = list(fc = "LQ", rm = 1), 
+#'                         partitions = "block", other.settings = os, partition.settings = ps,
+#'                         algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' # Plot with clamp tails
+#' evalplot.curve(mod = e.maxnet@models$fc.LQ_rm.1, 
+#'                envs = tr_envs, 
+#'                var = "bio1")
+#' # without tails
+#' evalplot.curve(mod = e.maxnet@models$fc.LQ_rm.1, 
+#'                envs = tr_envs, 
+#'                var = "bio1", 
+#'                clamp.tails = FALSE)
+#' }
+#' @export
+evalplot.curve <- function(mod,
+                       envs,
+                       var,
+                       fun = mean,
+                       exp.curve = 0.025,
+                       nr.curve = 100,
+                       clamp.tails = TRUE) {
+  # Determine if model is maxnet
+  is_maxnet <- inherits(mod, "maxnet")
+  
+  # Get constant values for all variables
+  if (is_maxnet) {
+    const_v <- mod$samplemeans
+    var_names <- names(mod$samplemeans)
+  } else {
+    const_v <- apply(rbind(mod@absence, mod@presence), 2, fun)
+    var_names <- colnames(mod@absence)
+  }
+  
+  # Create matrix with nr.curve + 2 rows of constant values
+  mat_const <- matrix(const_v, nrow = nr.curve + 2, ncol = length(const_v), byrow = TRUE)
+  colnames(mat_const) <- var_names
+  
+  # Get ranges for fitting and transfer
+  if (is_maxnet) {
+    min_var_train <- mod$varmin[var]
+    max_var_train <- mod$varmax[var]
+  } else {
+    min_var_train <- min(mod@absence[, var], na.rm = TRUE)
+    max_var_train <- max(mod@absence[, var], na.rm = TRUE)
+  }
+  
+  min_var_transfer <- terra::minmax(envs[[var]])[1]
+  max_var_transfer <- terra::minmax(envs[[var]])[2]
+  
+  min_val <- min(min_var_train, min_var_transfer)
+  max_val <- max(max_var_train, max_var_transfer)
+  range_val <- c(min_val, max_val)
+  
+  # Create vector of values to plot the curve
+  v <- seq(0, (range_val[2] - range_val[1]) * (1 + exp.curve * 2), length.out = nr.curve)
+  v.plot <- (range_val[1] - (range_val[2] - range_val[1]) * exp.curve) + v
+  v.plot <- c(v.plot, min_var_train, max_var_train)
+  v.plot <- sort(v.plot)
+  
+  # Replace variable of interest in matrix
+  mat_const[, var] <- v.plot
+  
+  # Predict suitability values
+  # Get suitability values
+  if (is_maxnet) {
+    p <- predict(mod, mat_const, 
+                 type = "cloglog",
+                 clamp = FALSE)
+  } else {
+    p <- predict(mod, mat_const, 
+                 args = c("outputformat=cloglog",
+                          "doclamp=FALSE"))
+  }
+  
+  
+  # Prepare data for ggplot
+  v.curve <- cbind(p, v.plot)
+  colnames(v.curve) <- c("suitability", var)
+  # Create ggplot curve
+  ggcurve <- ggplot2::ggplot(tibble::as_tibble(v.curve), aes(x = get(var), 
+                                                             y = suitability)) +
+    ggplot2::geom_line(color = "red") +
+    ggplot2::geom_vline(xintercept = min_var_train, color = "orange") +
+    ggplot2::geom_vline(xintercept = min_var_transfer, color = "darkorange3", linetype = 3) +
+    ggplot2::geom_vline(xintercept = max_var_train, color = "deepskyblue") +
+    ggplot2::geom_vline(xintercept = max_var_transfer, color = "darkblue", linetype = 3) +
+    (if (clamp.tails) {
+      # Add lower clamp tail
+      ggplot2::annotate("segment",
+                        x = min(v.plot),
+                        xend = min_var_train,
+                        y = v.curve[v.plot == min_var_train, "suitability"],
+                        yend = v.curve[v.plot == min_var_train, "suitability"],
+                        col = "darkred",
+                        lty = 2)
+    }) +
+    (if (clamp.tails) {
+      # Add upper clamp tail
+      ggplot2::annotate("segment",
+                        x = max_var_train,
+                        xend = max(v.plot),
+                        y = v.curve[v.plot == max_var_train, "suitability"],
+                        yend = v.curve[v.plot == max_var_train, "suitability"],
+                        col = "darkred",
+                        lty = 2)
+    }) +
+    # Add lower tail shade area
+    (if (min_var_transfer < min_var_train) {
+      ggplot2::annotate("rect", 
+                        xmin = min_var_transfer, 
+                        xmax = min_var_train, 
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "orange")
+    }) +
+    # Add upper tail shade area
+    (if (max_var_transfer > max_var_train) {
+      ggplot2::annotate("rect", 
+                        xmin = max_var_train, 
+                        xmax = max_var_transfer, 
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "blue")
+    }) +
+    ggplot2::ylim(c(-0.01, 1.01)) +
+    ggplot2::scale_x_continuous(expand = c(0, 0)) +
+    ggplot2::xlab(var) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.y = element_text(angle = 90, vjust = 0, hjust = 0.5))
+  return(ggcurve)
+}
+
+#' @title Plot Response Curves for All Variables with Shared Y-Axis
+#' @description A wrapper function to plot response curves for all contributing variables and combine
+#' them using patchwork. The plots share a common y-axis label.
+#' @param mod A Maxent.jar or maxnet model object.
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' @param fun A function to compute constant values for other variables (default is `median`).
+#' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
+#' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
+#' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @import patchwork
+#' @author Gonzalo E. Pinilla- Buitrago 
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e.maxnet <- ENMevaluate(occs, envs, bg, 
+#'                        tune.args = list(fc = "LQ", rm = 1), 
+#'                         partitions = "block", other.settings = os, partition.settings = ps,
+#'                         algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' evalplot.all.curves(mod = e.maxent@models$fc.LQ_rm.1, 
+#' envs = tr_envs)
+#' }
+#' @export
+evalplot.all.curves <- function(mod,
+                            envs,
+                            fun = mean,
+                            exp.curve = 0.025,
+                            nr.curve = 100,
+                            clamp.tails = TRUE) {
+  # Get variable names
+  var_names <- if (inherits(mod, "maxnet")) names(mod$samplemeans) else colnames(mod@absence)
+  
+  # Calculate number of columns (assuming square or near-square layout)
+  n_plots <- length(var_names)
+  n_cols <- ceiling(sqrt(n_plots))
+  
+  # Generate plots with y-axis text only for the first column
+  plots <- lapply(seq_along(var_names), function(i) {
+    ENMeval::evalplot.curve(mod, envs, var_names[i], fun, exp.curve, nr.curve, clamp.tails = clamp.tails)
+  })
+  
+  # Combine plots with a shared y-axis label
+  combined_plot <- patchwork::wrap_plots(plots, ncol = n_cols, 
+                                         axis_titles = "collect_y") +
+    ggplot2::theme(plot.margin = margin(10, 10, 10, 10))  # Adjust margins
+  
+  # Add a shared y-axis label
+  combined_plot <- combined_plot
+  
+  return(combined_plot)
+}
+
+#' @title Plot Density Plots of variables
+#' @description This function plots densities of a given environmental variable based on a Maxent.jar
+#' or maxnet model.
+#' @param e An ENMevaluation object.
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param bw.envs The smoothing bandwidth to be used in the environmental variables
+#' @return A ggplot object of the response curve.
+#' @import ggplot2
+#' @import terra
+#' @author Gonzalo E. Pinilla-Buitrago 
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e.maxnet <- ENMevaluate(occs, envs, bg, 
+#'                        tune.args = list(fc = "LQ", rm = 1), 
+#'                         partitions = "block", other.settings = os, partition.settings = ps,
+#'                         algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' evalplot.density(e = e.maxent,  envs = tr_envs, var = "bio1")
+#' }
+#' @export
+evalplot.density <- function(e, envs, var, bw.envs = 10) {
+  # Determine if model is maxnet
+  # Get ranges for fitting and transfer
+  ## Minimum value of train data
+  min_var_train <- min(e@bg[, var])
+  ## Maximum value of train data
+  max_var_train <- max(e@bg[, var])
+  ## Minimum value of transfer data
+  min_var_transfer <- terra::minmax(envs[[var]])[1]
+  ## Maximum value of transfer data
+  max_var_transfer <- terra::minmax(envs[[var]])[2]
+  ## Minimum value
+  min_val <- min(min_var_train, min_var_transfer)
+  ## Maximum value
+  max_val <- max(max_var_train, max_var_transfer)
+  ## Range 
+  range_val <- c(min_val, max_val)
+  
+  df.den <-  dplyr::tibble(c(e@bg[, var], e@occs[, var]))
+  names(df.den) <- var
+  
+  ## ggplot density
+  ggdens <- ggplot(df.den, aes(x = get(var))) +
+    # Add density curves
+    ggplot2::geom_density(na.rm = TRUE, fill = "black", alpha = 0.3,
+                          bounds = c(min_var_train, max_var_train)) +
+    # Add density curves
+    ggplot2::geom_density(data = terra::values(envs[[var]]),
+                          na.rm = TRUE, fill = "purple", alpha = 0.2,
+                          bounds = c(min_var_transfer, max_var_transfer),
+                          lty = 2, bw = bw.envs) +
+    # Add minimum train line
+    ggplot2::geom_vline(xintercept = min_var_train, col = "orange") +
+    # Add minimum transfer line
+    ggplot2::geom_vline(xintercept = min_var_transfer, col = "darkorange3",
+                        lty = 3) +
+    # Add maximum train line
+    ggplot2::geom_vline(xintercept = max_var_train, col = "deepskyblue") +
+    # Add maximum transfer line
+    ggplot2::geom_vline(xintercept = max_var_transfer, col = "darkblue",
+                        lty = 3) +
+    # Add lower tail shade area
+    (if (min_var_transfer < min_var_train) {
+      annotate("rect",
+               xmin = min_var_transfer,
+               xmax = min_var_train,
+               ymin = -Inf, ymax = Inf,
+               alpha = .1, fill = "orange")
+    }) +
+    # Add upper tail shade area
+    (if (max_var_transfer > max_var_train) {
+      annotate("rect",
+               xmin = max_var_train,
+               xmax = max_var_transfer,
+               ymin = -Inf, ymax = Inf,
+               alpha = .1, fill = "blue")
+    }) +
+    # No expand ggplot
+    ggplot2::scale_x_continuous(expand = c(0.025, 0.025)) +
+    ggplot2::scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
+    # Change x axis label
+    ggplot2::xlab(var) +
+    # Define ggplot theme
+    ggplot2::theme_classic() +
+    theme(axis.text.y = element_text(angle = 90, vjust = 0, hjust = 0.5))
+  return(ggdens)
+}
+
+#' @title Density plots for All Variables with Shared Y-Axis
+#' @description A wrapper function to plot response curves for all contributing variables and combine
+#' them using patchwork. The plots share a common y-axis label.
+#' @param e An ENMevaluation object.
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param bw.envs The smoothing bandwidth to be used in the environmental variables
+#' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @import patchwork
+#' @author Gonzalo E. Pinilla-Buitrago 
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e.maxnet <- ENMevaluate(occs, envs, bg, 
+#'                        tune.args = list(fc = "LQ", rm = 1), 
+#'                         partitions = "block", other.settings = os, partition.settings = ps,
+#'                         algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' evalplot.all.density(e = e.maxent, envs = tr_envs)
+#' }
+
+#' @export
+evalplot.all.density <- function(e, envs, var, bw.envs = 10) {
+  # Get variable names
+  var_names <- names(e@bg)
+  var_names <- var_names[!(var_names %in% c("lon", "lat"))]
+  # Calculate number of columns (assuming square or near-square layout)
+  n_plots <- length(var_names)
+  n_cols <- ceiling(sqrt(n_plots))
+  
+  # Generate plots with y-axis text only for the first column
+  plots <- lapply(seq_along(var_names), function(i) {
+    ENMeval::evalplot.density(e, envs, var_names[i], bw.envs = bw.envs)
+  })
+  
+  # Combine plots with a shared y-axis label
+  combined_plot <- patchwork::wrap_plots(plots, ncol = n_cols, 
+                                         axis_titles = "collect_y") +
+    ggplot2::theme(plot.margin = margin(10, 10, 10, 10))  # Adjust margins
+  
+  # Add a shared y-axis label
+  combined_plot <- combined_plot
+  
+  return(combined_plot)
+}
+
+#' @title Response curve and density plots for one variable
+#' @description A wrapper function to plot response curves and density plot.
+#' @param e An ENMevaluation object.
+#' @param mod A character defining model (e.g., "fc.LQ_rm.1")
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param fun A function to compute constant values for other variables (default is `median`).
+#' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
+#' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
+#' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @param bw.envs The smoothing bandwidth to be used in the environmental variables
+#' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @import patchwork
+#' @author Gonzalo E. Pinilla-Buitrago 
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e.maxnet <- ENMevaluate(occs, envs, bg, 
+#'                        tune.args = list(fc = "LQ", rm = 1), 
+#'                         partitions = "block", other.settings = os, partition.settings = ps,
+#'                         algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' evalplot.curden(e.maxent, "fc.LQ_rm.1", tr_envs, "bio1", fun = median)
+#' }
+#' @export
+evalplot.curden <- function(e, mod, envs, var, fun = mean,
+                        exp.curve = 0.025, nr.curve = 100, 
+                        clamp.tails = TRUE, bw.envs = 10) {
+  curve_var <- ENMeval::evalplot.curve(e@models[[mod]], envs, var, fun, 
+                          exp.curve, nr.curve, clamp.tails = clamp.tails)
+  den_var <- ENMeval::evalplot.density(e, envs, var, bw.envs = bw.envs)
+  curden_var <- patchwork::wrap_plots(curve_var, den_var, ncol = 1, 
+                                      axis_titles = "collect_x")
+  return(curden_var)
+}
