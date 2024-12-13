@@ -64,7 +64,7 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
   
   grp.n <- length(unique(pts.plot$partition))
   if(grp.n > 9) {
-    theme.custom <- ggplot2::guides(color = FALSE)
+    theme.custom <- ggplot2::guides(color = "none")
     pt.cols <- rainbow(grp.n)
   }else{
     theme.custom <- NULL
@@ -280,7 +280,7 @@ evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp 
   }
   
   if(nk > 9) {
-    theme.custom <- ggplot2::guides(color = FALSE)
+    theme.custom <- ggplot2::guides(color = "none")
     pt.cols <- rainbow(nk)
   }else{
     theme.custom <- NULL
@@ -433,6 +433,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   }
   
   for(k in 1:nk) {
+    message("Calculating MESS for partition ", k, "...")
     test.z <- pts.plot |> dplyr::filter(partition == k) |> 
       dplyr::select(-longitude, -latitude, -partition)
     
@@ -546,6 +547,8 @@ evalplot.stats <- function(e, stats, x.var, color.var, dodge = NULL, error.bars 
   res.avgs <- dplyr::left_join(avgs, sds, by = join.names) |>
     dplyr::mutate(lower = avg - sd, upper = avg + sd,
                   metric = factor(metric, levels = stats))
+  res.avgs[[x.var]] <- factor(res.avgs[[x.var]])
+  res.avgs[[color.var]] <- factor(res.avgs[[color.var]])
   if(!is.null(facet.labels)) labeller <- ggplot2::as_labeller(facet.labels) else labeller <- NULL
   if(!is.null(metric.levels)) res$metric <- factor(res$metric, levels = metric.levels)
   if(!is.null(metric.levels)) res.avgs$metric <- factor(res.avgs$metric, levels = metric.levels)

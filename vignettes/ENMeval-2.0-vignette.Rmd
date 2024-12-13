@@ -173,9 +173,9 @@ In the next step, we'll sample 10,000 random points from the background (note th
 
 ```{r backgPts}
 # Randomly sample 10,000 background points from one background extent raster 
-# (only one per cell without replacement). Note: Since the raster has <10,000 pixels, 
-# you'll get a warning and all pixels will be used for background.
-bg <- predicts::backgroundSample(envs.bg, n = 10000) |> as.data.frame()
+# (only one per cell without replacement). 
+bg <- terra::spatSample(envs.bg, size = 10000, na.rm = TRUE, 
+                        values = FALSE, xy = TRUE) |> as.data.frame()
 colnames(bg) <- colnames(occs)
 
 # Notice how we have pretty good coverage (every cell).
@@ -223,19 +223,15 @@ evalplot.grps(pts = bg, pts.grp = block$bg.grp, envs = envs.bg) +
 # background localities.
 occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = block$occs.grp, bg.grp = block$bg.grp)
-evalplot.envSim.hist(sim.type = "most_diff", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = block$occs.grp, bg.grp = block$bg.grp)
-evalplot.envSim.hist(sim.type = "most_sim", ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = block$occs.grp, bg.grp = block$bg.grp)
+evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = block$occs.grp, 
+                     bg.grp = block$bg.grp, ref.data = "occs")
 
 # Here we plot environmental similarity values for the entire extent with respect 
 # to each validation group.
 # We use the bb.buf (bounding box buffer) argument to zoom in to our study extent.
-evalplot.envSim.map(ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = block$occs.grp, 
-                    bg.grp = block$bg.grp, bb.buf = 7)
+evalplot.envSim.map(envs = envs, occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = block$occs.grp, bg.grp = block$bg.grp, 
+                    ref.data = "occs", bb.buf = 7)
 ```
 
 #### 2. Basic checkerboard {#cb1}
@@ -244,53 +240,54 @@ The next two partitioning methods are variants of a checkerboard approach to par
 The basic checkerboard method partitions the points into *k* = 2 spatial groups using a simple checkerboard pattern.
 
 ```{r part.ck1}
-cb1 <- get.checkerboard(occs, envs.bg, bg, aggregation.factor = 5)
+cb1 <- get.checkerboard(occs, envs.bg, bg, aggregation.factor = 25)
 evalplot.grps(pts = occs, pts.grp = cb1$occs.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern clearly.
 evalplot.grps(pts = bg, pts.grp = cb1$bg.grp, envs = envs.bg)
 # We can see from the MESS maps that this method results in similar environmental 
 # representation between the partitions.
-evalplot.envSim.hist(ref.data = "occs", occs.z = occs.z, bg.z = bg.z, 
-                     occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp)
+evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = cb1$occs.grp, 
+                     bg.grp = cb1$bg.grp, ref.data = "occs")
 ```
 
 ```{r fig.width = 7, fig.height = 5}
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = cb1$occs.grp, 
-                    bg.grp = cb1$bg.grp, bb.buf = 7)
+evalplot.envSim.map(envs = envs, occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = cb1$occs.grp, bg.grp = cb1$bg.grp, 
+                    ref.data = "occs", bb.buf = 7)
 ```
 
 ```{r}
 # We can increase the aggregation factor to give the groups bigger boxes.
 # This can result in groups that are more environmentally different from each other.
-cb1.large <- get.checkerboard(occs, envs.bg, bg, aggregation.factor = 30)
+cb1.large <- get.checkerboard(occs, envs.bg, bg, aggregation.factor = 100)
 evalplot.grps(pts = occs, pts.grp = cb1.large$occs.grp, envs = envs.bg)
 evalplot.grps(pts = bg, pts.grp = cb1.large$bg.grp, envs = envs.bg)
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
-                     bg.z = bg.z, occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp)
+evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, 
+                     occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp, 
+                     ref.data = "occs")
 ```
 
 ```{r fig.width = 7, fig.height = 5}
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = cb1.large$occs.grp, 
-                    bg.grp = cb1$bg.grp, bb.buf = 7)
+evalplot.envSim.map(envs = envs, occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = cb1.large$occs.grp, bg.grp = cb1$bg.grp, 
+                    ref.data = "occs", bb.buf = 7)
 ```
 
 #### 3. Hierarchical checkerboard {#cb2}
 The hierarchical checkerboard method partitions the data into *k* = 4 spatial groups. This is done by inputting two aggregation factors to hierarchically aggregate the input raster at two scales. Presence and background groups are assigned based on which box they fall into on the hierarchical checkerboard.
 
 ```{r part.ck2}
-cb2 <- get.checkerboard(occs, envs.bg, bg, aggregation.factor = c(5,5))
+cb2 <- get.checkerboard(occs, envs.bg, bg, aggregation.factor = c(10,10))
 evalplot.grps(pts = occs, pts.grp = cb2$occs.grp, envs = envs.bg)
 # Plotting the background points shows the checkerboard pattern very clearly.
 evalplot.grps(pts = bg, pts.grp = cb2$bg.grp, envs = envs.bg)
 # Different from basic checkerboard, some partitions here do show some difference
 # in environmental representation, but not as consistently different as with block.
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
-                     bg.z = bg.z, occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp)
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = cb2$occs.grp, 
-                    bg.grp = cb2$bg.grp, bb.buf = 7)
+evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = cb2$occs.grp, 
+                     bg.grp = cb2$bg.grp, ref.data = "occs")
+evalplot.envSim.map(envs = envs, occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = cb2$occs.grp, bg.grp = cb2$bg.grp, 
+                    ref.data = "occs", bb.buf = 7)
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
@@ -310,14 +307,14 @@ The 'random k-fold' method partitions occurrence localities randomly into a user
 rand <- get.randomkfold(occs, bg, k = 5)
 evalplot.grps(pts = occs, pts.grp = rand$occs.grp, envs = envs.bg)
 # As the partitions are random, there is no large environmental difference between them.
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
-                     bg.z = bg.z, occs.grp = rand$occs.grp, bg.grp = rand$bg.grp)
+evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, occs.grp = rand$occs.grp, 
+                     bg.grp = rand$bg.grp, ref.data = "occs")
 ```
 
 ```{r fig.width = 7, fig.height = 9}
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = rand$occs.grp, 
-                    bg.grp = rand$bg.grp, bb.buf = 7)
+evalplot.envSim.map(envs = envs, occs.z = occs.z, bg.z = bg.z, 
+                    occs.grp = rand$occs.grp, bg.grp = rand$bg.grp, 
+                    ref.data = "occs", bb.buf = 7)
 ```
 
 #### 6. Fully Withheld Testing Data {#testing}
@@ -337,15 +334,16 @@ occs.testing.z <- cbind(occs.testing, terra::extract(envs, occs.testing, ID = FA
 # for testing data is also from the full study extent. We use here the occs.testing.z 
 # parameter to add information for our testing localities, and we set the partitions 
 # for occurrences all to zero (as no partitioning is done).
-evalplot.envSim.hist(sim.type = "mess", ref.data = "occs", occs.z = occs.z, 
-                     bg.z = bg.z, occs.grp = rep(0, nrow(occs)), 
-                     bg.grp = rand$bg.grp, occs.testing.z = occs.testing.z)
+evalplot.envSim.hist(occs.z = occs.z, bg.z = bg.z, 
+                     occs.grp = rep(0, nrow(occs)), bg.grp = rand$bg.grp, 
+                     ref.data = "occs", occs.testing.z = occs.testing.z)
 ```
 
 ```{r fig.width = 7, fig.height = 5}
-evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = occs.z, 
-                    bg.z = bg.z, occs.grp = rep(0, nrow(occs)), bg.grp = rand$bg.grp, 
-                    bb.buf = 7, occs.testing.z = occs.testing.z)
+evalplot.envSim.map(envs = envs, occs.z = occs.z, 
+                    bg.z = bg.z, occs.grp = rep(0, nrow(occs)), 
+                    bg.grp = rand$bg.grp, bb.buf = 7, 
+                    ref.data = "occs", occs.testing.z = occs.testing.z)
 # We can see what is to be expected -- the testing dataset is much more restricted 
 # environmentally than the training data, and thus is much more difference with the 
 # study extent.
@@ -397,12 +395,12 @@ terra::crs(envs.bg) <- terra::crs(occsBg.sf)
 # partition selection method can be assigned as either "checkerboard" or "random"
 # In addition, the spatialBlock function returns a map showing the different 
 # spatial partitions.
-sb <- blockCV::spatialBlock(speciesData = occsBg.sf, rasterLayer = envs.bg, 
-                            theRange = 1000000, k = 5, selection = "random")
+sb <- blockCV::cv_spatial(x = occsBg.sf, r = envs.bg, k = 5, 
+                            size = 1000000, selection = "random")
 # We can pull out the partition information from the SpatialBlock object to assemble
 # occs.grp and bg.grp, which can be used for plotting or as user.grp inputs for ENMevaluate.
-occs.grp <- sb$foldID[1:nrow(occs)]
-bg.grp <- sb$foldID[(nrow(occs)+1):length(sb$foldID)]
+occs.grp <- sb$folds_ids[1:nrow(occs)]
+bg.grp <- sb$folds_ids[(nrow(occs)+1):length(sb$folds_ids)]
 evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 ```
 
@@ -431,7 +429,7 @@ e.mx.l
 We may, however, want to compare a wider range of models that can use a wider variety of feature classes and regularization multipliers:
 
 ```{r maxnet2, results='hide'}
-tune.args <- list(fc = c("L","LQ","LQH","H"), rm = 1:5)
+tune.args <- list(fc = c("L","LQ","LQH"), rm = 1:5)
 e.mx <- ENMevaluate(occs = occs, envs = envs, bg = bg, 
                     algorithm = 'maxnet', partitions = 'block', 
                     tune.args = tune.args)
@@ -450,7 +448,7 @@ overlap <- calc.niche.overlap(e.mx@predictions, overlapStat = "D")
 ```
 
 ```{r}
-overlap[1:5,]
+overlap[1:5,1:5]
 ```
 
 #### Different parameterizations
@@ -458,9 +456,7 @@ There are multiple ways to run the function `ENMevaluate`, and we will go over h
 
 ```{r evalExamples, eval = FALSE}
 # If maxent.jar is installed and rJava loads properly, you can also run Maxent with 
-# the original Java software. You may need to run rJava::.jpackage('predicts') before
-# running the model.
-rJava::.jpackage('predicts')
+# the original Java software.
 e.mxjar <- ENMevaluate(occs, envs, bg, algorithm = "maxent.jar", 
                        tune.args = tune.args, partitions = "block")
 
@@ -474,7 +470,8 @@ e.test <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
 user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 2)), 
                  bg.grp = round(runif(nrow(bg), 1, 2)))
 e.user <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", 
-                      tune.args = tune.args, partitions = "user", user.grp = user.grp)
+                      tune.args = tune.args, partitions = "user", 
+                      user.grp = user.grp)
 
 # 4. No partitions: no cross validation statistics calculated, nor any model 
 # evaluation on test data.
@@ -489,8 +486,8 @@ e.noCV <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
 # occs and bg, avoiding any errors associated with different factor levels when combining data.
 occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
-e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", tune.args = tune.args, 
-                     partitions = "block")
+e.swd <- ENMevaluate(occs.z, bg = bg.z, algorithm = "maxnet", 
+                     tune.args = tune.args, partitions = "block")
 ```
 
 You can also specify your own custom validation statistics for `ENMevaluate` to calculate and report in the results tables. This is done by defining a custom function that has the arguments shown below, which are used by the internal function `tune.validate`. Here, we add functionality to calculate the AUC ratio and associated p-value for the partial ROC perfomance metric, defined in (Peterson et al. 2008) and implemented by the R package `kuenm` (Cobos et al. 2019), which is currently only available on Github.
@@ -503,10 +500,10 @@ devtools::install_github("marlonecobos/kuenm")
 # data most performance metrics should require -- the total list of these data can be found 
 # here: ?ENMevaluate. Make sure you return a data frame that specifies the names you want to 
 # see in the results tables.
-proc <- function(vars) {
-  proc <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
-  out <- data.frame(proc_auc_ratio = proc$pROC_summary[1], 
-                    proc_pval = proc$pROC_summary[2], row.names = NULL)
+pROC <- function(vars) {
+  pROC <- kuenm::kuenm_proc(vars$occs.val.pred, c(vars$bg.train.pred, vars$bg.val.pred))
+  out <- data.frame(pROC_auc_ratio = pROC$pROC_summary[1], 
+                    pROC_pval = pROC$pROC_summary[2], row.names = NULL)
   return(out)
 }
 
@@ -514,11 +511,11 @@ proc <- function(vars) {
 # custom function.
 e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet", 
                          tune.args = list(fc = "L", rm = 1:2), 
-                         partitions = "block", user.eval = proc)
+                         partitions = "block", user.eval = pROC)
 ```
 
 ```{r include = FALSE}
-e.mx.proc <- readRDS("e_mx_proc.rds")
+e.mx.proc <- readRDS("e_mx_pROC.rds")
 ```
 
 We can see the new performance statistic averages in the `results` slot. Notice that some model settings have NA values for validation statistics -- this is because one or more models were NULL when built during cross-validation. If this is the case, it means the training data used by the model (which was missing the withheld fold) may have provided insufficient information for model convergence given the assigned settings. Other cross-validation methods might result in fewer model errors because they partition the data differently. To see the model performance for all the folds, look at the `results.partitions` slot.
@@ -626,18 +623,18 @@ m1.mxjar@results
 `ENMeval` 2.0.x has a built-in plotting function (`eval.plot`) to visualize the results of the different models you tuned in a ggplot. Here, we will plot average validation AUC and omission rates for the models we tuned. The x-axis is the regularization multiplier, and the color of the points and lines represents the feature class. Notice that models with NA scores for cross-validation are not plotted here, so hinge models with rm 2 and higher are not shown because they had errors during cross-validation.
 
 ```{r plot.res}
-evalplot.stats(e = e.mx, stats = "or.mtp", color = "fc", x.var = "rm")
+evalplot.stats(e = e.mx, stats = "or.10p", color = "fc", x.var = "rm")
 # We can plot more than one statistic at once with ggplot facetting.
-evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "fc", x.var = "rm")
+evalplot.stats(e = e.mx, stats = c("or.10p", "cbi.val"), color = "fc", x.var = "rm")
 # Sometimes the error bars make it hard to visualize the plot, so we can try turning them off.
-evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "fc", x.var = "rm", 
+evalplot.stats(e = e.mx, stats = c("or.10p", "cbi.val"), color = "fc", x.var = "rm", 
                error.bars = FALSE)
 # We can also fiddle with the dodge argument to jitter the positions of overlapping points.
-evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "fc", x.var = "rm", 
+evalplot.stats(e = e.mx, stats = c("or.10p", "cbi.val"), color = "fc", x.var = "rm", 
                dodge = 0.5)
 # Finally, we can switch which variables are on the x-axis and which symbolized by color.
 # ENMeval currently only accepts two variables for plotting at a time.
-evalplot.stats(e = e.mx, stats = c("or.mtp", "auc.val"), color = "rm", x.var = "fc", 
+evalplot.stats(e = e.mx, stats = c("or.10p", "cbi.val"), color = "rm", x.var = "fc", 
                error.bars = FALSE)
 ```
 
@@ -789,10 +786,10 @@ The last point this vignette will discuss is extremely important for all scienti
 rmm <- eval.rmm(e.mx)
 # We can fill in the model selection rules based on the sequential criteria we chose.
 rmm$model$selectionRules <- "lowest 10 percentile omission rate, 
-break ties with average validation AUC"
+break ties with average validation CBI"
 # We can also enter our optimal model settings and the details of our optimal 
 # model's prediction.
-rmm$model$finalModelSettings <- "LQ2"
+rmm$model$finalModelSettings <- "LQH3"
 rmm$prediction$continuous$minVal <- terra::global(pred.seq, min)
 rmm$prediction$continuous$maxVal <- terra::global(pred.seq, max)
 rmm$prediction$continuous$units <- "suitability (cloglog transformation)"
