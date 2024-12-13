@@ -76,7 +76,8 @@
 #' occs <- read.csv(file.path(system.file(package="predicts"), 
 #' "/ex/bradypus.csv"))[,2:3]
 #' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
-#'                                    "/ex", sep=""), pattern="tif$", full.names=TRUE))
+#'                                    "/ex", sep=""), pattern="tif$", 
+#'                                    full.names=TRUE))
 #' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 #' names(bg) <- names(occs)
 #' 
@@ -90,19 +91,25 @@
 #'     rep(x = 1, times = length(vars$occs.val.pred)),
 #'     rep(x = 0, times = length(vars$bg.val.pred))
 #'   )
-#'   predictions <- c(vars$occs.train.pred, vars$bg.train.pred, vars$occs.val.pred, vars$bg.val.pred)
+#'   predictions <- c(vars$occs.train.pred, vars$bg.train.pred, 
+#'   vars$occs.val.pred, vars$bg.val.pred)
 #'   evaluation_mask <- c(
-#'     rep(x = FALSE, times = length(vars$occs.train.pred) + length(vars$bg.train.pred)),
-#'     rep(x = TRUE, times = length(vars$occs.val.pred) + length(vars$bg.val.pred))
+#'     rep(x = FALSE, times = length(vars$occs.train.pred) + 
+#'     length(vars$bg.train.pred)),
+#'     rep(x = TRUE, times = length(vars$occs.val.pred) + 
+#'     length(vars$bg.val.pred))
 #'   )
-#'   measures <- confcons::measures(observations = observations, predictions = predictions, evaluation_mask = evaluation_mask, df = TRUE)[, c("CPP_eval", "DCPP")]
+#'   measures <- confcons::measures(observations = observations, 
+#'   predictions = predictions, 
+#'   evaluation_mask = evaluation_mask, df = TRUE)[, c("CPP_eval", "DCPP")]
 #'   colnames(measures) <- c("confidence", "consistency")
 #'   return(measures)
 #' }
 #' 
 #' e <- ENMevaluate(occs, envs, bg, 
-#'                  tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), partitions = "block", 
-#'                  partition.settings = ps, algorithm = "maxnet", categoricals = "biome",
+#'                  tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), 
+#'                  partitions = "block", partition.settings = ps, 
+#'                  algorithm = "maxnet", categoricals = "biome",
 #'                  user.eval  = conf.and.cons, parallel = TRUE)
 #' 
 #' d <- eval.results(e)
@@ -112,8 +119,8 @@
 #' opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
 #' 
 #' # now we can run our null models, and we can specify to include estimates for
-#' # our user-specified variables too, but we need to make sure we note what sign
-#' # we expect these statistics to be 
+#' # our user-specified variables too, but we need to make sure we note what 
+#' # sign we expect these statistics to be 
 #' # NOTE: you should use at least 100 iterations in practice -- this is just an
 #' # example
 #' nulls <- ENMnulls(e, 

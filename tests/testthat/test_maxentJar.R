@@ -1,7 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- FALSE
+skip_tests_for_cran <- TRUE
 
 # this additionally skips tests for env similarity and difference for the 
 # envSim.map tests
@@ -243,7 +243,7 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and no raster environmental variables..."))
   test_evalplot.stats(e)
   context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and no raster environmental variables..."))
-  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, categoricals = cats1)
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0)
   context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and no raster environmental variables..."))
   test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0)
   
@@ -298,9 +298,9 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and two categorical variables..."))
   test_evalplot.stats(e.2cat)
   context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and two categorical variables..."))
-  test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
+  test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0)
   context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and two categorical variables..."))
-  test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0)
   
   context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and two categorical variables..."))
   ns <- ENMnulls(e.2cat, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
