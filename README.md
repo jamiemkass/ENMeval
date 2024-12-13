@@ -21,11 +21,7 @@ For the original package version, please reference this older publication:
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](https://doi.org/10.1111/2041-210X.12261)
 
-WARNINGS:
-
-*** The new version 2.0.5 has replaced dismo::maxent with predicts::MaxEnt, but when categorical predictor variables are used, there are differences between the model outputs of these two functions, and it is unclear why. Please see this [active Github issue](https://github.com/rspatial/predicts/issues/18) for details. Hopefully this can be fixed soon.
-
-NOTES:
+## NOTES:
 
 1. `ENMeval` is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues.
 Install with: `devtools::install_github("jamiemkass/ENMeval")`
