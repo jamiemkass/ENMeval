@@ -2,7 +2,7 @@ Package: ENMeval
 Type: Package
 Title: Automated Tuning and Evaluations of Ecological Niche Models
 Version: 2.0.5
-Date: 2024-11-10
+Date: 2024-12-14
 Authors@R: c(
   person("Jamie M.","Kass", email = "jamie.m.kass@gmail.com", role = c("aut","cre")), 
   person("Robert","Muscarella", role = "aut"),
@@ -48,6 +48,8 @@ Suggests:
     blockCV,
     devtools,
     tibble,
-    ecospat
+    ecospat,
+    geodata,
+    usdm
 VignetteBuilder: knitr
 URL: https://jamiemkass.github.io/ENMeval/
