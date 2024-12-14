@@ -515,7 +515,7 @@ e.mx.proc <- ENMevaluate(occs, envs, bg, algorithm = "maxnet",
 ```
 
 ```{r include = FALSE}
-e.mx.proc <- readRDS("e_mx_pROC.rds")
+e.mx.proc <- readRDS("e_mx_proc.rds")
 ```
 
 We can see the new performance statistic averages in the `results` slot. Notice that some model settings have NA values for validation statistics -- this is because one or more models were NULL when built during cross-validation. If this is the case, it means the training data used by the model (which was missing the withheld fold) may have provided insufficient information for model convergence given the assigned settings. Other cross-validation methods might result in fewer model errors because they partition the data differently. To see the model performance for all the folds, look at the `results.partitions` slot.
