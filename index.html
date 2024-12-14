@@ -5,76 +5,73 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="description" content="Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate niche overlap between model predictions, among others. The package was originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but the current version allows possible extensions for any modeling algorithm. The extensive vignette, which guides users through most package functionality but unfortunately has a file size too big for CRAN, can be found here on the package's Github Pages website: &lt;https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html&gt;.">
 <title>Automated Tuning and Evaluations of Ecological Niche Models • ENMeval</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.2.2/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.2.2/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Automated Tuning and Evaluations of Ecological Niche Models">
-<meta property="og:description" content="Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate niche overlap between model predictions, among others. The package was originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but the current version allows possible extensions for any modeling algorithm. The extensive vignette, which guides users through most package functionality but unfortunately has a file size too big for CRAN, can be found here on the package's Github Pages website: &lt;https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html&gt;.">
-<!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
-<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]-->
+<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Automated Tuning and Evaluations of Ecological Niche Models">
+<meta name="description" content="Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate range overlap between model predictions, among others. The package was originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but the current version allows possible extensions for any modeling algorithm. The extensive vignette, which guides users through most package functionality but unfortunately has a file size too big for CRAN, can be found here on the package's Github Pages website: &lt;https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html&gt;.">
+<meta property="og:description" content="Runs ecological niche models over all combinations of user-defined settings (i.e., tuning), performs cross validation to evaluate models, and returns data tables to aid in selection of optimal model settings that balance goodness-of-fit and model complexity. Also has functions to partition data spatially (or not) for cross validation, to plot multiple visualizations of results, to run null models to estimate significance and effect sizes of performance metrics, and to calculate range overlap between model predictions, among others. The package was originally built for Maxent models (Phillips et al. 2006, Phillips et al. 2017), but the current version allows possible extensions for any modeling algorithm. The extensive vignette, which guides users through most package functionality but unfortunately has a file size too big for CRAN, can be found here on the package's Github Pages website: &lt;https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html&gt;.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
-    
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
-    
+
+    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+
     <a class="navbar-brand me-2" href="index.html">ENMeval</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.5</small>
 
-    
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item">
-  <a class="nav-link" href="reference/index.html">Reference</a>
-</li>
+<li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="articles/ENMeval-2.0-vignette.html">ENMeval 2.0 Vignette</a>
-  </div>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/ENMeval-2.0-vignette.html">ENMeval 2.0.5 Vignette</a></li>
+  </ul>
 </li>
       </ul>
-<form class="form-inline my-2 my-lg-0" role="search">
-        <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="search.json" id="search-input" placeholder="Search for" autocomplete="off">
-</form>
-
-      <ul class="navbar-nav"></ul>
+<ul class="navbar-nav">
+<li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
+</form></li>
+      </ul>
 </div>
 
-    
+
   </div>
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9">
 <div class="section level1">
-<div class="page-header"><h1 id="enmeval-version-204">ENMeval version 2.0.4<a class="anchor" aria-label="anchor" href="#enmeval-version-204"></a>
+<div class="page-header"><h1 id="enmeval-version-205">ENMeval version 2.0.5<a class="anchor" aria-label="anchor" href="#enmeval-version-205"></a>
 </h1></div>
 <div class="section level2">
 <h2 id="r-package-for-automated-tuning-and-evaluations-of-ecological-niche-models">R package for automated tuning and evaluations of ecological niche models<a class="anchor" aria-label="anchor" href="#r-package-for-automated-tuning-and-evaluations-of-ecological-niche-models"></a>
 </h2>
-<p>NOTE: ENMeval is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues. Install with: <code>devtools::install_packages("jamiemkass/ENMeval")</code></p>
-<p><a href="https://jamiemkass.github.io/ENMeval/index.html"><code>ENMeval</code></a> is an R package that performs automated tuning and evaluations of ecological niche models and species distribution models. Version &gt;=2.0.0 represents an extensive restructure and expansion of version 0.3.1, and has many new features, including customizable specification of algorithms besides Maxent using the new <strong>ENMdetails</strong> object, comprehensive metadata output, null model evaluations, new visualization tools, a completely updated and extensive <a href="https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html">vignette</a> with a complete analysis walkthrough, and more flexibility for different analyses and data types. Many of these new features were created in response to user requests – thank you for your input!</p>
-<p><code>ENMeval</code> &gt;=2.0.0 includes the functionality to specify any algorithm of choice, but comes out of the box with two implementations of Maxent: maxnet <a href="https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049" class="external-link">(Phillips <em>et al.</em> 2017)</a> from the <a href="https://cran.r-project.org/package=maxnet" class="external-link">maxnet R package</a> and the Java software maxent.jar <a href="https://doi.org/10.1016/j.ecolmodel.2005.03.026" class="external-link">(Phillips <em>et al.</em> 2006)</a>, available <a href="http://biodiversityinformatics.amnh.org/open_source/maxent/" class="external-link">here</a>, as well as BIOCLIM implemented with the <a href="https://cran.r-project.org/package=dismo" class="external-link">dismo R package</a>.</p>
-<p>Model tuning refers to the process of building models with varying complexity settings, then choosing optimal settings based on some criteria. As it is difficult to predict in advance what level of complexity best fits your data and results in the most ecologically realistic response for your species, model tuning and evaluations are essential for ENM studies. This process helps researchers maximize predictive ability and avoid overfitting with models that are too complex.</p>
-<p>For a more detailed description of version &gt;=2.0.0, please reference the new publication in Methods in Ecology and Evolution:</p>
+<p><a href="https://jamiemkass.github.io/ENMeval/index.html"><code>ENMeval</code></a> is an R package that performs automated tuning and evaluations of ecological niche models / species distribution models. These models make predictions of species’ niche relationships and potential geographic distributions based on presence data, environmental predictor variables, and a sample of available environmental conditions (i.e., background data).</p>
+<p>“Model tuning” is commonly used for machine-learning models. It means building candidate models with a range of complexity settings, evaluating the accuracy of each one (here with cross-validation), then selecting optimal settings for your data based on those of the best-performing model. This exercise is important because it is difficult to predict in advance how complex your model needs to be to make accurate and ecologically realistic predictions for your species. Too much model complexity leads to overfitting, where your model fits your data very well but it cannot predict new data accurately. Model tuning helps maximize predictive ability while avoiding model overfitting.</p>
+<p>The <code>ENMeval</code> package features a single function that performs model tuning based on user specifications, including methods for partitioning data for cross-validation (random, leave-one-out, spatial, custom), and evaluates models using predefined performance metrics (AUC, Continuous Boyce Index, omission rates) with the option to insert others. The package includes functionality for three models: <a href="https://doi.org/10.1016/j.ecolmodel.2005.03.026" class="external-link">maxent.jar</a> (Java implementation of Maxent), <a href="https://onlinelibrary.wiley.com/doi/full/10.1111/ecog.03049" class="external-link">maxnet</a> (R implementation of Maxent), and <a href="https://doi.org/10.1111/ddi.12144" class="external-link">BIOCLIM</a> (climate envelope method). Users can also specify other algorithms by customizing an <strong>ENMdetails</strong> object (<code><a href="reference/ENMdetails.html">?ENMdetails</a></code>). The package also offers comprehensive metadata output, null model evaluations, visualization tools, and an extensive <a href="https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html">tutorial</a> that walks you through a full analysis workflow. Many features in <code>ENMeval</code> were created in response to user requests – thank you for your input! Version &gt;=2.0.0 represents an extensive restructure and expansion of previous versions, and 2.0.5 is a big move from <code>raster</code> and <code>dismo</code> functions to those of <code>terra</code> and <code>predicts</code>.</p>
+<p>For a more detailed description of <code>ENMeval</code>, please reference the most recent publication:</p>
 <p><a href="https://doi.org/10.1111/2041-210X.13628" class="external-link">Kass, J. M., Muscarella, R., Galante, P. J., Bohl, C., Pinilla-Buitrago, G. E., Boria, R. A., Soley-Guardia, M., &amp; Anderson, R. P. (2021). ENMeval 2.0: redesigned for customizable and reproducible modeling of species’ niches and distributions. Methods in Ecology and Evolution, 12: 1602-1608.</a></p>
-<p>For the original package version, please reference the 2014 publication in Methods in Ecology and Evolution:</p>
+<p>For the original package version, please reference this older publication:</p>
 <p><a href="https://doi.org/10.1111/2041-210X.12261" class="external-link">Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. and Anderson, R. P. (2014), ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.</a></p>
-<p>NOTES:</p>
+</div>
+<div class="section level2">
+<h2 id="notes">NOTES:<a class="anchor" aria-label="anchor" href="#notes"></a>
+</h2>
 <ol style="list-style-type: decimal">
+<li><p><code>ENMeval</code> is a work in progress, changing slowly to fix bugs when users identify them. If you find a bug, please raise an Issue in this Github repo and I will resolve it as soon as I can. The CRAN version may lag behind the Github one, so please try the development version here first if you are having any issues. Install with: <code>devtools::install_github("jamiemkass/ENMeval")</code></p></li>
 <li><p>The vignette is not included in the CRAN version of the package due to file size constraints, but is <a href="https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html">available</a> on the package’s Github Pages website.</p></li>
-<li><p>Please make sure to use the most recent version of <a href="https://biodiversityinformatics.amnh.org/open_source/maxent/" class="external-link">maxent.jar</a> (currently 3.4.4), as recent bug fixes were made.</p></li>
+<li><p>Please make sure to use the most recent version of <a href="https://biodiversityinformatics.amnh.org/open_source/maxent/" class="external-link">maxent.jar</a> , as bug fixes are occasionally made.</p></li>
 <li><p>Note that as of version 0.3.0, the default implementation uses the <a href="https://cran.r-project.org/package=maxnet" class="external-link">‘maxnet’ R package</a>. The output from this differs from that of the original Java program and so some features are not compatible (e.g., variable importance, html output).</p></li>
 </ol>
 </div>
@@ -90,7 +87,8 @@
 <div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li>GPL</li>
+<li>file <a href="LICENSE-text.html">LICENSE</a>
+</li>
 </ul>
 </div>
 
@@ -121,6 +119,7 @@
 <ul class="list-unstyled">
 <li><a href="https://CRAN.R-project.org/package=ENMeval" class="external-link"><img src="https://www.r-pkg.org/badges/version/ENMeval" alt="CRAN version"></a></li>
 <li><a href="https://cranlogs.r-pkg.org:443/badges/grand-total/ENMeval?color=orange" class="external-link"><img src="https://cranlogs.r-pkg.org:443/badges/grand-total/ENMeval?color=orange" alt="downloads"></a></li>
+<li><a href="https://www.gnu.org/licenses/gpl-3.0" class="external-link"><img src="https://img.shields.io/badge/License-GPL%20v3-blue.svg" alt="License: GPL v3"></a></li>
 <li><a href="https://github.com/jamiemkass/ENMeval/actions" class="external-link"><img src="https://github.com/jamiemkass/ENMeval/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>
@@ -130,21 +129,19 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p></p>
-<p>Developed by Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert A. Boria, Mariano Soley-Guardia, Robert P. Anderson.</p>
+  <p>Developed by Jamie M. Kass, Robert Muscarella, Peter J. Galante, Corentin Bohl, Gonzalo E. Buitrago-Pinilla, Robert A. Boria, Mariano Soley-Guardia, Robert P. Anderson.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer>
 </div>
 
-  
 
-  
+
+
 
   </body>
 </html>

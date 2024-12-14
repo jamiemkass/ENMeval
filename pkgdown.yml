@@ -1,10 +1,9 @@
-pandoc: 2.19.2
-pkgdown: 2.0.7
+pandoc: 3.1.11
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   ENMeval-2.0-vignette: ENMeval-2.0-vignette.html
-last_built: 2023-01-09T10:54Z
+last_built: 2024-12-14T01:21Z
 urls:
   reference: https://jamiemkass.github.io/ENMeval/reference
   article: https://jamiemkass.github.io/ENMeval/articles
-
