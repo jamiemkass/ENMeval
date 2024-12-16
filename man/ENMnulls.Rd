@@ -109,8 +109,8 @@ library(ENMeval)
 occs <- read.csv(file.path(system.file(package="predicts"), 
 "/ex/bradypus.csv"))[,2:3]
 envs <- rast(list.files(path=paste(system.file(package="predicts"), 
-                                   "/ex", sep=""), 
-                                   pattern="tif$", full.names=TRUE))
+                                   "/ex", sep=""), pattern="tif$", 
+                                   full.names=TRUE))
 bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 names(bg) <- names(occs)
 
