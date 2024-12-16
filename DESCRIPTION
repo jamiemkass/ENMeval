@@ -51,5 +51,4 @@ Suggests:
     ecospat,
     geodata,
     usdm
-VignetteBuilder: knitr
 URL: https://jamiemkass.github.io/ENMeval/
