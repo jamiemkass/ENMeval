@@ -48,7 +48,6 @@ tune(
   occs.testing.z,
   numCores,
   parallel,
-  parallelType,
   user.eval,
   algorithm,
   updateProgress,
@@ -132,8 +131,6 @@ coordinates at the testing occurrence records}
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
 \item{parallel}{boolean: if TRUE, run with parallel processing.}
-
-\item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
 
 \item{algorithm}{character: name of the algorithm used to build models. Currently one of "maxnet",
 "maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.}

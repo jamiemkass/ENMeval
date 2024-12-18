@@ -35,8 +35,6 @@
 #' @param parallel boolean: if TRUE, use parallel processing.
 #' @param numCores numeric: number of cores to use for parallel processing; 
 #' if NULL, all available cores will be used.
-#' @param parallelType character:: either "doParallel" or "doSNOW" 
-#' (default: "doSNOW").
 #' @param quiet boolean: if TRUE, silence all function messages 
 #' (but not errors).
 #' 
@@ -156,9 +154,12 @@
 #'
 
 # for split evaluation, label training occs "1" and testing evaluation occs "2" in partitions
-ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.diff","cbi.val","or.mtp","or.10p"),
-                     user.enm = NULL, user.eval = NULL, user.eval.type = NULL, userStats.signs = NULL, 
-                     removeMxTemp = TRUE, parallel = FALSE, numCores = NULL, parallelType = "doSNOW", quiet = FALSE) {
+ENMnulls <- function(e, mod.settings, no.iter, 
+                     eval.stats = c("auc.val","auc.diff",
+                                    "cbi.val","or.mtp","or.10p"),
+                     user.enm = NULL, user.eval = NULL, user.eval.type = NULL, 
+                     userStats.signs = NULL, removeMxTemp = TRUE, 
+                     parallel = FALSE, numCores = NULL, quiet = FALSE) {
   
   # assign evaluation type based on partition method
   if(is.null(user.eval.type)) {
@@ -252,18 +253,11 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
       numCores <- allCores
     }
     cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
-    if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
-    
-    if(parallelType == "doParallel") {
-      doParallel::registerDoParallel(cl)
-      opts <- NULL
-    } else if(parallelType == "doSNOW") {
-      doSNOW::registerDoSNOW(cl)
-      if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
-    }
-    numCoresUsed <- foreach::getDoParWorkers()
-    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
-    if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))  
+    parallel::clusterExport(cl, c("null.samps", "occs.grp.tbl", "mod.settings",
+                                  "e", "eval.type", "mod.settings"),
+                            envir = environment())
+    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
+    if(quiet != TRUE) message(paste0("Running in parallel ..."))  
   }
   
   if(length(e@clamp.directions) == 0) clamp.directions.i <- NULL else clamp.directions.i <- e@clamp.directions
@@ -373,9 +367,7 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   }
   
   if(parallel == TRUE) {
-    outs <- foreach::foreach(i = 1:no.iter, .options.snow = opts, .export = c("e"), .packages = c("dplyr", "ENMeval")) %dopar% {
-      null_i(i)
-    }
+    outs <- parallel::parLapply(cl, 1:no.iter, null_i)
   }else{
     outs <- list()
     for(i in 1:no.iter) {
@@ -385,7 +377,6 @@ ENMnulls <- function(e, mod.settings, no.iter, eval.stats = c("auc.val","auc.dif
   }
   
   if(quiet != TRUE) close(pb)
-  if(parallel == TRUE) parallel::stopCluster(cl)
   
   # assemble null evaluation statistics and take summaries
   nulls.ls <- lapply(outs, function(x) x$results)

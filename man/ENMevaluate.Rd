@@ -29,7 +29,6 @@ ENMevaluate(
   rmm = NULL,
   parallel = FALSE,
   numCores = NULL,
-  parallelType = "doSNOW",
   updateProgress = FALSE,
   quiet = FALSE
 )
@@ -127,8 +126,6 @@ this object, but if not, a new \code{rangeModelMetadata} object will be generate
 \item{parallel}{boolean: if TRUE, run with parallel processing.}
 
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
-
-\item{parallelType}{character: either "doParallel" or "doSNOW" (default: "doSNOW") .}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
 

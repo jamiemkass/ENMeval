@@ -21,8 +21,6 @@ Imports:
     terra,
     maxnet,
     predicts (>= 0.1-16),
-    doSNOW,
-    doParallel,
     parallel,
     foreach,
     utils,

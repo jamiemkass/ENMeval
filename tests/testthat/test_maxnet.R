@@ -1,7 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- TRUE
+skip_tests_for_cran <- FALSE
 
 # this additionally skips tests for env similarity and difference for the 
 # envSim.map tests
@@ -56,49 +56,26 @@ test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
 context(paste("Testing evalplot.nulls for", alg, "with block partitions..."))
 test_evalplot.nulls(ns)
 
-# block partitions with doSNOW
+# block partitions with parallel processing
 if(skip_tests_for_cran == FALSE) {
-  context(paste("Testing ENMevaluate for", alg, "with block partitions using doSNOW..."))
-  e.snow <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
+  context(paste("Testing ENMevaluate for", alg, "with block partitions using in parallel..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
                         algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
-                        parallel = TRUE, parallelType = "doSNOW")
+                        parallel = TRUE)
   test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
   
-  context(paste("Testing evalplot.stats for", alg, "with block partitions using doSNOW..."))
+  context(paste("Testing evalplot.stats for", alg, "with block partitions using in parallel..."))
   test_evalplot.stats(e)
-  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using doSNOW..."))
+  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using in parallel..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using doSNOW..."))
+  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using in parallel..."))
   test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
   
-  context(paste("Testing ENMnulls for", alg, "with block partitions using doSNOW..."))
-  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doSNOW")
+  context(paste("Testing ENMnulls for", alg, "with block partitions using in parallel..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE)
   test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
   
-  context(paste("Testing evalplot.nulls for", alg, "with block partitions using doSNOW..."))
-  test_evalplot.nulls(ns)
-}
-
-# block partitions with doParallel
-if(skip_tests_for_cran == FALSE) {
-  context(paste("Testing ENMevaluate for", alg, "with block partitions using doParallel..."))
-  e.snow <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
-                        algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
-                        parallel = TRUE, parallelType = "doParallel")
-  test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
-  
-  context(paste("Testing evalplot.stats for", alg, "with block partitions using doParallel..."))
-  test_evalplot.stats(e)
-  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using doParallel..."))
-  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using doParallel..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
-  
-  context(paste("Testing ENMnulls for", alg, "with block partitions using doParallel..."))
-  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doParallel")
-  test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
-  
-  context(paste("Testing evalplot.nulls for", alg, "with block partitions using doParallel..."))
+  context(paste("Testing evalplot.nulls for", alg, "with block partitions using in parallel..."))
   test_evalplot.nulls(ns)
 }
 

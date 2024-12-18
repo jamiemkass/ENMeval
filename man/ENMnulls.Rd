@@ -17,7 +17,6 @@ ENMnulls(
   removeMxTemp = TRUE,
   parallel = FALSE,
   numCores = NULL,
-  parallelType = "doSNOW",
   quiet = FALSE
 )
 }
@@ -58,9 +57,6 @@ when using maxent.jar for modeling.}
 
 \item{numCores}{numeric: number of cores to use for parallel processing; 
 if NULL, all available cores will be used.}
-
-\item{parallelType}{character:: either "doParallel" or "doSNOW" 
-(default: "doSNOW").}
 
 \item{quiet}{boolean: if TRUE, silence all function messages 
 (but not errors).}

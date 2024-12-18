@@ -78,7 +78,6 @@
 #' \code{ENMevaluation} object.
 #' @param parallel boolean: if TRUE, run with parallel processing.
 #' @param numCores numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.
-#' @param parallelType character: either "doParallel" or "doSNOW" (default: "doSNOW") .
 #' @param updateProgress boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors).
 #' 
@@ -299,8 +298,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                         n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), user.val.grps = NULL, 
                         user.eval = NULL, rmm = NULL, parallel = FALSE, 
-                        numCores = NULL,  parallelType = "doSNOW", 
-                        updateProgress = FALSE, quiet = FALSE) {
+                        numCores = NULL, updateProgress = FALSE, 
+                        quiet = FALSE) {
   
   
   # record start time
@@ -715,7 +714,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   results <- tune(d, enm, partitions, tune.tbl, doClamp, other.settings, 
                   partition.settings, user.val.grps, occs.testing.z, 
-                  numCores, parallel, parallelType, user.eval, algorithm, 
+                  numCores, parallel, user.eval, algorithm, 
                   updateProgress, quiet)  
   
   ##################### #
