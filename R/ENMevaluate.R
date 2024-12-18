@@ -752,7 +752,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
         levels(envs[[categoricals[i]]]) <- lev.df[[1]]
       }  
     }
-    message("Making model prediction rasters...")
+    if(quiet != TRUE) message("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
   }else{
