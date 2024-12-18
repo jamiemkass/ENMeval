@@ -30,8 +30,9 @@
 #' @importFrom methods is
 #' @importFrom utils count.fields
 #' @importFrom stats setNames
-#' @export
+#' 
 #' @examples
+#' \dontrun{
 #' # Below we use the predicts::MaxEnt example to fit a model:
 #' library(predicts)
 #' occs <- read.csv(file.path(system.file(package="predicts"),
@@ -42,6 +43,8 @@
 #' lam <- parse_lambdas(me)
 #' lam
 #' str(lam, 1)
+#' }
+#' @export
 
 parse_lambdas <- function(lambdas) {
   if(methods::is(lambdas, 'MaxEnt_model')) {
