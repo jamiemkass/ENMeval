@@ -1,4 +1,5 @@
 Version: 1.0
+ProjectId: 748ae0fd-9553-4eec-9d89-caf43202c31a
 
 RestoreWorkspace: Default
 SaveWorkspace: Default
@@ -17,4 +18,4 @@ PackageUseDevtools: Yes
 PackageInstallArgs: --no-multiarch --with-keep.source
 PackageBuildArgs: --no-build-vignettes
 PackageBuildBinaryArgs: --no-build-vignettes
-PackageCheckArgs: --ignore-vignettes
+PackageCheckArgs: --ignore-vignettes --as.cran
