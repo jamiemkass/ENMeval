@@ -165,7 +165,7 @@ points(bg, pch=21, bg=jack$bg.grp)
 \references{
 Hijmans, R. J. (2023). terra: Spatial Data Analysis. Available online at: \url{https://cran.r-project.org/package=terra}.
 
-Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, 5(11), 1198-1205. \doi{https://doi.org/10.1111/2041-210X.12945} 
+Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. \emph{Methods in Ecology and Evolution}, 5(11), 1198-1205. \doi{10.1111/2041-210X.12945} 
 
 Pearson, R. G., Raxworthy, C. J., Nakamura, M. and Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. \emph{Journal of Biogeography}, \bold{34}: 102-117. \doi{10.1111/j.1365-2699.2006.01594.x}
 
