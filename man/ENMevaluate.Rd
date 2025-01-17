@@ -153,7 +153,11 @@ There is also a brief discussion of some points relevant to null models in ?ENMn
 1. By default, validation AUC is calculated with respect to the full background (training + validation).
 This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
 other.settings$validation.bg to "partition", which will calculate AUC with respect 
-to the validation background only. The default value for other.settings$validation.bg is "full".
+to the validation background only. The default value for other.settings$validation.bg is "full". 
+NOTE: When examining validation AUC and other discrimination metrics, the "full" option will likely 
+result in higher performance than for the "partition" option because more and varied background data 
+should lead to higher discriminatory power for the model. Users should thus make sure they are correctly
+interpreting the evaluation results.
 
 2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using 
 the predicted values of the SpatRaster delineating the full study extent, but instead using the predicted
@@ -210,7 +214,7 @@ to make new spatial partitions. For example, 'basic' checkerboard with an aggreg
 Using two aggregation factors makes the checkerboard partitions hierarchical, where squares are first aggregated to define groups as in the 'basic' checkerboard, but a 
 second aggregation is then made to separate the resulting two bins into four bins (see ?partitions for more details).
 
-For user.eval, the accessible variables you have access to in order to run your custom function are below. 
+For user.eval, the variables you have access to in order to run your custom function are below. 
 See the vignette for a worked example.\cr*
 enm - ENMdetails object\cr*
 occs.train.z - data frame: predictor variable values for training occurrences\cr*
