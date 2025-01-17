@@ -144,7 +144,7 @@
 #' Using two aggregation factors makes the checkerboard partitions hierarchical, where squares are first aggregated to define groups as in the 'basic' checkerboard, but a 
 #' second aggregation is then made to separate the resulting two bins into four bins (see ?partitions for more details).
 #' 
-#' For user.eval, the accessible variables you have access to in order to run your custom function are below. 
+#' For user.eval, the variables you have access to in order to run your custom function are below. 
 #' See the vignette for a worked example.\cr*
 #' enm - ENMdetails object\cr*
 #' occs.train.z - data frame: predictor variable values for training occurrences\cr*
