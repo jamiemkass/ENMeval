@@ -88,6 +88,10 @@
 #' This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
 #' other.settings$validation.bg to "partition", which will calculate AUC with respect 
 #' to the validation background only. The default value for other.settings$validation.bg is "full".
+#' NOTE: When examining validation AUC and other discrimination metrics, the "full" option will likely 
+#' result in higher performance than for the "partition" option because more and varied background data 
+#' should lead to higher discriminatory power for the model. Users should thus make sure they are correctly
+#' interpreting the evaluation results.
 #' 
 #' 2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using 
 #' the predicted values of the SpatRaster delineating the full study extent, but instead using the predicted
