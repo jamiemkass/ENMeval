@@ -260,7 +260,11 @@ There is also a brief discussion of some points relevant to null models in ?ENMn
 <p>1. By default, validation AUC is calculated with respect to the full background (training + validation).
 This approach follows Radosavljevic &amp; Anderson (2014).This setting can be changed by assigning
 other.settings$validation.bg to "partition", which will calculate AUC with respect
-to the validation background only. The default value for other.settings$validation.bg is "full".</p>
+to the validation background only. The default value for other.settings$validation.bg is "full".
+NOTE: When examining validation AUC and other discrimination metrics, the "full" option will likely
+result in higher performance than for the "partition" option because more and varied background data
+should lead to higher discriminatory power for the model. Users should thus make sure they are correctly
+interpreting the evaluation results.</p>
 <p>2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using
 the predicted values of the SpatRaster delineating the full study extent, but instead using the predicted
 values for the background records. This decision to use the background only for calculating the continuous
@@ -310,7 +314,7 @@ to make new spatial partitions. For example, 'basic' checkerboard with an aggreg
 4 times larger than the input rasters and assign occurrence and background records to partition groups based on which square they fall in.
 Using two aggregation factors makes the checkerboard partitions hierarchical, where squares are first aggregated to define groups as in the 'basic' checkerboard, but a
 second aggregation is then made to separate the resulting two bins into four bins (see ?partitions for more details).</p>
-<p>For user.eval, the accessible variables you have access to in order to run your custom function are below.
+<p>For user.eval, the variables you have access to in order to run your custom function are below.
 See the vignette for a worked example.<br>*
 enm - ENMdetails object<br>*
 occs.train.z - data frame: predictor variable values for training occurrences<br>*
