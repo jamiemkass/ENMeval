@@ -188,12 +188,12 @@
 #' "/ex/bradypus.csv"))[,2:3]
 #' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
 #' "/ex", sep=""), pattern="tif$", full.names=TRUE))
-#' occs.z <- cbind(occs, extract(envs, occs, ID = FALSE))
-#' occs.z$biome <- factor(occs.z$biome)
+#' occs.xyEnv <- cbind(occs, extract(envs, occs, ID = FALSE))
+#' occs.xyEnv$biome <- factor(occs.xyEnv$biome)
 #' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 #' names(bg) <- names(occs)
-#' bg.z <- cbind(bg, extract(envs, bg, ID = FALSE))
-#' bg.z$biome <- factor(bg.z$biome)
+#' bg.xyEnv <- cbind(bg, extract(envs, bg, ID = FALSE))
+#' bg.xyEnv$biome <- factor(bg.xyEnv$biome)
 #' 
 #' # set other.settings -- pred.type is only for Maxent models
 #' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", 
@@ -207,6 +207,12 @@
 #' # categorical variable we are using (this can be a vector if multiple
 #' # categorical variables are used)
 #' e.maxnet <- ENMevaluate(occs, envs, bg, 
+#' tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+#' partitions = "block", other.settings = os, partition.settings = ps,
+#' algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
+
+#' # you can run the same model without rasters using the xyEnv data
+#' e.maxnet <- ENMevaluate(occs.xyEnv, envs = NULL, bg.xyEnv, 
 #' tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
 #' partitions = "block", other.settings = os, partition.settings = ps,
 #' algorithm = "maxnet", categoricals = "biome", overlap = TRUE)

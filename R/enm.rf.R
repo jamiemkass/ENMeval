@@ -1,12 +1,12 @@
 ################################# #
-# maxnet ENMdetails object ####
+# rf ENMdetails object ####
 ################################# #
 
-maxnet.name <- "maxnet"
+rf.name <- "random_forest"
 
-maxnet.fun <- maxnet::maxnet
+rf.fun <- randomForest::randomForest
 
-maxnet.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
+rf.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
                           partition.settings, other.settings, 
                           categoricals, doClamp, clamp.directions) {
   if(!("rm" %in% names(tune.args)) | !("fc" %in% names(tune.args))) {
@@ -25,30 +25,29 @@ maxnet.errors <- function(occs, envs, bg, tune.args, partitions, algorithm,
   }
 }
 
-maxnet.msgs <- function(tune.args, other.settings) {
+rf.msgs <- function(tune.args, other.settings) {
   msg <- paste0("maxnet from maxnet package v", packageVersion('maxnet'))
   return(msg)
 }
 
-maxnet.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
+rf.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
+  #implementation of down-sampled RF from Valavi et al. 2021
   out <- list()
+  out$formula <- formula(p ~.)
   out$data <- rbind(occs.z, bg.z)
-  out$p <- c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z)))
-  out$f <- maxnet::maxnet.formula(out$p, out$data, classes = tolower(tune.tbl.i$fc))
-  out$regmult <- tune.tbl.i$rm
-  # some models fail to converge if this parameter is not set to TRUE
-  # usually the case with sparse datasets
-  if(is.null(other.settings$addsamplestobackground)) {
-    out$addsamplestobackground <- TRUE
-  }else{
-    out$addsamplestobackground <- other.settings$addsamplestobackground
-  }
+  p <- as.factor(c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))))
+  out$data <- cbind(p, out$data)
+  prNum <- as.numeric(table(p)["1"])
+  bgNum <- as.numeric(table(p)["0"])
+  out$sampsize <- c("0" = prNum, "1" = prNum)
+  out$replace <- TRUE
+  out$ntree <- 1000
   out <- c(out, other.settings$other.args)
   return(out)
 }
 
-maxnet.predict <- function(mod, envs, other.settings) {
-  requireNamespace("maxnet", quietly = TRUE)
+rf.predict <- function(mod, envs, other.settings) {
+  requireNamespace("randomForest", quietly = TRUE)
   # function to generate a prediction Raster* when raster data is specified as envs,
   # and a prediction data frame when a data frame is specified as envs
   if(inherits(envs, "SpatRaster") == TRUE) {
@@ -64,21 +63,21 @@ maxnet.predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-maxnet.ncoefs <- function(mod) {
+rf.ncoefs <- function(mod) {
   length(mod$betas)
 }
 
 # no existing method in model object for variable importance
-maxnet.variable.importance <- function(mod) {
+rf.variable.importance <- function(mod) {
   NULL
 }
 
-#' @title ENMdetails maxnet
-#' @description This is the ENMdetails implementation for maxnet, the R version of
+#' @title ENMdetails rf
+#' @description This is the ENMdetails implementation for random forest, the R version of
 #' the Maxent algorithm. The configuration for running the model now includes addsamplestobackground = TRUE,
 #' which explicitly adds presences to the background for model training, though as the current 
-#' version of maxnet has this set to TRUE as default, behavior between ENMeval versions should not differ.
+#' version of rf has this set to TRUE as default, behavior between ENMeval versions should not differ.
 #' @export
-enm.maxnet <- ENMdetails(name = maxnet.name, fun = maxnet.fun, errors = maxnet.errors,
-                         msgs = maxnet.msgs, args = maxnet.args,
-                         predict = maxnet.predict, ncoefs = maxnet.ncoefs, variable.importance = maxnet.variable.importance)
+enm.rf <- ENMdetails(name = rf.name, fun = rf.fun, errors = rf.errors,
+                         msgs = rf.msgs, args = rf.args,
+                         predict = rf.predict, ncoefs = rf.ncoefs, variable.importance = rf.variable.importance)
