@@ -46,19 +46,26 @@ rf.predict <- function(mod, envs, other.settings) {
                            other.settings$other.args)[[2]]
   }else{
     # otherwise, envs is data frame, so return data frame of predicted values
-    pred <- predict(mod, envs, type = "response", 
-                    other.settings$other.args) |> as.numeric()
+    pred <- predict(mod, envs, type = "prob", 
+                    other.settings$other.args)[,2] |> as.numeric()
   }
   return(pred)
 }
 
 rf.ncoefs <- function(mod) {
-  length(mod$betas)
+  nrow(mod$importance)
 }
 
 # no existing method in model object for variable importance
 rf.variable.importance <- function(mod) {
-  NULL
+  # remove mean decrease in accuracy for absences (1st column)
+  # and mean decrease in accuracy over all classes (3rd column)
+  # this leaves mean decrease in accuracy for presences and mean decrease
+  # in Gini index
+  imp <- data.frame(mod$importance[,c(-1,-3)])
+  names(imp)[1] <- "MeanDecreaseAccuracyPres"
+  imp <- dplyr::arrange(imp, dplyr::desc(MeanDecreaseAccuracyPres))
+  return(imp)
 }
 
 #' @title ENMdetails rf
