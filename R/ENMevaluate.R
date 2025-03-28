@@ -749,7 +749,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
     # necessary to convert levels of envs categoricals to numbers for maxent.jar
     # predictions, else error
-    if(!is.null(categoricals)) {
+    if(!is.null(categoricals) & algorithm == "maxent.jar") {
       for(i in 1:length(categoricals)) {
         lev.df <- terra::levels(envs[[categoricals[i]]])
         lev.df[[1]][,2] <- 1:length(cat.levs[[i]])
