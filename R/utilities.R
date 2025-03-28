@@ -381,7 +381,7 @@ lookup.enm <- function(algorithm) {
   x <- switch(algorithm, 
               maxent.jar = enm.maxent.jar,
               maxnet = enm.maxnet,
-              # randomForest = enm.randomForest,
+              rf = enm.rf,
               # boostedRegressionTrees = enm.boostedRegressionTrees,
               bioclim = enm.bioclim
   )
