@@ -331,82 +331,28 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   occs <- as.data.frame(occs)
   if(!is.null(bg)) bg <- as.data.frame(bg)
   
-  # fill in these arguments with defaults if they are NULL
-  if(is.null(partition.settings)) 
-    partition.settings <- list(orientation = "lat_lon", aggregation.factor = 2, 
-                               kfolds = 5)
-  # add these defaults to other.settings if not entered by user
-  if(is.null(other.settings$removeduplicates)) other.settings$removeduplicates = TRUE
-  if(is.null(other.settings$abs.auc.diff)) other.settings$abs.auc.diff <- TRUE
-  if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
-  if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
-  # add whether to use ecospat to other.settings to avoid multiple requires
-  other.settings <- c(other.settings, ecospat.use = ecospat.use)
+  # add defaults to other.settings if not entered by user
+  other.settings <- checks.other.settings(other.settings)
   
   # make sure taxon name column is not included
   if(inherits(occs[,1], "character") | inherits(bg[,1], "character")) 
     stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
   
-  if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste0("*** Running initial checks... ***\n"))
-  }else{
-    if(quiet != TRUE) message(paste0("*** Running initial checks for ", 
-                                     taxon.name, " ... ***\n"))
-  }
+  # initial message
+  if(quiet != TRUE) message(paste0("*** Running initial checks... ***\n"))
   
-  ## general argument checks
-  all.partitions <- c("jackknife", "randomkfold", "block", "checkerboard", 
-                      "user", "testing", "none")
+  # common partitions input errors
+  checks.partitions(partitions, partition.settings, occs.testing)
   
-  if(!(partitions %in% all.partitions)) {
-    stop("Please enter an accepted partition method.")
-  }
+  # incompatibilities between envs and algorithms
+  checks.envs(envs, algorithm)
+
+  # if a vector of tuning arguments is numeric, make sure it is sorted 
+  # (for results table and plotting)
+  tune.args <- checks.tuning(tune.args)
   
-  if(partitions == "testing" & is.null(occs.testing)) {
-    stop("If doing testing evaluations, please provide testing data (occs.testing).")
-  }
-  
-  if((partitions == "checkerboard") & 
-     is.null(envs)) {
-    stop('For checkerboard partitioning, predictor variable rasters "envs" are required.')
-  }
-  
-  if(partitions == "randomkfold") {
-    if(is.null(partition.settings$kfolds)) {
-      stop('For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
-    }else{
-      if(partition.settings$kfolds == 0) {
-        stop('For random k-fold partitioning, a numeric, non-zero value of "kfolds" is required.')  
-      }
-    }
-  }
-  
-  if(!is.null(envs)) {
-    # environmental raster data checks
-    if(inherits(envs, "SpatRaster") == FALSE) {
-      stop('From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
-    }else{
-      if(terra::nlyr(envs) < 2 & algorithm %in% c("maxent.jar", "maxnet")) {
-        stop('Maxent is generally not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
-      }
-      if(terra::nlyr(envs) < 2 & algorithm == "bioclim") {
-        stop('BIOCLIM is not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
-      }
-    }
-  }
-  
-  # if occs.testing input, coerce partitions to 'testing'
-  if(partitions == "testing") {
-    if(is.null(occs.testing)) {
-      stop('If performing fully withheld testing, enter occs.testing dataset and assign partitions to "testing".')
-    }
-    if(nrow(occs.testing) == 0) {
-      stop('If performing fully withheld testing, enter occs.testing dataset and assign partitions to "testing".')
-    }
-  }
-  
+  # turn off overlap is no tuning specified  
   if(is.null(tune.args) & overlap == TRUE) {
-    if(quiet != TRUE) message('* As no tuning arguments were specified, turning off range overlap.')
     overlap <- FALSE
   }
   
@@ -417,14 +363,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   if(doClamp == FALSE & !is.null(clamp.directions)) {
     stop("If specifying clamp directions, please make doClamp = TRUE.")
-  }
-  
-  # if a vector of tuning arguments is numeric, make sure it is sorted 
-  # (for results table and plotting)
-  tune.args.num <- which((sapply(tune.args, class) %in% c("numeric", "integer")) 
-                         & sapply(tune.args, length) > 1)
-  for(i in tune.args.num) {
-    tune.args[[i]] <- sort(tune.args[[i]])
   }
   
   # make sure that validation.bg is only "bg" if the partitions are spatial
