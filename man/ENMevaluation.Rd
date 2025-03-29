@@ -63,8 +63,6 @@ ncoef = number of non-zero beta values (model coefficients)
 
 \item{\code{predictions}}{SpatRaster: model predictions}
 
-\item{\code{taxon.name}}{character: the name of the focal taxon (optional)}
-
 \item{\code{occs}}{data frame: occurrence coordinates and predictor variable values used for model training}
 
 \item{\code{occs.testing}}{data frame: when provided, the coordinates of the fully-withheld testing records}

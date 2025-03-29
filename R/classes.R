@@ -16,7 +16,6 @@ NULL
 #' @slot models list: model objects
 #' @slot variable.importance list: variable importance data frames (when available)
 #' @slot predictions SpatRaster: model predictions
-#' @slot taxon.name character: the name of the focal taxon (optional)
 #' @slot occs data frame: occurrence coordinates and predictor variable values used for model training
 #' @slot occs.testing data frame: when provided, the coordinates of the fully-withheld testing records
 #' @slot occs.grp vector: partition groups for occurrence points
@@ -89,7 +88,6 @@ ENMevaluation <- setClass("ENMevaluation",
                                     models = 'list',
                                     variable.importance = 'list',
                                     predictions = 'ANY',
-                                    taxon.name = 'character',
                                     occs = 'data.frame',
                                     occs.testing = 'data.frame',
                                     occs.grp = 'factor',
@@ -206,15 +204,6 @@ setGeneric("eval.clamp.directions", function(x) standardGeneric("eval.clamp.dire
 #' @rdname eval.clamp.directions
 setMethod("eval.clamp.directions", "ENMevaluation", function(x) x@other.settings)
 
-#' @title eval.taxon.name generic for ENMevaluation object
-#' @param x ENMevaluation object
-#' @rdname eval.taxon.name
-#' @export
-setGeneric("eval.taxon.name", function(x) standardGeneric("eval.taxon.name"))
-
-#' @rdname eval.taxon.name
-setMethod("eval.taxon.name", "ENMevaluation", function(x) x@taxon.name)
-
 #' @title eval.occs generic for ENMevaluation object
 #' @param x ENMevaluation object
 #' @rdname eval.occs
@@ -284,7 +273,6 @@ setMethod("show",
           signature = "ENMevaluation",
           definition = function(object) {
             cat("An object of class: ", class(object), "\n")
-            if(nchar(object@taxon.name)>0) cat(" taxon name: ", object@taxon.name, "\n")
             cat(" occurrence/background points: ", nrow(object@occs), '/', nrow(object@bg), "\n")
             cat(" partition method: ", object@partition.method, "\n")
             cat(" partition settings: ", ifelse(length(object@partition.settings) > 0, paste(names(object@partition.settings), unlist(object@partition.settings), sep = " = ", collapse = ", "), "none"), "\n")

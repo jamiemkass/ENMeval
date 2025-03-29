@@ -59,8 +59,6 @@
 #' @param occs.testing matrix / data frame: a fully withheld testing dataset with two columns for longitude and latitude 
 #' of occurrence localities, in that order when \code{partitions = "testing"}. These occurrences will be used only 
 #' for evaluation but not for model training, and thus no cross validation will be performed.
-#' @param taxon.name character: name of the focal species or taxon. This is used primarily for annotating
-#' the ENMevaluation object and output metadata (rmm), but not necessary for analysis.
 #' @param n.bg numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental  
 #' raster data (default: 10000) if background records were not already provided.
 #' @param overlap boolean: if TRUE, calculate range overlap statistics (Warren \emph{et al.} 2008).
@@ -304,7 +302,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                         other.settings = list(), categoricals = NULL, 
                         doClamp = TRUE, raster.preds = TRUE,
                         clamp.directions = NULL, user.enm = NULL, 
-                        user.grp = NULL, occs.testing = NULL, taxon.name = NULL, 
+                        user.grp = NULL, occs.testing = NULL, 
                         n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), user.val.grps = NULL, 
                         user.eval = NULL, rmm = NULL, parallel = FALSE, 
@@ -341,7 +339,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # make sure taxon name column is not included
   if(inherits(occs[,1], "character") | inherits(bg[,1], "character")) 
-    stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
+    stop("* The two first columns of occs should be longitude and latitude.")
   
   # initial message
   msg("*** Running initial checks... ***\n")
@@ -401,9 +399,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
              clamp.directions)
   
   
-  ########################################################### #
-  # ASSEMBLE COORDINATES AND ENVIRONMENTAL VARIABLE VALUES ####
-  ########################################################### #
+  ############################################################## #
+  # ASSEMBLE OCCS / BG DATA AND ENVIRONMENTAL VARIABLE VALUES ####
+  ############################################################## #
   
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
@@ -486,9 +484,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(!is.null(categoricals)) {
     # make list of categorical variable levels
     cat.levs <- catLevs(d, envs, categoricals)
-    for(i in 1:length(categoricals)) {
-      if(algorithm == "maxent.jar") {
-        msg(paste0("* Assigning variable ", categoricals[i], " to categorical and changing to integer for maxent.jar..."))
+    # if maxent.jar, categorical variables must be converted to numeric
+    if(algorithm == "maxent.jar") {
+      msg(paste0("* Assigning variable ", categoricals[i], " to categorical and changing to integer for maxent.jar..."))
+      for(i in 1:length(categoricals)) {  
         d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), levels = 1:length(cat.levs[[i]]))
         if(!is.null(user.val.grps)) {
           user.val.grps <- numFactors(user.val.grps, d, i)
@@ -496,8 +495,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
         if(!is.null(occs.testing.z)) {
           occs.testing.z <- numFactors(occs.testing.z, d, i)
         }
-      }else{
-        message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
+      }
+      # otherwise, categorical variable values can remain as characters
+    }else{
+      msg(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
+      for(i in 1:length(categoricals)) {  
         d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
         if(!is.null(user.val.grps)) {
           user.val.grps <- regFactors(user.val.grps, d, i)
@@ -509,7 +511,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }
   }
   
-  # drop categoricals designation in other.settings to feed into other functions
+  # put categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
   
   ################# #
@@ -530,7 +532,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                          left = clamp.directions$left, 
                          right = clamp.directions$right, 
                          categoricals = categoricals)
-      if(quiet != TRUE) message("* Clamping predictor variable rasters...")
+      msg("* Clamping predictor variable rasters...")
     }else{
       # if no predictor variable rasters are input, assign both clamp directions
       # to all variable names (columns besides the first two, which should be
@@ -569,7 +571,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                  testing = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
                  none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
   
-  
   # choose a user message reporting on partition choice
   parts.message <- switch(partitions,
                           jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
@@ -579,7 +580,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                           user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
                           testing = "* Model evaluations with testing data...",
                           none = "* Skipping model evaluations (only calculating full model statistics)...")
-  if(quiet != TRUE) message(parts.message)
+  msg(parts.message)
   
   # if jackknife partitioning, do not calculate CBI because there are too few validation occurrences
   # per partition (n=1) to have a meaningful result
@@ -598,12 +599,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   ################# #
   # MESSAGE
   ################# #
-  # print model-specific message
-  if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
-  }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.5 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
-  }
+  msg(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
   
   ################# #
   # MODEL TUNING #### 
@@ -747,7 +743,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # add ncoef column
   eval.stats$ncoef <- ncoefs
   
-  if(is.null(taxon.name)) taxon.name <- ""
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
   if(partitions != "block") partition.settings$orientation <- NULL
@@ -769,7 +764,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                      variable.importance = variable.importance.all,
                      partition.method = partitions, partition.settings = partition.settings,
                      other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
-                     taxon.name = as.character(taxon.name),
                      occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.testing = occs.testing.z, occs.grp = factor(d[d$pb == 1, "grp"]),
                      bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
                      rmm = list())

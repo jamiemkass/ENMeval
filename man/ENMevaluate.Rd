@@ -20,7 +20,6 @@ ENMevaluate(
   user.enm = NULL,
   user.grp = NULL,
   occs.testing = NULL,
-  taxon.name = NULL,
   n.bg = 10000,
   overlap = FALSE,
   overlapStat = c("D", "I"),
@@ -98,9 +97,6 @@ background (or pseudo-absence) localities.}
 \item{occs.testing}{matrix / data frame: a fully withheld testing dataset with two columns for longitude and latitude 
 of occurrence localities, in that order when \code{partitions = "testing"}. These occurrences will be used only 
 for evaluation but not for model training, and thus no cross validation will be performed.}
-
-\item{taxon.name}{character: name of the focal species or taxon. This is used primarily for annotating
-the ENMevaluation object and output metadata (rmm), but not necessary for analysis.}
 
 \item{n.bg}{numeric: the number of background (or pseudo-absence) points to randomly sample over the environmental
 raster data (default: 10000) if background records were not already provided.}

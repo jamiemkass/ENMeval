@@ -18,7 +18,6 @@ buildRMM <- function(e, envs, rmm = NULL) {
   rmm$code$software$packages <- paste("ENMeval", packageVersion("ENMeval"))
   
   # occurrence/background metadata ####
-  rmm$data$occurrence$taxon <- e@taxon.name
   rmm$data$occurrence$dataType <- "presence only"
   rmm$data$occurrence$presenceSampleSize <- nrow(e@occs)
   rmm$data$occurrence$backgroundSampleSize <- nrow(e@bg)

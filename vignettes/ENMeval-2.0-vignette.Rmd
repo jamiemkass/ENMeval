@@ -544,7 +544,6 @@ Now let's take a look at the output from `ENMevaluate`, which is an `ENMevaluati
 - `models` A list of model objects
 - `variable.importance` A list of data frames with variable importance for each model (when applicable)
 - `predictions` A SpatRaster of model predictions
-- `taxon.name` A character for taxon name (when specified)
 - `occs` A data frame of the occurrence record coordinates used for model training
 - `occs.testing` A data frame of the coordinates of the fully withheld testing records (when specified)
 - `occs.grp` A vector of partition groups for occurrence records

@@ -67,7 +67,6 @@ regFactors <- function(x, d, i) {
 }
 
   
-  
 
   
   

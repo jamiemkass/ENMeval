@@ -10,7 +10,7 @@
 #' previous versions of ENMeval did not record them in ENMevaluation objects:
 #' variable.importance, partition.settings, other.settings, doClamp (set to TRUE
 #' arbitrarily to avoid errors, but may actually have been FALSE), clamp.directions,
-#' taxon.name, and rmm.
+#' and rmm.
 #' @importFrom rlang .data
 #' @export
 ENMevaluation_convert <- function(e, envs) {
@@ -35,7 +35,7 @@ ENMevaluation_convert <- function(e, envs) {
                          variable.importance = list(),
                          partition.method = e@partition.method, partition.settings = list(),
                          other.settings = list(), doClamp = TRUE, clamp.directions = list(), 
-                         taxon.name = "", occs = occs, occs.testing = data.frame(), 
+                         occs = occs, occs.testing = data.frame(), 
                          occs.grp = factor(e@occ.grp), bg = bg, bg.grp = factor(e@bg.grp),
                          rmm = list())
   return(e_new)
