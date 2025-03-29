@@ -315,11 +315,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # record start time
   start.time <- proc.time()
   
+  # message function
+  msg <- function(txt) {
+    if(quiet == FALSE) message(txt)
+  }
+  
   # check if ecospat is installed, and if not, prevent CBI calculations
   if((requireNamespace("ecospat", quietly = TRUE))) {
     ecospat.use <- TRUE
   }else{
-    message("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
+    msg("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
     ecospat.use <- FALSE
   }
   
@@ -339,7 +344,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
   
   # initial message
-  if(quiet != TRUE) message(paste0("*** Running initial checks... ***\n"))
+  msg("*** Running initial checks... ***\n")
   
   # common partitions input errors
   checks.partitions(partitions, partition.settings, occs.testing)
@@ -399,13 +404,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
-    # convert all raster grid cells to NA that are NA for any one raster
-    ## MAYBE DONT DO THIS -- CONVERTS CHARACTER CAT VARS TO NUMERIC
-    # envs <- multiRasMatchNAs(envs, quiet)
     # if no background points specified, generate random ones
     if(is.null(bg)) {
-      if(quiet != TRUE) message(paste0("* Randomly sampling ", n.bg, 
-                                       " background points ..."))
+      msg(paste0("* Randomly sampling ", n.bg, " background points ..."))
       bg <- terra::spatSample(envs, size = n.bg, xy = TRUE, na.rm = TRUE,
                               values = FALSE) |> as.data.frame()
       names(bg) <- names(occs)
@@ -413,62 +414,40 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     
     # remove cell duplicates
     if(other.settings$removeduplicates == TRUE) {
-      occs.cellNo <- terra::extract(envs, occs, cells = TRUE, ID = FALSE)
-      occs.dups <- duplicated(occs.cellNo[,"cell"])
-      if(sum(occs.dups) > 0) if(quiet != TRUE) 
-        message(paste0("* Removed ", 
-                       sum(occs.dups), 
-                       " occurrence localities that shared the same grid cell."))
-      occs <- occs[!occs.dups,]
-      if(!is.null(user.grp)) user.grp$occs.grp <- user.grp$occs.grp[!occs.dups]  
-      occs.z <- occs.cellNo[!occs.dups,-which(names(occs.cellNo) == "cell")]
-    }else{
-      occs.z <- terra::extract(envs, occs, ID = FALSE)  
+      occs <- removeOccDups(occs, envs)
     }
+
+    # extract env values from occs and bg
+    occs.z <- terra::extract(envs, occs, ID = FALSE)  
+    bg.z <- terra::extract(envs, bg, ID = FALSE)
     
     # bind coordinates to predictor variable values for occs and bg
-    bg.z <- terra::extract(envs, bg, ID = FALSE)
     occs <- cbind(occs, occs.z)
     bg <- cbind(bg, bg.z)
+    
+  # if no environmental rasters input (SWD)
   }else{
-    # if no bg included, stop
-    if(is.null(bg)) stop("* If inputting variable values without rasters, please make sure to input background coordinates with values as well as occurrences.")
-    # for occ and bg coordinates with x, y, and environmental predictor values 
-    # (SWD format)
-    if(quiet != TRUE) 
-      message("* Variable values were input along with coordinates and not as raster data, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
+    # if no bg included, cannot continue because no raster for random sampling
+    if(is.null(bg)) stop("* If using species with data (SWD) format, please input coordinates for background records as well as occurrences.")
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.")
+    msg("* Using species with data (SWD) format, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
   }
   
   # if NA predictor variable values exist for occs or bg, remove these records 
-  # and modify user.grp accordingly
-  occs.z.na <- which(rowSums(is.na(occs)) > 0)
-  if(length(occs.z.na) > 0) {
-    if(quiet != TRUE) 
-      message(paste0("* Removed ", length(occs.z.na), 
-                     " occurrence points with NA predictor variable values."))
-    occs <- occs[-occs.z.na,]
-    if(!is.null(user.grp)) 
-      user.grp$occs.grp <- user.grp$occs.grp[-occs.z.na]
-  }
+  occs <- removeNARecs(occs, type = "occurrences")
+  bg <- removeNARecs(bg, type = "background")
   
-  bg.z.na <- which(rowSums(is.na(bg)) > 0)
-  if(length(bg.z.na) > 0) {
-    if(quiet != TRUE) 
-      message(paste0("* Removed ", length(bg.z.na), 
-                     " background points with NA predictor variable values."))
-    bg <- bg[-bg.z.na,]
-    if(!is.null(user.grp)) 
-      user.grp$bg.grp <- user.grp$bg.grp[-bg.z.na]
+  # take out removed occs and bg from user.grp
+  if(!is.null(user.grp)) {
+    user.grp <- cleanUsrGrp(user.grp, occs, bg)
   }
   
   # make main df with coordinates and predictor variable values
   d <- rbind(occs, bg)
   
   # add presence-background identifier for occs and bg
-  d$pb <- c(rep(1, nrow(occs)), 
-            rep(0, nrow(bg)))
+  d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
   
   # if user-defined partitions, assign grp variable before filtering out records 
   # with NA predictor variable values for all other partitioning methods, 
