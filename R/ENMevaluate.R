@@ -612,10 +612,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # when tune.args does not exist
   if(nrow(tune.tbl) == 0) tune.tbl <- NULL
   
-  results <- tune(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+  # run parallel or regular
+  if(parallel == TRUE) {
+  results <- tuneParallel(d, enm, partitions, tune.tbl, doClamp, other.settings, 
                   partition.settings, user.val.grps, occs.testing.z, 
-                  numCores, parallel, user.eval, algorithm, 
-                  updateProgress, quiet)  
+                  numCores, user.eval, algorithm, updateProgress, quiet)
+  }else{
+    results <- tune(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+                    partition.settings, user.val.grps, occs.testing.z, 
+                    numCores, user.eval, algorithm, updateProgress, quiet)
+  }
   
   ##################### #
   # ASSEMBLE RESULTS #### 

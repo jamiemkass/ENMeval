@@ -145,62 +145,66 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z,
 }
 
 #' @rdname tune.enm
-tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
-                 partition.settings, user.val.grps, occs.testing.z, 
-                 numCores, parallel, user.eval, algorithm, 
-                 updateProgress, quiet) {
-  if(parallel == TRUE) {
-    # set up parallel processing functionality
-    allCores <- parallel::detectCores()
-    if (is.null(numCores)) {
-      numCores <- allCores
-    }
-    cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
-    parallel::clusterExport(cl, c("d", "enm", "partitions", "tune.tbl", 
-                                  "doClamp", "other.settings", 
-                                  "partition.settings", "user.val.grps", 
-                                  "occs.testing.z", "user.eval", "algorithm", 
-                                  "quiet", "cv.enm", "tune.train", "clamp.vars", 
-                                  "tune.validate"),
-                                  envir = environment())
-    n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
-    
-    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
-    if(quiet != TRUE) message(paste0("Running in parallel ..."))
-    
-    par.cv.enm <- function(i) {
-      cv.enm(d, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
-             partition.settings, user.val.grps, occs.testing.z, user.eval, 
-             algorithm, quiet)
-    }
-    
-    results <- parallel::parLapply(cl, 1:n, par.cv.enm)
-  }else{
-    results <- list()
-    n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
-    
-    # set up the console progress bar
-    if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
-    
-    for(i in 1:n) {
-      # and (optionally) the shiny progress bar (updateProgress)
-      if(n > 1) {
-        if(is.function(updateProgress)) {
-          text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
-          updateProgress(detail = text)
-        }
-        if(quiet != TRUE) setTxtProgressBar(pb, i)
-      }
-      # set the current tune settings
-      tune.tbl.i <- tune.tbl[i,]
-      results[[i]] <- cv.enm(d, enm, partitions, tune.tbl.i, doClamp,
-                             other.settings, partition.settings, user.val.grps, 
-                             occs.testing.z, user.eval, algorithm, quiet)
-    }
-    if(quiet != TRUE) close(pb)
+tuneParallel <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+                         partition.settings, user.val.grps, occs.testing.z, 
+                         numCores, user.eval, algorithm, updateProgress, quiet) {
+  # set up parallel processing functionality
+  allCores <- parallel::detectCores()
+  if (is.null(numCores)) {
+    numCores <- allCores
   }
+  cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
+  parallel::clusterExport(cl, c("d", "enm", "partitions", "tune.tbl", 
+                                "doClamp", "other.settings", 
+                                "partition.settings", "user.val.grps", 
+                                "occs.testing.z", "user.eval", "algorithm", 
+                                "quiet", "cv.enm", "tune.train", "clamp.vars", 
+                                "tune.validate"),
+                          envir = environment())
+  n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
+  
+  msg(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
+  msg("Running in parallel ...")
+  
+  par.cv.enm <- function(i) {
+    cv.enm(d, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
+           partition.settings, user.val.grps, occs.testing.z, user.eval, 
+           algorithm, quiet)
+  }
+  
+  results <- parallel::parLapply(cl, 1:n, par.cv.enm)
   return(results)
 }
+
+#' @rdname tune.enm
+tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+                 partition.settings, user.val.grps, occs.testing.z, 
+                 numCores, user.eval, algorithm, updateProgress, quiet) {
+  results <- list()
+  n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
+  
+  # set up the console progress bar
+  if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
+  
+  for(i in 1:n) {
+    # and (optionally) the shiny progress bar (updateProgress)
+    if(n > 1) {
+      if(is.function(updateProgress)) {
+        text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
+        updateProgress(detail = text)
+      }
+      if(quiet != TRUE) setTxtProgressBar(pb, i)
+    }
+    # set the current tune settings
+    tune.tbl.i <- tune.tbl[i,]
+    results[[i]] <- cv.enm(d, enm, partitions, tune.tbl.i, doClamp,
+                           other.settings, partition.settings, user.val.grps, 
+                           occs.testing.z, user.eval, algorithm, quiet)
+  }
+  if(quiet != TRUE) close(pb)
+  return(results)
+}
+
 
 #' @rdname tune.enm
 cv.enm <- function(d, enm, partitions, tune.tbl.i, doClamp, other.settings, 
