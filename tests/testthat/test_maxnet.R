@@ -34,12 +34,15 @@ cats1 <- "biome"
 
 # define tune args
 tune.args <- list(fc = c("L","Q"), rm = 2:3)
+partition.settings <- list(orientation = "lat_lon")
 mset <- lapply(tune.args, function(x) x[1])
 
 
 # block partitions
 context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
+                 partition.settings = partition.settings, algorithm = alg, 
+                 categoricals = cats1, overlap = TRUE, quiet = TRUE)
 test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
 
 context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
@@ -60,8 +63,8 @@ test_evalplot.nulls(ns)
 if(skip_tests_for_cran == FALSE) {
   context(paste("Testing ENMevaluate for", alg, "with block partitions using in parallel..."))
   e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
-                        algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
-                        parallel = TRUE)
+                   partition.settings = partition.settings, algorithm = alg, 
+                   categoricals = cats1, overlap = TRUE, quiet = TRUE, parallel = TRUE)
   test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
   
   context(paste("Testing evalplot.stats for", alg, "with block partitions using in parallel..."))
