@@ -351,7 +351,10 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # incompatibilities between envs and algorithms
   checks.envs(envs, algorithm)
-
+  
+  # confirm all categorical variables are specified
+  checks.cats(occs, envs, categoricals)
+  
   # if a vector of tuning arguments is numeric, make sure it is sorted 
   # (for results table and plotting)
   tune.args <- checks.tuning(tune.args)
@@ -416,7 +419,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     if(other.settings$removeduplicates == TRUE) {
       occs <- removeOccDups(occs, envs)
     }
-
+    
     # extract env values from occs and bg
     occs.z <- terra::extract(envs, occs, ID = FALSE)  
     bg.z <- terra::extract(envs, bg, ID = FALSE)
@@ -425,7 +428,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     occs <- cbind(occs, occs.z)
     bg <- cbind(bg, bg.z)
     
-  # if no environmental rasters input (SWD)
+    # if no environmental rasters input (SWD)
   }else{
     # if no bg included, cannot continue because no raster for random sampling
     if(is.null(bg)) stop("* If using species with data (SWD) format, please input coordinates for background records as well as occurrences.")
@@ -479,55 +482,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # ASSIGN CATEGORICAL VARIABLES ####
   ################################# #
   
-  # find factor rasters or columns and identify them as categoricals
-  if(!is.null(envs)) {
-    categoricals <- unique(c(categoricals, names(envs)[which(terra::is.factor(envs))]))
-  }else{
-    categoricals <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
-  }
-  if(length(categoricals) == 0) categoricals <- NULL
-  
   # if categoricals argument was specified, convert these columns to factor class
   if(!is.null(categoricals)) {
-    
-    # make categorical levels list
-    cat.levs <- list()
+    # make list of categorical variable levels
+    cat.levs <- catLevs(d, envs, categoricals)
     for(i in 1:length(categoricals)) {
-      if(!is.null(envs)) {
-        cat.levs[[i]] <- terra::levels(envs[[categoricals[i]]])[[1]][,2]
+      if(algorithm == "maxent.jar") {
+        msg(paste0("* Assigning variable ", categoricals[i], " to categorical and changing to integer for maxent.jar..."))
+        d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), levels = 1:length(cat.levs[[i]]))
+        if(!is.null(user.val.grps)) {
+          user.val.grps <- numFactors(user.val.grps, d, i)
+        }
+        if(!is.null(occs.testing.z)) {
+          occs.testing.z <- numFactors(occs.testing.z, d, i)
+        }
       }else{
-        cat.levs[[i]] <- levels(d[, categoricals[i]])
-      }  
-    }
-    
-    for(i in 1:length(categoricals)) {
-        if(algorithm == "maxent.jar") {
-          if(quiet != TRUE) {
-            message(paste0("* Assigning variable ", categoricals[i], 
-                         " to categorical and changing to integer for maxent.jar..."))
-          }
-          d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), 
-                                         levels = 1:length(cat.levs[[i]]))
-        }else{
-          if(quiet != TRUE) {
-            message(paste0("* Assigning variable ", categoricals[i], 
-                         " to categorical ..."))
-          }
+        message(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
+        d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
+        if(!is.null(user.val.grps)) {
+          user.val.grps <- regFactors(user.val.grps, d, i)
         }
-      d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
-      if(!is.null(user.val.grps)) {
-        if(algorithm == "maxent.jar") {
-          user.val.grps[, categoricals[i]] <- as.numeric(user.val.grps[, categoricals[i]])
+        if(!is.null(occs.testing.z)) {
+          occs.testing.z <- regFactors(occs.testing.z, d, i)
         }
-        user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], 
-                                                   levels = levels(d[, categoricals[i]]))
-      }
-      if(!is.null(occs.testing.z)) {
-        if(algorithm == "maxent.jar") {
-          occs.testing.z[, categoricals[i]] <- as.numeric(occs.testing.z[, categoricals[i]])
-        }
-        occs.testing.z[, categoricals[i]] <- factor(occs.testing.z[, categoricals[i]], 
-                                                    levels = levels(d[, categoricals[i]]))
       }
     }
   }

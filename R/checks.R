@@ -80,3 +80,15 @@ checks.tuning <- function(tune.args) {
   }
   return(tune.args)
 }
+
+checks.cats <- function(occs, envs, categoricals) {
+  # find factor rasters or columns and identify them as categoricals
+  if(!is.null(envs)) {
+    cat.extra <- unique(c(categoricals, names(envs)[which(terra::is.factor(envs))]))
+  }else{
+    cat.extra <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
+  }
+  if(length(cat.extra) > categoricals) {
+    stop(paste0("There are ", length(cat.extra), " variables with class factor, but only ", length(categoricals), " categorical variables specified. Please enter all categorical variable names in argument 'categoricals'."))
+  }
+}
