@@ -26,15 +26,15 @@ occs.z$biome <- factor(occs.z$biome)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 bg.z$biome <- factor(bg.z$biome)
 
-alg <- "maxnet"
+categoricals <- "biome"
+partitions <- "block"
+partition.settings <- list(orientation = "lat_lon")
+algorithm <- "maxnet"
 no.iter <- 5
 
-# define categorical variable
-cats1 <- "biome"
 
 # define tune args
 tune.args <- list(fc = c("L","Q"), rm = 2:3)
-partition.settings <- list(orientation = "lat_lon")
 mset <- lapply(tune.args, function(x) x[1])
 
 

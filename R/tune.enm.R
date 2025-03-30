@@ -145,7 +145,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z,
 }
 
 #' @rdname tune.enm
-tuneParallel <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+tuneParallel <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
                          partition.settings, user.val.grps, occs.testing.z, 
                          numCores, user.eval, algorithm, updateProgress, quiet) {
   # set up parallel processing functionality
@@ -167,7 +167,7 @@ tuneParallel <- function(d, enm, partitions, tune.tbl, doClamp, other.settings,
   msg("Running in parallel ...")
   
   par.cv.enm <- function(i) {
-    cv.enm(d, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
+    cv.enm(occs.z, bg.z, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
            partition.settings, user.val.grps, occs.testing.z, user.eval, 
            algorithm, quiet)
   }
@@ -177,7 +177,7 @@ tuneParallel <- function(d, enm, partitions, tune.tbl, doClamp, other.settings,
 }
 
 #' @rdname tune.enm
-tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+tune <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
                  partition.settings, user.val.grps, occs.testing.z, 
                  numCores, user.eval, algorithm, updateProgress, quiet) {
   results <- list()
@@ -197,7 +197,7 @@ tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings,
     }
     # set the current tune settings
     tune.tbl.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(d, enm, partitions, tune.tbl.i, doClamp,
+    results[[i]] <- cv.enm(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp,
                            other.settings, partition.settings, user.val.grps, 
                            occs.testing.z, user.eval, algorithm, quiet)
   }
@@ -207,14 +207,14 @@ tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings,
 
 
 #' @rdname tune.enm
-cv.enm <- function(d, enm, partitions, tune.tbl.i, doClamp, other.settings, 
+cv.enm <- function(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp, other.settings, 
                    partition.settings, user.val.grps, occs.testing.z, 
                    user.eval, algorithm, quiet) {
-  envs.names <- names(d[, 3:(ncol(d)-2)])
+  envs.names <- names(occs.z)
   # unpack predictor variable values for occs and bg
-  occs.xy <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
+  # occs.xy <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
   occs.z <- d |> dplyr::filter(pb == 1) |> dplyr::select(dplyr::all_of(envs.names))
-  bg.xy <- d |> dplyr::filter(pb == 0) |> dplyr::select(1:2)
+  # bg.xy <- d |> dplyr::filter(pb == 0) |> dplyr::select(1:2)
   bg.z <- d |> dplyr::filter(pb == 0) |> dplyr::select(dplyr::all_of(envs.names))
   
   # define number of grp (the value of "k") for occurrences

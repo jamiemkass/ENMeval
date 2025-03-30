@@ -49,6 +49,7 @@ checks.other.settings <- function(other.settings) {
   if(is.null(other.settings$abs.auc.diff)) other.settings$abs.auc.diff <- TRUE
   if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
   if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
+  if(is.null(other.settings$cbi.cv)) other.settings$cbi.cv <- TRUE
   # add whether to use ecospat to other.settings to avoid multiple requires
   other.settings <- c(other.settings, ecospat.use = ecospat.use)
   return(other.settings)
@@ -79,16 +80,4 @@ checks.tuning <- function(tune.args) {
     tune.args[[i]] <- sort(tune.args[[i]])
   }
   return(tune.args)
-}
-
-checks.cats <- function(occs, envs, categoricals) {
-  # find factor rasters or columns and identify them as categoricals
-  if(!is.null(envs)) {
-    cat.extra <- unique(c(categoricals, names(envs)[which(terra::is.factor(envs))]))
-  }else{
-    cat.extra <- unique(c(categoricals, names(occs)[which(sapply(occs, is.factor))]))
-  }
-  if(length(cat.extra) > categoricals) {
-    stop(paste0("There are ", length(cat.extra), " variables with class factor, but only ", length(categoricals), " categorical variables specified. Please enter all categorical variable names in argument 'categoricals'."))
-  }
 }

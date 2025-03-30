@@ -347,18 +347,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # common partitions input errors
   checks.partitions(partitions, partition.settings, occs.testing)
   
+  
   # incompatibilities between envs and algorithms
   checks.envs(envs, algorithm)
-  
-  # confirm all categorical variables are specified
-  checks.cats(occs, envs, categoricals)
   
   # if a vector of tuning arguments is numeric, make sure it is sorted 
   # (for results table and plotting)
   tune.args <- checks.tuning(tune.args)
   
   # turn off overlap is no tuning specified  
-  if(is.null(tune.args) & overlap == TRUE) {
+  if(is.null(tune.args)) {
     overlap <- FALSE
   }
   
@@ -390,18 +388,22 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # get unique values of user partition groups to make sure they all remain 
   # after occurrence data processing
   if(!is.null(user.grp)) {
-    user.grp.uniq <- unique(c(user.grp$occs.grp, user.grp$bg.grp))
+    user.nk <- length(unique(c(user.grp$occs.grp, user.grp$bg.grp)))
+    partition.settings$kfolds <- user.nk
   }
   
   # algorithm-specific errors
   enm@errors(occs, envs, bg, tune.args, partitions, algorithm, 
-             partition.settings, other.settings, categoricals, doClamp, 
-             clamp.directions)
+             partition.settings, other.settings, 
+             categoricals, doClamp, clamp.directions)
   
   
   ############################################################## #
   # ASSEMBLE OCCS / BG DATA AND ENVIRONMENTAL VARIABLE VALUES ####
   ############################################################## #
+  
+  # keep records of which points were removed during cleaning
+  occs.rem <- numeric(nrow(occs))
   
   # if environmental rasters are input as predictor variables
   if(!is.null(envs)) {
@@ -413,9 +415,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
       names(bg) <- names(occs)
     }
     
-    # remove cell duplicates
+    # flag occurrence record cell duplicates
     if(other.settings$removeduplicates == TRUE) {
-      occs <- removeOccDups(occs, envs)
+      # extract cell number values from occs to determine duplicates
+      occs.cellNo <- terra::extract(envs, occs, cells = TRUE, ID = FALSE)
+      occs.dups <- which(duplicated(occs.cellNo[,"cell"]) == 1)
+      if(sum(occs.dups) > 0) {
+        occs.rem[occs.dups] <- 1
+        msg(paste0("* Removing ", length(occs.dups), " occurrence record grid cell duplicates."))
+      }
     }
     
     # extract env values from occs and bg
@@ -423,42 +431,71 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     bg.z <- terra::extract(envs, bg, ID = FALSE)
     
     # bind coordinates to predictor variable values for occs and bg
-    occs <- cbind(occs, occs.z)
-    bg <- cbind(bg, bg.z)
+    # occs <- cbind(occs, occs.z)
+    # bg <- cbind(bg, bg.z)
     
     # if no environmental rasters input (SWD)
   }else{
+    # assign occs/bg to coordinates and occs.z/bg.z to variable values
+    occs.z <- occs[,-1:-2]
+    occs <- occs[,1:2]
+    bg.z <- bg[,-1:-2]
+    bg <- bg[,1:2]
     # if no bg included, cannot continue because no raster for random sampling
-    if(is.null(bg)) stop("* If using species with data (SWD) format, please input coordinates for background records as well as occurrences.")
+    if(is.null(bg)) stop("* If using species with data (SWD) format, input coordinates for both occurrence and background records.")
     # make sure both occ and bg have predictor variable values
-    if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If inputting variable values without rasters, please make sure these values are included in the occs and bg tables proceeding the coordinates.")
-    msg("* Using species with data (SWD) format, so no raster predictions can be generated and AICc is calculated with background data for Maxent models.")
+    if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If using species with data (SWD) format, input variable values in occs and bg tables proceeding the coordinates.")
+    msg("* Using species with data (SWD) format, so raster predictions cannot be generated. Also, AICc is calculated with background data for Maxent models.")
   }
   
-  # if NA predictor variable values exist for occs or bg, remove these records 
-  occs <- removeNARecs(occs, type = "occurrences")
-  bg <- removeNARecs(bg, type = "background")
+  # keep records of which points were removed during cleaning
+  bg.rem <- numeric(nrow(bg))
+  
+  # if NA predictor variable values exist for occs or bg, flag these records 
+  occs.na <- which(rowSums(is.na(occs.z)) > 0)
+  if(length(occs.na) > 0) {
+    # which many occs are newly filtered?
+    occs.na.rem <- occs.na[which(occs.rem[occs.na] == 0)]
+    msg(paste0("* Removing ", length(occs.na.rem), " occurrence records with NA predictor variable values."))
+    occs.rem[occs.na.rem] <- 1
+  }
+  bg.na <- which(rowSums(is.na(bg.z)) > 0)
+  if(length(bg.na) > 0) {
+    msg(paste0("* Removing ", length(bg.na), " background records with NA predictor variable values."))
+    bg.rem[bg.na] <- 1
+  }
+  
+  # remove flagged occs and bg records
+  occs <- occs[which(occs.rem == 0),]
+  occs.z <- occs.z[which(occs.rem == 0),]
+  bg <- bg[which(bg.rem == 0),]
+  bg.z <- bg.z[which(bg.rem == 0),]
   
   # take out removed occs and bg from user.grp
   if(!is.null(user.grp)) {
-    user.grp <- cleanUsrGrp(user.grp, occs, bg)
+    user.grp$occs.grp <- user.grp$occs.grp[which(occs.rem == 0)]
+    user.nk.occs <- length(unique(user.grp$occs.grp))
+    if(user.nk > user.nk.occs) stop("Occurrence record cleaning removed one or more user partition groups.")
+    user.grp$bg.grp <- user.grp$bg.grp[which(bg.rem == 0)]
+    user.nk.bg <- length(unique(user.grp$bg.grp))
+    if(user.nk > user.nk.bg) stop("Background record cleaning removed one or more user partition groups.")
   }
   
   # make main df with coordinates and predictor variable values
-  d <- rbind(occs, bg)
+  # d <- rbind(occs, bg)
   
   # add presence-background identifier for occs and bg
-  d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
+  # d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
   
-  # if user-defined partitions, assign grp variable before filtering out records 
-  # with NA predictor variable values for all other partitioning methods, 
-  # grp assignments occur after filtering
-  if(!is.null(user.grp)) {
-    d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occs.grp))
-    d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
-    if(!all(user.grp.uniq %in% d$grp)) stop("Removal of cell duplicates caused one or more user partition groups to be missing. Please make sure all partition groups are represented by at least one non-duplicate occurrence record.")
-    d$grp <- factor(d$grp)
-  }
+  # # if user-defined partitions, assign grp variable before filtering out records 
+  # # with NA predictor variable values for all other partitioning methods, 
+  # # grp assignments occur after filtering
+  # if(!is.null(user.grp)) {
+  #   d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occs.grp))
+  #   d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
+  #   
+  #   d$grp <- factor(d$grp)
+  # }
   
   ############################################ #
   # ADD TESTING DATA (IF INPUT) ####
@@ -477,39 +514,62 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }
   
   ################################# #
-  # ASSIGN CATEGORICAL VARIABLES ####
+  # CHECK CATEGORICAL VARIABLES ####
   ################################# #
   
-  # if categoricals argument was specified, convert these columns to factor class
+  # which columns are factors
+  facts <- names(occs.z)[which(sapply(occs.z, is.factor))]
+  
+  # if categoricals specified
   if(!is.null(categoricals)) {
-    # make list of categorical variable levels
-    cat.levs <- catLevs(d, envs, categoricals)
-    # if maxent.jar, categorical variables must be converted to numeric
-    if(algorithm == "maxent.jar") {
-      msg(paste0("* Assigning variable ", categoricals[i], " to categorical and changing to integer for maxent.jar..."))
-      for(i in 1:length(categoricals)) {  
-        d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), levels = 1:length(cat.levs[[i]]))
-        if(!is.null(user.val.grps)) {
-          user.val.grps <- numFactors(user.val.grps, d, i)
-        }
-        if(!is.null(occs.testing.z)) {
-          occs.testing.z <- numFactors(occs.testing.z, d, i)
-        }
-      }
-      # otherwise, categorical variable values can remain as characters
-    }else{
-      msg(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
-      for(i in 1:length(categoricals)) {  
-        d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
-        if(!is.null(user.val.grps)) {
-          user.val.grps <- regFactors(user.val.grps, d, i)
-        }
-        if(!is.null(occs.testing.z)) {
-          occs.testing.z <- regFactors(occs.testing.z, d, i)
-        }
-      }
+    cat.extra <- unique(c(categoricals, facts))
+    if(length(cat.extra) > categoricals) {
+      stop(paste0("There are ", length(cat.extra), " variables with class factor, but only ", 
+                  length(categoricals), " categorical variables specified.", 
+                  "Enter all categorical variable names in argument 'categoricals'."))
     }
+    if(algorithm == "maxent.jar") {
+      cat.levs <- catLevs(occs.z, envs, categoricals) 
+      levs.class <- sapply(cat.levs, class)
+      if(all(levs.class != "numeric")) stop("For maxent.jar, all categorical variable levels must be numeric.",
+                                            "Change character levels to numbers and rerun.")
+    }
+  # if categoricals not specified
+  }else{
+    if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified.",
+                               "Rerun after specifying 'categoricals'.")
   }
+  
+  # # if categoricals argument was specified, convert these columns to factor class
+  # if(!is.null(categoricals)) {
+  #   # make list of categorical variable levels
+  #   cat.levs <- catLevs(occs.z, envs, categoricals)
+  #   # if maxent.jar, categorical variables must be converted to numeric
+  #   if(algorithm == "maxent.jar") {
+  #     msg(paste0("* Assigning variable ", categoricals[i], " to categorical and changing to integer for maxent.jar..."))
+  #     for(i in 1:length(categoricals)) {  
+  #       d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), levels = 1:length(cat.levs[[i]]))
+  #       if(!is.null(user.val.grps)) {
+  #         user.val.grps <- numFactors(user.val.grps, d, i)
+  #       }
+  #       if(!is.null(occs.testing.z)) {
+  #         occs.testing.z <- numFactors(occs.testing.z, d, i)
+  #       }
+  #     }
+  #     # otherwise, categorical variable values can remain as characters
+  #   }else{
+  #     msg(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
+  #     for(i in 1:length(categoricals)) {  
+  #       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
+  #       if(!is.null(user.val.grps)) {
+  #         user.val.grps <- regFactors(user.val.grps, d, i)
+  #       }
+  #       if(!is.null(occs.testing.z)) {
+  #         occs.testing.z <- regFactors(occs.testing.z, d, i)
+  #       }
+  #     }
+  #   }
+  # }
   
   # put categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
@@ -540,8 +600,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
       # during cross-validation, validation data will be clamped using the
       # clamp.vars() function
       if(is.null(clamp.directions)) {
-        clamp.directions$left <- names(d[, 3:(ncol(d)-1)])
-        clamp.directions$right <- names(d[, 3:(ncol(d)-1)])
+        clamp.directions$left <- names(occs.z)
+        clamp.directions$right <- names(occs.z)
       }
     }
   }
@@ -557,19 +617,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # ASSIGN PARTITIONS ####
   ###################### #
   
-  # unpack occs and bg records for partitioning
-  d.occs <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
-  d.bg <- d |> dplyr::filter(pb == 0) |> dplyr::select(1:2)
-  
   # partition occs based on selected partition method
   grps <- switch(partitions, 
-                 jackknife = get.jackknife(d.occs, d.bg),
-                 randomkfold = get.randomkfold(d.occs, d.bg, partition.settings$kfolds),
-                 block = get.block(d.occs, d.bg, partition.settings$orientation),
-                 checkerboard = get.checkerboard(d.occs, envs, d.bg, partition.settings$aggregation.factor),
-                 user = NULL,
-                 testing = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))),
-                 none = list(occs.grp = rep(0, nrow(d.occs)), bg.grp = rep(0, nrow(d.bg))))
+                 jackknife = get.jackknife(occs, bg),
+                 randomkfold = get.randomkfold(occs, bg, partition.settings$kfolds),
+                 block = get.block(occs, bg, partition.settings$orientation),
+                 checkerboard = get.checkerboard(occs, envs, bg, partition.settings$aggregation.factor),
+                 user = user.grp,
+                 testing = list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg))),
+                 none = list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg))))
   
   # choose a user message reporting on partition choice
   parts.message <- switch(partitions,
@@ -582,19 +638,21 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                           none = "* Skipping model evaluations (only calculating full model statistics)...")
   msg(parts.message)
   
-  # if jackknife partitioning, do not calculate CBI because there are too few validation occurrences
-  # per partition (n=1) to have a meaningful result
-  if(partitions == "jackknife") other.settings$cbi.cv <- FALSE else other.settings$cbi.cv <- TRUE
-  
-  # record user partition settings and do same check as above if partitions are identical to jackknife
+  # do not calculate CBI if one or more partitions has only 1 occurrence record
+  if(partitions == "jackknife") {
+    other.settings$cbi.cv <- FALSE
+    msg("For jackknife partitioning, not calculating CBI because each partition has too few occurrences for this metric.")
+  }
   if(partitions == "user") {
-    user.nk <- length(unique(user.grp$occs.grp))
-    partition.settings$kfolds <- user.nk
-    if(user.nk == nrow(d[d$pb==1,])) other.settings$cbi.cv <- FALSE else other.settings$cbi.cv <- TRUE
+    tb <- table(user.grp$occs.grp)
+    user.grp.1 <- names(tb)[which(tb == 1)]
+    if(length(user.grp.1 > 0)) other.settings$cbi.cv <- FALSE
+    msg("For user partitioning, not calculating CBI because partition ", user.grp.1, 
+        "has too few occurrences for this metric.")
   }
   
   # add these values as the 'grp' column
-  if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
+  # if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
   
   ################# #
   # MESSAGE
@@ -614,11 +672,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # run parallel or regular
   if(parallel == TRUE) {
-  results <- tuneParallel(d, enm, partitions, tune.tbl, doClamp, other.settings, 
-                  partition.settings, user.val.grps, occs.testing.z, 
-                  numCores, user.eval, algorithm, updateProgress, quiet)
+    results <- tuneParallel(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
+                            partition.settings, user.val.grps, occs.testing.z, 
+                            numCores, user.eval, algorithm, updateProgress, quiet)
   }else{
-    results <- tune(d, enm, partitions, tune.tbl, doClamp, other.settings, 
+    results <- tune(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
                     partition.settings, user.val.grps, occs.testing.z, 
                     numCores, user.eval, algorithm, updateProgress, quiet)
   }
