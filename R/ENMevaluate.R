@@ -347,7 +347,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # common partitions input errors
   checks.partitions(partitions, partition.settings, occs.testing)
   
-  
   # incompatibilities between envs and algorithms
   checks.envs(envs, algorithm)
   
@@ -505,9 +504,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(partitions == "testing") {
     if(!is.null(envs)) {
       occs.testing.z <- as.data.frame(terra::extract(envs, occs.testing, ID = FALSE))
-      occs.testing.z <- cbind(occs.testing, occs.testing.z)
     }else{
-      occs.testing.z <- occs.testing
+      occs.testing.z <- occs.testing[,-1:-2]
     }
   }else{
     occs.testing.z <- NULL
@@ -672,11 +670,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # run parallel or regular
   if(parallel == TRUE) {
-    results <- tuneParallel(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
-                            partition.settings, user.val.grps, occs.testing.z, 
-                            numCores, user.eval, algorithm, updateProgress, quiet)
+    results <- tuneParallel(occs.z, bg.z, grps, enm, partitions, tune.tbl, 
+                            doClamp, other.settings, partition.settings, 
+                            user.val.grps, occs.testing.z, numCores, user.eval, 
+                            algorithm, updateProgress, quiet)
   }else{
-    results <- tune(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
+    results <- tune(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, other.settings, 
                     partition.settings, user.val.grps, occs.testing.z, 
                     numCores, user.eval, algorithm, updateProgress, quiet)
   }

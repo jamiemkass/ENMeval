@@ -30,13 +30,9 @@
 NULL
 
 #' @rdname tune.enm
-tune.train <- function(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, partitions, quiet) {
-  # get model predictions for training data
-  occs.pred <- enm@predict(mod.full, occs.z, other.settings)
-  bg.pred <- enm@predict(mod.full, bg.z, other.settings)
-  
+tune.train <- function(pred.occs, pred.bg) {
   # training AUC
-  e <- predicts::pa_evaluate(occs.pred, bg.pred)
+  e <- predicts::pa_evaluate(pred.occs, pred.bg)
   auc.train <- e@stats$auc
   
   # calculate training CBI with background, not raster -- this is in order
@@ -47,7 +43,7 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, 
   # is determined from "fit" only, and if occs have higher predictions than
   # bg, the interval will be cut short
   if(other.settings$ecospat.use == TRUE) {
-    cbi.train <- ecospat::ecospat.boyce(c(bg.pred, occs.pred), occs.pred, PEplot = FALSE)$cor
+    cbi.train <- ecospat::ecospat.boyce(c(pred.bg, pred.occs), pred.occs, PEplot = FALSE)$cor
   }else{
     cbi.train <- NA
   }
@@ -57,57 +53,36 @@ tune.train <- function(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, 
 }
 
 #' @rdname tune.enm
-tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, 
-                          mod.k, nk, tune.tbl.i, other.settings, partitions, 
-                          user.eval, quiet) {
-  # get model predictions for training and validation data for partition k
-  occs.train.pred <- enm@predict(mod.k, occs.train.z, other.settings)
-  occs.val.pred <- enm@predict(mod.k, occs.val.z, other.settings)
-  bg.train.pred <- enm@predict(mod.k, bg.train.z, other.settings)
-  # if the background was partitioned, get predictions for this subset; if not, it will be NULL
-  if(nrow(bg.val.z) > 0) {
-    bg.val.pred <- enm@predict(mod.k, bg.val.z, other.settings)
-  }else{
-    bg.val.pred <- NULL
-    # if(quiet != TRUE) message("\nNOTE: Background points were not partitioned for this analysis, so model validation will proceed on the full background.")
-  }
-  
+tune.validate <- function(pred.occs.train, pred.occs.val, pred.bg.train, 
+                          pred.bg.val, other.settings, user.eval) {
   # if validation.bg == "full", calculate training and validation AUC and CBI based on the full background 
   # (training + validation background for all statistics) 
   # see Radosavljevic & Anderson 2014 for an example of calculating validation AUC with spatial partitions over a shared background
   if(other.settings$validation.bg == "full") {
-    e.train <- predicts::pa_evaluate(occs.train.pred, c(bg.train.pred, bg.val.pred))
+    e.train <- predicts::pa_evaluate(pred.occs.train, c(pred.bg.train, pred.bg.val))
     auc.train <- e.train@stats$auc
-    e.val <- predicts::pa_evaluate(occs.val.pred, c(bg.train.pred, bg.val.pred))
+    e.val <- predicts::pa_evaluate(pred.occs.val, c(pred.bg.train, pred.bg.val))
     auc.val <- e.val@stats$auc
     # calculate AUC diff as training AUC minus validation AUC with a shared background
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the full background (do not calculate for jackknife partitions)
-    if(other.settings$ecospat.use == TRUE) {
-      if(partitions != "jackknife") {
-        cbi.val <- ecospat::ecospat.boyce(c(bg.train.pred, bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$cor  
-      }else{
-        cbi.val <- NA
-      }
+    if(other.settings$ecospat.use == TRUE & other.settings$cbi.cv == TRUE) {
+      cbi.val <- ecospat::ecospat.boyce(c(pred.bg.train, pred.bg.val, pred.occs.val), pred.occs.val, PEplot = FALSE)$cor  
     }else{
       cbi.val <- NA
     }
     # if validation.bg == "partition", calculate training and validation AUC and CBI based on the partitioned backgrounds only 
     # (training background for training statistics and validation background for validation statistics) 
   }else if(other.settings$validation.bg == "partition") {
-    e.train <- predicts::pa_evaluate(occs.train.pred, bg.train.pred)
+    e.train <- predicts::pa_evaluate(pred.occs.train, pred.bg.train)
     auc.train <- e.train@stats$auc
-    e.val <- predicts::pa_evaluate(occs.val.pred, bg.val.pred)
+    e.val <- predicts::pa_evaluate(pred.occs.val, pred.bg.val)
     auc.val <- e.val@stats$auc
     # calculate AUC diff as training AUC minus validation AUC with different backgrounds
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the validation background only (do not calculate for jackknife partitions)
-    if(other.settings$ecospat.use == TRUE) {
-      if(partitions != "jackknife") {
-        cbi.val <- ecospat::ecospat.boyce(c(bg.val.pred, occs.val.pred), occs.val.pred, PEplot = FALSE)$cor
-      }else{
-        cbi.val <- NA
-      }
+    if(other.settings$ecospat.use == TRUE & other.settings$cbi.cv == TRUE) {
+      cbi.val <- ecospat::ecospat.boyce(c(pred.bg.val, pred.occs.val), pred.occs.val, PEplot = FALSE)$cor
     }else{
       cbi.val <- NA
     }
@@ -118,20 +93,20 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z,
   
   ## omission rates
   # get minimum training presence threshold (expected no omission)
-  min.train.thr <- min(occs.train.pred)
-  or.mtp <- mean(occs.val.pred < min.train.thr)
+  min.train.thr <- min(pred.occs.train)
+  or.mtp <- mean(pred.occs.val < min.train.thr)
   # get 10 percentile training presence threshold (expected 0.1 omission)
-  pct10.train.thr <- calc.10p.trainThresh(occs.train.pred)
-  or.10p <- mean(occs.val.pred < pct10.train.thr)
+  pct10.train.thr <- calc.10p.trainThresh(pred.occs.train)
+  or.10p <- mean(pred.occs.val < pct10.train.thr)
   
   # perform user-specified validation statistics if available
   if(is.function(user.eval)) {
     vars <- list(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, 
-                 other.settings, partitions, occs.train.pred, occs.val.pred,
-                 bg.train.pred, bg.val.pred)
+                 other.settings, partitions, pred.occs.train, pred.occs.val,
+                 pred.bg.train, pred.bg.val)
     names(vars) <- c("enm", "occs.train.z", "occs.val.z", "bg.train.z", "bg.val.z", "mod.k", "nk", 
-                     "other.settings", "partitions", "occs.train.pred", "occs.val.pred",
-                     "bg.train.pred", "bg.val.pred")
+                     "other.settings", "partitions", "pred.occs.train", "pred.occs.val",
+                     "pred.bg.train", "pred.bg.val")
     user.eval.out <- user.eval(vars)
   }else{
     user.eval.out <- NULL
@@ -145,9 +120,9 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z,
 }
 
 #' @rdname tune.enm
-tuneParallel <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
-                         partition.settings, user.val.grps, occs.testing.z, 
-                         numCores, user.eval, algorithm, updateProgress, quiet) {
+tuneParallel <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, 
+                         other.settings, partition.settings, user.val.grps, 
+                         occs.testing.z, numCores, user.eval, algorithm, updateProgress, quiet) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -167,9 +142,9 @@ tuneParallel <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other
   msg("Running in parallel ...")
   
   par.cv.enm <- function(i) {
-    cv.enm(occs.z, bg.z, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
-           partition.settings, user.val.grps, occs.testing.z, user.eval, 
-           algorithm, quiet)
+    cv.enm(occs.z, bg.z, grps, enm, partitions, tune.tbl[i,], doClamp, 
+           other.settings, partition.settings, user.val.grps, occs.testing.z, 
+           user.eval, algorithm, quiet)
   }
   
   results <- parallel::parLapply(cl, 1:n, par.cv.enm)
@@ -177,9 +152,9 @@ tuneParallel <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other
 }
 
 #' @rdname tune.enm
-tune <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.settings, 
-                 partition.settings, user.val.grps, occs.testing.z, 
-                 numCores, user.eval, algorithm, updateProgress, quiet) {
+tune <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, 
+                 other.settings, partition.settings, user.val.grps, 
+                 occs.testing.z, numCores, user.eval, algorithm, updateProgress, quiet) {
   results <- list()
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
@@ -197,9 +172,9 @@ tune <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.setting
     }
     # set the current tune settings
     tune.tbl.i <- tune.tbl[i,]
-    results[[i]] <- cv.enm(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp,
-                           other.settings, partition.settings, user.val.grps, 
-                           occs.testing.z, user.eval, algorithm, quiet)
+    results[[i]] <- cv.enm(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, 
+                           doClamp,other.settings, partition.settings, 
+                           user.val.grps, occs.testing.z, user.eval, algorithm, quiet)
   }
   if(quiet != TRUE) close(pb)
   return(results)
@@ -207,20 +182,20 @@ tune <- function(occs.z, bg.z, enm, partitions, tune.tbl, doClamp, other.setting
 
 
 #' @rdname tune.enm
-cv.enm <- function(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp, other.settings, 
-                   partition.settings, user.val.grps, occs.testing.z, 
-                   user.eval, algorithm, quiet) {
+cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp, 
+                   other.settings, partition.settings, user.val.grps, 
+                   occs.testing.z, user.eval, algorithm, quiet) {
   envs.names <- names(occs.z)
   # unpack predictor variable values for occs and bg
   # occs.xy <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
-  occs.z <- d |> dplyr::filter(pb == 1) |> dplyr::select(dplyr::all_of(envs.names))
+  # occs.z <- d |> dplyr::filter(pb == 1) |> dplyr::select(dplyr::all_of(envs.names))
   # bg.xy <- d |> dplyr::filter(pb == 0) |> dplyr::select(1:2)
-  bg.z <- d |> dplyr::filter(pb == 0) |> dplyr::select(dplyr::all_of(envs.names))
+  # bg.z <- d |> dplyr::filter(pb == 0) |> dplyr::select(dplyr::all_of(envs.names))
   
   # define number of grp (the value of "k") for occurrences
-  nk <- length(unique(d[d$pb == 1, "grp"]))
+  nk <- length(unique(grps$occs.grp))
   
-  # build the full model from all the data
+  ## build the full model from all the data
   # assign arguments
   mod.full.args <- enm@args(occs.z, bg.z, tune.tbl.i, other.settings)
   # run training model with specified arguments
@@ -228,35 +203,46 @@ cv.enm <- function(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp, other.set
   
   if(is.null(mod.full)) stop('Training model is NULL. Consider changing the tuning parameters or inputting more background points.')
   
-  # as bioclim can be tuned with different "tails" settings that affect not the 
+  # as BIOCLIM can be tuned with different "tails" settings that affect not the 
   # model but the prediction, these settings need to be moved from tune.tbl.i
   # to other.settings as eval.predict() does not accept tune.args
   if(algorithm == "bioclim") other.settings$tails <- tune.tbl.i$tails
-  
-  mod.full.pred <- enm@predict(mod.full, rbind(occs.z, bg.z), other.settings)
+  # get model predictions for occs and bg
+  pred.occs <- enm@predict(mod.full, occs.z, other.settings)
+  pred.bg <- enm@predict(mod.full, bg.z, other.settings)
+  pred.full <- c(pred.occs, pred.bg)
   # get evaluation statistics for training data
-  train <- tune.train(enm, occs.z, bg.z, mod.full, tune.tbl.i, other.settings, partitions, quiet)
+  train <- tune.train(pred.occs, pred.bg)
   # make training stats table
   tune.args.col <- paste(names(tune.tbl.i), tune.tbl.i, collapse = "_", sep = ".")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) |> cbind(train)
   
   # if no partitions, return results without cv.stats
   if(partitions == "none") {
-    cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = NULL)
+    cv.res <- list(mod.full = mod.full, pred.full = pred.full, 
+                   train.stats = train.stats.df, cv.stats = NULL)
     return(cv.res)
   }
   
+  # calculate validation stats on user-specified testing dataset
   if(partitions == "testing") {
-    bg.val.z <- data.frame()
-    occs.testing.zEnvs <- occs.testing.z |> dplyr::select(dplyr::all_of(envs.names))
     if(doClamp == TRUE) {
-      occs.testing.zEnvs <- clamp.vars(orig.vals = occs.testing.zEnvs, ref.vals = rbind(occs.z, bg.z), 
-                                       left = other.settings$clamp.directions$left, right = other.settings$clamp.directions$right, 
-                                       categoricals = other.settings$categoricals)
+      occs.testing.z <- clamp.vars(orig.vals = occs.testing.z, 
+                                   ref.vals = rbind(occs.z, bg.z), 
+                                   left = other.settings$clamp.directions$left, 
+                                   right = other.settings$clamp.directions$right, 
+                                   categoricals = other.settings$categoricals)
     }
-    validate <- tune.validate(enm, occs.z, occs.testing.zEnvs, bg.z, bg.val.z, mod.full, 0, tune.tbl.i, other.settings, partitions, user.eval, quiet)
-    test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, stringsAsFactors = FALSE) |> cbind(validate)
-    cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, train.stats = train.stats.df, cv.stats = test.stats.df) 
+    # make model prediction of occs.training
+    pred.occs.testing <- enm@predict(mod.full, occs.testing.z, other.settings)
+    # calculate validation stats
+    validate <- tune.validate(pred.occs, pred.occs.testing, pred.bg, 
+                              bg.val.z = data.frame(), other.settings, 
+                              user.eval)
+    test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, 
+                                stringsAsFactors = FALSE) |> cbind(validate)
+    cv.res <- list(mod.full = mod.full, pred.full = pred.full, 
+                   train.stats = train.stats.df, cv.stats = test.stats.df) 
     return(cv.res)
   }
   
@@ -264,28 +250,37 @@ cv.enm <- function(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp, other.set
   cv.stats <- list()
   
   for(k in 1:nk) {
-    # assign partitions for training and validation occurrence data and for background data
-    occs.train.z <- d |> dplyr::filter(pb == 1, grp != k) |> dplyr::select(dplyr::all_of(envs.names))
-    bg.train.z <- d |> dplyr::filter(pb == 0, grp != k) |> dplyr::select(dplyr::all_of(envs.names))
-    if(is.null(user.val.grps)) {
-      occs.val.z <- d |> dplyr::filter(pb == 1, grp == k) |> dplyr::select(dplyr::all_of(envs.names))
-      bg.val.z <- d |> dplyr::filter(pb == 0, grp == k) |> dplyr::select(dplyr::all_of(envs.names))
-    }else{
+    # if doClamp is on, make sure that the validation data for each validation model is also clamped
+    # this means for each partition, making sure no values in validation data are more extreme than those in training data
+    occs.train.z <- occs.z[-which(grps$occs.grp == k),]
+    occs.val.z <- occs.z[which(grps$occs.grp == k),]
+    bg.train.z <- bg.z[-which(grps$bg.grp == k),]
+    bg.val.z <- bg.z[which(grps$bg.grp == k),]
+    # if bg not partitioned for cross-validation, this will be an empty df
+    # if so, make bg.val the whole bg
+    if(nrow(bg.val.z) == 0) {
+      bg.val.z <- bg.z
+    }
+    
+    # if clamping is on, clamp the validation data by the training data
+    if(doClamp == TRUE) {
+      occs.val.z <- clamp.vars(orig.vals = occs.val.z, 
+                               ref.vals = rbind(occs.train.z, bg.train.z), 
+                               left = other.settings$clamp.directions$left, 
+                               right = other.settings$clamp.directions$right, 
+                               categoricals = other.settings$categoricals)
+      bg.val.z <- clamp.vars(orig.vals = bg.val.z, 
+                               ref.vals = rbind(occs.train.z, bg.train.z), 
+                               left = other.settings$clamp.directions$left, 
+                               right = other.settings$clamp.directions$right, 
+                               categoricals = other.settings$categoricals)
+    }
+    
+    ## NOT SURE ABOUT HERE
+    if(!is.null(user.val.grps)) {
       # assign partitions for training and validation occurrence data and for background data based on user data
       occs.val.z <- user.val.grps |> dplyr::filter(grp == k) |> dplyr::select(dplyr::all_of(envs.names))
       bg.val.z <- d |> dplyr::filter(pb == 0, grp == k) |> dplyr::select(envs.names)
-    }
-    
-    # if doClamp is on, make sure that the validation data for each validation model is also clamped
-    # this means for each partition, making sure no values in validation data are more extreme than those in training data
-    if(doClamp == TRUE) {
-      val.z <- clamp.vars(orig.vals = rbind(occs.val.z, bg.val.z), 
-                          ref.vals = rbind(occs.train.z, bg.train.z), 
-                          left = other.settings$clamp.directions$left, 
-                          right = other.settings$clamp.directions$right, 
-                          categoricals = other.settings$categoricals)
-      occs.val.z <- val.z[1:nrow(occs.val.z),]
-      if(nrow(bg.val.z) > 0) bg.val.z <- val.z[(nrow(occs.val.z)+1):nrow(bg.val.z),]  
     }
     
     # define model arguments for current model k
@@ -299,20 +294,30 @@ cv.enm <- function(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp, other.set
       return(NULL)
     })  
     
+    # get model predictions for training and validation data for partition k
+    pred.occs.train <- enm@predict(mod.k, occs.train.z, other.settings)
+    pred.occs.val <- enm@predict(mod.k, occs.val.z, other.settings)
+    pred.bg.train <- enm@predict(mod.k, bg.train.z, other.settings)
+    # if the background was partitioned, get predictions for this subset; if not, it will be NULL
+    if(nrow(bg.val.z) > 0) {
+      pred.bg.val <- enm@predict(mod.k, bg.val.z, other.settings)
+    }else{
+      bg.val.pred <- NULL
+    }
+    
+    # if model ran without problems, make validation table
+    if(!is.null(mod.k)) {
+      validate <- tune.validate(enm, occs.train.z, occs.val.z, bg.train.z, 
+                                bg.val.z, mod.k, nk, tune.tbl.i, other.settings, 
+                                partitions, user.eval, quiet)  
     # if model is NULL for some reason, continue but report to user
-    if(is.null(mod.k)) {
-      if(quiet != TRUE) message(paste0("\nThe results were NULL for model with settings ", 
-                                       paste(names(tune.tbl.i), 
-                                             tune.tbl.i, 
-                                             collapse = ", "), 
+    }else{
+      mod.name <- paste(names(tune.tbl.i), tune.tbl.i, collapse = ", ")
+      msg(paste0("The results were NULL for model with settings ", mod.name,
                                        " for partition ", k, 
                                        ". These settings will have NA results."))
       validate <- data.frame(auc.val = NA, auc.diff = NA, cbi.val = NA, 
                              or.mtp = NA, or.10p = NA)
-    }else{
-      validate <- tune.validate(enm, occs.train.z, occs.val.z, bg.train.z, 
-                                bg.val.z, mod.k, nk, tune.tbl.i, other.settings, 
-                                partitions, user.eval, quiet)  
     }
     
     # put into list as one-row data frame for easy binding
@@ -322,7 +327,7 @@ cv.enm <- function(occs.z, bg.z, enm, partitions, tune.tbl.i, doClamp, other.set
   
   cv.stats.df <- dplyr::bind_rows(cv.stats)
   
-  cv.res <- list(mod.full = mod.full, mod.full.pred = mod.full.pred, 
+  cv.res <- list(mod.full = mod.full, pred.full = pred.full, 
                  train.stats = train.stats.df, cv.stats = cv.stats.df)
   
   return(cv.res)
