@@ -43,7 +43,8 @@
 
 evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data = "occs", pts.size = 1.5, return.tbl = FALSE) {
   if(!is.null(e)) {
-    pts.plot <- switch(ref.data, occs = cbind(e@occs, partition = e@occs.grp),
+    pts.plot <- switch(ref.data, 
+                       occs = cbind(e@occs, partition = e@occs.grp),
                        bg = cbind(e@bg, partition = e@bg.grp))  
     if(e@partition.method == "testing") {
       pts.plot <- pts.plot |> dplyr::mutate(partition = as.numeric(as.character(partition))) |> 

@@ -250,8 +250,7 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
   cv.stats <- list()
   
   for(k in 1:nk) {
-    # if doClamp is on, make sure that the validation data for each validation model is also clamped
-    # this means for each partition, making sure no values in validation data are more extreme than those in training data
+    # get env values for training and validaton data
     occs.train.z <- occs.z[-which(grps$occs.grp == k),]
     occs.val.z <- occs.z[which(grps$occs.grp == k),]
     bg.train.z <- bg.z[-which(grps$bg.grp == k),]
@@ -262,7 +261,9 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
       bg.val.z <- bg.z
     }
     
-    # if clamping is on, clamp the validation data by the training data
+    # if doClamp is on, make sure that the validation data for each validation 
+    # model is also clamped; this means for each partition, making sure no 
+    # values in validation data are more extreme than those in training data
     if(doClamp == TRUE) {
       occs.val.z <- clamp.vars(orig.vals = occs.val.z, 
                                ref.vals = rbind(occs.train.z, bg.train.z), 
