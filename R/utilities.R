@@ -80,7 +80,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   # error if both sides are set to "none"
   if(!is.null(left) & !is.null(right)) {
     if(("none" %in% left) & ("none" %in% right)) {
-      warning('Both left and right were set to "none", so clamping was not performed.')
+      inform('Both left and right were set to "none", so clamping was not performed.')
       return(orig.vals)
     }
   }
@@ -262,7 +262,7 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   return(out)
 }
 
-calcAIC <- function(occs.z, envs, enm, mod.full.all, other.settings) {
+calcAIC <- function(occs.z, envs, enm, mod.full.all, ncoefs, other.settings) {
   if((enm@name == "maxnet" | enm@name == "maxent.jar")) {
     pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
     aic.settings <- other.settings
@@ -346,19 +346,19 @@ calc.10p.trainThresh <- function(pred.train) {
 #' `nicheOverlap` in the \pkg{dismo} package
 
 #' @export
-calc.niche.overlap <- function(predictors, overlapStat, quiet=FALSE){
+calc.niche.overlap <- function(predictors, overlapStat, verbose = TRUE){
   n <- terra::nlyr(predictors)
   ov <- matrix(nrow = n, ncol = n)
-  if(quiet != TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
+  if(verbose == TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
-    if(quiet != TRUE) setTxtProgressBar(pb, i)
+    if(verbose == TRUE) setTxtProgressBar(pb, i)
     for(j in (i + 1):n){
       ov[j, i] <- nicheOverlap_terra(predictors[[i]], predictors[[j]], stat = overlapStat)
     }
   }
   colnames(ov) <- names(predictors)
   rownames(ov) <- names(predictors)
-  if(quiet != TRUE) close(pb)
+  if(verbose == TRUE) close(pb)
   return(ov)
 }
 
@@ -484,7 +484,6 @@ loadENMevaluation <- function(filename) {
   e@predictions <- terra::unwrap(e@predictions)
   return(e)
 }
-
 
 # multiRasMatchNAs <- function(envs, quiet = TRUE) {
 #   envs.z <- terra::values(envs)

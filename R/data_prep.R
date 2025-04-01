@@ -1,28 +1,31 @@
-# make a list of categorical variable levels
-catLevs <- function(occs.z, envs, categoricals) {
-  # make categorical levels list
-  cat.levs <- list()
-  for(i in 1:length(categoricals)) {
-    if(!is.null(envs)) {
-      cat.levs[[i]] <- terra::levels(envs[[categoricals[i]]])[[1]][,2]
-    }else{
-      cat.levs[[i]] <- levels(occs.z[, categoricals[i]])
-    }  
-  }
-  return(cat.levs)
+assign.partitions <- function(occs, bg, envs, partitions, partition.settings) {
+  switch(partitions, 
+         jackknife = get.jackknife(occs, bg),
+         randomkfold = get.randomkfold(occs, bg, partition.settings$kfolds),
+         block = get.block(occs, bg, partition.settings$orientation),
+         checkerboard = get.checkerboard(occs, envs, bg, partition.settings$aggregation.factor),
+         user = user.grp,
+         testing = list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg))),
+         none = list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg))))
 }
 
-# # converts categorical variable fields to factors and coerces them to numbers for maxent.jar
-# numFactors <- function(x, d, i) {
-#   x[, categoricals[i]] <- factor(as.numeric(x[, categoricals[i]]), levels = levels(d[, categoricals[i]]))
-#   return(x)
-# }
-# 
-# # converts categorical variable fields to factors
-# regFactors <- function(x, d, i) {
-#   x[, categoricals[i]] <- factor(x[, categoricals[i]], levels = levels(d[, categoricals[i]]))
-#   return(x)
-# }
+assign.partition.msg <- function(partitions, partition.settings) {
+  switch(partitions,
+         jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
+         randomkfold = paste0("* Model evaluations with random ", 
+                              partition.settings$kfolds, 
+                              "-fold cross validation..."),
+         block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", 
+                         partition.settings$orientation, " orientation..."),
+         checkerboard = ifelse(length(partition.settings$aggregation.factor) == 1, 
+                               "* Model evaluations with basic checkerboard (2-fold) cross validation...",
+                               "* Model evaluations with hierarchical checkerboard (4-fold) cross validation..."),
+         user = paste0("* Model evaluations with user-defined ", 
+                       length(unique(user.grp$occs.grp)), 
+                       "-fold cross validation..."),
+         testing = "* Model evaluations with testing data...",
+         none = "* Skipping model evaluations (only calculating full model statistics)...")
+}
 
   
 

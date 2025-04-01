@@ -30,7 +30,7 @@
 NULL
 
 #' @rdname tune.enm
-tune.train <- function(pred.occs, pred.bg) {
+tune.train <- function(pred.occs, pred.bg, other.settings) {
   # training AUC
   e <- predicts::pa_evaluate(pred.occs, pred.bg)
   auc.train <- e@stats$auc
@@ -138,8 +138,8 @@ tuneParallel <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp,
                           envir = environment())
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
-  msg(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
-  msg("Running in parallel ...")
+  inform(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
+  inform("Running in parallel ...")
   
   par.cv.enm <- function(i) {
     cv.enm(occs.z, bg.z, grps, enm, partitions, tune.tbl[i,], doClamp, 
@@ -173,7 +173,7 @@ tune <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp,
     # set the current tune settings
     tune.tbl.i <- tune.tbl[i,]
     results[[i]] <- cv.enm(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, 
-                           doClamp,other.settings, partition.settings, 
+                           doClamp, other.settings, partition.settings, 
                            user.val.grps, occs.testing.z, user.eval, algorithm, quiet)
   }
   if(quiet != TRUE) close(pb)
@@ -212,7 +212,7 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
   pred.bg <- enm@predict(mod.full, bg.z, other.settings)
   pred.full <- c(pred.occs, pred.bg)
   # get evaluation statistics for training data
-  train <- tune.train(pred.occs, pred.bg)
+  train <- tune.train(pred.occs, pred.bg, other.settings)
   # make training stats table
   tune.args.col <- paste(names(tune.tbl.i), tune.tbl.i, collapse = "_", sep = ".")
   train.stats.df <- data.frame(tune.args = tune.args.col, stringsAsFactors = FALSE) |> cbind(train)
@@ -237,7 +237,7 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
     pred.occs.testing <- enm@predict(mod.full, occs.testing.z, other.settings)
     # calculate validation stats
     validate <- tune.validate(pred.occs, pred.occs.testing, pred.bg, 
-                              bg.val.z = data.frame(), other.settings, 
+                              pred.bg.val = data.frame(), other.settings, 
                               user.eval)
     test.stats.df <- data.frame(tune.args = tune.args.col, fold = 0, 
                                 stringsAsFactors = FALSE) |> cbind(validate)
@@ -312,7 +312,7 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
     # if model is NULL for some reason, continue but report to user
     }else{
       mod.name <- paste(names(tune.tbl.i), tune.tbl.i, collapse = ", ")
-      msg(paste0("The results were NULL for model with settings ", mod.name,
+      inform(paste0("The results were NULL for model with settings ", mod.name,
                                        " for partition ", k, 
                                        ". These settings will have NA results."))
       validate <- data.frame(auc.val = NA, auc.diff = NA, cbi.val = NA, 

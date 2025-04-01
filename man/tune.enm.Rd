@@ -7,37 +7,25 @@
 \alias{cv.enm}
 \alias{tune.train}
 \alias{tune.validate}
+\alias{tuneParallel}
 \alias{tune}
 \title{Iterate tuning of ENMs}
 \usage{
-tune.train(
-  enm,
-  occs.z,
-  bg.z,
-  mod.full,
-  tune.tbl.i,
-  other.settings,
-  partitions,
-  quiet
-)
+tune.train(pred.occs, pred.bg, other.settings)
 
 tune.validate(
-  enm,
-  occs.train.z,
-  occs.val.z,
-  bg.train.z,
-  bg.val.z,
-  mod.k,
-  nk,
-  tune.tbl.i,
+  pred.occs.train,
+  pred.occs.val,
+  pred.bg.train,
+  pred.bg.val,
   other.settings,
-  partitions,
-  user.eval,
-  quiet
+  user.eval
 )
 
-tune(
-  d,
+tuneParallel(
+  occs.z,
+  bg.z,
+  grps,
   enm,
   partitions,
   tune.tbl,
@@ -47,7 +35,25 @@ tune(
   user.val.grps,
   occs.testing.z,
   numCores,
-  parallel,
+  user.eval,
+  algorithm,
+  updateProgress,
+  quiet
+)
+
+tune(
+  occs.z,
+  bg.z,
+  grps,
+  enm,
+  partitions,
+  tune.tbl,
+  doClamp,
+  other.settings,
+  partition.settings,
+  user.val.grps,
+  occs.testing.z,
+  numCores,
   user.eval,
   algorithm,
   updateProgress,
@@ -55,7 +61,9 @@ tune(
 )
 
 cv.enm(
-  d,
+  occs.z,
+  bg.z,
+  grps,
   enm,
   partitions,
   tune.tbl.i,
@@ -70,43 +78,23 @@ cv.enm(
 )
 }
 \arguments{
-\item{enm}{\link{ENMdetails} object}
-
-\item{occs.z}{data.frame: the envs values for the coordinates at the full dataset occurrence records}
-
-\item{bg.z}{data.frame: the envs values for the coordinates at the full dataset background records}
-
-\item{mod.full}{model object: the model trained on the full dataset}
-
-\item{tune.tbl.i}{vector: single set of tuning parameters}
-
 \item{other.settings}{named list: used to specify extra settings for the analysis. 
 All of these settings have internal defaults, so if they are not specified the analysis will be run 
 with default settings. See Details for descriptions of these settings, including how to specify arguments
 for maxent.jar.}
-
-\item{partitions}{character: name of partitioning technique (see \code{?partitions})}
-
-\item{quiet}{boolean: if TRUE, silence all function messages (but not errors).}
-
-\item{occs.train.z}{data.frame: the envs values for the coordinates at the training occurrence records}
-
-\item{occs.val.z}{data.frame: the envs values for the coordinates at the validation occurrence records}
-
-\item{bg.train.z}{data.frame: the envs values for the coordinates at the training background records}
-
-\item{bg.val.z}{data.frame: the envs values for the coordinates at the validation background records}
-
-\item{mod.k}{model object: the model trained on the training dataset that becomes evaluated on the validation data}
-
-\item{nk}{numeric: the number of folds (i.e., partitions) -- will be equal to \code{kfolds} for random partitions}
 
 \item{user.eval}{function: custom function for specifying performance metrics not included in \pkg{ENMeval}.
 The function must first be defined and then input as the argument \code{user.eval}. 
 This function should have a single argument called \code{vars}, which is a list that includes different data 
 that can be used to calculate the metric. See Details below and the vignette for a worked example.}
 
-\item{d}{data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
+\item{occs.z}{data.frame: the envs values for the coordinates at the full dataset occurrence records}
+
+\item{bg.z}{data.frame: the envs values for the coordinates at the full dataset background records}
+
+\item{enm}{\link{ENMdetails} object}
+
+\item{partitions}{character: name of partitioning technique (see \code{?partitions})}
 
 \item{tune.tbl}{data frame: all combinations of tuning parameters}
 
@@ -130,12 +118,30 @@ coordinates at the testing occurrence records}
 
 \item{numCores}{numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.}
 
-\item{parallel}{boolean: if TRUE, run with parallel processing.}
-
 \item{algorithm}{character: name of the algorithm used to build models. Currently one of "maxnet",
 "maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
+
+\item{quiet}{boolean: if TRUE, silence all function messages (but not errors).}
+
+\item{tune.tbl.i}{vector: single set of tuning parameters}
+
+\item{mod.full}{model object: the model trained on the full dataset}
+
+\item{occs.train.z}{data.frame: the envs values for the coordinates at the training occurrence records}
+
+\item{occs.val.z}{data.frame: the envs values for the coordinates at the validation occurrence records}
+
+\item{bg.train.z}{data.frame: the envs values for the coordinates at the training background records}
+
+\item{bg.val.z}{data.frame: the envs values for the coordinates at the validation background records}
+
+\item{mod.k}{model object: the model trained on the training dataset that becomes evaluated on the validation data}
+
+\item{nk}{numeric: the number of folds (i.e., partitions) -- will be equal to \code{kfolds} for random partitions}
+
+\item{d}{data frame: data frame from \code{ENMevaluate()} with occurrence and background coordinates (or coordinates plus predictor variable values) and partition group values}
 }
 \description{
 Internal functions to tune and summarize results for ecological niche models (ENMs) iteratively across a range of user-specified tuning settings. 

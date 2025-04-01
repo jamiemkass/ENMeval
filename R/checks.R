@@ -50,8 +50,6 @@ checks.other.settings <- function(other.settings) {
   if(is.null(other.settings$pred.type)) other.settings$pred.type <- "cloglog"
   if(is.null(other.settings$validation.bg)) other.settings$validation.bg <- "full"
   if(is.null(other.settings$cbi.cv)) other.settings$cbi.cv <- TRUE
-  # add whether to use ecospat to other.settings to avoid multiple requires
-  other.settings <- c(other.settings, ecospat.use = ecospat.use)
   return(other.settings)
 }
 
@@ -80,4 +78,43 @@ checks.tuning <- function(tune.args) {
     tune.args[[i]] <- sort(tune.args[[i]])
   }
   return(tune.args)
+}
+
+# make a list of categorical variable levels
+catLevs <- function(occs.z, envs, categoricals) {
+  # make categorical levels list
+  cat.levs <- list()
+  for(i in 1:length(categoricals)) {
+    if(!is.null(envs)) {
+      cat.levs[[i]] <- terra::levels(envs[[categoricals[i]]])[[1]][,2]
+    }else{
+      cat.levs[[i]] <- levels(occs.z[, categoricals[i]])
+    }  
+  }
+  return(cat.levs)
+}
+
+checks.cats <- function(occs.z, envs, categoricals) {
+  # which columns are factors
+  facts <- names(occs.z)[which(sapply(occs.z, is.factor))]
+  
+  # if categoricals specified
+  if(!is.null(categoricals)) {
+    cat.extra <- unique(c(categoricals, facts))
+    if(length(cat.extra) > categoricals) {
+      stop(paste0("There are ", length(cat.extra), " variables with class factor, but only ", 
+                  length(categoricals), " categorical variables specified.", 
+                  "Enter all categorical variable names in argument 'categoricals'."))
+    }
+    if(algorithm == "maxent.jar") {
+      cat.levs <- catLevs(occs.z, envs, categoricals) 
+      levs.class <- sapply(cat.levs, class)
+      if(all(levs.class != "numeric")) stop("For maxent.jar, all categorical variable levels must be numeric.",
+                                            "Change character levels to numbers and rerun.")
+    }
+    # if categoricals not specified
+  }else{
+    if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified.",
+                               "Rerun after specifying 'categoricals'.")
+  }
 }

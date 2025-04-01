@@ -29,6 +29,7 @@ ENMevaluate(
   parallel = FALSE,
   numCores = NULL,
   updateProgress = FALSE,
+  verbose = FALSE,
   quiet = FALSE
 )
 }

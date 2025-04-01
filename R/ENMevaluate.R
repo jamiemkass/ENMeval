@@ -172,6 +172,7 @@
 #' in the results table.
 #'
 #' @importFrom foreach %dopar%
+#' @importFrom rlang inform warn abort
 #' @importFrom grDevices rainbow
 #' @importFrom methods new slot validObject
 #' @importFrom stats pnorm quantile runif sd quantile
@@ -307,24 +308,27 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                         overlapStat = c("D", "I"), user.val.grps = NULL, 
                         user.eval = NULL, rmm = NULL, parallel = FALSE, 
                         numCores = NULL, updateProgress = FALSE, 
-                        quiet = FALSE) {
+                        verbose = FALSE, quiet = FALSE) {
   
   
   # record start time
   start.time <- proc.time()
   
   # message function
-  msg <- function(txt) {
-    if(quiet == FALSE) message(txt)
+  if(verbose == FALSE) {
+    options(rlib_message_verbosity = "quiet")
+    options(rlib_warning_verbosity = "quiet")
   }
   
   # check if ecospat is installed, and if not, prevent CBI calculations
   if((requireNamespace("ecospat", quietly = TRUE))) {
     ecospat.use <- TRUE
   }else{
-    msg("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
+    inform("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
     ecospat.use <- FALSE
   }
+  # add whether to use ecospat to other.settings to avoid multiple requires
+  other.settings <- c(other.settings, ecospat.use = ecospat.use)
   
   ######################## #
   # INITIAL DATA CHECKS ####
@@ -342,7 +346,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     stop("* The two first columns of occs should be longitude and latitude.")
   
   # initial message
-  msg("*** Running initial checks... ***\n")
+  inform("*** Running initial checks... ***\n")
   
   # common partitions input errors
   checks.partitions(partitions, partition.settings, occs.testing)
@@ -408,7 +412,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(!is.null(envs)) {
     # if no background points specified, generate random ones
     if(is.null(bg)) {
-      msg(paste0("* Randomly sampling ", n.bg, " background points ..."))
+      inform(paste0("* Randomly sampling ", n.bg, " background points ..."))
       bg <- terra::spatSample(envs, size = n.bg, xy = TRUE, na.rm = TRUE,
                               values = FALSE) |> as.data.frame()
       names(bg) <- names(occs)
@@ -421,7 +425,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
       occs.dups <- which(duplicated(occs.cellNo[,"cell"]) == 1)
       if(sum(occs.dups) > 0) {
         occs.rem[occs.dups] <- 1
-        msg(paste0("* Removing ", length(occs.dups), " occurrence record grid cell duplicates."))
+        inform(paste0("* Removing ", length(occs.dups), " occurrence record grid cell duplicates."))
       }
     }
     
@@ -444,7 +448,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     if(is.null(bg)) stop("* If using species with data (SWD) format, input coordinates for both occurrence and background records.")
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If using species with data (SWD) format, input variable values in occs and bg tables proceeding the coordinates.")
-    msg("* Using species with data (SWD) format, so raster predictions cannot be generated. Also, AICc is calculated with background data for Maxent models.")
+    inform("* Using species with data (SWD) format, so raster predictions cannot be generated. Also, AICc is calculated with background data for Maxent models.")
   }
   
   # keep records of which points were removed during cleaning
@@ -455,12 +459,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(length(occs.na) > 0) {
     # which many occs are newly filtered?
     occs.na.rem <- occs.na[which(occs.rem[occs.na] == 0)]
-    msg(paste0("* Removing ", length(occs.na.rem), " occurrence records with NA predictor variable values."))
+    inform(paste0("* Removing ", length(occs.na.rem), " occurrence records with NA predictor variable values."))
     occs.rem[occs.na.rem] <- 1
   }
   bg.na <- which(rowSums(is.na(bg.z)) > 0)
   if(length(bg.na) > 0) {
-    msg(paste0("* Removing ", length(bg.na), " background records with NA predictor variable values."))
+    inform(paste0("* Removing ", length(bg.na), " background records with NA predictor variable values."))
     bg.rem[bg.na] <- 1
   }
   
@@ -499,28 +503,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # CHECK CATEGORICAL VARIABLES ####
   ################################# #
   
-  # which columns are factors
-  facts <- names(occs.z)[which(sapply(occs.z, is.factor))]
-  
-  # if categoricals specified
-  if(!is.null(categoricals)) {
-    cat.extra <- unique(c(categoricals, facts))
-    if(length(cat.extra) > categoricals) {
-      stop(paste0("There are ", length(cat.extra), " variables with class factor, but only ", 
-                  length(categoricals), " categorical variables specified.", 
-                  "Enter all categorical variable names in argument 'categoricals'."))
-    }
-    if(algorithm == "maxent.jar") {
-      cat.levs <- catLevs(occs.z, envs, categoricals) 
-      levs.class <- sapply(cat.levs, class)
-      if(all(levs.class != "numeric")) stop("For maxent.jar, all categorical variable levels must be numeric.",
-                                            "Change character levels to numbers and rerun.")
-    }
-  # if categoricals not specified
-  }else{
-    if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified.",
-                               "Rerun after specifying 'categoricals'.")
-  }
+  checks.cats(occs.z, envs, categoricals)
   
   # put categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
@@ -543,7 +526,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                          left = clamp.directions$left, 
                          right = clamp.directions$right, 
                          categoricals = categoricals)
-      msg("* Clamping predictor variable rasters...")
+      inform("* Clamping predictor variable rasters...")
     }else{
       # if no predictor variable rasters are input, assign both clamp directions
       # to all variable names (columns besides the first two, which should be
@@ -568,44 +551,29 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # ASSIGN PARTITIONS ####
   ###################### #
   
-  # partition occs based on selected partition method
-  grps <- switch(partitions, 
-                 jackknife = get.jackknife(occs, bg),
-                 randomkfold = get.randomkfold(occs, bg, partition.settings$kfolds),
-                 block = get.block(occs, bg, partition.settings$orientation),
-                 checkerboard = get.checkerboard(occs, envs, bg, partition.settings$aggregation.factor),
-                 user = user.grp,
-                 testing = list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg))),
-                 none = list(occs.grp = rep(0, nrow(occs)), bg.grp = rep(0, nrow(bg))))
+  # partition occs / bg based on selected partition method
+  grps <- assign.partitions(occs, bg, envs, partitions, partition.settings)
   
   # choose a user message reporting on partition choice
-  parts.message <- switch(partitions,
-                          jackknife = "* Model evaluations with k-1 jackknife (leave-one-out) cross validation...",
-                          randomkfold = paste0("* Model evaluations with random ", partition.settings$kfolds, "-fold cross validation..."),
-                          block =  paste0("* Model evaluations with spatial block (4-fold) cross validation and ", partition.settings$orientation, " orientation..."),
-                          checkerboard = ifelse(length(partition.settings$aggregation.factor) == 1, "* Model evaluations with basic checkerboard (2-fold) cross validation...","* Model evaluations with hierarchical checkerboard (4-fold) cross validation..."),
-                          user = paste0("* Model evaluations with user-defined ", length(unique(user.grp$occs.grp)), "-fold cross validation..."),
-                          testing = "* Model evaluations with testing data...",
-                          none = "* Skipping model evaluations (only calculating full model statistics)...")
-  msg(parts.message)
+  inform(assign.partition.msg(partitions, partition.settings))
   
   # do not calculate CBI if one or more partitions has only 1 occurrence record
   if(partitions == "jackknife") {
     other.settings$cbi.cv <- FALSE
-    msg("For jackknife partitioning, not calculating CBI because each partition has too few occurrences for this metric.")
+    inform("For jackknife partitioning, not calculating CBI because each partition has too few occurrences for this metric.")
   }
   if(partitions == "user") {
     tb <- table(user.grp$occs.grp)
     user.grp.1 <- names(tb)[which(tb == 1)]
     if(length(user.grp.1 > 0)) other.settings$cbi.cv <- FALSE
-    msg("For user partitioning, not calculating CBI because partition ", user.grp.1, 
+    inform("For user partitioning, not calculating CBI because partition ", user.grp.1, 
         "has too few occurrences for this metric.")
   }
   
   ################# #
   # MESSAGE
   ################# #
-  msg(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
+  inform(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
   
   ################# #
   # MODEL TUNING #### 
@@ -623,11 +591,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     results <- tuneParallel(occs.z, bg.z, grps, enm, partitions, tune.tbl, 
                             doClamp, other.settings, partition.settings, 
                             user.val.grps, occs.testing.z, numCores, user.eval, 
-                            algorithm, updateProgress, quiet)
+                            algorithm, updateProgress, verbose)
   }else{
     results <- tune(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, other.settings, 
                     partition.settings, user.val.grps, occs.testing.z, 
-                    numCores, user.eval, algorithm, updateProgress, quiet)
+                    numCores, user.eval, algorithm, updateProgress, verbose)
   }
   
   ##################### #
@@ -656,75 +624,21 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if envs is null, make an empty stack
   if(!is.null(envs) & raster.preds == TRUE) {
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
-    if(quiet != TRUE) message("Making model prediction rasters...")
+    inform("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
   }else{
     mod.full.pred.all <- terra::rast()
   }
   
-  # define number of grp (the value of "k") for occurrences
-  # k is 1 for partition "testing"
-  # k is 0 for partitions "none" and "user"
-  if(partitions %in% c("user", "none")) {
-    nk <- 0
+  ## assemble model evaluation statistics table
+  if(partitions == "none") {
+    # if no partitions were specified
+    eval.stats <- assemble.stats.noParts(train.stats.all, val.stats.all, tune.names, tune.tbl)
   }else{
+    # if partitions were specified
     nk <- length(unique(grps$occs.grp))
-  }
-  
-  # if partitions were specified
-  if(nk > 0) {
-    # define number of settings (plus the tune.args field)
-    # nset <- ifelse(!is.null(tune.tbl), ncol(tune.tbl), 0)
-    
-    # if jackknife cross-validation (leave-one-out), correct variance for
-    # non-independent samples (Shcheglovitova & Anderson 2013)
-    if(partitions == "jackknife") {
-      sum.list <- list(avg = mean, sd = ~sqrt(corrected.var(., nk)))
-    }else{
-    # if other partition method, leave sd as is
-      sum.list <- list(avg = mean, sd = sd)
-    } 
-    
-    # if there is one partition, or if using an testing dataset, do not take summary statistics
-    if(nk == 1 | partitions == "testing") sum.list <- list(function(x) {x})
-    
-    # if tune.tbl exists, make tune.args column a factor to keep order after using dplyr functions
-    if(!is.null(tune.tbl)) val.stats.all$tune.args <- factor(val.stats.all$tune.args, levels = tune.names)
-    
-    # calculate summary statistics
-    cv.stats.sum <- val.stats.all |> 
-      dplyr::group_by(tune.args) |>
-      dplyr::select(-fold) |> 
-      dplyr::summarize_all(sum.list) |>
-      dplyr::ungroup() 
-    
-    # change names (replace _ with .)
-    names(cv.stats.sum) <- gsub("(.*)_(.*)", "\\1.\\2", names(cv.stats.sum))
-    # order columns alphabetically
-    cv.stats.sum <- cv.stats.sum[, order(colnames(cv.stats.sum))]
-    
-    # if tune.tbl exists
-    if(!is.null(tune.tbl)) {
-      # make tune.args column in training stats factor too for smooth join
-      train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
-      # eval.stats is the join of tune.tbl, training stats, and cv stats
-      eval.stats <- tune.tbl |> dplyr::left_join(train.stats.all, by = "tune.args") |>
-        dplyr::left_join(cv.stats.sum, by = "tune.args")
-    }else{
-      # if tune.tbl does not exist, eval.stats is the binding of training stats to cv stats
-      train.stats.all$tune.args <- NULL
-      cv.stats.sum$tune.args <- NULL
-      eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
-    }
-  # if no partitions specified
-  }else{
-    # make tune.args column in training stats factor too for smooth join
-    train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
-    # if no partitions assigned, eval.stats is the join of tune.tbl to training stats
-    eval.stats <- dplyr::left_join(tune.tbl, train.stats.all, by = "tune.args") 
-    if(nrow(val.stats.all) > 0) eval.stats <- dplyr::left_join(eval.stats, val.stats.all, by = "tune.args")
-    if("fold" %in% names(eval.stats)) eval.stats <- eval.stats |> dplyr::select(-fold)
+    eval.stats <- assemble.stats.parts(nk, train.stats.all, val.stats.all, tune.names, tune.tbl)
   }
   
   # calculate number of non-zero parameters in model
@@ -732,7 +646,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # calculate AICc and bind to eval.stats
   # currently, only works for Maxent models
-  aic <- calcAIC(occs.z, envs, enm, mod.full.all, other.settings)
+  aic <- calcAIC(occs.z, envs, enm, mod.full.all, ncoefs, other.settings)
   eval.stats <- dplyr::bind_cols(eval.stats, aic)
   
   # add ncoef column
@@ -750,8 +664,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # get variable importance for all models
   variable.importance.all <- lapply(mod.full.all, enm@variable.importance)
   
-  # remove the doClamp = FALSE recorded in other.settings to avoid confusion
-  other.settings$doClamp <- NULL
+  # overwrite the doClamp = FALSE used internally with the one entered by user
+  other.settings$doClamp <- doClamp
+  
+  # if range overlap selected, calculate and add the resulting matrix to results
+  if(overlap == TRUE) {
+    ov.ls <- assemble.overlap(mod.full.pred.all, overlapStat, verbose)
+  }else{
+    ov.ls <- NULL
+  }
   
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
@@ -763,36 +684,20 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                      partition.settings = partition.settings,
                      other.settings = other.settings, doClamp = doClamp, 
                      clamp.directions = clamp.directions, occs = occs.z, 
-                     occs.testing = occs.testing.z, occs.grp = factor(grps$occs.grp),
-                     bg = bg.z, bg.grp = factor(grps$bg.grp), rmm = list())
+                     occs.testing = occs.testing.z, 
+                     occs.grp = factor(grps$occs.grp), bg = bg.z, 
+                     bg.grp = factor(grps$bg.grp), overlap = ov.ls, rmm = list())
   
   # add the rangeModelMetadata object to the ENMevaluation object
   # write to existing RMM if input by user
   e@rmm <- buildRMM(e, envs, rmm)
   
-  # if range overlap selected, calculate and add the resulting matrix to results
-  if(overlap == TRUE) {
-    nr <- terra::nlyr(e@predictions)
-    if(nr == 0) {
-      if(quiet != TRUE) message("Warning: calculate range overlap without model prediction rasters.")
-    }else if(nr == 1) {
-      if(quiet != TRUE) message("Warning: only 1 model prediction raster found. Need at least 2 rasters to calculate range overlap. Increase number of tuning arguments and run again.") 
-    }else{
-      for(ovStat in overlapStat) {
-        if(quiet != TRUE) message(paste0("Calculating range overlap for statistic ", ovStat, "..."))
-        # turn negative values to 0 for range overlap calculations
-        predictions.noNegs <- terra::rast(lapply(e@predictions, function(x) {x[x<0] <- 0; x}))
-        overlap.mat <- calc.niche.overlap(predictions.noNegs, ovStat, quiet)
-        e@overlap[[ovStat]] <- overlap.mat
-      }
-    }
-  }
   
   # calculate time expended and print message
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  if(quiet != TRUE) message(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  inform(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
   return(e)
 }
