@@ -172,7 +172,6 @@
 #' in the results table.
 #'
 #' @importFrom foreach %dopar%
-#' @importFrom rlang inform warn abort
 #' @importFrom grDevices rainbow
 #' @importFrom methods new slot validObject
 #' @importFrom stats pnorm quantile runif sd quantile
@@ -307,24 +306,17 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                         n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), user.val.grps = NULL, 
                         user.eval = NULL, rmm = NULL, parallel = FALSE, 
-                        numCores = NULL, updateProgress = FALSE, 
-                        verbose = FALSE, quiet = FALSE) {
+                        numCores = NULL, updateProgress = FALSE) {
   
   
   # record start time
   start.time <- proc.time()
   
-  # message function
-  if(verbose == FALSE) {
-    options(rlib_message_verbosity = "quiet")
-    options(rlib_warning_verbosity = "quiet")
-  }
-  
   # check if ecospat is installed, and if not, prevent CBI calculations
   if((requireNamespace("ecospat", quietly = TRUE))) {
     ecospat.use <- TRUE
   }else{
-    inform("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
+    message("Package ecospat is not installed, so Continuous Boyce Index (CBI) cannot be calculated.")
     ecospat.use <- FALSE
   }
   # add whether to use ecospat to other.settings to avoid multiple requires
@@ -346,7 +338,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     stop("* The two first columns of occs should be longitude and latitude.")
   
   # initial message
-  inform("*** Running initial checks... ***\n")
+  message("*** Running initial checks... ***\n")
   
   # common partitions input errors
   checks.partitions(partitions, partition.settings, occs.testing)
@@ -412,7 +404,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(!is.null(envs)) {
     # if no background points specified, generate random ones
     if(is.null(bg)) {
-      inform(paste0("* Randomly sampling ", n.bg, " background points ..."))
+      message(paste0("* Randomly sampling ", n.bg, " background points ..."))
       bg <- terra::spatSample(envs, size = n.bg, xy = TRUE, na.rm = TRUE,
                               values = FALSE) |> as.data.frame()
       names(bg) <- names(occs)
@@ -425,7 +417,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
       occs.dups <- which(duplicated(occs.cellNo[,"cell"]) == 1)
       if(sum(occs.dups) > 0) {
         occs.rem[occs.dups] <- 1
-        inform(paste0("* Removing ", length(occs.dups), " occurrence record grid cell duplicates."))
+        message(paste0("* Removing ", length(occs.dups), " occurrence record grid cell duplicates."))
       }
     }
     
@@ -448,7 +440,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     if(is.null(bg)) stop("* If using species with data (SWD) format, input coordinates for both occurrence and background records.")
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If using species with data (SWD) format, input variable values in occs and bg tables proceeding the coordinates.")
-    inform("* Using species with data (SWD) format, so raster predictions cannot be generated. Also, AICc is calculated with background data for Maxent models.")
+    message("* Using species with data (SWD) format, so raster predictions cannot be generated. Also, AICc is calculated with background data for Maxent models.")
   }
   
   # keep records of which points were removed during cleaning
@@ -459,12 +451,12 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(length(occs.na) > 0) {
     # which many occs are newly filtered?
     occs.na.rem <- occs.na[which(occs.rem[occs.na] == 0)]
-    inform(paste0("* Removing ", length(occs.na.rem), " occurrence records with NA predictor variable values."))
+    message(paste0("* Removing ", length(occs.na.rem), " occurrence records with NA predictor variable values."))
     occs.rem[occs.na.rem] <- 1
   }
   bg.na <- which(rowSums(is.na(bg.z)) > 0)
   if(length(bg.na) > 0) {
-    inform(paste0("* Removing ", length(bg.na), " background records with NA predictor variable values."))
+    message(paste0("* Removing ", length(bg.na), " background records with NA predictor variable values."))
     bg.rem[bg.na] <- 1
   }
   
@@ -526,7 +518,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                          left = clamp.directions$left, 
                          right = clamp.directions$right, 
                          categoricals = categoricals)
-      inform("* Clamping predictor variable rasters...")
+      message("* Clamping predictor variable rasters...")
     }else{
       # if no predictor variable rasters are input, assign both clamp directions
       # to all variable names (columns besides the first two, which should be
@@ -555,25 +547,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   grps <- assign.partitions(occs, bg, envs, partitions, partition.settings)
   
   # choose a user message reporting on partition choice
-  inform(assign.partition.msg(partitions, partition.settings))
+  message(assign.partition.msg(partitions, partition.settings))
   
   # do not calculate CBI if one or more partitions has only 1 occurrence record
   if(partitions == "jackknife") {
     other.settings$cbi.cv <- FALSE
-    inform("For jackknife partitioning, not calculating CBI because each partition has too few occurrences for this metric.")
+    message("For jackknife partitioning, not calculating CBI because each partition has too few occurrences for this metric.")
   }
   if(partitions == "user") {
     tb <- table(user.grp$occs.grp)
     user.grp.1 <- names(tb)[which(tb == 1)]
     if(length(user.grp.1 > 0)) other.settings$cbi.cv <- FALSE
-    inform("For user partitioning, not calculating CBI because partition ", user.grp.1, 
+    message("For user partitioning, not calculating CBI because partition ", user.grp.1, 
         "has too few occurrences for this metric.")
   }
   
   ################# #
   # MESSAGE
   ################# #
-  inform(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
+  message(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
   
   ################# #
   # MODEL TUNING #### 
@@ -591,11 +583,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     results <- tuneParallel(occs.z, bg.z, grps, enm, partitions, tune.tbl, 
                             doClamp, other.settings, partition.settings, 
                             user.val.grps, occs.testing.z, numCores, user.eval, 
-                            algorithm, updateProgress, verbose)
+                            algorithm, updateProgress)
   }else{
     results <- tune(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, other.settings, 
                     partition.settings, user.val.grps, occs.testing.z, 
-                    numCores, user.eval, algorithm, updateProgress, verbose)
+                    numCores, user.eval, algorithm, updateProgress)
   }
   
   ##################### #
@@ -624,7 +616,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if envs is null, make an empty stack
   if(!is.null(envs) & raster.preds == TRUE) {
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
-    inform("Making model prediction rasters...")
+    message("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
   }else{
@@ -669,7 +661,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # if range overlap selected, calculate and add the resulting matrix to results
   if(overlap == TRUE) {
-    ov.ls <- assemble.overlap(mod.full.pred.all, overlapStat, verbose)
+    ov.ls <- assemble.overlap(mod.full.pred.all, overlapStat)
   }else{
     ov.ls <- NULL
   }
@@ -697,7 +689,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   timed <- proc.time() - start.time
   t.min <- floor(timed[3] / 60)
   t.sec <- timed[3] - (t.min * 60)
-  inform(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
+  message(paste("ENMevaluate completed in", t.min, "minutes", round(t.sec, 1), "seconds."))
   
   return(e)
 }

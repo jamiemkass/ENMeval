@@ -122,7 +122,7 @@ tune.validate <- function(pred.occs.train, pred.occs.val, pred.bg.train,
 #' @rdname tune.enm
 tuneParallel <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, 
                          other.settings, partition.settings, user.val.grps, 
-                         occs.testing.z, numCores, user.eval, algorithm, updateProgress, quiet) {
+                         occs.testing.z, numCores, user.eval, algorithm, updateProgress) {
   # set up parallel processing functionality
   allCores <- parallel::detectCores()
   if (is.null(numCores)) {
@@ -133,18 +133,18 @@ tuneParallel <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp,
                                 "doClamp", "other.settings", 
                                 "partition.settings", "user.val.grps", 
                                 "occs.testing.z", "user.eval", "algorithm", 
-                                "quiet", "cv.enm", "tune.train", "clamp.vars", 
+                                "cv.enm", "tune.train", "clamp.vars", 
                                 "tune.validate"),
                           envir = environment())
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
-  inform(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
-  inform("Running in parallel ...")
+  message(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
+  message("Running in parallel ...")
   
   par.cv.enm <- function(i) {
     cv.enm(occs.z, bg.z, grps, enm, partitions, tune.tbl[i,], doClamp, 
            other.settings, partition.settings, user.val.grps, occs.testing.z, 
-           user.eval, algorithm, quiet)
+           user.eval, algorithm)
   }
   
   results <- parallel::parLapply(cl, 1:n, par.cv.enm)
@@ -154,12 +154,12 @@ tuneParallel <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp,
 #' @rdname tune.enm
 tune <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp, 
                  other.settings, partition.settings, user.val.grps, 
-                 occs.testing.z, numCores, user.eval, algorithm, updateProgress, quiet) {
+                 occs.testing.z, numCores, user.eval, algorithm, updateProgress) {
   results <- list()
   n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
   
   # set up the console progress bar
-  if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
+  pb <- txtProgressBar(0, n, style = 3)
   
   for(i in 1:n) {
     # and (optionally) the shiny progress bar (updateProgress)
@@ -168,15 +168,15 @@ tune <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp,
         text <- paste0('Running ', paste(as.character(tune.tbl[i,]), collapse = ""), '...')
         updateProgress(detail = text)
       }
-      if(quiet != TRUE) setTxtProgressBar(pb, i)
+      setTxtProgressBar(pb, i)
     }
     # set the current tune settings
     tune.tbl.i <- tune.tbl[i,]
     results[[i]] <- cv.enm(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, 
                            doClamp, other.settings, partition.settings, 
-                           user.val.grps, occs.testing.z, user.eval, algorithm, quiet)
+                           user.val.grps, occs.testing.z, user.eval, algorithm)
   }
-  if(quiet != TRUE) close(pb)
+  close(pb)
   return(results)
 }
 
@@ -184,7 +184,7 @@ tune <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl, doClamp,
 #' @rdname tune.enm
 cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp, 
                    other.settings, partition.settings, user.val.grps, 
-                   occs.testing.z, user.eval, algorithm, quiet) {
+                   occs.testing.z, user.eval, algorithm) {
   envs.names <- names(occs.z)
   # unpack predictor variable values for occs and bg
   # occs.xy <- d |> dplyr::filter(pb == 1) |> dplyr::select(1:2)
@@ -289,7 +289,7 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
     mod.k <- tryCatch({
       do.call(enm@fun, mod.k.args)  
     }, error = function(cond) {
-      if(quiet != TRUE) message(paste0("\n", cond, "\n"))
+      message(paste0("\n", cond, "\n"))
       # Choose a return value in case of error
       return(NULL)
     })  
@@ -312,7 +312,7 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
     # if model is NULL for some reason, continue but report to user
     }else{
       mod.name <- paste(names(tune.tbl.i), tune.tbl.i, collapse = ", ")
-      inform(paste0("The results were NULL for model with settings ", mod.name,
+      message(paste0("The results were NULL for model with settings ", mod.name,
                                        " for partition ", k, 
                                        ". These settings will have NA results."))
       validate <- data.frame(auc.val = NA, auc.diff = NA, cbi.val = NA, 

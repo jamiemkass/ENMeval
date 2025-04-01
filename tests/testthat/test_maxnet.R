@@ -42,7 +42,7 @@ mset <- lapply(tune.args, function(x) x[1])
 context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
 e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
                  partition.settings = partition.settings, algorithm = algorithm, 
-                 categoricals = categoricals, overlap = TRUE, quiet = TRUE)
+                 categoricals = categoricals, overlap = TRUE)
 test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
 
 context(paste("Testing evalplot.stats for", alg, "with block partitions..."))

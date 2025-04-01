@@ -80,7 +80,7 @@ clamp.vars <- function(orig.vals, ref.vals, left = NULL, right = NULL, categoric
   # error if both sides are set to "none"
   if(!is.null(left) & !is.null(right)) {
     if(("none" %in% left) & ("none" %in% right)) {
-      inform('Both left and right were set to "none", so clamping was not performed.')
+      message('Both left and right were set to "none", so clamping was not performed.')
       return(orig.vals)
     }
   }
@@ -328,7 +328,6 @@ calc.10p.trainThresh <- function(pred.train) {
 #' @description Compute pairwise "niche overlap" in geographic space for Maxent predictions. The value ranges from 0 (no overlap) to 1 (identical predictions).  The function uses the \code{nicheOverlap} function of the \pkg{dismo} package (Hijmans \emph{et al.} 2011).
 #' @param predictors SpatRaster: at least 2 Maxent raster predictions
 #' @param overlapStat character: either "D" or "I", the statistic calculated by the \code{nicheOverlap} function of the \pkg{dismo} package (default: "D"), which we updated for \pkg{terra} as no correlate currently exists in the new \pkg{predicts} package
-#' @param quiet boolean: if TRUE, silence all function messages (but not errors)
 #' @details "D" refers to Schoeners \emph{D} (Schoener 1968), while "I" refers to the \emph{I} similarity statistic from Warren \emph{et al.} (2008).
 #' @return 
 #' A matrix with the lower triangle giving values of pairwise "niche overlap" in geographic space.  Row and column names correspond to the results table output by \code{\link{ENMevaluate}()}.
@@ -346,19 +345,19 @@ calc.10p.trainThresh <- function(pred.train) {
 #' `nicheOverlap` in the \pkg{dismo} package
 
 #' @export
-calc.niche.overlap <- function(predictors, overlapStat, verbose = TRUE){
+calc.niche.overlap <- function(predictors, overlapStat){
   n <- terra::nlyr(predictors)
   ov <- matrix(nrow = n, ncol = n)
-  if(verbose == TRUE) pb <- txtProgressBar(0, n - 1, style = 3)
+  pb <- txtProgressBar(0, n - 1, style = 3)
   for(i in 1:(n - 1)){
-    if(verbose == TRUE) setTxtProgressBar(pb, i)
+    setTxtProgressBar(pb, i)
     for(j in (i + 1):n){
       ov[j, i] <- nicheOverlap_terra(predictors[[i]], predictors[[j]], stat = overlapStat)
     }
   }
   colnames(ov) <- names(predictors)
   rownames(ov) <- names(predictors)
-  if(verbose == TRUE) close(pb)
+  close(pb)
   return(ov)
 }
 

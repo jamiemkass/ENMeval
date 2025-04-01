@@ -37,8 +37,7 @@ tuneParallel(
   numCores,
   user.eval,
   algorithm,
-  updateProgress,
-  quiet
+  updateProgress
 )
 
 tune(
@@ -56,8 +55,7 @@ tune(
   numCores,
   user.eval,
   algorithm,
-  updateProgress,
-  quiet
+  updateProgress
 )
 
 cv.enm(
@@ -73,8 +71,7 @@ cv.enm(
   user.val.grps,
   occs.testing.z,
   user.eval,
-  algorithm,
-  quiet
+  algorithm
 )
 }
 \arguments{
@@ -122,8 +119,6 @@ coordinates at the testing occurrence records}
 "maxent.jar", or "bioclim", else the name from a custom ENMdetails implementation.}
 
 \item{updateProgress}{boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.}
-
-\item{quiet}{boolean: if TRUE, silence all function messages (but not errors).}
 
 \item{tune.tbl.i}{vector: single set of tuning parameters}
 

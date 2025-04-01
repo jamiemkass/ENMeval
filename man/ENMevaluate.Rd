@@ -28,9 +28,7 @@ ENMevaluate(
   rmm = NULL,
   parallel = FALSE,
   numCores = NULL,
-  updateProgress = FALSE,
-  verbose = FALSE,
-  quiet = FALSE
+  updateProgress = FALSE
 )
 }
 \arguments{

@@ -52,19 +52,19 @@ assemble.stats.noParts <- function(train.stats.all, val.stats.all, tune.names, t
   return(eval.stats)
 }
 
-assemble.overlap <- function(mod.full.pred.all, overlapStat, verbose) {
+assemble.overlap <- function(mod.full.pred.all, overlapStat) {
   nr <- terra::nlyr(mod.full.pred.all)
   if(nr == 0) {
-    inform("Warning: calculate range overlap without model prediction rasters.")
+    message("Warning: calculate range overlap without model prediction rasters.")
   }else if(nr == 1) {
-    inform("Warning: only 1 model prediction raster found. Need at least 2 rasters to calculate range overlap. Increase number of tuning arguments and run again.") 
+    message("Warning: only 1 model prediction raster found. Need at least 2 rasters to calculate range overlap. Increase number of tuning arguments and run again.") 
   }else{
     ls <- list()
     for(ovStat in overlapStat) {
-      inform(paste0("Calculating range overlap for statistic ", ovStat, "..."))
+      message(paste0("Calculating range overlap for statistic ", ovStat, "..."))
       # turn negative values to 0 for range overlap calculations
       predictions.noNegs <- terra::rast(lapply(mod.full.pred.all, function(x) {x[x<0] <- 0; x}))
-      overlap.mat <- calc.niche.overlap(predictions.noNegs, ovStat, verbose)
+      overlap.mat <- calc.niche.overlap(predictions.noNegs, ovStat)
       ls[[ovStat]] <- overlap.mat
     }
   }
