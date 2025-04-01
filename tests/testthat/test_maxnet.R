@@ -14,9 +14,8 @@ options(warn=-1)
 set.seed(48)
 occs <- read.csv(file.path(system.file(package="predicts"), 
                            "/ex/bradypus.csv"))[,2:3]
-envs <- terra::rast(list.files(path = paste(system.file(package='predicts'), 
-                                            '/ex', sep=''), 
-                               pattern='tif$', full.names=TRUE))
+p <- paste(system.file(package='predicts'), '/ex', sep='')
+envs <- terra::rast(list.files(path = p, pattern='tif$', full.names=TRUE))
 bg <- predicts::backgroundSample(envs, n = 1000) |> as.data.frame()
 names(bg) <- names(occs)
 

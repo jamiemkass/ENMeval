@@ -41,26 +41,29 @@
 #' 
 #' @export
 
-evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data = "occs", pts.size = 1.5, return.tbl = FALSE) {
-  if(!is.null(e)) {
+plot.partitions <- function(data = NULL, envs, ref.data = "occs",
+                            lat.name = NULL, lon.name = NULL, part.name = NULL,
+                            pts.size = 1.5, return.tbl = FALSE) {
+  if(class(data) == "ENMevaluation") {
     pts.plot <- switch(ref.data, 
-                       occs = cbind(e@occs, partition = e@occs.grp),
-                       bg = cbind(e@bg, partition = e@bg.grp))  
-    if(e@partition.method == "testing") {
-      pts.plot <- pts.plot |> dplyr::mutate(partition = as.numeric(as.character(partition))) |> 
-        dplyr::bind_rows(e@occs.testing |> dplyr::mutate(partition = 1)) |>
+                       occs = cbind(data@occs, partition = data@occs.grp),
+                       bg = cbind(data@bg, partition = data@bg.grp))  
+    if(data@partition.method == "testing") {
+      pts.plot <- pts.plot |> 
+        dplyr::mutate(partition = as.numeric(as.character(partition))) |> 
+        dplyr::bind_rows(data@occs.testing |> dplyr::mutate(partition = 1)) |>
         dplyr::mutate(partition = factor(partition))
-    } 
-    names(pts.plot)[1:2] <- c("longitude", "latitude")
-  }else{
-    if(!is.null(pts) & !is.null(pts.grp)) {
-      # make sure pts is a data frame with the right column names
-      pts <- as.data.frame(pts)
-      names(pts) <- c("longitude", "latitude")
-      pts.plot <- cbind(pts, partition = factor(pts.grp))
-    }else{
-      stop("If inputting point data instead of an ENMevaluation object, make sure to also input the partition groups (pts.grp).")
+      namespts.plot[1:2] <- c("longitude", "latitude")
+      pts.plot <- pts.plot[,c("longitude", "latitude", "partition")]
     }
+  }else{
+    if(any(is.null(lat.name), is.null(lon.name), is.null(part.name))) {
+      stop("If inputting a data frame instead of an ENMevaluation object, confirm that lat.name, lon.name, and part.name are entered.")
+    }
+    # make sure partition column is factor
+    data[,part.name] <- factor(data[,part.name])
+    pts.plot <- data
+    names(pts.plot) <- c("longitude", "latitude", "partition")
   }
   
   grp.n <- length(unique(pts.plot$partition))

@@ -425,10 +425,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     occs.z <- terra::extract(envs, occs, ID = FALSE)  
     bg.z <- terra::extract(envs, bg, ID = FALSE)
     
-    # bind coordinates to predictor variable values for occs and bg
-    # occs <- cbind(occs, occs.z)
-    # bg <- cbind(bg, bg.z)
-    
     # if no environmental rasters input (SWD)
   }else{
     # assign occs/bg to coordinates and occs.z/bg.z to variable values
@@ -667,18 +663,25 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   }
   
   # assemble the ENMevaluation object
-  e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
+  e <- ENMevaluation(algorithm = enm@name, 
+                     tune.settings = as.data.frame(tune.tbl),
                      results = as.data.frame(eval.stats), 
                      results.partitions = val.stats.all,
-                     predictions = mod.full.pred.all, models = mod.full.all, 
+                     predictions = mod.full.pred.all, 
+                     models = mod.full.all, 
                      variable.importance = variable.importance.all,
                      partition.method = partitions, 
                      partition.settings = partition.settings,
-                     other.settings = other.settings, doClamp = doClamp, 
-                     clamp.directions = clamp.directions, occs = occs.z, 
+                     other.settings = other.settings, 
+                     doClamp = doClamp, 
+                     clamp.directions = clamp.directions, 
+                     occs = cbind(occs, occs.z), 
                      occs.testing = occs.testing.z, 
-                     occs.grp = factor(grps$occs.grp), bg = bg.z, 
-                     bg.grp = factor(grps$bg.grp), overlap = ov.ls, rmm = list())
+                     occs.grp = factor(grps$occs.grp), 
+                     bg = cbind(bg, bg.z), 
+                     bg.grp = factor(grps$bg.grp), 
+                     overlap = ov.ls, 
+                     rmm = list())
   
   # add the rangeModelMetadata object to the ENMevaluation object
   # write to existing RMM if input by user
