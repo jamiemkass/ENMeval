@@ -480,22 +480,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     if(user.nk > user.nk.bg) stop("Background record cleaning removed one or more user partition groups.")
   }
   
-  # make main df with coordinates and predictor variable values
-  # d <- rbind(occs, bg)
-  
-  # add presence-background identifier for occs and bg
-  # d$pb <- c(rep(1, nrow(occs)), rep(0, nrow(bg)))
-  
-  # # if user-defined partitions, assign grp variable before filtering out records 
-  # # with NA predictor variable values for all other partitioning methods, 
-  # # grp assignments occur after filtering
-  # if(!is.null(user.grp)) {
-  #   d[d$pb == 1, "grp"] <- as.numeric(as.character(user.grp$occs.grp))
-  #   d[d$pb == 0, "grp"] <- as.numeric(as.character(user.grp$bg.grp))
-  #   
-  #   d$grp <- factor(d$grp)
-  # }
-  
   ############################################ #
   # ADD TESTING DATA (IF INPUT) ####
   ############################################ #
@@ -537,37 +521,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified.",
                                "Rerun after specifying 'categoricals'.")
   }
-  
-  # # if categoricals argument was specified, convert these columns to factor class
-  # if(!is.null(categoricals)) {
-  #   # make list of categorical variable levels
-  #   cat.levs <- catLevs(occs.z, envs, categoricals)
-  #   # if maxent.jar, categorical variables must be converted to numeric
-  #   if(algorithm == "maxent.jar") {
-  #     msg(paste0("* Assigning variable ", categoricals[i], " to categorical and changing to integer for maxent.jar..."))
-  #     for(i in 1:length(categoricals)) {  
-  #       d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), levels = 1:length(cat.levs[[i]]))
-  #       if(!is.null(user.val.grps)) {
-  #         user.val.grps <- numFactors(user.val.grps, d, i)
-  #       }
-  #       if(!is.null(occs.testing.z)) {
-  #         occs.testing.z <- numFactors(occs.testing.z, d, i)
-  #       }
-  #     }
-  #     # otherwise, categorical variable values can remain as characters
-  #   }else{
-  #     msg(paste0("* Assigning variable ", categoricals[i], " to categorical ..."))
-  #     for(i in 1:length(categoricals)) {  
-  #       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
-  #       if(!is.null(user.val.grps)) {
-  #         user.val.grps <- regFactors(user.val.grps, d, i)
-  #       }
-  #       if(!is.null(occs.testing.z)) {
-  #         occs.testing.z <- regFactors(occs.testing.z, d, i)
-  #       }
-  #     }
-  #   }
-  # }
   
   # put categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
@@ -649,9 +602,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
         "has too few occurrences for this metric.")
   }
   
-  # add these values as the 'grp' column
-  # if(!is.null(grps)) d$grp <- factor(c(grps$occs.grp, grps$bg.grp))
-  
   ################# #
   # MESSAGE
   ################# #
@@ -690,13 +640,13 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # (these are no validation stats if no partitions were chosen)
   val.stats.all <- dplyr::bind_rows(lapply(results, function(x) x$cv.stats))
   
-  if(is.null(tune.tbl)) {
-    # if not tuned settings, the "tune name" is the model name
-    tune.names <- enm@name
-  }else{
+  if(!is.null(tune.tbl)) {
     # define tuned settings names and bind them to the tune table
     tune.names <- train.stats.all$tune.args
     tune.tbl$tune.args <- factor(tune.names, levels = tune.names)
+  }else{
+    # if not tuned settings, the "tune name" is the model name
+    tune.names <- enm@name
   }
   # gather all full models into list and name them
   mod.full.all <- lapply(results, function(x) x$mod.full)
@@ -706,15 +656,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if envs is null, make an empty stack
   if(!is.null(envs) & raster.preds == TRUE) {
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
-    # necessary to convert levels of envs categoricals to numbers for maxent.jar
-    # predictions, else error
-    if(!is.null(categoricals) & (algorithm == "maxent.jar")) {
-      for(i in 1:length(categoricals)) {
-        lev.df <- terra::levels(envs[[categoricals[i]]])
-        lev.df[[1]][,2] <- 1:length(cat.levs[[i]])
-        levels(envs[[categoricals[i]]]) <- lev.df[[1]]
-      }  
-    }
     if(quiet != TRUE) message("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
@@ -725,22 +666,23 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # define number of grp (the value of "k") for occurrences
   # k is 1 for partition "testing"
   # k is 0 for partitions "none" and "user"
-  if(partitions %in% c("testing", "none")) {
+  if(partitions %in% c("user", "none")) {
     nk <- 0
   }else{
-    nk <- length(unique(d[d$pb == 1, "grp"]))
+    nk <- length(unique(grps$occs.grp))
   }
   
   # if partitions were specified
   if(nk > 0) {
     # define number of settings (plus the tune.args field)
-    nset <- ifelse(!is.null(tune.tbl), ncol(tune.tbl), 0)
+    # nset <- ifelse(!is.null(tune.tbl), ncol(tune.tbl), 0)
     
     # if jackknife cross-validation (leave-one-out), correct variance for
     # non-independent samples (Shcheglovitova & Anderson 2013)
     if(partitions == "jackknife") {
       sum.list <- list(avg = mean, sd = ~sqrt(corrected.var(., nk)))
     }else{
+    # if other partition method, leave sd as is
       sum.list <- list(avg = mean, sd = sd)
     } 
     
@@ -775,6 +717,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
       cv.stats.sum$tune.args <- NULL
       eval.stats <- dplyr::bind_cols(train.stats.all, cv.stats.sum)
     }
+  # if no partitions specified
   }else{
     # make tune.args column in training stats factor too for smooth join
     train.stats.all$tune.args <- factor(train.stats.all$tune.args, levels = tune.names)
@@ -787,25 +730,15 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # calculate number of non-zero parameters in model
   ncoefs <- sapply(mod.full.all, enm@ncoefs)
   
-  # calculate AICc
-  if((enm@name == "maxnet" | enm@name == "maxent.jar")) {
-    pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
-    aic.settings <- other.settings
-    aic.settings$pred.type <- pred.type.raw
-    if(!is.null(envs)) {
-      pred.all.raw <- terra::rast(lapply(mod.full.all, enm@predict, envs, aic.settings))
-    }else{
-      pred.all.raw <- NULL
-    }
-    # if maxent.jar, convert categorical values to numeric in occs table first
-    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, d[d$pb == 1, 1:(ncol(d)-2)], aic.settings))
-    aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
-    eval.stats <- dplyr::bind_cols(eval.stats, aic)
-  }
+  # calculate AICc and bind to eval.stats
+  # currently, only works for Maxent models
+  aic <- calcAIC(occs.z, envs, enm, mod.full.all, other.settings)
+  eval.stats <- dplyr::bind_cols(eval.stats, aic)
   
   # add ncoef column
   eval.stats$ncoef <- ncoefs
   
+  # clean up variables for making ENMevaluation object
   if(is.null(tune.tbl)) tune.tbl <- data.frame()
   if(is.null(occs.testing.z)) occs.testing.z <- data.frame()
   if(partitions != "block") partition.settings$orientation <- NULL
@@ -822,14 +755,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   # assemble the ENMevaluation object
   e <- ENMevaluation(algorithm = enm@name, tune.settings = as.data.frame(tune.tbl),
-                     results = as.data.frame(eval.stats), results.partitions = val.stats.all,
+                     results = as.data.frame(eval.stats), 
+                     results.partitions = val.stats.all,
                      predictions = mod.full.pred.all, models = mod.full.all, 
                      variable.importance = variable.importance.all,
-                     partition.method = partitions, partition.settings = partition.settings,
-                     other.settings = other.settings, doClamp = doClamp, clamp.directions = clamp.directions, 
-                     occs = d[d$pb == 1, 1:(ncol(d)-2)], occs.testing = occs.testing.z, occs.grp = factor(d[d$pb == 1, "grp"]),
-                     bg = d[d$pb == 0, 1:(ncol(d)-2)], bg.grp = factor(d[d$pb == 0, "grp"]),
-                     rmm = list())
+                     partition.method = partitions, 
+                     partition.settings = partition.settings,
+                     other.settings = other.settings, doClamp = doClamp, 
+                     clamp.directions = clamp.directions, occs = occs.z, 
+                     occs.testing = occs.testing.z, occs.grp = factor(grps$occs.grp),
+                     bg = bg.z, bg.grp = factor(grps$bg.grp), rmm = list())
   
   # add the rangeModelMetadata object to the ENMevaluation object
   # write to existing RMM if input by user

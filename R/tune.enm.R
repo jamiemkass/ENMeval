@@ -96,24 +96,24 @@ tune.validate <- function(pred.occs.train, pred.occs.val, pred.bg.train,
   min.train.thr <- min(pred.occs.train)
   or.mtp <- mean(pred.occs.val < min.train.thr)
   # get 10 percentile training presence threshold (expected 0.1 omission)
-  pct10.train.thr <- calc.10p.trainThresh(pred.occs.train)
+  pct10.train.thr <- quantile(pred.occs.train, 0.1) |> as.numeric()
   or.10p <- mean(pred.occs.val < pct10.train.thr)
   
   # perform user-specified validation statistics if available
   if(is.function(user.eval)) {
-    vars <- list(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z, mod.k, nk, 
-                 other.settings, partitions, pred.occs.train, pred.occs.val,
-                 pred.bg.train, pred.bg.val)
-    names(vars) <- c("enm", "occs.train.z", "occs.val.z", "bg.train.z", "bg.val.z", "mod.k", "nk", 
-                     "other.settings", "partitions", "pred.occs.train", "pred.occs.val",
-                     "pred.bg.train", "pred.bg.val")
+    vars <- list(pred.occs.train, pred.occs.val, pred.bg.train, 
+                 pred.bg.val, other.settings)
+    names(vars) <- c("pred.occs.train", "pred.occs.val", "pred.bg.train", 
+                     "pred.bg.val", "other.settings")
     user.eval.out <- user.eval(vars)
   }else{
     user.eval.out <- NULL
   }
   
   # gather all evaluation statistics for k
-  out.df <- data.frame(auc.val = auc.val, auc.diff = auc.diff, cbi.val = cbi.val, or.mtp = or.mtp, or.10p = or.10p)
+  out.df <- data.frame(auc.val = auc.val, auc.diff = auc.diff, 
+                       cbi.val = cbi.val, or.mtp = or.mtp, or.10p = or.10p)
+  # if user.eval was used, add it to table
   if(!is.null(user.eval.out)) out.df <- cbind(out.df, user.eval.out)
   
   return(out.df)
@@ -307,9 +307,8 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
     
     # if model ran without problems, make validation table
     if(!is.null(mod.k)) {
-      validate <- tune.validate(enm, occs.train.z, occs.val.z, bg.train.z, 
-                                bg.val.z, mod.k, nk, tune.tbl.i, other.settings, 
-                                partitions, user.eval, quiet)  
+      validate <- tune.validate(pred.occs.train, pred.occs.val, pred.bg.train, 
+                                pred.bg.val, other.settings, user.eval)  
     # if model is NULL for some reason, continue but report to user
     }else{
       mod.name <- paste(names(tune.tbl.i), tune.tbl.i, collapse = ", ")

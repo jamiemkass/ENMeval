@@ -262,6 +262,24 @@ aic.maxent <- function(p.occs, ncoefs, p = NULL) {
   return(out)
 }
 
+calcAIC <- function(occs.z, envs, enm, mod.full.all, other.settings) {
+  if((enm@name == "maxnet" | enm@name == "maxent.jar")) {
+    pred.type.raw <- switch(enm@name, maxnet = "exponential", maxent.jar = "raw")
+    aic.settings <- other.settings
+    aic.settings$pred.type <- pred.type.raw
+    if(!is.null(envs)) {
+      pred.all.raw <- terra::rast(lapply(mod.full.all, enm@predict, envs, aic.settings))
+    }else{
+      pred.all.raw <- NULL
+    }
+    # get "raw" Maxent predictions for all models
+    occs.pred.raw <- dplyr::bind_rows(lapply(mod.full.all, enm@predict, occs.z, aic.settings))
+    # calculate AICc for Maxent predictions
+    aic <- aic.maxent(occs.pred.raw, ncoefs, pred.all.raw)
+    return(aic)
+  }
+}
+
 #' @title Corrected variance function
 #' @description Calculate variance corrected for non-independence of \emph{k}-fold iterations
 #'

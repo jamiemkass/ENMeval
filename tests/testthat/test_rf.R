@@ -32,6 +32,9 @@ no.iter <- 5
 # define categorical variable
 cats1 <- "biome"
 
+partitions <- "block"
+partition.settings <- list(orientation = "lat_lon")
+
 # define tune args
 tune.args <- list(mtry = 1:5)
 mset <- lapply(tune.args, function(x) x[1])
