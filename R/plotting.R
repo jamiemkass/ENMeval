@@ -88,7 +88,8 @@ plot.partitions <- function(data = NULL, envs, ref.data = "occs",
     ggplot2::coord_equal() + theme.custom
   
   if(return.tbl == TRUE) {
-    return(list(envs.df = tibble::as_tibble(envs.df), pts.plot = tibble::as_tibble(pts.plot)))
+    return(list(envs.df = tibble::as_tibble(envs.df), 
+                pts.plot = tibble::as_tibble(pts.plot)))
   }else{
     return(g)  
   }
@@ -103,7 +104,7 @@ plot.partitions <- function(data = NULL, envs, ref.data = "occs",
 #' plot.sim.dataPrep()
 #' }
 #' @keywords internal
-plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet) {
+plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z) {
   
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
     stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
@@ -112,7 +113,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   if(is.null(envs)) {
     if(is.null(e) & any(is.null(occs.z), is.null(bg.z), is.null(occs.grp), is.null(bg.grp))) {
       stop("* If inputting occurrence and background data instead of an ENMevaluation object, please input occs.z, bg.z, occs.grp, and bg.grp.")
-      if(!quiet) message("* Similarity values calculated by contrasting occurrences with background.")
+      message("* Similarity values calculated by contrasting occurrences with background.")
     }
   }else{
     if(is.null(e)) {
@@ -122,7 +123,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
         if(any(is.null(bg.z), is.null(bg.grp))) {stop("* If inputting background data instead of an ENMevaluation object, please input bg.z and bg.grp.")}
       }
     }
-    if(!quiet) message("* Similarity values calculated by contrasting occurrences with all cell values in raster extent.")
+    message("* Similarity values calculated by contrasting occurrences with all cell values in raster extent.")
   }
   
   # assign variables from ENMevaluation object
@@ -160,7 +161,7 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
   # remove categorical variables for plotting
   if(!is.null(categoricals)) {
     for(i in 1:length(categoricals)) {
-      if(!quiet) message(paste0("* Ignoring categorical variable ", categoricals[i], "..."))
+      message(paste0("* Ignoring categorical variable ", categoricals[i], "..."))
       pts.plot[, categoricals[i]] <- NULL
     }
   }
@@ -242,17 +243,17 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' 
 #' @export
 
-evalplot.envSim.hist <- function(e = NULL, occs.z = NULL, bg.z = NULL, occs.grp = NULL, 
-                                 bg.grp = NULL, ref.data = "occs", 
+evalplot.envSim.hist <- function(data = NULL, ref.data = "occs", 
+                                 lat.name = NULL, lon.name = NULL, part.name = NULL,
                                  envs.vars = NULL, occs.testing.z = NULL,
                                  hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
   
-  pts.plot <- plot.sim.dataPrep(e, envs = NULL, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet)
+  pts.plot <- plot.sim.dataPrep(data, grps, e, envs = NULL, ref.data, occs.testing.z, quiet)
   
   envs.names <- pts.plot |> dplyr::select(-longitude, -latitude, -partition, -type) |> names()
   
   if(!is.null(envs.vars)) {
-    if(!quiet) message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
+    message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
     envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
     pts.plot <- pts.plot |> dplyr::select(-dplyr::all_of(envs.rem))
   }
@@ -416,7 +417,7 @@ evalplot.envSim.map <- function(e = NULL, envs, occs.z = NULL, bg.z = NULL, occs
   }
   
   if(!is.null(envs.vars)) {
-    if(!quiet) message(paste0("* Similarity values calculated based only on ", 
+    message(paste0("* Similarity values calculated based only on ", 
                               paste(envs.vars, collapse = ", "), "."))
     envs.names <- names(envs)
     envs.rem <- envs.names[-which(envs.names %in% envs.vars)]
