@@ -423,7 +423,7 @@ maxentJARversion <- function() {
 #' 
 maxnet.predictRaster <- function(mod, envs, pred.type = "cloglog", 
                                  doClamp = TRUE, ...) {
-  requireNamespace("maxnet", quitely = TRUE)
+  requireNamespace("maxnet", quietly = TRUE)
   envs.pts <- terra::values(envs) |> as.data.frame()
   mxnet.p <- predict(mod, envs.pts, type = pred.type, clamp = doClamp, ...)
   envs.pts[as.numeric(row.names(mxnet.p)), "pred"] <- mxnet.p
