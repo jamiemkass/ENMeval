@@ -1,3 +1,7 @@
+ENMeval 2.0.5.1
+===========
+o  Fixed a typo in maxnet.predictRaster.
+
 ENMeval 2.0.5
 ===========
 * This one is kind of a big update, making the switch to terra and predicts*
