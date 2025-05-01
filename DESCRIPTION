@@ -22,6 +22,7 @@ Imports:
     maxnet,
     predicts (>= 0.1-16),
     parallel,
+    patchwork,
     foreach,
     utils,
     stats,
