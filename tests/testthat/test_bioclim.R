@@ -35,24 +35,26 @@ cats1 <- NULL
 tune.args <- list(tails = c("low", "high", "both"))
 mset <- lapply(tune.args, function(x) x[1])
 
-# block partitions
-context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
-
-context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
-test_evalplot.stats(e)
-context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions..."))
-test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-context(paste("Testing evalplot.envSim.map for", alg, "with block partitions..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
-
-context(paste("Testing ENMnulls for", alg, "with block partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
-
-context(paste("Testing evalplot.nulls for", alg, "with block partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  # block partitions
+  context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
+  
+  context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
+  test_evalplot.stats(e)
+  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions..."))
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
+  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions..."))
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
+  
+  context(paste("Testing ENMnulls for", alg, "with block partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
+  
+  context(paste("Testing evalplot.nulls for", alg, "with block partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # block partitions with parallel processing
 if(skip_tests_for_cran == FALSE) {
@@ -258,9 +260,10 @@ if(skip_tests_for_cran == FALSE) {
   test_evalplot.nulls(ns)
 }
 
-# clamping
-context(paste("Testing clamping function for", alg, "with..."))
-test_clamp(envs, e@occs, e@bg, categoricals = cats1)
-context(paste("Testing clamping function for", alg, "with two categorical variables..."))
-if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(envs.2cat, e.2cat@occs, e.2cat@bg, categoricals = c("biome.1", "biome.2"))
-
+if(skip_tests_for_cran == FALSE) {
+  # clamping
+  context(paste("Testing clamping function for", alg, "with..."))
+  test_clamp(envs, e@occs, e@bg, categoricals = cats1)
+  context(paste("Testing clamping function for", alg, "with two categorical variables..."))
+  if(skip_tests_for_cran == FALSE & alg != "bioclim") test_clamp(envs.2cat, e.2cat@occs, e.2cat@bg, categoricals = c("biome.1", "biome.2"))
+}
