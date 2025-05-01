@@ -17,7 +17,7 @@ for predicting to new data."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ENMeval</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.5.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,86 +92,18 @@ Maxent .lambdas file.</p></dd>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Below we use the predicts::MaxEnt example to fit a model:</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Below we use the predicts::MaxEnt example to fit a model:</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/sdm/" class="external-link">predicts</a></span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required package: terra</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.8.29</span>
 <span class="r-in"><span><span class="va">occs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package<span class="op">=</span><span class="st">"predicts"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span><span class="st">"/ex/bradypus.csv"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span>,<span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">predictors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package<span class="op">=</span><span class="st">'predicts'</span><span class="op">)</span>, <span class="st">'/ex/bio.tif'</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">me</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/predicts/man/maxent.html" class="external-link">MaxEnt</a></span><span class="op">(</span><span class="va">predictors</span>, <span class="va">occs</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required namespace: rJava</span>
 <span class="r-in"><span><span class="co"># ... and then parse the lambdas information:</span></span></span>
 <span class="r-in"><span><span class="va">lam</span> <span class="op">&lt;-</span> <span class="fu">parse_lambdas</span><span class="op">(</span><span class="va">me</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">lam</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $lambdas</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        feature         var        lambda       min        max          type</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         bio1        bio1  1.910476e+00     -23.0      289.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2        bio12       bio12  7.093663e-01       0.0     7682.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3        bio16       bio16  0.000000e+00       0.0     2458.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4        bio17       bio17 -3.851500e+00       0.0     1496.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5         bio5        bio5  0.000000e+00      61.0      422.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6         bio6        bio6  0.000000e+00    -212.0      242.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7         bio7        bio7 -1.725647e+01      60.0      461.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8         bio8        bio8  3.870400e-01     -66.0      323.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9         bio9        bio9  8.186268e-01     -23.0      289.0        linear</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10     bio12^2       bio12  5.919734e-02       0.0 59013124.0     quadratic</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11     bio16^2       bio16  3.039654e-01       0.0  6041764.0     quadratic</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12      bio6^2        bio6 -2.442335e+00       0.0    58564.0     quadratic</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13  bio1*bio12  bio1,bio12  2.840565e-01  -14571.0  2028048.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14 bio12*bio16 bio12,bio16  3.220484e-01       0.0 18636532.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15  bio12*bio5  bio12,bio5  6.430193e-04       0.0  2396784.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16  bio12*bio6  bio12,bio6  1.644931e-01 -156047.0  1674676.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17  bio12*bio7  bio12,bio7  8.865686e-01       0.0   737464.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18  bio12*bio8  bio12,bio8  3.011205e+00  -27324.0  2020366.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19  bio12*bio9  bio12,bio9  3.059475e-01  -14571.0  2028048.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20  bio16*bio8  bio16,bio8  6.038987e-01  -13332.0   638038.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21   bio5*bio7   bio5,bio7 -4.103028e-01    8235.0   162812.0       product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22      `bio17       bio17 -1.970418e-01       0.0       89.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23      `bio17       bio17 -5.218809e-02       0.0       62.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24       'bio5        bio5 -1.635089e+00     287.5      422.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25      `bio17       bio17 -1.260720e+00       0.0       52.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26       'bio5        bio5 -8.593232e-01     283.5      422.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 27       `bio1        bio1 -1.528864e+00     -23.0      180.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 28       'bio6        bio6 -1.075395e+00     203.5      242.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 29      `bio16       bio16 -9.611040e-01       0.0      531.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30       'bio1        bio1  1.826304e+00     265.5      289.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 31       'bio6        bio6 -2.437269e-01     204.5      242.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32      'bio16       bio16  3.590613e-01    2394.0     2458.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33      'bio17       bio17  1.020436e-01    1229.5     1496.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34      'bio17       bio17  1.335425e+00    1202.5     1496.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35       'bio8        bio8  1.082490e+00     256.5      323.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 36       'bio6        bio6 -2.318697e-01     197.5      242.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 37       'bio1        bio1  4.046470e-01     258.5      289.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 38       'bio5        bio5 -4.581517e-01     255.5      422.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39       'bio5        bio5 -2.546101e-01     258.5      422.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40       `bio7        bio7 -9.515878e-01      60.0      111.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41       'bio9        bio9  5.708096e-01     265.5      289.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 42       'bio9        bio9  7.703929e-02     258.5      289.0 forward_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 43      `bio17       bio17 -3.679882e-02       0.0       53.5 reverse_hinge</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $linearPredictorNormalizer</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.283563</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $densityNormalizer</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 117.8422</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $numBackgroundPoints</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 9775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $entropy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 7.9527</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "lambdas"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">lam</span>, <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> List of 5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ lambdas                  :'data.frame':	43 obs. of  6 variables:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ linearPredictorNormalizer: num 2.28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ densityNormalizer        : num 118</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ numBackgroundPoints      : num 9775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ entropy                  : num 7.95</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "class")= chr "lambdas"</span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -183,7 +115,7 @@ Maxent .lambdas file.</p></dd>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
 </div>
 
     </footer></div>
