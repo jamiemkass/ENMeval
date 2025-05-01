@@ -1,6 +1,6 @@
 bibentry(
   bibtype  = "Article",
-  title    = "ENMeval 2.0: Redesigned for customizable and reproducible modeling of species’ niches and distributions",
+  title    = "ENMeval 2.0: Redesigned for customizable and reproducible modeling of species' niches and distributions",
   author   = c(
   person("Jamie M.","Kass", email = "jamie.m.kass@gmail.com"), 
   person("Robert","Muscarella"),
@@ -15,5 +15,5 @@ bibentry(
   volume   = "12",
   number   = "9",
   pages    = "1602-1608",
-  doi      =  "https://doi.org/10.1111/2041-210X.13628"
+  doi      =  "10.1111/2041-210X.13628"
 )

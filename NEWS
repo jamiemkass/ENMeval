@@ -1,3 +1,13 @@
+ENMeval 2.0.5.2
+===========
+o  Fixed an error in maxnet.predictRaster that resulted in ignoring categorical variables when making predictions. This happened because terra::values was converting the cateogrical values to numeric, and the maxnet model had them specified as categorical, so they were ignored. For maxent.jar models, they are specified internally as numeric, unlike for maxnet.
+o  Fixed a small error that resulted in conversion of categorical variable values to numeric for maxnet models for AICc calculation. This conversion was meant only for maxent.jar models, but it should not have affected AIC calculations.
+o  Added a note about the validation.bg option in the documentation for ENMevaluate.
+
+ENMeval 2.0.5.1
+===========
+o  Fixed a typo in maxnet.predictRaster.
+
 ENMeval 2.0.5
 ===========
 * This one is kind of a big update, making the switch to terra and predicts*

@@ -1,11 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- FALSE
-
-# this additionally skips tests for env similarity and difference for the 
-# envSim.map tests
-skip_simDiff <- FALSE
+skip_tests_for_cran <- TRUE
 
 library(dplyr)
 options(warn=-1)
@@ -58,8 +54,8 @@ test_evalplot.nulls(ns)
 if(skip_tests_for_cran == FALSE) {
   context(paste("Testing ENMevaluate for", alg, "with block partitions in parallel..."))
   e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
-                        algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
-                        parallel = TRUE)
+                   algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
+                   parallel = TRUE)
   test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
   
   context(paste("Testing evalplot.stats for", alg, "with block partitions in parallel..."))
@@ -158,23 +154,25 @@ if(skip_tests_for_cran == FALSE) {
 }
 
 # testing partition
-context(paste("Testing ENMevaluate for", alg, "with testing partition..."))
-e <- ENMevaluate(occs[1:100,], envs, bg, tune.args = tune.args, partitions = "testing", algorithm = alg, categoricals = cats1,  occs.testing = occs[101:nrow(occs),], overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, alg, "testing", tune.args, 1, 1)
-
-context(paste("Testing evalplot.stats for", alg, "with testing partition..."))
-test_evalplot.stats(e)
-context(paste("Testing evalplot.envSim.hist for", alg, "with testing partition..."))
-test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
-context(paste("Testing evalplot.envSim.map for", alg, "with testing partition..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
-
-context(paste("Testing ENMnulls for", alg, "with testing partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, alg, "testing", mset, 1, 1)
-
-context(paste("Testing ENMnulls plotting function for", alg, "with testing partition..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", alg, "with testing partition..."))
+  e <- ENMevaluate(occs[1:100,], envs, bg, tune.args = tune.args, partitions = "testing", algorithm = alg, categoricals = cats1,  occs.testing = occs[101:nrow(occs),], overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, alg, "testing", tune.args, 1, 1)
+  
+  context(paste("Testing evalplot.stats for", alg, "with testing partition..."))
+  test_evalplot.stats(e)
+  context(paste("Testing evalplot.envSim.hist for", alg, "with testing partition..."))
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
+  context(paste("Testing evalplot.envSim.map for", alg, "with testing partition..."))
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
+  
+  context(paste("Testing ENMnulls for", alg, "with testing partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, alg, "testing", mset, 1, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", alg, "with testing partition..."))
+  test_evalplot.nulls(ns)
+}
 
 # no partitions
 if(skip_tests_for_cran == FALSE) {
@@ -191,24 +189,26 @@ if(skip_tests_for_cran == FALSE) {
 }
 
 # user partitions
-context(paste("Testing ENMevaluate for", alg, "with user partitions..."))
-user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "user", algorithm = alg, categoricals = cats1, user.grp = user.grp, overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, alg, "user", tune.args, 4, 4)
-
-context(paste("Testing evalplot.stats for", alg, "with user partitions..."))
-test_evalplot.stats(e)
-context(paste("Testing evalplot.envSim.hist for", alg, "with user partitions..."))
-test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-context(paste("Testing evalplot.envSim.map for", alg, "with user partitions..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
-
-context(paste("Testing ENMnulls for", alg, "with user partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, alg, "user", mset, 4, 4)
-
-context(paste("Testing ENMnulls plotting function for", alg, "with user partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", alg, "with user partitions..."))
+  user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "user", algorithm = alg, categoricals = cats1, user.grp = user.grp, overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, alg, "user", tune.args, 4, 4)
+  
+  context(paste("Testing evalplot.stats for", alg, "with user partitions..."))
+  test_evalplot.stats(e)
+  context(paste("Testing evalplot.envSim.hist for", alg, "with user partitions..."))
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
+  context(paste("Testing evalplot.envSim.map for", alg, "with user partitions..."))
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
+  
+  context(paste("Testing ENMnulls for", alg, "with user partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, alg, "user", mset, 4, 4)
+  
+  context(paste("Testing ENMnulls plotting function for", alg, "with user partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # no envs (SWD)
 if(skip_tests_for_cran == FALSE) {

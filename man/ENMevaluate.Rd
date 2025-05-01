@@ -153,7 +153,7 @@ There is also a brief discussion of some points relevant to null models in ?ENMn
 1. By default, validation AUC is calculated with respect to the full background (training + validation).
 This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
 other.settings$validation.bg to "partition", which will calculate AUC with respect 
-to the validation background only. The default value for other.settings$validation.bg is "full". 
+to the validation background only. The default value for other.settings$validation.bg is "full".
 NOTE: When examining validation AUC and other discrimination metrics, the "full" option will likely 
 result in higher performance than for the "partition" option because more and varied background data 
 should lead to higher discriminatory power for the model. Users should thus make sure they are correctly

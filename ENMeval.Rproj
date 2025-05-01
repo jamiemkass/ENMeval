@@ -1,5 +1,5 @@
 Version: 1.0
-ProjectId: 9e305864-7f20-4c45-afc9-1414e3c271f9
+ProjectId: 906253b9-3779-4435-afd3-64b028824978
 
 RestoreWorkspace: Default
 SaveWorkspace: Default
@@ -16,6 +16,3 @@ LaTeX: pdfLaTeX
 BuildType: Package
 PackageUseDevtools: Yes
 PackageInstallArgs: --no-multiarch --with-keep.source
-PackageBuildArgs: --no-build-vignettes
-PackageBuildBinaryArgs: --no-build-vignettes
-PackageCheckArgs: --ignore-vignettes
