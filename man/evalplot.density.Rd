@@ -19,7 +19,7 @@ evalplot.density(e, envs, var, bw.envs = 10)
 A ggplot object of the response curve.
 }
 \description{
-This function plots densities of a given environmental variable based on a Maxent.jar
+This function plots densities of a given environmental variable based on a maxent.jar
 or maxnet model.
 }
 \examples{
