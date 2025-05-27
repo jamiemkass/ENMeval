@@ -733,15 +733,6 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # if envs is null, make an empty stack
   if(!is.null(envs) & raster.preds == TRUE) {
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
-    # necessary to convert levels of envs categoricals to numbers for maxent.jar
-    # predictions, else error
-    if(!is.null(categoricals) & algorithm == "maxent.jar") {
-      for(i in 1:length(categoricals)) {
-        lev.df <- terra::levels(envs[[categoricals[i]]])
-        lev.df[[1]][,2] <- 1:length(cat.levs[[i]])
-        levels(envs[[categoricals[i]]]) <- lev.df[[1]]
-      }  
-    }
     if(quiet != TRUE) message("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
