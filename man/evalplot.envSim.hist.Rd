@@ -5,12 +5,11 @@
 \title{Similarity histogram plots for partition groups}
 \usage{
 evalplot.envSim.hist(
-  e = NULL,
-  occs.z = NULL,
-  bg.z = NULL,
-  occs.grp = NULL,
-  bg.grp = NULL,
+  data = NULL,
   ref.data = "occs",
+  lat.name = NULL,
+  lon.name = NULL,
+  part.name = NULL,
   envs.vars = NULL,
   occs.testing.z = NULL,
   hist.bins = 30,
@@ -19,18 +18,6 @@ evalplot.envSim.hist(
 )
 }
 \arguments{
-\item{e}{ENMevaluation object}
-
-\item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
-the first two columns must be named "longitude" and "latitude"}
-
-\item{bg.z}{data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
-the first two columns must be named "longitude" and "latitude"}
-
-\item{occs.grp}{numeric vector: partition groups for occurrence records (optional)}
-
-\item{bg.grp}{numeric vector: partition groups for background records (optional)}
-
 \item{ref.data}{character: the reference to calculate MESS based on occurrences ("occs") or background ("bg"), with default "occs"
 these must be specified as this function was intended for use with continuous data only; these must be specified when inputting tabular data instead of an ENMevaluation object}
 
@@ -45,6 +32,18 @@ in that order; this is for use only with the "testing" partition option when an 
 \item{return.tbl}{boolean: if TRUE, return the data frames of similarity values used to make the ggplot instead of the plot itself}
 
 \item{quiet}{boolean: if TRUE, silence all function messages (but not errors)}
+
+\item{e}{ENMevaluation object}
+
+\item{occs.z}{data frame: longitude, latitude, and environmental predictor variable values for occurrence records, in that order (optional);
+the first two columns must be named "longitude" and "latitude"}
+
+\item{occs.grp}{numeric vector: partition groups for occurrence records (optional)}
+
+\item{bg.z}{data frame: longitude, latitude, and environmental predictor variable values for background records, in that order (optional);
+the first two columns must be named "longitude" and "latitude"}
+
+\item{bg.grp}{numeric vector: partition groups for background records (optional)}
 }
 \value{
 A ggplot of environmental similarities between the occurrence or background data 

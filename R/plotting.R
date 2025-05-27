@@ -53,9 +53,9 @@ plot.partitions <- function(data = NULL, envs, ref.data = "occs",
         dplyr::mutate(partition = as.numeric(as.character(partition))) |> 
         dplyr::bind_rows(data@occs.testing |> dplyr::mutate(partition = 1)) |>
         dplyr::mutate(partition = factor(partition))
-      namespts.plot[1:2] <- c("longitude", "latitude")
-      pts.plot <- pts.plot[,c("longitude", "latitude", "partition")]
     }
+    names(pts.plot)[1:2] <- c("longitude", "latitude")
+    pts.plot <- pts.plot[,c("longitude", "latitude", "partition")]
   }else{
     if(any(is.null(lat.name), is.null(lon.name), is.null(part.name))) {
       stop("If inputting a data frame instead of an ENMevaluation object, confirm that lat.name, lon.name, and part.name are entered.")
@@ -104,34 +104,36 @@ plot.partitions <- function(data = NULL, envs, ref.data = "occs",
 #' plot.sim.dataPrep()
 #' }
 #' @keywords internal
-plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z) {
+plot.dataPrep <- function(data, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z) {
   
-  if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
-    stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
-  }
-  
-  if(is.null(envs)) {
-    if(is.null(e) & any(is.null(occs.z), is.null(bg.z), is.null(occs.grp), is.null(bg.grp))) {
-      stop("* If inputting occurrence and background data instead of an ENMevaluation object, please input occs.z, bg.z, occs.grp, and bg.grp.")
-      message("* Similarity values calculated by contrasting occurrences with background.")
-    }
-  }else{
-    if(is.null(e)) {
-      if(ref.data == "occs") {
-        if(any(is.null(occs.z), is.null(occs.grp))) {stop("* If inputting occurrence data instead of an ENMevaluation object, please input occs.z and occs.grp.")}
-      }else if (ref.data == "bg") {
-        if(any(is.null(bg.z), is.null(bg.grp))) {stop("* If inputting background data instead of an ENMevaluation object, please input bg.z and bg.grp.")}
-      }
-    }
-    message("* Similarity values calculated by contrasting occurrences with all cell values in raster extent.")
-  }
+  # if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
+  #   stop("* If inputting an ENMevaluation object, leave occs.z, bg.z, occs.grp, and bg.grp NULL. These are read from the object.")
+  # }
+  # 
+  # if(is.null(envs)) {
+  #   if(is.null(e) & any(is.null(occs.z), is.null(bg.z), is.null(occs.grp), is.null(bg.grp))) {
+  #     stop("* If inputting occurrence and background data instead of an ENMevaluation object, please input occs.z, bg.z, occs.grp, and bg.grp.")
+  #     message("* Similarity values calculated by contrasting occurrences with background.")
+  #   }
+  # }else{
+  #   if(is.null(e)) {
+  #     if(ref.data == "occs") {
+  #       if(any(is.null(occs.z), is.null(occs.grp))) {stop("* If inputting occurrence data instead of an ENMevaluation object, please input occs.z and occs.grp.")}
+  #     }else if (ref.data == "bg") {
+  #       if(any(is.null(bg.z), is.null(bg.grp))) {stop("* If inputting background data instead of an ENMevaluation object, please input bg.z and bg.grp.")}
+  #     }
+  #   }
+  #   message("* Similarity values calculated by contrasting occurrences with all cell values in raster extent.")
+  # }
   
   # assign variables from ENMevaluation object
-  if(!is.null(e)) {
-    occs.z <- e@occs
-    bg.z <- e@bg
-    occs.grp <- as.numeric(as.character(e@occs.grp))
-    bg.grp <- as.numeric(as.character(e@bg.grp))
+  if(class(data) == "ENMevaluation") {
+    occs.z <- data@occs
+    bg.z <- data@bg
+    # occs.grp <- as.numeric(as.character(data@occs.grp))
+    # bg.grp <- as.numeric(as.character(e@bg.grp))
+    occs.grp <- data@occs.grp
+    bg.grp <- data@bg.grp
   }else{
     occs.grp <- as.numeric(as.character(occs.grp))
     bg.grp <- as.numeric(as.character(bg.grp))
@@ -243,14 +245,29 @@ plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data,
 #' 
 #' @export
 
-evalplot.envSim.hist <- function(data = NULL, ref.data = "occs", 
-                                 lat.name = NULL, lon.name = NULL, part.name = NULL,
-                                 envs.vars = NULL, occs.testing.z = NULL,
-                                 hist.bins = 30, return.tbl = FALSE, quiet = FALSE) {
+plot.envSim <- function(data = NULL, ref.data = "occs", 
+                        lat.name = NULL, lon.name = NULL, part.name = NULL,
+                        type.name = NULL,
+                        envs.vars = NULL, occs.testing.z = NULL,
+                        hist.bins = 30, return.tbl = FALSE) {
   
-  pts.plot <- plot.sim.dataPrep(data, grps, e, envs = NULL, ref.data, occs.testing.z, quiet)
+  # pts.plot <- plot.sim.dataPrep(data, grps, e, envs = NULL, ref.data, occs.testing.z, quiet)
   
-  envs.names <- pts.plot |> dplyr::select(-longitude, -latitude, -partition, -type) |> names()
+  if(class(data) == "ENMevaluation") {
+    occs.z <- data@occs
+    bg.z <- data@bg
+    # occs.grp <- as.numeric(as.character(data@occs.grp))
+    # bg.grp <- as.numeric(as.character(e@bg.grp))
+    occs.grp <- data@occs.grp
+    bg.grp <- data@bg.grp
+    envs.names <- names(data@occs[,-1:-2])
+  }else{
+    occs.z <- data[which(data[,type.name] == 1),] |> dplyr::select(-type.name, -part.name)
+    bg.z <- data[which(data[,type.name] == 0),] |> dplyr::select(-type.name, -part.name)
+    occs.grp <- data[which(data[,type.name] == 1),] |> dplyr::pull(part.name)
+    bg.grp <- data[which(data[,type.name] == 0),] |> dplyr::pull(part.name)
+    envs.names <- data |> dplyr::select(-lon.name, -lat.name, -part.name, -type.name) |> names()
+  }
   
   if(!is.null(envs.vars)) {
     message(paste0("* Similarity values calculated based only on ", paste(envs.vars, collapse = ", "), "."))
