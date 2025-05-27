@@ -579,31 +579,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }
     
     for(i in 1:length(categoricals)) {
-        if(algorithm == "maxent.jar") {
-          if(quiet != TRUE) {
-            message(paste0("* Assigning variable ", categoricals[i], 
-                         " to categorical and changing to integer for maxent.jar..."))
-          }
-          d[, categoricals[i]] <- factor(as.numeric(d[, categoricals[i]]), 
-                                         levels = 1:length(cat.levs[[i]]))
-        }else{
-          if(quiet != TRUE) {
-            message(paste0("* Assigning variable ", categoricals[i], 
-                         " to categorical ..."))
-          }
+      if(quiet != TRUE) {
+        message(paste0("* Assigning variable ", categoricals[i], 
+                       " to categorical ..."))
         }
       d[, categoricals[i]] <- as.factor(d[, categoricals[i]])
       if(!is.null(user.val.grps)) {
-        if(algorithm == "maxent.jar") {
-          user.val.grps[, categoricals[i]] <- as.numeric(user.val.grps[, categoricals[i]])
-        }
         user.val.grps[, categoricals[i]] <- factor(user.val.grps[, categoricals[i]], 
                                                    levels = levels(d[, categoricals[i]]))
       }
       if(!is.null(occs.testing.z)) {
-        if(algorithm == "maxent.jar") {
-          occs.testing.z[, categoricals[i]] <- as.numeric(occs.testing.z[, categoricals[i]])
-        }
         occs.testing.z[, categoricals[i]] <- factor(occs.testing.z[, categoricals[i]], 
                                                     levels = levels(d[, categoricals[i]]))
       }
