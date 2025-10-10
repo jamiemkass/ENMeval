@@ -180,7 +180,7 @@ A warning is given if the number of bins is &lt; 4 for the hierarchical method, 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.8.54</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.8.70</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -225,6 +225,7 @@ A warning is given if the number of bins is &lt; 4 for the hierarchical method, 
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">### Checkerboard partitioning method with aggregation factor of 4</span></span></span>
 <span class="r-in"><span><span class="va">chk.ag4</span> <span class="op">&lt;-</span> <span class="fu">get.checkerboard</span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs</span>, <span class="va">bg</span>, aggregation.factor <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removing duplicate points...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Generating basic checkerboard partitions...</span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">envs</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span>, pch<span class="op">=</span><span class="fl">23</span>, bg<span class="op">=</span><span class="va">chk.ag4</span><span class="op">$</span><span class="va">occs.grp</span><span class="op">)</span></span></span>
@@ -234,6 +235,7 @@ A warning is given if the number of bins is &lt; 4 for the hierarchical method, 
 <span class="r-plt img"><img src="partitions-7.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># Higher aggregation factors result in bigger checkerboard blocks</span></span></span>
 <span class="r-in"><span><span class="va">chk.ag8</span> <span class="op">&lt;-</span> <span class="fu">get.checkerboard</span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs</span>, <span class="va">bg</span>, aggregation.factor <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removing duplicate points...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Generating basic checkerboard partitions...</span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">envs</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span>, pch<span class="op">=</span><span class="fl">23</span>, bg<span class="op">=</span><span class="va">chk.ag8</span><span class="op">$</span><span class="va">occs.grp</span><span class="op">)</span></span></span>
@@ -245,6 +247,7 @@ A warning is given if the number of bins is &lt; 4 for the hierarchical method, 
 <span class="r-in"><span><span class="co">### Hierarchical checkerboard partitioning method with aggregation factors </span></span></span>
 <span class="r-in"><span><span class="co">### of 2 and 2</span></span></span>
 <span class="r-in"><span><span class="va">chk.ag2_2</span> <span class="op">&lt;-</span> <span class="fu">get.checkerboard</span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs</span>, <span class="va">bg</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removing duplicate points...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Generating hierarchical checkerboard partitions...</span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">envs</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span>, pch<span class="op">=</span><span class="fl">23</span>, bg<span class="op">=</span><span class="va">chk.ag2_2</span><span class="op">$</span><span class="va">occs.grp</span><span class="op">)</span></span></span>
@@ -255,6 +258,7 @@ A warning is given if the number of bins is &lt; 4 for the hierarchical method, 
 <span class="r-in"><span><span class="co"># Higher aggregation factors result in bigger checkerboard blocks,</span></span></span>
 <span class="r-in"><span><span class="co"># and can vary between hierarchical levels</span></span></span>
 <span class="r-in"><span><span class="va">chk.ag4_6</span> <span class="op">&lt;-</span> <span class="fu">get.checkerboard</span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs</span>, <span class="va">bg</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Removing duplicate points...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Generating hierarchical checkerboard partitions...</span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">envs</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span>, pch<span class="op">=</span><span class="fl">23</span>, bg<span class="op">=</span><span class="va">chk.ag4_6</span><span class="op">$</span><span class="va">occs.grp</span><span class="op">)</span></span></span>
