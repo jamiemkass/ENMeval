@@ -17,7 +17,6 @@ ENMnulls(
   removeMxTemp = TRUE,
   parallel = FALSE,
   numCores = NULL,
-  parallelType = "doSNOW",
   quiet = FALSE
 )
 }
@@ -58,9 +57,6 @@ when using maxent.jar for modeling.}
 
 \item{numCores}{numeric: number of cores to use for parallel processing; 
 if NULL, all available cores will be used.}
-
-\item{parallelType}{character:: either "doParallel" or "doSNOW" 
-(default: "doSNOW").}
 
 \item{quiet}{boolean: if TRUE, silence all function messages 
 (but not errors).}
@@ -109,8 +105,8 @@ library(ENMeval)
 occs <- read.csv(file.path(system.file(package="predicts"), 
 "/ex/bradypus.csv"))[,2:3]
 envs <- rast(list.files(path=paste(system.file(package="predicts"), 
-                                   "/ex", sep=""), 
-                                   pattern="tif$", full.names=TRUE))
+                                   "/ex", sep=""), pattern="tif$", 
+                                   full.names=TRUE))
 bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 names(bg) <- names(occs)
 
@@ -179,9 +175,9 @@ to quantify performance and significance for ecological niche models of
 species distributions. \emph{Journal of Biogeography}, \bold{46}: 1101-1111. 
 \doi{10.1111/jbi.13573}
 
-Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juárez-Jaimes, V., 
-Martínez-Salas, E., Botello, F.,  Tavera, G., Flores-Martínez, J. J., & 
-Sánchez-Cordero, V. (2020). Biotic predictors with phenological information 
+Kass, J. M., Anderson, R. P., Espinosa-Lucas, A., Juarez-Jaimes, V., 
+Martinez-Salas, E., Botello, F.,  Tavera, G., Flores-Martinez, J. J., & 
+Sanchez-Cordero, V. (2020). Biotic predictors with phenological information 
 improve range estimates for migrating monarch butterflies in Mexico. 
 \emph{Ecography}, \bold{43}: 341-352. \doi{10.1111/ecog.04886}
 

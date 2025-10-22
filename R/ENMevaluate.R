@@ -78,7 +78,6 @@
 #' \code{ENMevaluation} object.
 #' @param parallel boolean: if TRUE, run with parallel processing.
 #' @param numCores numeric: number of cores to use for parallel processing. If NULL, all available cores will be used.
-#' @param parallelType character: either "doParallel" or "doSNOW" (default: "doSNOW") .
 #' @param updateProgress boolean: if TRUE, use shiny progress bar. This is only for use in shiny apps.
 #' @param quiet boolean: if TRUE, silence all function messages (but not errors).
 #' 
@@ -89,6 +88,11 @@
 #' This approach follows Radosavljevic & Anderson (2014).This setting can be changed by assigning 
 #' other.settings$validation.bg to "partition", which will calculate AUC with respect 
 #' to the validation background only. The default value for other.settings$validation.bg is "full".
+
+#' NOTE: When examining validation AUC and other discrimination metrics, the "full" option will likely 
+#' result in higher performance than for the "partition" option because more and varied background data 
+#' should lead to higher discriminatory power for the model. Users should thus make sure they are correctly
+#' interpreting the evaluation results.
 #' 
 #' 2. The continuous Boyce index (always) and AICc (when no raster is provided) are not calculated using 
 #' the predicted values of the SpatRaster delineating the full study extent, but instead using the predicted
@@ -145,7 +149,7 @@
 #' Using two aggregation factors makes the checkerboard partitions hierarchical, where squares are first aggregated to define groups as in the 'basic' checkerboard, but a 
 #' second aggregation is then made to separate the resulting two bins into four bins (see ?partitions for more details).
 #' 
-#' For user.eval, the accessible variables you have access to in order to run your custom function are below. 
+#' For user.eval, the variables you have access to in order to run your custom function are below. 
 #' See the vignette for a worked example.\cr*
 #' enm - ENMdetails object\cr*
 #' occs.train.z - data frame: predictor variable values for training occurrences\cr*
@@ -299,8 +303,8 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                         n.bg = 10000, overlap = FALSE, 
                         overlapStat = c("D", "I"), user.val.grps = NULL, 
                         user.eval = NULL, rmm = NULL, parallel = FALSE, 
-                        numCores = NULL,  parallelType = "doSNOW", 
-                        updateProgress = FALSE, quiet = FALSE) {
+                        numCores = NULL, updateProgress = FALSE, 
+                        quiet = FALSE) {
   
   
   # record start time
@@ -715,7 +719,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   results <- tune(d, enm, partitions, tune.tbl, doClamp, other.settings, 
                   partition.settings, user.val.grps, occs.testing.z, 
-                  numCores, parallel, parallelType, user.eval, algorithm, 
+                  numCores, parallel, user.eval, algorithm, 
                   updateProgress, quiet)  
   
   ##################### #
@@ -746,14 +750,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     f <- function(x) enm@predict(x$mod.full, envs, other.settings)
     # necessary to convert levels of envs categoricals to numbers for maxent.jar
     # predictions, else error
-    if(!is.null(categoricals)) {
+    if(!is.null(categoricals) & algorithm == "maxent.jar") {
       for(i in 1:length(categoricals)) {
         lev.df <- terra::levels(envs[[categoricals[i]]])
         lev.df[[1]][,2] <- 1:length(cat.levs[[i]])
         levels(envs[[categoricals[i]]]) <- lev.df[[1]]
       }  
     }
-    message("Making model prediction rasters...")
+    if(quiet != TRUE) message("Making model prediction rasters...")
     mod.full.pred.all <- terra::rast(lapply(results, f))
     names(mod.full.pred.all) <- tune.names
   }else{

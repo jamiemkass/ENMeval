@@ -56,7 +56,7 @@ NULL
 #' 
 #' Fielding, A. H., & Bell, J. F. (1997). A review of methods for the assessment of prediction errors in conservation presence/absence models. \emph{Environmental Conservation}, \bold{24}: 38-49. \doi{10.1017/S0376892997000088}
 #' 
-#' Jiménez‐Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. \emph{Global Ecology and Biogeography}, \bold{21}: 498-507. \doi{10.1111/j.1466-8238.2011.00683.x}
+#' Jimenez-Valverde, A. (2012). Insights into the area under the receiver operating characteristic curve (AUC) as a discrimination measure in species distribution modelling. \emph{Global Ecology and Biogeography}, \bold{21}: 498-507. \doi{10.1111/j.1466-8238.2011.00683.x}
 #' 
 #' \emph{AUC diff}
 #' 

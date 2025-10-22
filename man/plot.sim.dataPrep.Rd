@@ -4,7 +4,17 @@
 \alias{plot.sim.dataPrep}
 \title{Internal plotting function}
 \usage{
-\method{plot}{sim.dataPrep}(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet)
+plot.sim.dataPrep(
+  e,
+  envs,
+  occs.z,
+  bg.z,
+  occs.grp,
+  bg.grp,
+  ref.data,
+  occs.testing.z,
+  quiet
+)
 }
 \description{
 This function preps data for plotting.

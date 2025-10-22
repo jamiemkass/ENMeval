@@ -1,9 +1,20 @@
+ENMeval 2.0.5.2
+===========
+o  Fixed an error in maxnet.predictRaster that resulted in ignoring categorical variables when making predictions. This happened because terra::values was converting the cateogrical values to numeric, and the maxnet model had them specified as categorical, so they were ignored. For maxent.jar models, they are specified internally as numeric, unlike for maxnet.
+o  Fixed a small error that resulted in conversion of categorical variable values to numeric for maxnet models for AICc calculation. This conversion was meant only for maxent.jar models, but it should not have affected AIC calculations.
+o  Added a note about the validation.bg option in the documentation for ENMevaluate.
+
+ENMeval 2.0.5.1
+===========
+o  Fixed a typo in maxnet.predictRaster.
+
 ENMeval 2.0.5
 ===========
 * This one is kind of a big update, making the switch to terra and predicts*
 o  Updated package and vignette to use terra and predicts functions instead of raster and dismo, which rely on deprecated pkgs sp, rgdal, and rgeos. This includes the multivariate environmental similarity functions originally from rmaxent and the RMM functionality. Thus, in place of dismo::maxent, we now use predicts::MaxEnt, and in place of dismo::bioclim we now use predicts::envelope. As the predict methods for these functions are not currently exported by the current version of the predicts pkg on CRAN, ENMeval currrently loads the predicts pkg when making model predictions for maxent.jar and BIOCLIM models, though this will be phased out once the predicts pkg updates. Please see README for a warning about using categorical predictors with predicts::MaxEnt.
+o  Removed doSNOW functionality because it is deprecated and replaced with a parallelization implementation from the parallel package. In doing so, also removed doParallel functions because they were not necessary. This means the parallelType argument is now gone, which simplifies things a bit, but it also means that parallel processes no longer have a progress bar, which only worked for doSNOW functions.
 o  Fixed the maxent.jar implementation so that it correctly receives extra arguments like jacknife=TRUE or responsecurves=TRUE and produces the html and plot output. To use this, you need to set the path in the parameter "other.settings" -- see the new example in ?ENMevaluate.
-o  Simplified the environmental similarity plotting by removing "most similar" and "most different" options -- these originate from an old function from a different package that is difficult to maintain over time, so I am now using predicts::mess only.
+o  Simplified the environmental similarity plotting by removing "most similar" and "most different" options -- these originate from an old function from a different package that is difficult to maintain over time, so we are now using predicts::mess only.
 o  Now when model settings result in a model error for at least one fold during cross-validation, the validation statistics for these settings in the results table are all NA. Previously, the fold with the error was simply removed from the results.partitions table and summary statistics were calculated ignoring these folds. This is a much more cautious approach, as the failure of a model to complete for even one fold may mean those settings are not recommendable given the partition method chosen.
 o  Fixed an issue that made the 'rm' field in the ENMevaluation results table a factor variable, potentially leading to change in the numbers when as.numeric() is used. Now this field is numeric type.
 o  Added new save and load functions for ENMevaluation objects (saveENMevaluation, loadENMevaluation) that write and read .rds files. This was necessary because the terra pkg uses new wrap and unwrap functions to preserve file connections, and these new ENMeval functions do the wrapping and unwrapping automatically.
@@ -61,7 +72,7 @@ o  New partition schema for fully withheld testing data and evaluation without p
 o  Now implements continuous Boyce Index for training, validation, and full withheld testing data (via R package ecospat), and allows use of custom evaluation functions with the user.eval argument (see ?ENMevaluate).
 o  A suite of new visualization functions using ggplot2 that map partition groups, plot environmental similarity histograms for partition groups, map environmental similarity for partition groups, and plot histograms or violins for null ENM results. The original evaluation plots were also redone and now use ggplot.
 o  New analysis options for more flexibility (see ?ENMevaluate).
-o  Fully updated and extensive vignette (https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0.0-vignette.html) that walks through a full analysis while describing all the new functionality.
+o  Fully updated and extensive vignette (https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html) that walks through a full analysis while describing all the new functionality.
 o  Now supports doSNOW parallelization as well as doParallel. The doSNOW option has a functioning progress bar for parallel processes.
 
 ENMeval 0.3.1

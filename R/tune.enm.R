@@ -147,7 +147,7 @@ tune.validate <- function(enm, occs.train.z, occs.val.z, bg.train.z, bg.val.z,
 #' @rdname tune.enm
 tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings, 
                  partition.settings, user.val.grps, occs.testing.z, 
-                 numCores, parallel, parallelType, user.eval, algorithm, 
+                 numCores, parallel, user.eval, algorithm, 
                  updateProgress, quiet) {
   if(parallel == TRUE) {
     # set up parallel processing functionality
@@ -156,27 +156,25 @@ tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings,
       numCores <- allCores
     }
     cl <- parallel::makeCluster(numCores, setup_strategy = "sequential")
+    parallel::clusterExport(cl, c("d", "enm", "partitions", "tune.tbl", 
+                                  "doClamp", "other.settings", 
+                                  "partition.settings", "user.val.grps", 
+                                  "occs.testing.z", "user.eval", "algorithm", 
+                                  "quiet", "cv.enm", "tune.train", "clamp.vars", 
+                                  "tune.validate"),
+                                  envir = environment())
     n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
-    if(quiet != TRUE) pb <- txtProgressBar(0, n, style = 3)
-    if(quiet != TRUE) progress <- function(n) setTxtProgressBar(pb, n)  
     
-    if(parallelType == "doParallel") {
-      doParallel::registerDoParallel(cl)
-      opts <- NULL
-    } else if(parallelType == "doSNOW") {
-      doSNOW::registerDoSNOW(cl)
-      if(quiet != TRUE) opts <- list(progress=progress) else opts <- NULL
-    }
-    numCoresUsed <- foreach::getDoParWorkers()
-    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCoresUsed, "..."))
-    if(quiet != TRUE) message(paste0("Running in parallel using ", parallelType, "..."))
+    if(quiet != TRUE) message(paste0("\nOf ", allCores, " total cores using ", numCores, "..."))
+    if(quiet != TRUE) message(paste0("Running in parallel ..."))
     
-    results <- foreach::foreach(i = 1:n, .options.snow = opts, .export = "cv.enm") %dopar% {
+    par.cv.enm <- function(i) {
       cv.enm(d, enm, partitions, tune.tbl[i,], doClamp, other.settings, 
              partition.settings, user.val.grps, occs.testing.z, user.eval, 
              algorithm, quiet)
     }
-    parallel::stopCluster(cl)
+    
+    results <- parallel::parLapply(cl, 1:n, par.cv.enm)
   }else{
     results <- list()
     n <- ifelse(!is.null(tune.tbl), nrow(tune.tbl), 1)
@@ -199,8 +197,8 @@ tune <- function(d, enm, partitions, tune.tbl, doClamp, other.settings,
                              other.settings, partition.settings, user.val.grps, 
                              occs.testing.z, user.eval, algorithm, quiet)
     }
+    if(quiet != TRUE) close(pb)
   }
-  if(quiet != TRUE) close(pb)
   return(results)
 }
 

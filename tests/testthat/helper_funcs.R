@@ -257,20 +257,27 @@ test_evalplot.stats <- function(e) {
     stat2 <- c("auc.val", "or.10p") 
   }
   
+  if(e@algorithm == "bioclim") {
+    x.var <- color.var <- "tails"  
+  }else if(e@algorithm %in% c("maxnet", "maxent.jar")) {
+    x.var <- "rm"
+    color.var <- "fc"
+  }
+  
   # defaults
-  evalplot.stats(e, stats = stat1, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat1, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
   # two stats
-  evalplot.stats(e, stats = stat2, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat2)
+  evalplot.stats(e, stats = stat2, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat2)
   # dodge
-  evalplot.stats(e, stats = stat1, x.var = "rm", color.var = "fc", dodge = TRUE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat1, x.var = x.var, color.var = color.var, dodge = TRUE, error.bars = FALSE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
   # error bars
-  evalplot.stats(e, stats = stat1, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat1, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
   # facet labels
-  evalplot.stats(e, stats = stat1, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat1), metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
-  evalplot.stats(e, stats = stat2, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat2), metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat2)
+  evalplot.stats(e, stats = stat1, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat1), metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat2, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = TRUE, facet.labels = paste0(stat2), metric.levels = NULL, return.tbl = TRUE) |> test_stats(stat2)
   # metric levels
-  evalplot.stats(e, stats = stat1, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = stat1, return.tbl = TRUE) |> test_stats(stat1)
-  evalplot.stats(e, stats = stat2, x.var = "rm", color.var = "fc", dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = rev(stat2), return.tbl = TRUE) |> test_stats(stat2)
+  evalplot.stats(e, stats = stat1, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = stat1, return.tbl = TRUE) |> test_stats(stat1)
+  evalplot.stats(e, stats = stat2, x.var = x.var, color.var = color.var, dodge = FALSE, error.bars = TRUE, facet.labels = NULL, metric.levels = rev(stat2), return.tbl = TRUE) |> test_stats(stat2)
 }
 
 test_evalplot.envSim.hist <- function(e, occs.z, bg.z, occs.grp, bg.grp, bg.sel = 1, occs.testing.z = NULL) {

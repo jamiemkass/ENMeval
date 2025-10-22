@@ -3,10 +3,6 @@
 # submitting to CRAN
 skip_tests_for_cran <- TRUE
 
-# this additionally skips tests for env similarity and difference for the 
-# envSim.map tests
-skip_simDiff <- FALSE
-
 library(dplyr)
 options(warn=-1)
 
@@ -54,49 +50,26 @@ test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
 context(paste("Testing evalplot.nulls for", alg, "with block partitions..."))
 test_evalplot.nulls(ns)
 
-# block partitions with doSNOW
+# block partitions with parallel processing
 if(skip_tests_for_cran == FALSE) {
-  context(paste("Testing ENMevaluate for", alg, "with block partitions using doSNOW..."))
-  e.snow <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
-                        algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
-                        parallel = TRUE, parallelType = "doSNOW")
+  context(paste("Testing ENMevaluate for", alg, "with block partitions in parallel..."))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
+                   algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
+                   parallel = TRUE)
   test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
   
-  context(paste("Testing evalplot.stats for", alg, "with block partitions using doSNOW..."))
+  context(paste("Testing evalplot.stats for", alg, "with block partitions in parallel..."))
   test_evalplot.stats(e)
-  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using doSNOW..."))
+  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions in parallel..."))
   test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using doSNOW..."))
+  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions in parallel..."))
   test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
   
-  context(paste("Testing ENMnulls for", alg, "with block partitions using doSNOW..."))
-  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doSNOW")
+  context(paste("Testing ENMnulls for", alg, "with block partitions in parallel..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE)
   test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
   
-  context(paste("Testing evalplot.nulls for", alg, "with block partitions using doSNOW..."))
-  test_evalplot.nulls(ns)
-}
-
-# block partitions with doParallel
-if(skip_tests_for_cran == FALSE) {
-  context(paste("Testing ENMevaluate for", alg, "with block partitions using doParallel..."))
-  e.snow <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block",
-                        algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE,
-                        parallel = TRUE, parallelType = "doParallel")
-  test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
-  
-  context(paste("Testing evalplot.stats for", alg, "with block partitions using doParallel..."))
-  test_evalplot.stats(e)
-  context(paste("Testing evalplot.envSim.hist for", alg, "with block partitions using doParallel..."))
-  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-  context(paste("Testing evalplot.envSim.map for", alg, "with block partitions using doParallel..."))
-  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
-  
-  context(paste("Testing ENMnulls for", alg, "with block partitions using doParallel..."))
-  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE, parallel = TRUE, parallelType = "doParallel")
-  test_ENMnulls(e, ns, no.iter, alg, "block", mset, 4, 4)
-  
-  context(paste("Testing evalplot.nulls for", alg, "with block partitions using doParallel..."))
+  context(paste("Testing evalplot.nulls for", alg, "with block partitions in parallel..."))
   test_evalplot.nulls(ns)
 }
 
@@ -181,23 +154,25 @@ if(skip_tests_for_cran == FALSE) {
 }
 
 # testing partition
-context(paste("Testing ENMevaluate for", alg, "with testing partition..."))
-e <- ENMevaluate(occs[1:100,], envs, bg, tune.args = tune.args, partitions = "testing", algorithm = alg, categoricals = cats1,  occs.testing = occs[101:nrow(occs),], overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, alg, "testing", tune.args, 1, 1)
-
-context(paste("Testing evalplot.stats for", alg, "with testing partition..."))
-test_evalplot.stats(e)
-context(paste("Testing evalplot.envSim.hist for", alg, "with testing partition..."))
-test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
-context(paste("Testing evalplot.envSim.map for", alg, "with testing partition..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
-
-context(paste("Testing ENMnulls for", alg, "with testing partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, alg, "testing", mset, 1, 1)
-
-context(paste("Testing ENMnulls plotting function for", alg, "with testing partition..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", alg, "with testing partition..."))
+  e <- ENMevaluate(occs[1:100,], envs, bg, tune.args = tune.args, partitions = "testing", algorithm = alg, categoricals = cats1,  occs.testing = occs[101:nrow(occs),], overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, alg, "testing", tune.args, 1, 1)
+  
+  context(paste("Testing evalplot.stats for", alg, "with testing partition..."))
+  test_evalplot.stats(e)
+  context(paste("Testing evalplot.envSim.hist for", alg, "with testing partition..."))
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
+  context(paste("Testing evalplot.envSim.map for", alg, "with testing partition..."))
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp, bg.sel = 0, occs.testing.z = e@occs.testing)
+  
+  context(paste("Testing ENMnulls for", alg, "with testing partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, alg, "testing", mset, 1, 1)
+  
+  context(paste("Testing ENMnulls plotting function for", alg, "with testing partition..."))
+  test_evalplot.nulls(ns)
+}
 
 # no partitions
 if(skip_tests_for_cran == FALSE) {
@@ -214,24 +189,26 @@ if(skip_tests_for_cran == FALSE) {
 }
 
 # user partitions
-context(paste("Testing ENMevaluate for", alg, "with user partitions..."))
-user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "user", algorithm = alg, categoricals = cats1, user.grp = user.grp, overlap = TRUE, quiet = TRUE)
-test_ENMevaluation(e, alg, "user", tune.args, 4, 4)
-
-context(paste("Testing evalplot.stats for", alg, "with user partitions..."))
-test_evalplot.stats(e)
-context(paste("Testing evalplot.envSim.hist for", alg, "with user partitions..."))
-test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
-context(paste("Testing evalplot.envSim.map for", alg, "with user partitions..."))
-test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
-
-context(paste("Testing ENMnulls for", alg, "with user partitions..."))
-ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
-test_ENMnulls(e, ns, no.iter, alg, "user", mset, 4, 4)
-
-context(paste("Testing ENMnulls plotting function for", alg, "with user partitions..."))
-test_evalplot.nulls(ns)
+if(skip_tests_for_cran == FALSE) {
+  context(paste("Testing ENMevaluate for", alg, "with user partitions..."))
+  user.grp <- list(occs.grp = round(runif(nrow(occs), 1, 4)), bg.grp = round(runif(nrow(bg), 1, 4)))
+  e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "user", algorithm = alg, categoricals = cats1, user.grp = user.grp, overlap = TRUE, quiet = TRUE)
+  test_ENMevaluation(e, alg, "user", tune.args, 4, 4)
+  
+  context(paste("Testing evalplot.stats for", alg, "with user partitions..."))
+  test_evalplot.stats(e)
+  context(paste("Testing evalplot.envSim.hist for", alg, "with user partitions..."))
+  test_evalplot.envSim.hist(e, e@occs, e@bg, e@occs.grp, e@bg.grp)
+  context(paste("Testing evalplot.envSim.map for", alg, "with user partitions..."))
+  test_evalplot.envSim.map(e, envs, e@occs, e@bg, e@occs.grp, e@bg.grp)
+  
+  context(paste("Testing ENMnulls for", alg, "with user partitions..."))
+  ns <- ENMnulls(e, mod.settings = mset, no.iter = no.iter, user.eval.type = "kspatial", quiet = TRUE)
+  test_ENMnulls(e, ns, no.iter, alg, "user", mset, 4, 4)
+  
+  context(paste("Testing ENMnulls plotting function for", alg, "with user partitions..."))
+  test_evalplot.nulls(ns)
+}
 
 # no envs (SWD)
 if(skip_tests_for_cran == FALSE) {
@@ -298,9 +275,9 @@ if(skip_tests_for_cran == FALSE) {
   context(paste("Testing evalplot.stats for", alg, "with random 5-fold partitions and two categorical variables..."))
   test_evalplot.stats(e.2cat)
   context(paste("Testing evalplot.envSim.hist for", alg, "with random 5-fold partitions and two categorical variables..."))
-  test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"))
+  test_evalplot.envSim.hist(e.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0)
   context(paste("Testing evalplot.envSim.map for", alg, "with random 5-fold partitions and two categorical variables..."))
-  test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0, categoricals = c("biome.1", "biome.2"), skip_simDiff = skip_simDiff)
+  test_evalplot.envSim.map(e.2cat, envs.2cat, e.2cat@occs, e.2cat@bg, e.2cat@occs.grp, e.2cat@bg.grp, bg.sel = 0)
   
   context(paste("Testing ENMnulls for", alg, "with random 5-fold partitions and two categorical variables..."))
   ns <- ENMnulls(e.2cat, mod.settings = mset, no.iter = no.iter, quiet = TRUE)

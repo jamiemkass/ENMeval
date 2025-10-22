@@ -15,7 +15,7 @@ evalplot.curve(
 )
 }
 \arguments{
-\item{mod}{A Maxent.jar or maxnet model object.}
+\item{mod}{A maxent.jar or maxnet model object.}
 
 \item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
 
@@ -33,7 +33,7 @@ evalplot.curve(
 A ggplot object of the response curve.
 }
 \description{
-This function plots a response curve for a given environmental variable based on a Maxent.jar
+This function plots a response curve for a given environmental variable based on a maxent.jar
 or maxnet model. It allows plotting clamping on or off and supports multiple variables via
 a wrapper that combines plots using the patchwork package.
 }
