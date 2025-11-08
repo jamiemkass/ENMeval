@@ -334,8 +334,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   other.settings <- checks.other.settings(other.settings)
   
   # make sure taxon name column is not included
-  if(inherits(occs[,1], "character") | inherits(bg[,1], "character")) 
+  if(inherits(occs[,1], "character") | inherits(bg[,1], "character")) {
     stop("* The two first columns of occs should be longitude and latitude.")
+  } 
   
   # initial message
   message("*** Running initial checks... ***\n")
@@ -561,14 +562,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   ################# #
   # MESSAGE
   ################# #
-  message(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
+  message(paste("\n*** Running ENMeval v2.1.0 with", enm@msgs(tune.args, other.settings), "***\n"))
   
   ################# #
   # MODEL TUNING #### 
   ################# #
   
   # make table for all tuning parameter combinations
-  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE) |> tibble::as_tibble()
+  tune.tbl <- expand.grid(tune.args, stringsAsFactors = FALSE)
   # make tune.tbl NULL, not an empty table, if no settings are specified
   # this makes it easier to use tune.i as a parameter in function calls
   # when tune.args does not exist
@@ -659,7 +660,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(overlap == TRUE) {
     ov.ls <- assemble.overlap(mod.full.pred.all, overlapStat)
   }else{
-    ov.ls <- NULL
+    ov.ls <- list()
   }
   
   # assemble the ENMevaluation object

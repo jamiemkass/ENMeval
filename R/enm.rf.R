@@ -33,7 +33,8 @@ rf.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   bgNum <- as.numeric(table(p)["0"])
   out$sampsize <- c("0" = prNum, "1" = prNum)
   out$replace <- TRUE
-  out$ntree <- 1000
+  out$ntree <- ifelse(is.null(tune.tbl.i$ntree), 500, tune.tbl.i$ntree)
+  out$mtry <- tune.tbl.i$mtry
   out$importance <- TRUE
   out <- c(out, other.settings$other.args)
   return(out)

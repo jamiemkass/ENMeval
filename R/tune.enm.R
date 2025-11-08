@@ -250,11 +250,11 @@ cv.enm <- function(occs.z, bg.z, grps, enm, partitions, tune.tbl.i, doClamp,
   cv.stats <- list()
   
   for(k in 1:nk) {
-    # get env values for training and validaton data
-    occs.train.z <- occs.z[-which(grps$occs.grp == k),]
-    occs.val.z <- occs.z[which(grps$occs.grp == k),]
-    bg.train.z <- bg.z[-which(grps$bg.grp == k),]
-    bg.val.z <- bg.z[which(grps$bg.grp == k),]
+    # get env values for training and validation data
+    occs.train.z <- occs.z[grps$occs.grp != k,]
+    occs.val.z <- occs.z[grps$occs.grp == k,]
+    bg.train.z <- bg.z[grps$bg.grp != k,]
+    bg.val.z <- bg.z[grps$bg.grp == k,]
     # if bg not partitioned for cross-validation, this will be an empty df
     # if so, make bg.val the whole bg
     if(nrow(bg.val.z) == 0) {

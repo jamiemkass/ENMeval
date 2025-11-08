@@ -36,13 +36,13 @@ partitions <- "block"
 partition.settings <- list(orientation = "lat_lon")
 
 # define tune args
-tune.args <- list(mtry = 1:5)
+tune.args <- list(ntree = c(500, 1000, 2000), mtry = 1:5)
 mset <- lapply(tune.args, function(x) x[1])
 
 
 # block partitions
 context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = alg, categoricals = cats1, overlap = TRUE)
 test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
 
 context(paste("Testing evalplot.stats for", alg, "with block partitions..."))
