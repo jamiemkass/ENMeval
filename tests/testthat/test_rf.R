@@ -26,7 +26,7 @@ occs.xyEnv$biome <- factor(occs.xyEnv$biome)
 bg.xyEnv <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 bg.xyEnv$biome <- factor(bg.xyEnv$biome)
 
-alg <- "rf"
+alg <- "RF"
 no.iter <- 5
 
 # define categorical variable

@@ -2,47 +2,45 @@
 # rf ENMdetails object ####
 ################################# #
 
-rf.name <- "RF"
+gbm.name <- "GBM"
 
-rf.fun <- randomForest::randomForest
+gbm.fun <- gbm::gbm
 
-rf.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
+gbm.errors <- function(occs, envs, bg, tune.args, partitions, algorithm, 
                           partition.settings, other.settings, 
                           categoricals, doClamp, clamp.directions) {
-  if(!("mtry" %in% names(tune.args))) {
-    stop("RF settings must include 'mtry' (number of variables randomly sampled at each tree split). See ?tune.args for details.")
+  if(!("interaction.depth" %in% names(tune.args))) {
+    stop("GBM settings must include 'interaction.depth' (highest level of variable interactions allowed for each tree). See ?tune.args for details.")
   }
-  if(any(tune.args$mtry <= 0)) {
-    stop("Please input positive integer values for 'mtry' settings for RF.")
+  if(any(tune.args$interaction.depth <= 0)) {
+    stop("Please input positive integer values for 'interaction.depth' settings for gbm.")
   }
 }
 
-rf.msgs <- function(tune.args, other.settings) {
+gbm.msgs <- function(tune.args, other.settings) {
   msg <- paste0("randomForest from randomForest package v", packageVersion('randomForest'))
   return(msg)
 }
 
-rf.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
+gbm.args <- function(occs.z, bg.z, tune.tbl.i, other.settings) {
   #implementation of down-sampled RF from Valavi et al. 2021
   out <- list()
   out$formula <- formula(p ~.)
   out$data <- rbind(occs.z, bg.z)
   p <- as.factor(c(rep(1, nrow(occs.z)), rep(0, nrow(bg.z))))
   out$data <- cbind(p, out$data)
-  prNum <- as.numeric(table(p)["1"])
-  bgNum <- as.numeric(table(p)["0"])
-  out$sampsize <- c("0" = prNum, "1" = prNum)
-  out$replace <- TRUE
   # set to algorithm default if none specified
-  out$ntree <- ifelse(is.null(tune.tbl.i$ntree), 500, tune.tbl.i$ntree)
-  out$mtry <- tune.tbl.i$mtry
-  out$importance <- TRUE
+  out$n.trees <- ifelse(is.null(tune.tbl.i$n.trees), 100, tune.tbl.i$n.trees)
+  # set to algorithm default if none specified
+  out$bag.fraction <- ifelse(is.null(tune.tbl.i$bag.fraction), 0.5, tune.tbl.i$bag.fraction)
+  out$interaction.depth <- tune.tbl.i$interaction.depth
+  out$shrinkage <- tune.tbl.i$shrinkage
   out <- c(out, other.settings$other.args)
   return(out)
 }
 
-rf.predict <- function(mod, envs, other.settings) {
-  requireNamespace("randomForest", quietly = TRUE)
+gbm.predict <- function(mod, envs, other.settings) {
+  requireNamespace("gbm", quietly = TRUE)
   if(inherits(envs, "SpatRaster") == TRUE) {
     pred <- terra::predict(envs, mod, type = "prob", fun = predict,
                            other.settings$other.args)[[2]]
@@ -54,12 +52,12 @@ rf.predict <- function(mod, envs, other.settings) {
   return(pred)
 }
 
-rf.ncoefs <- function(mod) {
+gbm.ncoefs <- function(mod) {
   nrow(mod$importance)
 }
 
 # no existing method in model object for variable importance
-rf.variable.importance <- function(mod) {
+gbm.variable.importance <- function(mod) {
   # remove mean decrease in accuracy for absences (1st column)
   # and mean decrease in accuracy over all classes (3rd column)
   # this leaves mean decrease in accuracy for presences and mean decrease
@@ -76,6 +74,6 @@ rf.variable.importance <- function(mod) {
 #' which explicitly adds presences to the background for model training, though as the current 
 #' version of rf has this set to TRUE as default, behavior between ENMeval versions should not differ.
 #' @export
-enm.rf <- ENMdetails(name = rf.name, fun = rf.fun, errors = rf.errors,
-                         msgs = rf.msgs, args = rf.args,
-                         predict = rf.predict, ncoefs = rf.ncoefs, variable.importance = rf.variable.importance)
+enm.rf <- ENMdetails(name = gbm.name, fun = gbm.fun, errors = gbm.errors,
+                         msgs = gbm.msgs, args = gbm.args,
+                         predict = gbm.predict, ncoefs = gbm.ncoefs, variable.importance = gbm.variable.importance)
