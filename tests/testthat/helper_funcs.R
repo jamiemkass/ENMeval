@@ -16,12 +16,12 @@ test_ENMevaluation <- function(e, alg, parts, tune.args, nparts.occs, nparts.bg,
     expect_true(!is.null(e@bg))
     expect_true(!is.null(e@bg.grp))
     expect_true(!is.null(e@overlap))
-    expect_equal(length(slotNames(e)), 20)
+    expect_equal(length(slotNames(e)), 19)
     expect_equal(slotNames(e),
                  c("algorithm", "tune.settings", "partition.method",
                    "partition.settings", "other.settings", "doClamp",
                    "clamp.directions", "results", "results.partitions",
-                   "models", "variable.importance", "predictions", "taxon.name",
+                   "models", "variable.importance", "predictions", 
                    "occs", "occs.testing", "occs.grp", "bg", "bg.grp",
                    "overlap", "rmm"))
   })  

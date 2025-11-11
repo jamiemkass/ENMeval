@@ -11,9 +11,6 @@ An object of class \code{ENMdetails} of length 1.
 enm.rf
 }
 \description{
-This is the ENMdetails implementation for random forest, the R version of
-the Maxent algorithm. The configuration for running the model now includes addsamplestobackground = TRUE,
-which explicitly adds presences to the background for model training, though as the current 
-version of rf has this set to TRUE as default, behavior between ENMeval versions should not differ.
+This is the ENMdetails implementation for random forest.
 }
 \keyword{datasets}

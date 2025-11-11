@@ -26,17 +26,17 @@ occs.xyEnv$biome <- factor(occs.xyEnv$biome)
 bg.xyEnv <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 bg.xyEnv$biome <- factor(bg.xyEnv$biome)
 
-alg <- "RF"
+algorithm <- "GBM"
 no.iter <- 5
 
 # define categorical variable
-cats1 <- "biome"
+categoricals <- "biome"
 
 partitions <- "block"
 partition.settings <- list(orientation = "lat_lon")
 
 # define tune args
-tune.args <- list(ntree = c(500, 1000, 2000), mtry = 1:5)
+tune.args <- list(bag.fraction = c(0.25, 0.5), interaction.depth = c(1,3), shrinkage = c(0.01, 0.05))
 mset <- lapply(tune.args, function(x) x[1])
 
 
