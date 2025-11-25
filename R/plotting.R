@@ -1036,6 +1036,26 @@ evalplot.density <- function(data,
   min_var_transfer <- terra::minmax(envs[[var]])[1]
   ## Maximum value of transfer data
   max_var_transfer <- terra::minmax(envs[[var]])[2]
+  ## Get values of transfer data
+  env_values <- terra::values(envs[[var]], na.rm = TRUE)
+
+  ## Get percentages
+  if (length(env_values) > 0) {
+    total_count <- length(env_values)
+    count_below <- sum(env_values < min_var_train, na.rm = TRUE)
+    count_above <- sum(env_values > max_var_train, na.rm = TRUE)
+    count_between <- total_count - count_below - count_above
+    
+    perc_below <- (count_below / total_count) * 100
+    perc_above <- (count_above / total_count) * 100
+    perc_between <- (count_between / total_count) * 100
+    
+    label_below <- sprintf("%.2f%%", perc_below)
+    label_above <- sprintf("%.2f%%", perc_above)
+    label_between <- sprintf("%.2f%%", perc_between)
+  } else {
+    label_below <- "0.0%"; label_above <- "0.0%"; label_between <- "0.0%"
+  }
   
   names(data) <- var
   
@@ -1083,6 +1103,40 @@ evalplot.density <- function(data,
     # Define ggplot theme
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.y = ggplot2::element_text(angle = 90, vjust = 0, hjust = 0.5))
+    
+    # Build the plot to calculate the y-axis range
+    ggdens_build <- ggplot2::ggplot_build(ggdens)
+    y_range <- ggdens_build$layout$panel_params[[1]]$y.range
+
+    # Set y_pos to a fraction of the maximum y-value, making it relative
+    y_pos <- y_range[2] * 0.8
+
+    # Add annotation layers with the dynamically calculated y_pos
+    ggdens <- ggdens +
+      # Add "between" percentage label
+      ggplot2::annotate(
+        "label",
+        x = (min_var_train + max_var_train) / 2, # Centered in the training range
+        y = y_pos,
+        label = label_between,
+        color = "black", fontface = "bold", size = 3.5, angle = 90,
+        fill = "white", alpha = 0.6, label.size = NA) +
+      # Add "below" percentage label, if applicable
+      (if (min_var_transfer < min_var_train) {
+        ggplot2::annotate("label",
+          x = (min_var_train + min_var_transfer) / 2,
+          y = y_pos,
+          label = label_below,
+          color = "darkorange3", fontface = "bold", size = 3.5, angle = 90,
+          fill = "white", alpha = 0.6, label.size = NA)}) +
+      # Add "above" percentage label, if applicable
+      (if (max_var_transfer > max_var_train) {
+        ggplot2::annotate("label",
+          x = (max_var_transfer + max_var_train) / 2,
+          y = y_pos,
+          label = label_above,
+          color = "darkblue", fontface = "bold", size = 3.5, angle = 90,
+          fill = "white", alpha = 0.6, label.size = NA)})                              
   return(ggdens)
 }
 
