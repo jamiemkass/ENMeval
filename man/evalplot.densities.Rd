@@ -4,16 +4,17 @@
 \alias{evalplot.densities}
 \title{Density plots for All Variables with Shared Y-Axis}
 \usage{
-evalplot.densities(e, envs, bw.envs = 10)
+evalplot.densities(data, envs, vars = NULL, bw.envs = 10)
 }
 \arguments{
-\item{e}{An ENMevaluation object.}
+\item{data}{Data frame of training data (occurrences + background).}
 
 \item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
 
-\item{bw.envs}{The smoothing bandwidth to be used in the environmental variables}
+\item{vars}{Vector specifying the variable names for the response curve.
+Default is all variables.}
 
-\item{var}{A character string specifying the variable name for the response curve.}
+\item{bw.envs}{The smoothing bandwidth to be used in the environmental variables}
 }
 \value{
 A combined patchwork plot of all response curves with a shared y-axis label.
@@ -35,14 +36,12 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 ps <- list(orientation = "lat_lat")
-e.maxnet <- ENMevaluate(occs, envs, bg, 
-                       tune.args = list(fc = "LQ", rm = 1), 
-                        partitions = "block", other.settings = os, partition.settings = ps,
-                        algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
 tr_envs <- envs * 1.5
+# Define data as combined training values with coordinates removed
+data <- rbind(e@occs, e@bg)[,3:11]
 # Plot
-evalplot.densities(e = e.maxent, envs = tr_envs)
+evalplot.densities(data, envs = tr_envs)
 }
 }
 \author{

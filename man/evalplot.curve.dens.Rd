@@ -5,11 +5,12 @@
 \title{Response curve and density plots for one variable}
 \usage{
 evalplot.curve.dens(
-  e,
-  mod.name,
+  mod,
+  data,
   envs,
   var,
   fun = mean,
+  type = c(1, 2),
   exp.curve = 0.025,
   nr.curve = 100,
   clamp.tails = TRUE,
@@ -17,9 +18,9 @@ evalplot.curve.dens(
 )
 }
 \arguments{
-\item{e}{An ENMevaluation object.}
+\item{mod}{A maxent.jar or maxnet model object.}
 
-\item{mod.name}{A character defining model (e.g., "fc.LQ_rm.1")}
+\item{data}{Data frame of training data (occurrences + background).}
 
 \item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
 
@@ -54,14 +55,13 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 ps <- list(orientation = "lat_lat")
-e.maxnet <- ENMevaluate(occs, envs, bg, 
-                       tune.args = list(fc = "LQ", rm = 1), 
-                        partitions = "block", other.settings = os, partition.settings = ps,
-                        algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
 tr_envs <- envs * 1.5
 # Plot
-evalplot.curve.dens(e.maxent, "fc.LQ_rm.1", tr_envs, "bio1", fun = median)
+mod <- e@models[[1]]
+# Define data as combined training values with coordinates removed
+data <- rbind(e@occs, e@bg)[,3:11]
+evalplot.curve.dens(mod, data, envs = tr_envs, var = "bio1", fun = median)
 }
 }
 \author{

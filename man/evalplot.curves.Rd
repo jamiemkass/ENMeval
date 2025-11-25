@@ -6,8 +6,10 @@
 \usage{
 evalplot.curves(
   mod,
+  data,
   envs,
   fun = mean,
+  type = c(1, 2),
   exp.curve = 0.025,
   nr.curve = 100,
   clamp.tails = TRUE
@@ -15,6 +17,8 @@ evalplot.curves(
 }
 \arguments{
 \item{mod}{A maxent.jar or maxnet model object.}
+
+\item{data}{Data frame of training data (occurrences + background).}
 
 \item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
 
@@ -35,8 +39,9 @@ them using patchwork. The plots share a common y-axis label.
 }
 \examples{
 \dontrun{
+library(ENMeval)
 occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
-envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
                         pattern="tif$", full.names=TRUE))
 # No biome
 envs <- envs[[!(names(envs) \%in\% "biome")]]
@@ -46,15 +51,16 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 ps <- list(orientation = "lat_lat")
-e.maxnet <- ENMevaluate(occs, envs, bg, 
-                       tune.args = list(fc = "LQ", rm = 1), 
-                        partitions = "block", other.settings = os, partition.settings = ps,
-                        algorithm = "maxnet", overlap = TRUE)
+e <- ENMevaluate(occs, envs, bg, tune.args = list(fc = "LQ", rm = 1),
+                 partitions = "block", other.settings = os, 
+                 partition.settings = ps, algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
 tr_envs <- envs * 1.5
+mod <- e@models[[1]]
+# Define data as combined training values with coordinates removed
+data <- rbind(e@occs, e@bg)[,3:11]
 # Plot
-evalplot.curves(mod = e.maxent@models$fc.LQ_rm.1, 
-envs = tr_envs)
+evalplot.curves(mod, data, envs = tr_envs)
 }
 }
 \author{

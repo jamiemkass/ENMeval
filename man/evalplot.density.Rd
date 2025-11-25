@@ -4,10 +4,10 @@
 \alias{evalplot.density}
 \title{Plot Density Plots of variables}
 \usage{
-evalplot.density(e, envs, var, bw.envs = 10)
+evalplot.density(data, envs, var, bw.envs = 10)
 }
 \arguments{
-\item{e}{An ENMevaluation object.}
+\item{data}{Data frame of training data (occurrences + background).}
 
 \item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
 
@@ -24,8 +24,9 @@ or maxnet model.
 }
 \examples{
 \dontrun{
+library(ENMeval)
 occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
-envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
                         pattern="tif$", full.names=TRUE))
 # No biome
 envs <- envs[[!(names(envs) \%in\% "biome")]]
@@ -41,8 +42,10 @@ e.maxnet <- ENMevaluate(occs, envs, bg,
                         algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
 tr_envs <- envs * 1.5
+# Define data as combined training values with coordinates removed
+data <- rbind(e@occs, e@bg)[,3:11]
 # Plot
-evalplot.density(e = e.maxent,  envs = tr_envs, var = "bio1")
+evalplot.density(data, envs = tr_envs, var = "bio1")
 }
 }
 \author{

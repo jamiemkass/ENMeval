@@ -725,7 +725,7 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
   }
 }
 
-#' @title Plot Response Curve for Maxent or Maxnet Models
+#' @title Plot Response Curve for Maxent Models
 #' @description This function plots a response curve for a given environmental variable based on a maxent.jar
 #' or maxnet model. It allows plotting clamping on or off and supports multiple variables via
 #' a wrapper that combines plots using the patchwork package.
@@ -734,59 +734,74 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
 #' @param envs Raster data (SpatRaster) of environmental variables for model projection.
 #' @param var A character string specifying the variable name for the response curve.
 #' @param fun If maxent.jar a function to compute constant values for other variables (default is `mean`). Maxnet models always use mean.
+#' @param type Number (1 or 2) to specify type of response curve to plot. See details for explanation.
 #' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
 #' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @details
+#' The type 1 option (default) sets the focal variable to values along a range "r" from its minimum to 
+#' maximum (buffered by exp.curve) while setting all other variables to static values defined by fun
+#' (which defaults to their means), then makes a model prediction for this table. The type 2 option
+#' sets the focal variable to one static value along r while keeping all other variables
+#' at their original values, makes a model predicton for this table, then repeats this process for
+#' all values along the range, resulting in 100 model predictions for an r of length 100. The 
+#' final curve for type 2 plots the means of these prediction tables.
+#' 
+#' The original maxent.jar software and the dismo package implemented type 1 response curves,
+#' but the pdp package and the predicts package implement type 2, so the user can choose
+#' which to visualize in order to directly compare to one of these outputs.
+#' 
 #' @return A ggplot object of the response curve.
 #' @author Gonzalo E. Pinilla- Buitrago 
 #' @examples
 #' \dontrun{
 #' library(ENMeval)
-# occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
-# envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
-#                         pattern="tif$", full.names=TRUE))
-# # No biome
-# envs <- envs[[!(names(envs) %in% "biome")]]
-# occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
-# bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
-# names(bg) <- names(occs)
-# bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
-# os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
-# ps <- list(orientation = "lat_lat")
-# e <- ENMevaluate(occs, envs, bg,
-#                  tune.args = list(fc = "LQ", rm = 1),
-#                  partitions = "block", other.settings = os, partition.settings = ps,
-#                  algorithm = "maxnet", overlap = TRUE)
-# # Transfer envs
-# tr_envs <- envs * 1.5
-# # Plot
-# # Plot with clamp tails
-# mod <- e@models[[1]]
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e <- ENMevaluate(occs, envs, bg,
+#'                  tune.args = list(fc = "LQ", rm = 1),
+#'                  partitions = "block", other.settings = os, partition.settings = ps,
+#'                  algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' # Plot with clamp tails
+#' mod <- e@models[[1]]
 #' # Define data as combined training values with coordinates removed
 #' data <- rbind(e@occs, e@bg)[,3:11]
 #' # Plot
-# evalplot.curve(mod, data, envs = tr_envs, var = "bio1")
-# # Without tails
-# evalplot.curve(mod, data, envs = tr_envs, var = "bio1", clamp.tails = FALSE)
-# }
+#' evalplot.curve(mod, data, envs = tr_envs, var = "bio1")
+#' # Without tails
+#' evalplot.curve(mod, data, envs = tr_envs, var = "bio1", clamp.tails = FALSE)
+#' }
 #' @export
+
 evalplot.curve <- function(mod,
                            data,
                            envs,
                            var,
                            fun = mean,
+                           type = c(1, 2),
                            exp.curve = 0.025,
                            nr.curve = 100,
                            clamp.tails = TRUE) {
   
+  # If type is not entered, default is 1
+  if(length(type) > 1) {
+    type <- 1
+  }
+  
   # Determine if model is maxnet
   is_maxnet <- inherits(mod, "maxnet")
-  
-  const_v <- apply(data, 2, fun)
-  
-  # Create matrix with nr.curve + 2 rows of constant values
-  mat_const <- matrix(const_v, nrow = nr.curve + 2, ncol = length(const_v), byrow = TRUE)
-  colnames(mat_const) <- names(const_v)
   
   # Get ranges for fitting and transfer
   min_var_train <- min(data[var])
@@ -797,6 +812,7 @@ evalplot.curve <- function(mod,
   
   min_val <- min(min_var_train, min_var_transfer)
   max_val <- max(max_var_train, max_var_transfer)
+  
   if(is.na(min_val) | is.na(max_val)) {
     stop("The input variable cannot be categorical. Please input a numeric variable.")
   }
@@ -807,18 +823,40 @@ evalplot.curve <- function(mod,
   v.plot <- c(v.plot, min_var_train, max_var_train)
   v.plot <- sort(v.plot)
   
-  # Replace variable of interest in matrix
-  mat_const[, var] <- v.plot
-  
-  # Predict suitability values
-  # Get suitability values
-  if (is_maxnet) {
-    p <- predict(mod, mat_const, 
-                 type = "cloglog",
-                 clamp = FALSE)
-  } else {
-    p <- predict(mod, mat_const, args = c("outputformat=cloglog", 
-                                          "doclamp=FALSE"))
+  if(type == 1) {
+    const_v <- apply(data, 2, fun)
+    
+    # Create matrix with nr.curve + 2 rows of constant values
+    d.new <- matrix(const_v, nrow = nr.curve + 2, ncol = length(const_v), byrow = TRUE)
+    colnames(d.new) <- names(const_v)
+    
+    # Replace variable of interest in matrix
+    d.new[, var] <- v.plot  
+    
+    # Predict suitability values
+    # Get suitability values
+    if (is_maxnet) {
+      p <- predict(mod, d.new, 
+                   type = "cloglog",
+                   clamp = FALSE)
+    } else {
+      p <- predict(mod, d.new, args = c("outputformat=cloglog", 
+                                      "doclamp=FALSE"))
+    }
+  }else if(type == 2) {
+    ls <- list()
+    for(i in 1:length(v.plot)) {
+      d.new <- data
+      d.new[[var]] <- v.plot[i]
+      if (is_maxnet) {
+        p.i <- predict(mod, d.new, type = "cloglog", clamp = FALSE)
+      } else {
+        p.i <- predict(mod, d.new, args = c("outputformat=cloglog", 
+                                            "doclamp=FALSE"))
+      }
+      ls[[i]] <- mean(p.i)
+    }
+    p <- unlist(ls)
   }
   
   # Prepare data for ggplot
@@ -887,7 +925,6 @@ evalplot.curve <- function(mod,
 #' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
 #' @return A combined patchwork plot of all response curves with a shared y-axis label.
-#' @import patchwork
 #' @author Gonzalo E. Pinilla- Buitrago 
 #' @examples
 #' \dontrun{
@@ -920,9 +957,16 @@ evalplot.curves <- function(mod,
                             data,
                             envs,
                             fun = mean,
+                            type = c(1, 2),
                             exp.curve = 0.025,
                             nr.curve = 100,
                             clamp.tails = TRUE) {
+  
+  # If type is not entered, default is 1
+  if(length(type) > 1) {
+    type <- 1
+  }
+  
   # Get variable names
   var_names <- if (inherits(mod, "maxnet")) names(mod$samplemeans) else colnames(mod@absence)
   
@@ -932,7 +976,7 @@ evalplot.curves <- function(mod,
   
   # Generate plots with y-axis text only for the first column
   plots <- lapply(seq_along(var_names), function(i) {
-    evalplot.curve(mod, data, envs, var_names[i], fun, exp.curve, nr.curve, clamp.tails = clamp.tails)
+    evalplot.curve(mod, data, envs, var_names[i], fun, type, exp.curve, nr.curve, clamp.tails = clamp.tails)
   })
   
   # Combine plots with a shared y-axis label
@@ -951,8 +995,6 @@ evalplot.curves <- function(mod,
 #' @param var A character string specifying the variable name for the response curve.
 #' @param bw.envs The smoothing bandwidth to be used in the environmental variables
 #' @return A ggplot object of the response curve.
-#' @import ggplot2
-#' @import terra
 #' @author Gonzalo E. Pinilla-Buitrago 
 #' @examples
 #' \dontrun{
@@ -1020,18 +1062,18 @@ evalplot.density <- function(data,
     # Add lower tail shade area
     (if (min_var_transfer < min_var_train) {
       ggplot2::annotate("rect",
-               xmin = min_var_transfer,
-               xmax = min_var_train,
-               ymin = -Inf, ymax = Inf,
-               alpha = .1, fill = "orange")
+                        xmin = min_var_transfer,
+                        xmax = min_var_train,
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "orange")
     }) +
     # Add upper tail shade area
     (if (max_var_transfer > max_var_train) {
       ggplot2::annotate("rect",
-               xmin = max_var_train,
-               xmax = max_var_transfer,
-               ymin = -Inf, ymax = Inf,
-               alpha = .1, fill = "blue")
+                        xmin = max_var_train,
+                        xmax = max_var_transfer,
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "blue")
     }) +
     # No expand ggplot
     ggplot2::scale_x_continuous(expand = c(0.025, 0.025)) +
@@ -1053,7 +1095,6 @@ evalplot.density <- function(data,
 #' Default is all variables.
 #' @param bw.envs The smoothing bandwidth to be used in the environmental variables
 #' @return A combined patchwork plot of all response curves with a shared y-axis label.
-#' @import patchwork
 #' @author Gonzalo E. Pinilla-Buitrago 
 #' @examples
 #' \dontrun{
@@ -1085,7 +1126,7 @@ evalplot.densities <- function(data,
                                envs, 
                                vars = NULL,
                                bw.envs = 10) {
-
+  
   # Default if vars is NULL is all variables
   if(is.null(vars)) {
     vars <- names(envs)
@@ -1123,7 +1164,6 @@ evalplot.densities <- function(data,
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
 #' @param bw.envs The smoothing bandwidth to be used in the environmental variables
 #' @return A combined patchwork plot of all response curves with a shared y-axis label.
-#' @import patchwork
 #' @author Gonzalo E. Pinilla-Buitrago 
 #' @examples
 #' \dontrun{
@@ -1150,11 +1190,17 @@ evalplot.densities <- function(data,
 #' evalplot.curve.dens(mod, data, envs = tr_envs, var = "bio1", fun = median)
 #' }
 #' @export
-evalplot.curve.dens <- function(mod, data, envs, var, fun = mean,
-                            exp.curve = 0.025, nr.curve = 100, 
-                            clamp.tails = TRUE, bw.envs = 10) {
-  curve_var <- ENMeval::evalplot.curve(mod, envs, var, fun, exp.curve, nr.curve, 
-                                       clamp.tails = clamp.tails)
+evalplot.curve.dens <- function(mod, data, envs, var, fun = mean, type = c(1, 2),
+                                exp.curve = 0.025, nr.curve = 100, 
+                                clamp.tails = TRUE, bw.envs = 10) {
+  
+  # If type is not entered, default is 1
+  if(length(type) > 1) {
+    type <- 1
+  }
+  
+  curve_var <- ENMeval::evalplot.curve(mod, envs, var, fun, type, exp.curve, 
+                                       nr.curve, clamp.tails = clamp.tails)
   den_var <- ENMeval::evalplot.density(data, envs, var, bw.envs = bw.envs)
   curden_var <- patchwork::wrap_plots(curve_var, den_var, ncol = 1, 
                                       axis_titles = "collect_x")
