@@ -1057,10 +1057,10 @@ evalplot.density <- function(data,
     label_below <- "0.0%"; label_above <- "0.0%"; label_between <- "0.0%"
   }
   
-  names(data) <- var
+  names(env_values) <- var
   
   ## ggplot density
-  ggdens <- ggplot2::ggplot(data, ggplot2::aes(x = get(var))) +
+  ggdens <- ggplot2::ggplot(env_values, ggplot2::aes(x = get(var))) +
     # Add density curves
     ggplot2::geom_density(na.rm = TRUE, fill = "black", alpha = 0.3,
                           bounds = c(min_var_train, max_var_train)) +
