@@ -1,4 +1,4 @@
-assemble.stats.parts <- function(nk, train.stats.all, val.stats.all, tune.names, tune.tbl) {
+assemble.stats.parts <- function(nk, train.stats.all, val.stats.all, partitions, tune.names, tune.tbl) {
   # if jackknife cross-validation (leave-one-out), correct variance for
   # non-independent samples (Shcheglovitova & Anderson 2013)
   if(partitions == "jackknife") {

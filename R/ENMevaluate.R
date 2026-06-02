@@ -494,6 +494,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   
   checks.cats(occs.z, envs, categoricals)
   
+  # if(algorithm == "maxent.jar") {
+  #   cat.levs <- catLevs(occs.z, envs, categoricals) 
+  #   levs.class <- sapply(cat.levs, class)
+  #   
+  #   if(all(levs.class != "numeric")) stop("For maxent.jar, all categorical variable levels must be numeric. 
+  #                                           Change character levels to numbers and rerun.")
+  # }
+  
   # put categoricals designation in other.settings to feed into other functions
   other.settings$categoricals <- categoricals
   
@@ -623,11 +631,11 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   ## assemble model evaluation statistics table
   if(partitions == "none") {
     # if no partitions were specified
-    eval.stats <- assemble.stats.noParts(train.stats.all, val.stats.all, tune.names, tune.tbl)
+    eval.stats <- assemble.stats.noParts(train.stats.all, val.stats.all, partitions, tune.names, tune.tbl)
   }else{
     # if partitions were specified
     nk <- length(unique(grps$occs.grp))
-    eval.stats <- assemble.stats.parts(nk, train.stats.all, val.stats.all, tune.names, tune.tbl)
+    eval.stats <- assemble.stats.parts(nk, train.stats.all, val.stats.all, partitions, tune.names, tune.tbl)
   }
   
   # calculate number of non-zero parameters in model

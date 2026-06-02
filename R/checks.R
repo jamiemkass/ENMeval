@@ -101,20 +101,14 @@ checks.cats <- function(occs.z, envs, categoricals) {
   # if categoricals specified
   if(!is.null(categoricals)) {
     cat.extra <- unique(c(categoricals, facts))
-    if(length(cat.extra) > categoricals) {
+    if(length(cat.extra) > length(categoricals)) {
       stop(paste0("There are ", length(cat.extra), " variables with class factor, but only ", 
-                  length(categoricals), " categorical variables specified.", 
-                  "Enter all categorical variable names in argument 'categoricals'."))
-    }
-    if(algorithm == "maxent.jar") {
-      cat.levs <- catLevs(occs.z, envs, categoricals) 
-      levs.class <- sapply(cat.levs, class)
-      if(all(levs.class != "numeric")) stop("For maxent.jar, all categorical variable levels must be numeric.",
-                                            "Change character levels to numbers and rerun.")
+                  length(categoricals), " categorical variables specified. ", 
+                  "Enter vector of categorical variable names for argument 'categoricals'."))
     }
     # if categoricals not specified
   }else{
-    if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified.",
-                               "Rerun after specifying 'categoricals'.")
+    if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified. 
+                               Rerun after specifying 'categoricals'.")
   }
 }

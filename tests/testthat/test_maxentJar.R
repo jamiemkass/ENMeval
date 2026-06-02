@@ -26,18 +26,21 @@ occs.z$biome <- factor(occs.z$biome)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 bg.z$biome <- factor(bg.z$biome)
 
-alg <- "maxent.jar"
+algorithm <- "maxent.jar"
 no.iter <- 5
 
-cats1 <- "biome"
+categoricals <- "biome"
 
 # define tune args
-tune.args <- list(fc = c("L","Q"), rm = 2:3)
+tune.args <- list(fc = c("L","Q", "LQH"), rm = 1:3)
 mset <- lapply(tune.args, function(x) x[1])
 
 # block partitions
 context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", algorithm = alg, categoricals = cats1, overlap = TRUE, quiet = TRUE)
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
+                 partition.settings = list(orientation = "lat_lon"), 
+                 algorithm = algorithm, categoricals = categoricals, 
+                 overlap = TRUE)
 test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
 
 context(paste("Testing evalplot.stats for", alg, "with block partitions..."))

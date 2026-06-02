@@ -26,11 +26,11 @@ occs.xyEnv$biome <- factor(occs.xyEnv$biome)
 bg.xyEnv <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 bg.xyEnv$biome <- factor(bg.xyEnv$biome)
 
-alg <- "RF"
+algorithm <- "RF"
 no.iter <- 5
 
 # define categorical variable
-cats1 <- "biome"
+categoricals <- "biome"
 
 partitions <- "block"
 partition.settings <- list(orientation = "lat_lon")
@@ -42,9 +42,10 @@ mset <- lapply(tune.args, function(x) x[1])
 
 # block partitions
 context(paste("Testing ENMevaluate for", alg, "with block partitions..."))
-e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = partitions, 
-                 partition.settings = partition.settings, algorithm = algorithm, 
-                 categoricals = categoricals, overlap = TRUE)
+e <- ENMevaluate(occs, envs, bg, tune.args = tune.args, partitions = "block", 
+                 partition.settings = list(orientation = "lat_lon"), 
+                 algorithm = algorithm, categoricals = categoricals, 
+                 overlap = TRUE)
 test_ENMevaluation(e, alg, "block", tune.args, 4, 4)
 
 context(paste("Testing evalplot.stats for", alg, "with block partitions..."))

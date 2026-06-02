@@ -31,7 +31,7 @@ no.iter <- 5
 
 
 # define tune args
-tune.args <- list(fc = c("L","Q"), rm = 2:3)
+tune.args <- list(fc = c("L","Q", "LQH"), rm = 1:3)
 mset <- lapply(tune.args, function(x) x[1])
 
 
