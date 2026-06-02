@@ -67,7 +67,11 @@ tune.validate <- function(pred.occs.train, pred.occs.val, pred.bg.train,
     auc.diff <- auc.train - auc.val
     # calculate CBI based on the full background (do not calculate for jackknife partitions)
     if(other.settings$ecospat.use == TRUE & other.settings$cbi.cv == TRUE) {
-      cbi.val <- ecospat::ecospat.boyce(c(pred.bg.train, pred.bg.val, pred.occs.val), pred.occs.val, PEplot = FALSE)$cor  
+      fit <- c(pred.bg.train, pred.occs.val)
+      if(length(pred.bg.val) > 0) {
+        fit <- c(fit, pred.bg.val)
+      }
+      cbi.val <- ecospat::ecospat.boyce(fit, pred.occs.val, PEplot = FALSE)$cor  
     }else{
       cbi.val <- NA
     }

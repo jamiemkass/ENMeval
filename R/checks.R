@@ -57,7 +57,7 @@ checks.envs <- function(envs, algorithm) {
   if(!is.null(envs)) {
     # environmental raster data checks
     if(inherits(envs, "SpatRaster") == FALSE) {
-      stop('From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
+      stop('Input envs is not a SpatRaster. From this version of ENMeval, the package will only use "terra" raster data types. Please convert from "raster" to "terra" with terra::rast(r), where r is a RasterStack.')
     }else{
       if(terra::nlyr(envs) < 2 & algorithm %in% c("maxent.jar", "maxnet")) {
         stop('Maxent is generally not designed to be run with a single predictor variable. Please rerun with multiple predictors.')
@@ -94,7 +94,7 @@ catLevs <- function(occs.z, envs, categoricals) {
   return(cat.levs)
 }
 
-checks.cats <- function(occs.z, envs, categoricals) {
+checks.cats <- function(occs.z, bg.z, envs, categoricals) {
   # which columns are factors
   facts <- names(occs.z)[which(sapply(occs.z, is.factor))]
   
@@ -110,5 +110,16 @@ checks.cats <- function(occs.z, envs, categoricals) {
   }else{
     if(length(facts) > 0) stop("At least one variable is factor but no 'categoricals' argument specified. 
                                Rerun after specifying 'categoricals'.")
+  }
+  
+  # if running with SWD, make sure the levels are the same for occs.z and bg.z
+  if(is.null(envs)) {
+    for(i in facts) {
+      occs.z.levs <- levels(occs.z[,i])
+      bg.z.levs <- levels(bg.z[,i])
+      if(length(occs.z.levs) != length(bg.z.levs)) {
+        stop(paste("The number of levels in factor variable", i, "for occs and bg is different. Please confirm occs and bg have the same factor levels."))
+      }    
+    }
   }
 }

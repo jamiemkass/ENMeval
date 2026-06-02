@@ -48,6 +48,12 @@ A named list of two items:
 \pkg{ENMeval} provides several ways to partition occurrence and background localities into bins for training and validation (or, evaluation and calibration). 
 Users should carefully consider the objectives of their study and the influence of spatial bias when deciding on a method of data partitioning.
 
+When running \code{ENMevaluate}, specify the \code{partition} argument, one of \code{block}, \code{checkerboard}, \code{randomkfold}, or \code{jackknife}. You also need to specify the \code{partition.settings}, which have the following options:\cr*
+orientation (block)- character: one of "lat_lon" (default), "lon_lat", "lat_lat", or "lon_lon".\cr* 
+aggregation.factor (checkerboard) - numeric vector: one or two numbers specifying the factor with which to aggregate the envs (default: 2)
+raster to assign partitions.\cr*
+kfolds (randomkfold)- numeric: the number of folds (i.e., partitions) for random partitions (default: 5).\cr
+
 These functions are used internally to partition data during a call of \code{\link{ENMevaluate}} but can also be used independently to generate data partitions. 
 For user-specified partitions, users can simply define groups of occurrence records and background points directly with \code{ENMevaluate}.
 

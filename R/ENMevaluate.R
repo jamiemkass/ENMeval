@@ -428,16 +428,16 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     
     # if no environmental rasters input (SWD)
   }else{
-    # assign occs/bg to coordinates and occs.z/bg.z to variable values
-    occs.z <- occs[,-1:-2]
-    occs <- occs[,1:2]
-    bg.z <- bg[,-1:-2]
-    bg <- bg[,1:2]
     # if no bg included, cannot continue because no raster for random sampling
     if(is.null(bg)) stop("* If using species with data (SWD) format, input coordinates for both occurrence and background records.")
     # make sure both occ and bg have predictor variable values
     if(ncol(occs) < 3 | ncol(bg) < 3) stop("* If using species with data (SWD) format, input variable values in occs and bg tables proceeding the coordinates.")
     message("* Using species with data (SWD) format, so raster predictions cannot be generated. Also, AICc is calculated with background data for Maxent models.")
+    # assign occs/bg to coordinates and occs.z/bg.z to variable values
+    occs.z <- occs[,-1:-2]
+    occs <- occs[,1:2]
+    bg.z <- bg[,-1:-2]
+    bg <- bg[,1:2]
   }
   
   # keep records of which points were removed during cleaning
@@ -492,7 +492,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   # CHECK CATEGORICAL VARIABLES ####
   ################################# #
   
-  checks.cats(occs.z, envs, categoricals)
+  checks.cats(occs.z, bg.z, envs, categoricals)
   
   # if(algorithm == "maxent.jar") {
   #   cat.levs <- catLevs(occs.z, envs, categoricals) 
