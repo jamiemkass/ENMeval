@@ -237,6 +237,10 @@ get.block <- function(occs, bg, orientation = "lat_lon"){
 
 get.checkerboard <- function(occs, envs, bg, aggregation.factor,
                               gridSampleN = 10000){
+  message("Removing duplicate points...")
+  occs <- occs[!duplicated(occs),]
+  bg <- bg[!duplicated(bg),]
+  
   if(is.null(envs)) stop("Cannot use checkerboard partitioning if envs is NULL.")
   if(length(aggregation.factor) == 1) {
     message("Generating basic checkerboard partitions...")
