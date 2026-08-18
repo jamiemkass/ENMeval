@@ -1017,9 +1017,9 @@ evalplot.curves <- function(mod,
 #' # Transfer envs
 #' tr_envs <- envs * 1.5
 #' # Define data as combined training values with coordinates removed
-#' data <- rbind(e@occs, e@bg)[,3:11]
+#' data <- rbind(e.maxnet@occs, e.maxnet@bg)[,3:11]
 #' # Plot
-#' evalplot.density(data, envs = tr_envs, var = "bio1")
+#' evalplot.density(data, envs = tr_envs, var = "bio5")
 #' }
 #' @export
 
@@ -1057,10 +1057,8 @@ evalplot.density <- function(data,
     label_below <- "0.0%"; label_above <- "0.0%"; label_between <- "0.0%"
   }
   
-  names(env_values) <- var
-  
   ## ggplot density
-  ggdens <- ggplot2::ggplot(env_values, ggplot2::aes(x = get(var))) +
+  ggdens <- ggplot2::ggplot(data, ggplot2::aes(x = get(var))) +
     # Add density curves
     ggplot2::geom_density(na.rm = TRUE, fill = "black", alpha = 0.3,
                           bounds = c(min_var_train, max_var_train)) +
@@ -1163,10 +1161,10 @@ evalplot.density <- function(data,
 #' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 #' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 #' ps <- list(orientation = "lat_lat")
-# e <- ENMevaluate(occs, envs, bg,
-#                  tune.args = list(fc = "LQ", rm = 1),
-#                  partitions = "block", other.settings = os, partition.settings = ps,
-#                  algorithm = "maxnet", overlap = TRUE)
+#' e <- ENMevaluate(occs, envs, bg,
+#'                  tune.args = list(fc = "LQ", rm = 1),
+#'                  partitions = "block", other.settings = os, partition.settings = ps,
+#'                  algorithm = "maxnet", overlap = TRUE)
 #' # Transfer envs
 #' tr_envs <- envs * 1.5
 #' # Define data as combined training values with coordinates removed
