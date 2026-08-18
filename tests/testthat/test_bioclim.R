@@ -1,7 +1,7 @@
 # set to FALSE to run a comprehensive set of tests
 # when TRUE, only some essential tests are run to avoid lagging when 
 # submitting to CRAN
-skip_tests_for_cran <- F
+skip_tests_for_cran <- TRUE
 
 library(dplyr)
 options(warn=-1)
