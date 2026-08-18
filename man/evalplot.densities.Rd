@@ -36,6 +36,10 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 ps <- list(orientation = "lat_lat")
+e <- ENMevaluate(occs, envs, bg,
+                 tune.args = list(fc = "LQ", rm = 1),
+                 partitions = "block", other.settings = os, partition.settings = ps,
+                 algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
 tr_envs <- envs * 1.5
 # Define data as combined training values with coordinates removed

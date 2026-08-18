@@ -43,9 +43,9 @@ e.maxnet <- ENMevaluate(occs, envs, bg,
 # Transfer envs
 tr_envs <- envs * 1.5
 # Define data as combined training values with coordinates removed
-data <- rbind(e@occs, e@bg)[,3:11]
+data <- rbind(e.maxnet@occs, e.maxnet@bg)[,3:11]
 # Plot
-evalplot.density(data, envs = tr_envs, var = "bio1")
+evalplot.density(data, envs = tr_envs, var = "bio5")
 }
 }
 \author{
