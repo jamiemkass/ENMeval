@@ -98,6 +98,8 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
 #' plot.sim.dataPrep()
 #' }
 #' @keywords internal
+#' @noRd
+
 plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet) {
   
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
@@ -779,13 +781,13 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
 #' # Define data as combined training values with coordinates removed
 #' data <- rbind(e@occs, e@bg)[,3:11]
 #' # Plot
-#' evalplot.curve(mod, data, envs = tr_envs, var = "bio1")
+#' evalplot.respCurve(mod, data, envs = tr_envs, var = "bio1")
 #' # Without tails
-#' evalplot.curve(mod, data, envs = tr_envs, var = "bio1", clamp.tails = FALSE)
+#' evalplot.respCurve(mod, data, envs = tr_envs, var = "bio1", clamp.tails = FALSE)
 #' }
 #' @export
 
-evalplot.curve <- function(mod,
+evalplot.respCurve <- function(mod,
                            data,
                            envs,
                            var,
@@ -861,10 +863,10 @@ evalplot.curve <- function(mod,
   
   # Prepare data for ggplot
   v.curve <- cbind(p, v.plot)
-  colnames(v.curve) <- c("suitability", var)
+  colnames(v.curve) <- c("predicted suitability", var)
   # Create ggplot curve
   ggcurve <- ggplot2::ggplot(tibble::as_tibble(v.curve), ggplot2::aes(x = get(var), 
-                                                                      y = suitability)) +
+                                                                      y = .data$`predicted suitability`)) +
     ggplot2::geom_line(color = "red") +
     ggplot2::geom_vline(xintercept = min_var_train, color = "orange") +
     ggplot2::geom_vline(xintercept = min_var_transfer, color = "darkorange3", linetype = 3) +
@@ -875,8 +877,8 @@ evalplot.curve <- function(mod,
       ggplot2::annotate("segment",
                         x = min(v.plot),
                         xend = min_var_train,
-                        y = v.curve[v.plot == min_var_train, "suitability"],
-                        yend = v.curve[v.plot == min_var_train, "suitability"],
+                        y = v.curve[v.plot == min_var_train, "predicted suitability"],
+                        yend = v.curve[v.plot == min_var_train, "predicted suitability"],
                         col = "darkred",
                         lty = 2)
     }) +
@@ -885,8 +887,8 @@ evalplot.curve <- function(mod,
       ggplot2::annotate("segment",
                         x = max_var_train,
                         xend = max(v.plot),
-                        y = v.curve[v.plot == max_var_train, "suitability"],
-                        yend = v.curve[v.plot == max_var_train, "suitability"],
+                        y = v.curve[v.plot == max_var_train, "predicted suitability"],
+                        yend = v.curve[v.plot == max_var_train, "predicted suitability"],
                         col = "darkred",
                         lty = 2)
     }) +
@@ -921,6 +923,7 @@ evalplot.curve <- function(mod,
 #' @param data Data frame of training data (occurrences + background).
 #' @param envs Raster data (SpatRaster) of environmental variables for model projection.
 #' @param fun A function to compute constant values for other variables (default is `median`).
+#' @param type Number (1 or 2) to specify type of response curve to plot. See details for explanation.
 #' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
 #' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
@@ -949,11 +952,11 @@ evalplot.curve <- function(mod,
 #' # Define data as combined training values with coordinates removed
 #' data <- rbind(e@occs, e@bg)[,3:11]
 #' # Plot
-#' evalplot.curves(mod, data, envs = tr_envs)
+#' evalplot.respCurves(mod, data, envs = tr_envs)
 #' }
 #' @export
 
-evalplot.curves <- function(mod,
+evalplot.respCurves <- function(mod,
                             data,
                             envs,
                             fun = mean,
@@ -976,7 +979,7 @@ evalplot.curves <- function(mod,
   
   # Generate plots with y-axis text only for the first column
   plots <- lapply(seq_along(var_names), function(i) {
-    evalplot.curve(mod, data, envs, var_names[i], fun, type, exp.curve, nr.curve, clamp.tails = clamp.tails)
+    evalplot.respCurve(mod, data, envs, var_names[i], fun, type, exp.curve, nr.curve, clamp.tails = clamp.tails)
   })
   
   # Combine plots with a shared y-axis label
@@ -1211,6 +1214,7 @@ evalplot.densities <- function(data,
 #' @param envs Raster data (SpatRaster) of environmental variables for model projection.
 #' @param var A character string specifying the variable name for the response curve.
 #' @param fun A function to compute constant values for other variables (default is `median`).
+#' @param type Number (1 or 2) to specify type of response curve to plot. See details for explanation.
 #' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
 #' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
@@ -1239,10 +1243,10 @@ evalplot.densities <- function(data,
 #' mod <- e@models[[1]]
 #' # Define data as combined training values with coordinates removed
 #' data <- rbind(e@occs, e@bg)[,3:11]
-#' evalplot.curve.dens(mod, data, envs = tr_envs, var = "bio1", fun = median)
+#' evalplot.respCurve.dens(mod, data, envs = tr_envs, var = "bio1", fun = median)
 #' }
 #' @export
-evalplot.curve.dens <- function(mod, data, envs, var, fun = mean, type = c(1, 2),
+evalplot.respCurve.dens <- function(mod, data, envs, var, fun = mean, type = c(1, 2),
                                 exp.curve = 0.025, nr.curve = 100, 
                                 clamp.tails = TRUE, bw.envs = 10) {
   
@@ -1251,7 +1255,7 @@ evalplot.curve.dens <- function(mod, data, envs, var, fun = mean, type = c(1, 2)
     type <- 1
   }
   
-  curve_var <- ENMeval::evalplot.curve(mod, envs, var, fun, type, exp.curve, 
+  curve_var <- ENMeval::evalplot.respCurve(mod, envs, var, fun, type, exp.curve, 
                                        nr.curve, clamp.tails = clamp.tails)
   den_var <- ENMeval::evalplot.density(data, envs, var, bw.envs = bw.envs)
   curden_var <- patchwork::wrap_plots(curve_var, den_var, ncol = 1, 
