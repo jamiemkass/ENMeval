@@ -1,3 +1,7 @@
+ENMeval 2.0.6
+===========
+o  
+
 ENMeval 2.0.5.2
 ===========
 o  Fixed an error in maxnet.predictRaster that resulted in ignoring categorical variables when making predictions. This happened because terra::values was converting the cateogrical values to numeric, and the maxnet model had them specified as categorical, so they were ignored. For maxent.jar models, they are specified internally as numeric, unlike for maxnet.
