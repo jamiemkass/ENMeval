@@ -753,6 +753,11 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
 #' but the pdp package and the predicts package implement type 2, so the user can choose
 #' which to visualize in order to directly compare to one of these outputs.
 #' 
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
 #' @return A ggplot object of the response curve.
 #' @author Gonzalo E. Pinilla- Buitrago 
 #' @examples
@@ -929,6 +934,11 @@ evalplot.respCurve <- function(mod,
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
 #' @return A combined patchwork plot of all response curves with a shared y-axis label.
 #' @author Gonzalo E. Pinilla- Buitrago 
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
 #' @examples
 #' \dontrun{
 #' library(ENMeval)
@@ -998,6 +1008,11 @@ evalplot.respCurves <- function(mod,
 #' @param var A character string specifying the variable name for the response curve.
 #' @param bw.envs The smoothing bandwidth to be used in the environmental variables
 #' @return A ggplot object of the response curve.
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
 #' @author Gonzalo E. Pinilla-Buitrago 
 #' @examples
 #' \dontrun{
@@ -1150,6 +1165,11 @@ evalplot.density <- function(data,
 #' Default is all variables.
 #' @param bw.envs The smoothing bandwidth to be used in the environmental variables
 #' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
 #' @author Gonzalo E. Pinilla-Buitrago 
 #' @examples
 #' \dontrun{
@@ -1220,6 +1240,11 @@ evalplot.densities <- function(data,
 #' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
 #' @param bw.envs The smoothing bandwidth to be used in the environmental variables
 #' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
 #' @author Gonzalo E. Pinilla-Buitrago 
 #' @examples
 #' \dontrun{

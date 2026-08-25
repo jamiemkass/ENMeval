@@ -66,6 +66,12 @@ data <- rbind(e@occs, e@bg)[,3:11]
 evalplot.respCurve.dens(mod, data, envs = tr_envs, var = "bio1", fun = median)
 }
 }
+\references{
+Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+strategy matters when transferring ecological niche models: new
+visualization tools for informed decisions. Ecography, e08590.
+https://doi.org/10.1002/ecog.08590
+}
 \author{
 Gonzalo E. Pinilla-Buitrago
 }

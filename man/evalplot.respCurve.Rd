@@ -87,6 +87,12 @@ evalplot.respCurve(mod, data, envs = tr_envs, var = "bio1")
 evalplot.respCurve(mod, data, envs = tr_envs, var = "bio1", clamp.tails = FALSE)
 }
 }
+\references{
+Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+strategy matters when transferring ecological niche models: new
+visualization tools for informed decisions. Ecography, e08590.
+https://doi.org/10.1002/ecog.08590
+}
 \author{
 Gonzalo E. Pinilla- Buitrago
 }
