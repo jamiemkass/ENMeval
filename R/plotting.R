@@ -1145,7 +1145,9 @@ evalplot.density <- function(data,
     }) +
     # No expand ggplot
     ggplot2::scale_x_continuous(expand = c(0.025, 0.025)) +
-    ggplot2::scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
+    ggplot2::scale_y_continuous(labels = function(x) {
+      sub("e([+-])0*(\\d)", "e\\1\\2", formatC(x, format = "e", digits = 1))
+    }) +
     # Change x axis label
     ggplot2::xlab(var) +
     # Define ggplot theme
