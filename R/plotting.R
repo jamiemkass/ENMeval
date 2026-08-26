@@ -1280,7 +1280,7 @@ evalplot.respCurve.dens <- function(mod, data, envs, var, fun = mean, type = c(1
     type <- 1
   }
   
-  curve_var <- ENMeval::evalplot.respCurve(mod, envs, var, fun, type, exp.curve, 
+  curve_var <- ENMeval::evalplot.respCurve(mod, data, envs, var, fun, type, exp.curve,
                                        nr.curve, clamp.tails = clamp.tails)
   den_var <- ENMeval::evalplot.density(data, envs, var, bw.envs = bw.envs)
   curden_var <- patchwork::wrap_plots(curve_var, den_var, ncol = 1, 
