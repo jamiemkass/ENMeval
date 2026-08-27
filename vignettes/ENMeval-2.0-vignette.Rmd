@@ -709,6 +709,27 @@ length(mod.complex$betas)
 evalplot.respCurves(mod.simple, data)
 evalplot.respCurves(mod.complex, data)
 evalplot.respCurve(mod.complex, data, var = "bio2")
+```
+
+The response curves in ENMeval also allow you to control how you plot the curves via two types. The default, `type = 1`, holds all other variables at their mean (can be changed whit the fun parameter) while the focal variable varies across its range, as used in `maxnet`'s `plot()` and the maxent.jar/dismo response curves use. `type = 2` instead holds the focal variable at each grid value while keeping every other variable at its own observed value, as used by the `pdp` and `predicts` packages. It takes longer and consumes more of your computer's resources. The two can diverge, as shown here for `bio1`:
+
+```{r type-compare}
+# Each call returns a ggplot object, so we can pull out its underlying data with
+# ggplot2::layer_data() and combine both types onto one plot for a direct comparison.
+curve1 <- evalplot.respCurve(mod.complex, data, var = "bio1", type = 1)
+curve2 <- evalplot.respCurve(mod.complex, data, var = "bio1", type = 2)
+d1 <- ggplot2::layer_data(curve1, 1)
+d1$type <- "type 1"
+d2 <- ggplot2::layer_data(curve2, 1)
+d2$type <- "type 2"
+ggplot(rbind(d1, d2), aes(x = x, y = y, color = type)) +
+  geom_line(linewidth = 1) +
+  ylim(c(0, 1)) +
+  xlab("bio1") + ylab("predicted suitability") +
+  theme_classic()
+```
+
+```{r plot.pred3}
 # Finally, let's cut the plotting area into two rows to visualize the predictions
 # side-by-side.
 par(mfrow = c(2,1), mar = c(2,1,2,0))
