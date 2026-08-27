@@ -1,3 +1,8 @@
+ENMeval 2.0.6
+===========
+o  Added five new plotting functions to help visualize model behavior under non-analog conditions when transferring models. evalplot.respCurve and evalplot.respCurves plot response curves for non-analog conditions in the transfer region, for one variable or all variables at once, respectively, with the option to compare unconstrained extrapolation and clamping. evalplot.density and evalplot.densities plot kernel density estimates of training vs. transfer conditions, again for one variable or all at once. evalplot.respCurve.dens combines the response curve and density plot for a single variable into one figure (Pinilla-Buitrago et al. 2026 -- check ?evalplot.respCurve, ?evalplot.respCurves, ?evalplot.density, ?evalplot.densities, and ?evalplot.respCurve.dens).
+o  Updated vignette using new functions for current examples. Also, a new example showing difference between response curves type 1 and 2.
+
 ENMeval 2.0.5.2
 ===========
 o  Fixed an error in maxnet.predictRaster that resulted in ignoring categorical variables when making predictions. This happened because terra::values was converting the cateogrical values to numeric, and the maxnet model had them specified as categorical, so they were ignored. For maxent.jar models, they are specified internally as numeric, unlike for maxnet.
