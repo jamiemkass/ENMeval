@@ -7,7 +7,7 @@
 evalplot.respCurves(
   mod,
   data,
-  envs,
+  envs = NULL,
   fun = mean,
   type = c(1, 2),
   exp.curve = 0.025,
@@ -20,7 +20,9 @@ evalplot.respCurves(
 
 \item{data}{Data frame of training data (occurrences + background).}
 
-\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
+\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.
+If `NULL` (default), only the training-data response curves are plotted, with no
+transfer-environment comparison.}
 
 \item{fun}{A function to compute constant values for other variables (default is `median`).}
 
@@ -43,7 +45,7 @@ them using patchwork. The plots share a common y-axis label.
 \dontrun{
 library(ENMeval)
 occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
-envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
                         pattern="tif$", full.names=TRUE))
 # No biome
 envs <- envs[[!(names(envs) \%in\% "biome")]]
@@ -54,7 +56,7 @@ bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 ps <- list(orientation = "lat_lat")
 e <- ENMevaluate(occs, envs, bg, tune.args = list(fc = "LQ", rm = 1),
-                 partitions = "block", other.settings = os, 
+                 partitions = "block", other.settings = os,
                  partition.settings = ps, algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
 tr_envs <- envs * 1.5
@@ -63,6 +65,8 @@ mod <- e@models[[1]]
 data <- rbind(e@occs, e@bg)[,3:11]
 # Plot
 evalplot.respCurves(mod, data, envs = tr_envs)
+# Plot training data only, without a transfer environment
+evalplot.respCurves(mod, data)
 }
 }
 \references{

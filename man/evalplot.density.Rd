@@ -4,12 +4,14 @@
 \alias{evalplot.density}
 \title{Plot Density Plots of variables}
 \usage{
-evalplot.density(data, envs, var, bw.envs = 10)
+evalplot.density(data, envs = NULL, var, bw.envs = 10)
 }
 \arguments{
 \item{data}{Data frame of training data (occurrences + background).}
 
-\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
+\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.
+If `NULL` (default), only the training-data density is plotted, with no
+transfer-environment comparison.}
 
 \item{var}{A character string specifying the variable name for the response curve.}
 
@@ -26,7 +28,7 @@ or maxnet model.
 \dontrun{
 library(ENMeval)
 occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
-envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
                         pattern="tif$", full.names=TRUE))
 # No biome
 envs <- envs[[!(names(envs) \%in\% "biome")]]
@@ -36,8 +38,8 @@ names(bg) <- names(occs)
 bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
 os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
 ps <- list(orientation = "lat_lat")
-e.maxnet <- ENMevaluate(occs, envs, bg, 
-                       tune.args = list(fc = "LQ", rm = 1), 
+e.maxnet <- ENMevaluate(occs, envs, bg,
+                       tune.args = list(fc = "LQ", rm = 1),
                         partitions = "block", other.settings = os, partition.settings = ps,
                         algorithm = "maxnet", overlap = TRUE)
 # Transfer envs
@@ -46,6 +48,8 @@ tr_envs <- envs * 1.5
 data <- rbind(e.maxnet@occs, e.maxnet@bg)[,3:11]
 # Plot
 evalplot.density(data, envs = tr_envs, var = "bio5")
+# Plot training data only, without a transfer environment
+evalplot.density(data, var = "bio5")
 }
 }
 \references{

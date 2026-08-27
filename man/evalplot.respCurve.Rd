@@ -7,7 +7,7 @@
 evalplot.respCurve(
   mod,
   data,
-  envs,
+  envs = NULL,
   var,
   fun = mean,
   type = c(1, 2),
@@ -21,7 +21,9 @@ evalplot.respCurve(
 
 \item{data}{Data frame of training data (occurrences + background).}
 
-\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
+\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.
+If `NULL` (default), only the training-data response curve is plotted, with no
+transfer-environment comparison.}
 
 \item{var}{A character string specifying the variable name for the response curve.}
 

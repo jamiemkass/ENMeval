@@ -809,8 +809,10 @@ evalplot.respCurve <- function(mod,
     type <- 1
   }
 
-  # Determine if model is maxnet
-  is_maxnet <- inherits(mod, "maxnet")
+  # Predict via the  enm@predict slot, always unconstrained extrapolation
+  algorithm <- lookup.algorithm(mod)
+  enm <- lookup.enm(algorithm)
+  other.settings <- list(pred.type = "cloglog", doClamp = FALSE)
 
   # Whether a transfer environment was supplied
   has_transfer <- !is.null(envs)
@@ -848,29 +850,17 @@ evalplot.respCurve <- function(mod,
     colnames(d.new) <- names(const_v)
     
     # Replace variable of interest in matrix
-    d.new[, var] <- v.plot  
-    
+    d.new[, var] <- v.plot
+
     # Predict suitability values
-    # Get suitability values
-    if (is_maxnet) {
-      p <- predict(mod, d.new, 
-                   type = "cloglog",
-                   clamp = FALSE)
-    } else {
-      p <- predict(mod, d.new, args = c("outputformat=cloglog", 
-                                      "doclamp=FALSE"))
-    }
+    if (algorithm == "bioclim") d.new <- as.data.frame(d.new)
+    p <- enm@predict(mod, d.new, other.settings)
   }else if(type == 2) {
     ls <- list()
     for(i in 1:length(v.plot)) {
       d.new <- data
       d.new[[var]] <- v.plot[i]
-      if (is_maxnet) {
-        p.i <- predict(mod, d.new, type = "cloglog", clamp = FALSE)
-      } else {
-        p.i <- predict(mod, d.new, args = c("outputformat=cloglog", 
-                                            "doclamp=FALSE"))
-      }
+      p.i <- enm@predict(mod, d.new, other.settings)
       ls[[i]] <- mean(p.i)
     }
     p <- unlist(ls)
@@ -992,19 +982,19 @@ evalplot.respCurves <- function(mod,
                             exp.curve = 0.025,
                             nr.curve = 100,
                             clamp.tails = TRUE) {
-  
+
   # If type is not entered, default is 1
   if(length(type) > 1) {
     type <- 1
   }
-  
+
   # Get variable names
-  var_names <- if (inherits(mod, "maxnet")) names(mod$samplemeans) else colnames(mod@absence)
-  
+  var_names <- lookup.var.names(mod, lookup.algorithm(mod))
+
   # Calculate number of columns (assuming square or near-square layout)
   n_plots <- length(var_names)
   n_cols <- ceiling(sqrt(n_plots))
-  
+
   # Generate plots with y-axis text only for the first column
   plots <- lapply(seq_along(var_names), function(i) {
     evalplot.respCurve(mod, data, envs, var_names[i], fun, type, exp.curve, nr.curve, clamp.tails = clamp.tails)
@@ -1316,16 +1306,16 @@ evalplot.densities <- function(data,
 #' }
 #' @export
 evalplot.respCurve.dens <- function(mod, data, envs = NULL, var, fun = mean, type = c(1, 2),
-                                exp.curve = 0.025, nr.curve = 100, 
+                                exp.curve = 0.025, nr.curve = 100,
                                 clamp.tails = TRUE, bw.envs = 10) {
-  
+
   # If type is not entered, default is 1
   if(length(type) > 1) {
     type <- 1
   }
-  
-  curve_var <- ENMeval::evalplot.respCurve(mod, data, envs, var, fun, type, exp.curve,
-                                       nr.curve, clamp.tails = clamp.tails)
+
+  curve_var <- ENMeval::evalplot.respCurve(mod, data, envs, var, fun, type, exp.curve, 
+    nr.curve, clamp.tails = clamp.tails)
   den_var <- ENMeval::evalplot.density(data, envs, var, bw.envs = bw.envs)
   curden_var <- patchwork::wrap_plots(curve_var, den_var, ncol = 1, 
                                       axis_titles = "collect_x")
