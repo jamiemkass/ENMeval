@@ -1,10 +1,10 @@
 ---
-title: "ENMeval 2.0.5 Vignette"
+title: "ENMeval 2.0.6 Vignette"
 author: "Jamie M. Kass, Robert Muscarella, Gonzalo E. Pinilla-Buitrago, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ENMeval 2.0.5 Vignette}
+  %\VignetteIndexEntry{ENMeval 2.0.6 Vignette}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -29,7 +29,7 @@ options(terra.pal = terra::map.pal("plasma", 100))
 
 ## Introduction {#intro}
 
-* To align with the new `ENMeval` 2.0.5, this version updates the vignette by replacing `raster` functions with those from `terra`, and `dismo` functions with those from `predicts`. These updates were made by G. E. Pinilla-Buitrago.
+* To align with the new `ENMeval` 2.0.6, this version updates the vignette by replacing `raster` functions with those from `terra`, and `dismo` functions with those from `predicts`. These updates were made by G. E. Pinilla-Buitrago.
 
 [`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models (ENMs, a.k.a. species distribution models or SDMs), which can estimate species' ranges and niche characteristics using data on species occurrences and environmental variables (Franklin 2010, Peterson et al. 2011, Guisan et al. 2017). 
 
