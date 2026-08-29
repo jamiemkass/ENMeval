@@ -1,0 +1,97 @@
+# ENMnulls statistics plot
+
+Plot histogram of evaluation statistics for null ENM simulations
+
+## Usage
+
+``` r
+evalplot.nulls(
+  e.null,
+  stats,
+  plot.type,
+  facet.labels = NULL,
+  metric.levels = NULL,
+  return.tbl = FALSE
+)
+```
+
+## Arguments
+
+- e.null:
+
+  ENMnull object
+
+- stats:
+
+  character vector: metrics from results table to be plotted; examples
+  are "auc.val" or "or.10p"; if more than one statistic is specified,
+  the histogram plot will be faceted
+
+- plot.type:
+
+  character: either "violin" or "histogram"
+
+- facet.labels:
+
+  named list: custom names for the metric facets, in the form
+  list(old_name = "new_name", ...)
+
+- metric.levels:
+
+  character vector: custom factor levels for metrics; this controls the
+  order that metric statistics are plotted
+
+- return.tbl:
+
+  boolean: if TRUE, return the data frames of null results used to make
+  the ggplot instead of the plot itself
+
+## Value
+
+A ggplot of null model statistics.
+
+## Details
+
+There are two variations for this plot, but both show null quantiles
+(0.01, 0.05, 0.5, 0.95, 0.99). For violin plots, the null distribution
+is displayed as a vertical shape (i.e., the violin) with horizontal
+lines showing the quantiles and the empirical value is plotted as a red
+point along the vertical axis. For histogram plots, the null
+distribution is displayed as a histogram with vertical lines showing the
+quantiles and the empirical value as a vertical red line on the
+distribution.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# first, let's tune some models
+occs <- read.csv(file.path(system.file(package="predicts"), 
+                           "/ex/bradypus.csv"))[,2:3]
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+                                   "/ex", sep=""), pattern="tif$", full.names=TRUE))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+
+ps <- list(orientation = "lat_lat")
+
+e <- ENMevaluate(occs, envs, bg, 
+                 tune.args = list(fc = c("L","LQ","LQH"), rm = 2:4), partitions = "block", 
+                 partition.settings = ps, algorithm = "maxnet", categoricals = "biome",
+                 parallel = TRUE)
+
+d <- eval.results(e)
+
+# here, we will choose an optimal model based on validation CBI, but you can
+# choose yourself what evaluation statistics to use
+opt <- d |> filter(cbi.val.avg == max(cbi.val.avg))
+
+# now we can run our null models 
+# NOTE: you should use at least 100 iterations in practice -- this is just an
+# example
+nulls <- ENMnulls(e, mod.settings = list(fc = opt$fc, rm = opt$rm), no.iter = 10)
+
+# let's plot the null model results
+evalplot.nulls(nulls, stats = c("cbi.val", "auc.val"), plot.type = "violin")
+} # }
+```

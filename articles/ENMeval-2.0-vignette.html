@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>ENMeval 2.0.5 Vignette • ENMeval</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="ENMeval 2.0.5 Vignette">
 </head>
@@ -59,7 +59,7 @@
 Robert Muscarella, Gonzalo E. Pinilla-Buitrago, and Peter J.
 Galante</h4>
             
-            <h4 data-toc-skip class="date">2025-10-10</h4>
+            <h4 data-toc-skip class="date">2026-08-29</h4>
       
 
       <div class="d-none name"><code>ENMeval-2.0-vignette.Rmd</code></div>
@@ -141,7 +141,7 @@ notice you cannot load a particular package, simply install it with
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load packages -- the order here is important because some pkg functions overwrite others.</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jamiemkass.github.io/ENMeval/">ENMeval</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">geodata</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.github.io/geodata/" class="external-link">geodata</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-gis.net/" class="external-link">usdm</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rvalavi/blockCV" class="external-link">blockCV</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
@@ -178,7 +178,7 @@ inflation factor (VIF), a measure of variable correlation.</p>
 <span><span class="co"># simplify their names and crop them to our extent of interest.</span></span>
 <span><span class="co"># Find the descriptions of the bioclimatic variables here: </span></span>
 <span><span class="co"># https://www.worldclim.org/data/bioclim.html</span></span>
-<span><span class="va">envs</span> <span class="op">&lt;-</span> <span class="fu">geodata</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/geodata/man/worldclim.html" class="external-link">worldclim_global</a></span><span class="op">(</span>var <span class="op">=</span> <span class="st">"bio"</span>, res <span class="op">=</span> <span class="fl">5</span>, path <span class="op">=</span> <span class="st">"."</span><span class="op">)</span></span>
+<span><span class="va">envs</span> <span class="op">&lt;-</span> <span class="fu">geodata</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/geodata/reference/worldclim.html" class="external-link">worldclim_global</a></span><span class="op">(</span>var <span class="op">=</span> <span class="st">"bio"</span>, res <span class="op">=</span> <span class="fl">5</span>, path <span class="op">=</span> <span class="st">"."</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">envs</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"bio"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">19</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
 <span><span class="va">extent</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="op">-</span><span class="fl">125</span>, <span class="op">-</span><span class="fl">32</span>, <span class="op">-</span><span class="fl">56</span>, <span class="fl">40</span><span class="op">)</span></span>
 <span><span class="va">envs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">envs</span>, <span class="va">extent</span><span class="op">)</span></span>
@@ -211,7 +211,7 @@ inflation factor (VIF), a measure of variable correlation.</p>
 <span></span>
 <span><span class="co"># Plot the subsetted occurrences to make sure we filtered correctly.</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/envDownload-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/envDownload-1.png" class="r-plt" alt="" width="672"></p>
 <p>Now let’s take a look at which areas of this extent are climatically
 different with respect to the areas associated with the occurrence
 points. To do this, we’ll use the Multivariate Environmental Similarity
@@ -241,7 +241,7 @@ Soley-Guardia 2019).</p>
 <span><span class="co"># values are more similar.</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">occs.mess</span>, main <span class="op">=</span> <span class="st">"Environmental similarity"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-1-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-1-1.png" class="r-plt" alt="" width="672"></p>
 <p>Since our models will compare the environment at occurrence
 localities to the environment at background localities, we need to
 sample random points from a background extent. Now we will specify the
@@ -282,7 +282,7 @@ your own study.</p>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span></span>
 <span><span class="co"># To add sf objects to a plot, use add = TRUE</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">occs.buf</span>, border <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">3</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/backgExt-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/backgExt-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># Crop environmental rasters to match the study extent</span></span>
@@ -292,7 +292,7 @@ your own study.</p>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">envs.bg</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">envs</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">occs.buf</span>, border <span class="op">=</span> <span class="st">"blue"</span>, lwd <span class="op">=</span> <span class="fl">3</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/backgExt-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/backgExt-2.png" class="r-plt" alt="" width="672"></p>
 <p>In the next step, we’ll sample 10,000 random points from the
 background (note that the number of background points is also a
 consideration you should make with respect to your own study).</p>
@@ -306,7 +306,7 @@ consideration you should make with respect to your own study).</p>
 <span><span class="co"># Notice how we have pretty good coverage (every cell).</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">envs.bg</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">bg</span>, pch <span class="op">=</span> <span class="fl">20</span>, cex <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/backgPts-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/backgPts-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="partition">Partitioning Occurrences for Evaluation<a class="anchor" aria-label="anchor" href="#partition"></a>
@@ -371,13 +371,13 @@ argument.</p>
 <span><span class="co"># these plots easily customizable.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">block</span><span class="op">$</span><span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Spatial block partitions: occurrences"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># PLotting the background shows that the background extent is partitioned in a way </span></span>
 <span><span class="co"># that maximizes evenness of points across the four bins, not to maximize evenness of area.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">block</span><span class="op">$</span><span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Spatial block partitions: background"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-2.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># If we are curious how different the environment associated with each partition is from </span></span>
@@ -389,7 +389,7 @@ argument.</p>
 <span><span class="va">bg.z</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">bg</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/extract.html" class="external-link">extract</a></span><span class="op">(</span><span class="va">envs</span>, <span class="va">bg</span>, ID <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.envSim.hist.html">evalplot.envSim.hist</a></span><span class="op">(</span>occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, occs.grp <span class="op">=</span> <span class="va">block</span><span class="op">$</span><span class="va">occs.grp</span>, </span>
 <span>                     bg.grp <span class="op">=</span> <span class="va">block</span><span class="op">$</span><span class="va">bg.grp</span>, ref.data <span class="op">=</span> <span class="st">"occs"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-3.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-3.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># Here we plot environmental similarity values for the entire extent with respect </span></span>
@@ -398,7 +398,7 @@ argument.</p>
 <span><span class="fu"><a href="../reference/evalplot.envSim.map.html">evalplot.envSim.map</a></span><span class="op">(</span>envs <span class="op">=</span> <span class="va">envs</span>, occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                    occs.grp <span class="op">=</span> <span class="va">block</span><span class="op">$</span><span class="va">occs.grp</span>, bg.grp <span class="op">=</span> <span class="va">block</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                    ref.data <span class="op">=</span> <span class="st">"occs"</span>, bb.buf <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-4.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.block-4.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
 <h4 id="cb1">2. Basic checkerboard<a class="anchor" aria-label="anchor" href="#cb1"></a>
@@ -420,41 +420,41 @@ cells to aggregate when making the underlying checkerboard pattern.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/partitions.html">get.checkerboard</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs.bg</span>, <span class="va">bg</span>, aggregation.factor <span class="op">=</span> <span class="fl">25</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck1-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck1-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plotting the background points shows the checkerboard pattern clearly.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck1-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck1-2.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can see from the MESS maps that this method results in similar environmental </span></span>
 <span><span class="co"># representation between the partitions.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.envSim.hist.html">evalplot.envSim.hist</a></span><span class="op">(</span>occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, occs.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">occs.grp</span>, </span>
 <span>                     bg.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">bg.grp</span>, ref.data <span class="op">=</span> <span class="st">"occs"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck1-3.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck1-3.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.envSim.map.html">evalplot.envSim.map</a></span><span class="op">(</span>envs <span class="op">=</span> <span class="va">envs</span>, occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                    occs.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">occs.grp</span>, bg.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                    ref.data <span class="op">=</span> <span class="st">"occs"</span>, bb.buf <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-2-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can increase the aggregation factor to give the groups bigger boxes.</span></span>
 <span><span class="co"># This can result in groups that are more environmentally different from each other.</span></span>
 <span><span class="va">cb1.large</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/partitions.html">get.checkerboard</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs.bg</span>, <span class="va">bg</span>, aggregation.factor <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">cb1.large</span><span class="op">$</span><span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-3-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">cb1.large</span><span class="op">$</span><span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-3-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-3-2.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.envSim.hist.html">evalplot.envSim.hist</a></span><span class="op">(</span>occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                     occs.grp <span class="op">=</span> <span class="va">cb1.large</span><span class="op">$</span><span class="va">occs.grp</span>, bg.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                     ref.data <span class="op">=</span> <span class="st">"occs"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-3-3.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-3-3.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.envSim.map.html">evalplot.envSim.map</a></span><span class="op">(</span>envs <span class="op">=</span> <span class="va">envs</span>, occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                    occs.grp <span class="op">=</span> <span class="va">cb1.large</span><span class="op">$</span><span class="va">occs.grp</span>, bg.grp <span class="op">=</span> <span class="va">cb1</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                    ref.data <span class="op">=</span> <span class="st">"occs"</span>, bb.buf <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-4-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
 <h4 id="cb2">3. Hierarchical checkerboard<a class="anchor" aria-label="anchor" href="#cb2"></a>
@@ -467,22 +467,22 @@ into on the hierarchical checkerboard.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cb2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/partitions.html">get.checkerboard</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs.bg</span>, <span class="va">bg</span>, aggregation.factor <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">cb2</span><span class="op">$</span><span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plotting the background points shows the checkerboard pattern very clearly.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">cb2</span><span class="op">$</span><span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-2.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Different from basic checkerboard, some partitions here do show some difference</span></span>
 <span><span class="co"># in environmental representation, but not as consistently different as with block.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.envSim.hist.html">evalplot.envSim.hist</a></span><span class="op">(</span>occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, occs.grp <span class="op">=</span> <span class="va">cb2</span><span class="op">$</span><span class="va">occs.grp</span>, </span>
 <span>                     bg.grp <span class="op">=</span> <span class="va">cb2</span><span class="op">$</span><span class="va">bg.grp</span>, ref.data <span class="op">=</span> <span class="st">"occs"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-3.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-3.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.envSim.map.html">evalplot.envSim.map</a></span><span class="op">(</span>envs <span class="op">=</span> <span class="va">envs</span>, occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                    occs.grp <span class="op">=</span> <span class="va">cb2</span><span class="op">$</span><span class="va">occs.grp</span>, bg.grp <span class="op">=</span> <span class="va">cb2</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                    ref.data <span class="op">=</span> <span class="st">"occs"</span>, bb.buf <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-4.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ck2-4.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
 <h4 id="jack">4. Jackknife (leave-one-out)<a class="anchor" aria-label="anchor" href="#jack"></a>
@@ -505,7 +505,7 @@ large occurrence datasets.</p>
 <span><span class="co"># If the number of input points is larger than 10, the legend for the groups </span></span>
 <span><span class="co"># is suppressed.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">jack</span><span class="op">$</span><span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.jk-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.jk-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
 <h4 id="rand">5. Random k-fold<a class="anchor" aria-label="anchor" href="#rand"></a>
@@ -522,17 +522,17 @@ five random groups.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/partitions.html">get.randomkfold</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">bg</span>, k <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.rand-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.rand-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># As the partitions are random, there is no large environmental difference between them.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.envSim.hist.html">evalplot.envSim.hist</a></span><span class="op">(</span>occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, occs.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">occs.grp</span>, </span>
 <span>                     bg.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">bg.grp</span>, ref.data <span class="op">=</span> <span class="st">"occs"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.rand-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.rand-2.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.envSim.map.html">evalplot.envSim.map</a></span><span class="op">(</span>envs <span class="op">=</span> <span class="va">envs</span>, occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                    occs.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">occs.grp</span>, bg.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                    ref.data <span class="op">=</span> <span class="st">"occs"</span>, bb.buf <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-5-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
 <h4 id="testing">6. Fully Withheld Testing Data<a class="anchor" aria-label="anchor" href="#testing"></a>
@@ -558,7 +558,7 @@ used as training data).</p>
 <span><span class="va">occs.testing</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>longitude <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">55</span>, <span class="fl">65</span><span class="op">)</span>, latitude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">10</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">occs.testing</span><span class="op">)</span>, </span>
 <span>              pts.grp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">occs.testing</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ind-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ind-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Next, let's extract the predictor variable values for our testing points.</span></span>
 <span><span class="va">occs.testing.z</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">occs.testing</span>, <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/extract.html" class="external-link">extract</a></span><span class="op">(</span><span class="va">envs</span>, <span class="va">occs.testing</span>, ID <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
@@ -569,13 +569,13 @@ used as training data).</p>
 <span><span class="fu"><a href="../reference/evalplot.envSim.hist.html">evalplot.envSim.hist</a></span><span class="op">(</span>occs.z <span class="op">=</span> <span class="va">occs.z</span>, bg.z <span class="op">=</span> <span class="va">bg.z</span>, </span>
 <span>                     occs.grp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span><span class="op">)</span>, bg.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">bg.grp</span>, </span>
 <span>                     ref.data <span class="op">=</span> <span class="st">"occs"</span>, occs.testing.z <span class="op">=</span> <span class="va">occs.testing.z</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ind-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.ind-2.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.envSim.map.html">evalplot.envSim.map</a></span><span class="op">(</span>envs <span class="op">=</span> <span class="va">envs</span>, occs.z <span class="op">=</span> <span class="va">occs.z</span>, </span>
 <span>                    bg.z <span class="op">=</span> <span class="va">bg.z</span>, occs.grp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span><span class="op">)</span>, </span>
 <span>                    bg.grp <span class="op">=</span> <span class="va">rand</span><span class="op">$</span><span class="va">bg.grp</span>, bb.buf <span class="op">=</span> <span class="fl">7</span>, </span>
 <span>                    ref.data <span class="op">=</span> <span class="st">"occs"</span>, occs.testing.z <span class="op">=</span> <span class="va">occs.testing.z</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-6-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can see what is to be expected -- the testing dataset is much more restricted </span></span>
 <span><span class="co"># environmentally than the training data, and thus is much more difference with the </span></span>
@@ -598,7 +598,7 @@ other sources.</p>
 <span><span class="va">kmeans</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">grp.n</span><span class="op">)</span></span>
 <span><span class="va">occs.grp</span> <span class="op">&lt;-</span> <span class="va">kmeans</span><span class="op">$</span><span class="va">cluster</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">occs</span>, pts.grp <span class="op">=</span> <span class="va">occs.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.user1-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.user1-1.png" class="r-plt" alt="" width="672"></p>
 <p>When using the user-defined partitioning method, we need to supply
 <code>ENMevaluate</code> with group identifiers for both occurrence AND
 background records If we want to use all background records for each
@@ -607,7 +607,7 @@ group, we can set the background to zero.</p>
 <code class="sourceCode R"><span><span class="co"># Assign all background records</span></span>
 <span><span class="va">bg.grp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bg</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.user2-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.user2-1.png" class="r-plt" alt="" width="672"></p>
 <p>Alternatively, we may think of various ways to partition background
 data. This depends on the goals of the study but we might, for example,
 find it reasonable to partition background records by assigning groups
@@ -620,7 +620,7 @@ based on distance to the centroids of the occurrence clusters.</p>
 <span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/distance.html" class="external-link">distance</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/coerce.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">bg</span><span class="op">)</span>, <span class="va">centers</span>, lonlat <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">bg.grp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">d</span>, <span class="fl">1</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">x</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/part.user3-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/part.user3-1.png" class="r-plt" alt="" width="672"></p>
 <p>We can also use other packages to partition our data. As an example,
 we next show how to use the R package <a href="https://CRAN.R-project.org/package=blockCV" class="external-link"><code>blockCV</code></a>
 (Valavi et al. 2019) to generate spatial partitions to input into
@@ -646,21 +646,12 @@ plurality of tools.</p>
 <span><span class="co"># spatial partitions.</span></span>
 <span><span class="va">sb</span> <span class="op">&lt;-</span> <span class="fu">blockCV</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/blockCV/man/cv_spatial.html" class="external-link">cv_spatial</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">occsBg.sf</span>, r <span class="op">=</span> <span class="va">envs.bg</span>, k <span class="op">=</span> <span class="fl">5</span>, </span>
 <span>                            size <span class="op">=</span> <span class="fl">1000000</span>, selection <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   1%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |===                                                                   |   4%  |                                                                              |====                                                                  |   5%  |                                                                              |====                                                                  |   6%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |======                                                                |   9%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  11%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  14%  |                                                                              |==========                                                            |  15%  |                                                                              |===========                                                           |  16%  |                                                                              |============                                                          |  17%  |                                                                              |=============                                                         |  18%  |                                                                              |=============                                                         |  19%  |                                                                              |==============                                                        |  20%  |                                                                              |===============                                                       |  21%  |                                                                              |===============                                                       |  22%  |                                                                              |================                                                      |  23%  |                                                                              |=================                                                     |  24%  |                                                                              |==================                                                    |  25%  |                                                                              |==================                                                    |  26%  |                                                                              |===================                                                   |  27%  |                                                                              |====================                                                  |  28%  |                                                                              |====================                                                  |  29%  |                                                                              |=====================                                                 |  30%  |                                                                              |======================                                                |  31%  |                                                                              |======================                                                |  32%  |                                                                              |=======================                                               |  33%  |                                                                              |========================                                              |  34%  |                                                                              |========================                                              |  35%  |                                                                              |=========================                                             |  36%  |                                                                              |==========================                                            |  37%  |                                                                              |===========================                                           |  38%  |                                                                              |===========================                                           |  39%  |                                                                              |============================                                          |  40%  |                                                                              |=============================                                         |  41%  |                                                                              |=============================                                         |  42%  |                                                                              |==============================                                        |  43%  |                                                                              |===============================                                       |  44%  |                                                                              |================================                                      |  45%  |                                                                              |================================                                      |  46%  |                                                                              |=================================                                     |  47%  |                                                                              |==================================                                    |  48%  |                                                                              |==================================                                    |  49%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================                                  |  51%  |                                                                              |====================================                                  |  52%  |                                                                              |=====================================                                 |  53%  |                                                                              |======================================                                |  54%  |                                                                              |======================================                                |  55%  |                                                                              |=======================================                               |  56%  |                                                                              |========================================                              |  57%  |                                                                              |=========================================                             |  58%  |                                                                              |=========================================                             |  59%  |                                                                              |==========================================                            |  60%  |                                                                              |===========================================                           |  61%  |                                                                              |===========================================                           |  62%  |                                                                              |============================================                          |  63%  |                                                                              |=============================================                         |  64%  |                                                                              |==============================================                        |  65%  |                                                                              |==============================================                        |  66%  |                                                                              |===============================================                       |  67%  |                                                                              |================================================                      |  68%  |                                                                              |================================================                      |  69%  |                                                                              |=================================================                     |  70%  |                                                                              |==================================================                    |  71%  |                                                                              |==================================================                    |  72%  |                                                                              |===================================================                   |  73%  |                                                                              |====================================================                  |  74%  |                                                                              |====================================================                  |  75%  |                                                                              |=====================================================                 |  76%  |                                                                              |======================================================                |  77%  |                                                                              |=======================================================               |  78%  |                                                                              |=======================================================               |  79%  |                                                                              |========================================================              |  80%  |                                                                              |=========================================================             |  81%  |                                                                              |=========================================================             |  82%  |                                                                              |==========================================================            |  83%  |                                                                              |===========================================================           |  84%  |                                                                              |============================================================          |  85%  |                                                                              |============================================================          |  86%  |                                                                              |=============================================================         |  87%  |                                                                              |==============================================================        |  88%  |                                                                              |==============================================================        |  89%  |                                                                              |===============================================================       |  90%  |                                                                              |================================================================      |  91%  |                                                                              |================================================================      |  92%  |                                                                              |=================================================================     |  93%  |                                                                              |==================================================================    |  94%  |                                                                              |==================================================================    |  95%  |                                                                              |===================================================================   |  96%  |                                                                              |====================================================================  |  97%  |                                                                              |===================================================================== |  98%  |                                                                              |===================================================================== |  99%  |                                                                              |======================================================================| 100%</span></span>
-<span><span class="co">#&gt;   train test</span></span>
-<span><span class="co">#&gt; 1  8055 2123</span></span>
-<span><span class="co">#&gt; 2  8170 2008</span></span>
-<span><span class="co">#&gt; 3  8334 1844</span></span>
-<span><span class="co">#&gt; 4  7893 2285</span></span>
-<span><span class="co">#&gt; 5  8260 1918</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-7-1.png" width="672"></p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># We can pull out the partition information from the SpatialBlock object to assemble</span></span>
+<span><span class="co"># We can pull out the partition information from the SpatialBlock object to assemble</span></span>
 <span><span class="co"># occs.grp and bg.grp, which can be used for plotting or as user.grp inputs for ENMevaluate.</span></span>
 <span><span class="va">occs.grp</span> <span class="op">&lt;-</span> <span class="va">sb</span><span class="op">$</span><span class="va">folds_ids</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="va">bg.grp</span> <span class="op">&lt;-</span> <span class="va">sb</span><span class="op">$</span><span class="va">folds_ids</span><span class="op">[</span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">occs</span><span class="op">)</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sb</span><span class="op">$</span><span class="va">folds_ids</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="../reference/evalplot.grps.html">evalplot.grps</a></span><span class="op">(</span>pts <span class="op">=</span> <span class="va">bg</span>, pts.grp <span class="op">=</span> <span class="va">bg.grp</span>, envs <span class="op">=</span> <span class="va">envs.bg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-7-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="672"></p>
 <p>Selecting which of these data partitioning methods to use should be
 based on the research objectives and the characteristics of the study
 system. Refer to the <a href="#resources">References and Resources</a>
@@ -709,11 +700,11 @@ them as factors in the SpatRaster or input table.</p>
 combination of RM values and feature class combinations. For example,
 the following call will build and evaluate 2 models. One with RM=1 and
 another with RM=2, both allowing only linear features.</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">e.mx.l</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ENMevaluate.html">ENMevaluate</a></span><span class="op">(</span>occs <span class="op">=</span> <span class="va">occs</span>, envs <span class="op">=</span> <span class="va">envs</span>, bg <span class="op">=</span> <span class="va">bg</span>, </span>
 <span>                      algorithm <span class="op">=</span> <span class="st">'maxnet'</span>, partitions <span class="op">=</span> <span class="st">'block'</span>, </span>
 <span>                      tune.args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>fc <span class="op">=</span> <span class="st">"L"</span>, rm <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">e.mx.l</span></span>
 <span><span class="co">#&gt; An object of class:  ENMevaluation </span></span>
 <span><span class="co">#&gt;  occurrence/background points:  178 / 10000 </span></span>
@@ -729,12 +720,12 @@ another with RM=2, both allowing only linear features.</p>
 <span><span class="co">#&gt; Refer to ?ENMevaluation for information on slots.</span></span></code></pre></div>
 <p>We may, however, want to compare a wider range of models that can use
 a wider variety of feature classes and regularization multipliers:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tune.args</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>fc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"L"</span>,<span class="st">"LQ"</span>,<span class="st">"LQH"</span><span class="op">)</span>, rm <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">e.mx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ENMevaluate.html">ENMevaluate</a></span><span class="op">(</span>occs <span class="op">=</span> <span class="va">occs</span>, envs <span class="op">=</span> <span class="va">envs</span>, bg <span class="op">=</span> <span class="va">bg</span>, </span>
 <span>                    algorithm <span class="op">=</span> <span class="st">'maxnet'</span>, partitions <span class="op">=</span> <span class="st">'block'</span>, </span>
 <span>                    tune.args <span class="op">=</span> <span class="va">tune.args</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">e.mx</span></span>
 <span><span class="co">#&gt; An object of class:  ENMevaluation </span></span>
 <span><span class="co">#&gt;  occurrence/background points:  178 / 10000 </span></span>
@@ -759,16 +750,16 @@ running <code>ENMevaluate</code> by setting the arguments
 Moran’s I or Schoener’s D (Warren et al. 2008). Note that you can also
 calculate this value at a later stage using the separate
 <code>calc.niche.overlap</code> function.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">overlap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calc.niche.overlap.html">calc.niche.overlap</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">@</span><span class="va">predictions</span>, overlapStat <span class="op">=</span> <span class="st">"D"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">overlap</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span>
 <span><span class="co">#&gt;             fc.L_rm.1 fc.LQ_rm.1 fc.LQH_rm.1 fc.L_rm.2 fc.LQ_rm.2</span></span>
 <span><span class="co">#&gt; fc.L_rm.1          NA         NA          NA        NA         NA</span></span>
-<span><span class="co">#&gt; fc.LQ_rm.1  0.8887215         NA          NA        NA         NA</span></span>
-<span><span class="co">#&gt; fc.LQH_rm.1 0.4973815  0.5120040          NA        NA         NA</span></span>
-<span><span class="co">#&gt; fc.L_rm.2   0.9682736  0.8758681   0.5027874        NA         NA</span></span>
-<span><span class="co">#&gt; fc.LQ_rm.2  0.9173979  0.9567198   0.5100648 0.9108483         NA</span></span></code></pre></div>
+<span><span class="co">#&gt; fc.LQ_rm.1  0.8783190         NA          NA        NA         NA</span></span>
+<span><span class="co">#&gt; fc.LQH_rm.1 0.6132413  0.6316448          NA        NA         NA</span></span>
+<span><span class="co">#&gt; fc.L_rm.2   0.9780291  0.8735105   0.6148288        NA         NA</span></span>
+<span><span class="co">#&gt; fc.LQ_rm.2  0.9171711  0.9515974   0.6267390 0.9151218         NA</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="different-parameterizations">Different parameterizations<a class="anchor" aria-label="anchor" href="#different-parameterizations"></a>
@@ -776,7 +767,7 @@ calculate this value at a later stage using the separate
 <p>There are multiple ways to run the function <code>ENMevaluate</code>,
 and we will go over how to specify each parameterization and what the
 effects are on the results.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># If maxent.jar is installed and rJava loads properly, you can also run Maxent with </span></span>
 <span><span class="co"># the original Java software.</span></span>
 <span><span class="va">e.mxjar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ENMevaluate.html">ENMevaluate</a></span><span class="op">(</span><span class="va">occs</span>, <span class="va">envs</span>, <span class="va">bg</span>, algorithm <span class="op">=</span> <span class="st">"maxent.jar"</span>, </span>
@@ -819,9 +810,9 @@ AUC ratio and associated p-value for the partial ROC perfomance metric,
 defined in (Peterson et al. 2008) and implemented by the R package
 <code>kuenm</code> (Cobos et al. 2019), which is currently only
 available on Github.</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># First, make sure you install kuenm from Github.</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"marlonecobos/kuenm"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"marlonecobos/kuenm"</span><span class="op">)</span></span>
 <span><span class="co"># Define a custom function that implements a performance metric not included in ENMeval.</span></span>
 <span><span class="co"># The function should have a single argument "vars", which is a list that includes the </span></span>
 <span><span class="co"># data most performance metrics should require -- the total list of these data can be found </span></span>
@@ -849,7 +840,7 @@ convergence given the assigned settings. Other cross-validation methods
 might result in fewer model errors because they partition the data
 differently. To see the model performance for all the folds, look at the
 <code>results.partitions</code> slot.</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">e.mx.proc</span><span class="op">@</span><span class="va">results</span></span>
 <span><span class="co">#&gt;   fc rm tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg</span></span>
 <span><span class="co">#&gt; 1  L  1 fc.L_rm.1 0.8171632     0.974    0.1344515  0.07337408   0.7261343</span></span>
@@ -975,7 +966,7 @@ statistics</li>
 model</li>
 </ul>
 <p>Let’s first examine the structure of the object.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">e.mx</span></span>
 <span><span class="co">#&gt; An object of class:  ENMevaluation </span></span>
 <span><span class="co">#&gt;  occurrence/background points:  178 / 10000 </span></span>
@@ -1011,13 +1002,13 @@ model</li>
 <span><span class="co">#&gt;   ..@ occs.testing       :'data.frame':  0 obs. of  0 variables</span></span>
 <span><span class="co">#&gt;   ..@ occs.grp           : Factor w/ 4 levels "1","2","3","4": 3 3 3 1 1 1 4 4 3 1 ...</span></span>
 <span><span class="co">#&gt;   ..@ bg                 :'data.frame':  10000 obs. of  12 variables:</span></span>
-<span><span class="co">#&gt;   ..@ bg.grp             : Factor w/ 4 levels "1","2","3","4": 2 2 2 2 2 2 2 2 2 2 ...</span></span>
+<span><span class="co">#&gt;   ..@ bg.grp             : Factor w/ 4 levels "1","2","3","4": 2 1 3 2 2 2 2 1 2 2 ...</span></span>
 <span><span class="co">#&gt;   ..@ overlap            : list()</span></span>
 <span><span class="co">#&gt;   ..@ rmm                :List of 8</span></span>
 <span><span class="co">#&gt;   .. ..- attr(*, "class")= chr [1:2] "list" "RMM"</span></span></code></pre></div>
 <p>We can use helper functions to access the slots in the
 <code>ENMevaluation</code> object.</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Access algorithm, tuning settings, and partition method information.</span></span>
 <span><span class="fu"><a href="../reference/eval.algorithm.html">eval.algorithm</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "maxnet"</span></span>
@@ -1034,35 +1025,35 @@ model</li>
 <span><span class="co"># Results table with summary statistics for cross validation on test data.</span></span>
 <span><span class="fu"><a href="../reference/eval.results.html">eval.results</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    fc rm   tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg</span></span>
-<span><span class="co">#&gt; 1   L  1   fc.L_rm.1 0.8171632     0.974   0.13445146  0.07337408   0.7261343</span></span>
-<span><span class="co">#&gt; 2  LQ  1  fc.LQ_rm.1 0.8370413     0.976   0.12736855  0.09499498   0.7434951</span></span>
-<span><span class="co">#&gt; 3 LQH  1 fc.LQH_rm.1 0.9150306     0.970   0.08607102  0.11826192   0.8111343</span></span>
-<span><span class="co">#&gt; 4   L  2   fc.L_rm.2 0.8151969     0.974   0.13444323  0.07131803   0.7244877</span></span>
-<span><span class="co">#&gt; 5  LQ  2  fc.LQ_rm.2 0.8329256     0.973   0.11932791  0.07414506   0.7471441</span></span>
-<span><span class="co">#&gt; 6 LQH  2 fc.LQH_rm.2 0.8822739     0.938   0.09416783  0.12007184   0.7887931</span></span>
+<span><span class="co">#&gt; 1   L  1   fc.L_rm.1 0.8151500     0.979   0.13769372  0.07251663   0.7242520</span></span>
+<span><span class="co">#&gt; 2  LQ  1  fc.LQ_rm.1 0.8343236     0.978   0.13427958  0.08713124   0.7296996</span></span>
+<span><span class="co">#&gt; 3 LQH  1 fc.LQH_rm.1 0.9084494     0.984   0.09287126  0.11976041   0.8002663</span></span>
+<span><span class="co">#&gt; 4   L  2   fc.L_rm.2 0.8137242     0.981   0.13552525  0.06967154   0.7243118</span></span>
+<span><span class="co">#&gt; 5  LQ  2  fc.LQ_rm.2 0.8285820     0.975   0.12790665  0.06265885   0.7375323</span></span>
+<span><span class="co">#&gt; 6 LQH  2 fc.LQH_rm.2 0.8792736     0.937   0.10195797  0.11574321   0.7764359</span></span>
 <span><span class="co">#&gt;   auc.val.sd cbi.val.avg cbi.val.sd or.10p.avg or.10p.sd or.mtp.avg  or.mtp.sd</span></span>
-<span><span class="co">#&gt; 1  0.1376539     0.49125  0.2525079  0.2887626 0.2625836 0.02840909 0.05681818</span></span>
-<span><span class="co">#&gt; 2  0.1438563     0.56900  0.3275352  0.2611111 0.2980209 0.05113636 0.05977172</span></span>
-<span><span class="co">#&gt; 3  0.1338383     0.66400  0.2196315  0.2320707 0.1932193 0.03977273 0.05370245</span></span>
-<span><span class="co">#&gt; 4  0.1380480     0.49400  0.2689151  0.2832071 0.2659283 0.03396465 0.05413767</span></span>
-<span><span class="co">#&gt; 5  0.1359330     0.59425  0.2781503  0.2497475 0.2859188 0.05681818 0.06560799</span></span>
-<span><span class="co">#&gt; 6  0.1438574     0.61900  0.3072599  0.2148990 0.1841122 0.05113636 0.07509177</span></span>
+<span><span class="co">#&gt; 1  0.1396102     0.51725  0.2265633  0.2830808 0.2606623 0.03396465 0.05413767</span></span>
+<span><span class="co">#&gt; 2  0.1393112     0.51000  0.3485092  0.2608586 0.2759716 0.05113636 0.05977172</span></span>
+<span><span class="co">#&gt; 3  0.1332223     0.58400  0.2935223  0.2316919 0.1467600 0.04545455 0.05567022</span></span>
+<span><span class="co">#&gt; 4  0.1383142     0.54500  0.2351241  0.2775253 0.2638719 0.03952020 0.05366919</span></span>
+<span><span class="co">#&gt; 5  0.1354271     0.57400  0.3108204  0.2550505 0.2524495 0.05113636 0.05977172</span></span>
+<span><span class="co">#&gt; 6  0.1403662     0.58825  0.2782965  0.2093434 0.1782428 0.05113636 0.07509177</span></span>
 <span><span class="co">#&gt;       AICc delta.AICc        w.AIC ncoef</span></span>
-<span><span class="co">#&gt; 1 3943.051   134.4705 6.310939e-30     9</span></span>
-<span><span class="co">#&gt; 2 3913.348   104.7671 1.778705e-23    11</span></span>
-<span><span class="co">#&gt; 3 4211.406   402.8254 3.369555e-88    43</span></span>
-<span><span class="co">#&gt; 4 3948.874   140.2936 3.432697e-31     7</span></span>
-<span><span class="co">#&gt; 5 3926.884   118.3040 2.044663e-26    12</span></span>
-<span><span class="co">#&gt; 6 3808.580     0.0000 1.000000e+00    27</span></span>
+<span><span class="co">#&gt; 1 3954.384  127.76381 1.804846e-28     9</span></span>
+<span><span class="co">#&gt; 2 3921.788   95.16872 2.159603e-21    12</span></span>
+<span><span class="co">#&gt; 3 3973.954  147.33394 1.015877e-32    41</span></span>
+<span><span class="co">#&gt; 4 3958.635  132.01521 2.154074e-29     7</span></span>
+<span><span class="co">#&gt; 5 3938.183  111.56324 5.947716e-25    13</span></span>
+<span><span class="co">#&gt; 6 3826.620    0.00000 1.000000e+00    28</span></span>
 <span><span class="co"># Results table with cross validation statistics for each test partition.</span></span>
 <span><span class="fu"><a href="../reference/eval.results.partitions.html">eval.results.partitions</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    tune.args fold   auc.val   auc.diff cbi.val    or.mtp    or.10p</span></span>
-<span><span class="co">#&gt; 1  fc.L_rm.1    1 0.8886724 0.10205778   0.507 0.0000000 0.0000000</span></span>
-<span><span class="co">#&gt; 2  fc.L_rm.1    2 0.5524341 0.24397306   0.161 0.1136364 0.6136364</span></span>
-<span><span class="co">#&gt; 3  fc.L_rm.1    3 0.7218896 0.10402928   0.776 0.0000000 0.1777778</span></span>
-<span><span class="co">#&gt; 4  fc.L_rm.1    4 0.7415412 0.08774573   0.521 0.0000000 0.3636364</span></span>
-<span><span class="co">#&gt; 5 fc.LQ_rm.1    1 0.8951549 0.09341583   0.687 0.0000000 0.0000000</span></span>
-<span><span class="co">#&gt; 6 fc.LQ_rm.1    2 0.5609192 0.25051006   0.082 0.1136364 0.6363636</span></span>
+<span><span class="co">#&gt;    tune.args fold   auc.val   auc.diff cbi.val     or.mtp    or.10p</span></span>
+<span><span class="co">#&gt; 1  fc.L_rm.1    1 0.8912350 0.10298034   0.533 0.00000000 0.0000000</span></span>
+<span><span class="co">#&gt; 2  fc.L_rm.1    2 0.5539864 0.24290274   0.201 0.11363636 0.6136364</span></span>
+<span><span class="co">#&gt; 3  fc.L_rm.1    3 0.6976628 0.12499818   0.733 0.02222222 0.1777778</span></span>
+<span><span class="co">#&gt; 4  fc.L_rm.1    4 0.7541238 0.07989361   0.602 0.00000000 0.3409091</span></span>
+<span><span class="co">#&gt; 5 fc.LQ_rm.1    1 0.8856767 0.08037007   0.662 0.00000000 0.0000000</span></span>
+<span><span class="co">#&gt; 6 fc.LQ_rm.1    2 0.5507928 0.25534300  -0.012 0.11363636 0.6136364</span></span>
 <span><span class="co"># List of models with names corresponding to tune.args column label.</span></span>
 <span><span class="fu"><a href="../reference/eval.models.html">eval.models</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span>max.level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; List of 15</span></span>
@@ -1102,120 +1093,116 @@ model</li>
 <span><span class="va">m1.mx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.models.html">eval.models</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="st">"fc.LQH_rm.1"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">m1.mx</span><span class="op">$</span><span class="va">betas</span></span>
 <span><span class="co">#&gt;                                           bio2 </span></span>
-<span><span class="co">#&gt;                                  -1.300772e-01 </span></span>
+<span><span class="co">#&gt;                                  -3.484901e-02 </span></span>
 <span><span class="co">#&gt;                                          bio13 </span></span>
-<span><span class="co">#&gt;                                   1.567920e-02 </span></span>
+<span><span class="co">#&gt;                                   1.371658e-02 </span></span>
 <span><span class="co">#&gt;                                          bio14 </span></span>
-<span><span class="co">#&gt;                                  -3.408800e-03 </span></span>
-<span><span class="co">#&gt;                                          bio15 </span></span>
-<span><span class="co">#&gt;                                  -1.047407e-02 </span></span>
-<span><span class="co">#&gt;                                          bio18 </span></span>
-<span><span class="co">#&gt;                                   4.783857e-04 </span></span>
+<span><span class="co">#&gt;                                  -1.958717e-04 </span></span>
 <span><span class="co">#&gt;                                          bio19 </span></span>
-<span><span class="co">#&gt;                                   5.045810e-04 </span></span>
+<span><span class="co">#&gt;                                   2.020559e-04 </span></span>
 <span><span class="co">#&gt;                                      I(bio3^2) </span></span>
-<span><span class="co">#&gt;                                  -5.605024e-04 </span></span>
+<span><span class="co">#&gt;                                  -5.733600e-04 </span></span>
 <span><span class="co">#&gt;                                      I(bio5^2) </span></span>
-<span><span class="co">#&gt;                                  -8.933996e-05 </span></span>
-<span><span class="co">#&gt;                                      I(bio9^2) </span></span>
-<span><span class="co">#&gt;                                  -2.114426e-03 </span></span>
-<span><span class="co">#&gt;  hinge(bio2):10.3210696200935:18.9859161376953 </span></span>
-<span><span class="co">#&gt;                                  -1.663205e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio2):10.6098978373469:18.9859161376953 </span></span>
-<span><span class="co">#&gt;                                  -2.082817e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio2):4.83333349227905:8.58810031657316 </span></span>
-<span><span class="co">#&gt;                                  -1.580067e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):88.9814825252611:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                   1.123558e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):90.0485847628846:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                   2.667189e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):92.1827892381318:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                  -2.634117e-01 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):42.0289840698242:67.6394377727898 </span></span>
-<span><span class="co">#&gt;                                  -1.298906e+01 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):42.0289840698242:76.1762556737783 </span></span>
-<span><span class="co">#&gt;                                   1.381063e+01 </span></span>
-<span><span class="co">#&gt;   hinge(bio5):32.091081969592:37.1590003967285 </span></span>
-<span><span class="co">#&gt;                                  -3.393143e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio5):6.11800003051758:25.1226941322794 </span></span>
-<span><span class="co">#&gt;                                   7.683829e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio8):25.4872614485877:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                   4.599610e-01 </span></span>
-<span><span class="co">#&gt;  hinge(bio8):26.0479145001392:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                   4.394250e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio8):27.7298736547937:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                  -4.326107e+00 </span></span>
-<span><span class="co">#&gt;              hinge(bio13):447.448979591837:877 </span></span>
-<span><span class="co">#&gt;                                  -5.871009e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio13):0:196.877551020408 </span></span>
-<span><span class="co">#&gt;                                   8.887840e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio13):0:214.775510204082 </span></span>
-<span><span class="co">#&gt;                                   1.749113e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio13):0:304.265306122449 </span></span>
-<span><span class="co">#&gt;                                  -7.253474e+00 </span></span>
-<span><span class="co">#&gt;              hinge(bio14):129.469387755102:488 </span></span>
-<span><span class="co">#&gt;                                  -7.833881e-02 </span></span>
-<span><span class="co">#&gt;              hinge(bio14):139.428571428571:488 </span></span>
-<span><span class="co">#&gt;                                  -1.871329e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio14):0:29.8775510204082 </span></span>
-<span><span class="co">#&gt;                                  -1.441614e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio14):0:59.7551020408163 </span></span>
-<span><span class="co">#&gt;                                  -1.069372e+00 </span></span>
-<span><span class="co">#&gt; hinge(bio15):69.9453473772321:201.607177734375 </span></span>
-<span><span class="co">#&gt;                                  -6.670763e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio15):0:20.5721609933036 </span></span>
-<span><span class="co">#&gt;                                   6.341525e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio15):0:41.1443219866071 </span></span>
-<span><span class="co">#&gt;                                  -1.084412e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio18):728.571428571429:1700 </span></span>
-<span><span class="co">#&gt;                                  -1.210289e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio18):1110.20408163265:1700 </span></span>
-<span><span class="co">#&gt;                                  -1.383907e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio18):0:312.244897959184 </span></span>
-<span><span class="co">#&gt;                                   5.003381e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):847.755102040816:2077 </span></span>
-<span><span class="co">#&gt;                                  -7.545615e-01 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):1017.30612244898:2077 </span></span>
-<span><span class="co">#&gt;                                  -2.389713e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):1059.69387755102:2077 </span></span>
-<span><span class="co">#&gt;                                  -2.880705e-02 </span></span>
-<span><span class="co">#&gt;                hinge(bio19):0:42.3877551020408 </span></span>
-<span><span class="co">#&gt;                                   1.632038e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio19):0:169.551020408163 </span></span>
-<span><span class="co">#&gt;                                  -1.410946e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio19):0:254.326530612245 </span></span>
-<span><span class="co">#&gt;                                  -4.644699e-01 </span></span>
-<span><span class="co">#&gt;                 hinge(bio19):0:508.65306122449 </span></span>
-<span><span class="co">#&gt;                                   1.112090e+00</span></span>
+<span><span class="co">#&gt;                                  -1.947214e-03 </span></span>
+<span><span class="co">#&gt;                                     I(bio14^2) </span></span>
+<span><span class="co">#&gt;                                  -1.169370e-06 </span></span>
+<span><span class="co">#&gt;   hinge(bio2):10.541088522697:18.8052501678467 </span></span>
+<span><span class="co">#&gt;                                  -4.444045e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio2):4.84166669845581:8.54629088421257 </span></span>
+<span><span class="co">#&gt;                                  -7.364501e-01 </span></span>
+<span><span class="co">#&gt;  hinge(bio2):4.84166669845581:8.83126197542463 </span></span>
+<span><span class="co">#&gt;                                  -1.287224e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio3):89.3984775153958:94.7731399536133 </span></span>
+<span><span class="co">#&gt;                                   3.373626e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio3):90.4734100030393:94.7731399536133 </span></span>
+<span><span class="co">#&gt;                                   3.309855e-01 </span></span>
+<span><span class="co">#&gt;   hinge(bio3):42.101448059082:67.8998277625259 </span></span>
+<span><span class="co">#&gt;                                  -1.109297e+01 </span></span>
+<span><span class="co">#&gt;   hinge(bio3):42.101448059082:76.4992876636739 </span></span>
+<span><span class="co">#&gt;                                   1.252329e+01 </span></span>
+<span><span class="co">#&gt;   hinge(bio5):32.159918726707:37.0200004577637 </span></span>
+<span><span class="co">#&gt;                                  -3.024307e+00 </span></span>
+<span><span class="co">#&gt;    hinge(bio5):7.2519998550415:24.869796130122 </span></span>
+<span><span class="co">#&gt;                                   7.494751e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio8):26.1010746955872:29.4892711639404 </span></span>
+<span><span class="co">#&gt;                                   4.716079e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio8):27.7951729297638:29.4892711639404 </span></span>
+<span><span class="co">#&gt;                                  -4.146742e+00 </span></span>
+<span><span class="co">#&gt;              hinge(bio13):444.673469387755:807 </span></span>
+<span><span class="co">#&gt;                                  -3.830398e+00 </span></span>
+<span><span class="co">#&gt;              hinge(bio13):461.142857142857:807 </span></span>
+<span><span class="co">#&gt;                                  -9.733949e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio13):0:214.102040816327 </span></span>
+<span><span class="co">#&gt;                                   2.765453e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio13):0:296.448979591837 </span></span>
+<span><span class="co">#&gt;                                  -6.379973e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio13):0:312.918367346939 </span></span>
+<span><span class="co">#&gt;                                  -5.066619e-01 </span></span>
+<span><span class="co">#&gt;              hinge(bio14):133.428571428571:467 </span></span>
+<span><span class="co">#&gt;                                  -1.366309e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio14):0:9.53061224489796 </span></span>
+<span><span class="co">#&gt;                                   5.322608e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio14):0:28.5918367346939 </span></span>
+<span><span class="co">#&gt;                                  -7.552650e-02 </span></span>
+<span><span class="co">#&gt;                hinge(bio14):0:66.7142857142857 </span></span>
+<span><span class="co">#&gt;                                  -1.045965e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio15):66.2902190539302:191.071807861328 </span></span>
+<span><span class="co">#&gt;                                  -2.047826e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio15):70.1896437041613:191.071807861328 </span></span>
+<span><span class="co">#&gt;                                  -4.981868e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio15):0:23.3965479013871 </span></span>
+<span><span class="co">#&gt;                                   4.135612e+00 </span></span>
+<span><span class="co">#&gt;                 hinge(bio15):0:42.893671152543 </span></span>
+<span><span class="co">#&gt;                                  -1.254530e+00 </span></span>
+<span><span class="co">#&gt;             hinge(bio18):718.285714285714:1676 </span></span>
+<span><span class="co">#&gt;                                  -3.982232e-01 </span></span>
+<span><span class="co">#&gt;              hinge(bio18):1094.5306122449:1676 </span></span>
+<span><span class="co">#&gt;                                  -6.820240e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio18):0:307.836734693878 </span></span>
+<span><span class="co">#&gt;                                   5.126147e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio18):0:376.244897959184 </span></span>
+<span><span class="co">#&gt;                                   2.540105e-01 </span></span>
+<span><span class="co">#&gt;             hinge(bio19):1047.67346938776:2232 </span></span>
+<span><span class="co">#&gt;                                  -3.226929e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:45.5510204081633 </span></span>
+<span><span class="co">#&gt;                                   1.023080e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:91.1020408163265 </span></span>
+<span><span class="co">#&gt;                                  -2.805076e-01 </span></span>
+<span><span class="co">#&gt;                 hinge(bio19):0:136.65306122449 </span></span>
+<span><span class="co">#&gt;                                  -3.161503e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:227.755102040816 </span></span>
+<span><span class="co">#&gt;                                  -4.271298e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:501.061224489796 </span></span>
+<span><span class="co">#&gt;                                   1.194721e+00</span></span>
 <span><span class="co"># the enframe function from the tibble package makes this named vector into a </span></span>
 <span><span class="co"># more readable table.</span></span>
 <span><span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/enframe.html" class="external-link">enframe</a></span><span class="op">(</span><span class="va">m1.mx</span><span class="op">$</span><span class="va">betas</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 43 × 2</span></span></span>
-<span><span class="co">#&gt;    name                                               value</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> bio2                                          -<span style="color: #BB0000;">0.130</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> bio13                                          0.015<span style="text-decoration: underline;">7</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> bio14                                         -<span style="color: #BB0000;">0.003</span><span style="color: #BB0000; text-decoration: underline;">41</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> bio15                                         -<span style="color: #BB0000;">0.010</span><span style="color: #BB0000; text-decoration: underline;">5</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> bio18                                          0.000<span style="text-decoration: underline;">478</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> bio19                                          0.000<span style="text-decoration: underline;">505</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> I(bio3^2)                                     -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">561</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> I(bio5^2)                                     -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">089</span><span style="color: #BB0000;">3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> I(bio9^2)                                     -<span style="color: #BB0000;">0.002</span><span style="color: #BB0000; text-decoration: underline;">11</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> hinge(bio2):10.3210696200935:18.9859161376953 -<span style="color: #BB0000;">1.66</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 33 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 41 × 2</span></span></span>
+<span><span class="co">#&gt;    name                                                value</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> bio2                                          -<span style="color: #BB0000;">0.034</span><span style="color: #BB0000; text-decoration: underline;">8</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> bio13                                          0.013<span style="text-decoration: underline;">7</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> bio14                                         -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">196</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> bio19                                          0.000<span style="text-decoration: underline;">202</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> I(bio3^2)                                     -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">573</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> I(bio5^2)                                     -<span style="color: #BB0000;">0.001</span><span style="color: #BB0000; text-decoration: underline;">95</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> I(bio14^2)                                    -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">001</span><span style="color: #BB0000;">17</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> hinge(bio2):10.541088522697:18.8052501678467  -<span style="color: #BB0000;">4.44</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> hinge(bio2):4.84166669845581:8.54629088421257 -<span style="color: #BB0000;">0.736</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> hinge(bio2):4.84166669845581:8.83126197542463 -<span style="color: #BB0000;">1.29</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 31 more rows</span></span></span>
 <span><span class="co"># SpatRaster of model predictions (for extent of "envs") with names corresponding </span></span>
 <span><span class="co"># to tune.args column label.</span></span>
 <span><span class="fu"><a href="../reference/eval.predictions.html">eval.predictions</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span></span>
-<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; class       : SpatRaster</span></span>
 <span><span class="co">#&gt; size        : 1152, 1110, 15  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.08333333, 0.08333333  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -124.8333, -32.33333, -56, 40  (xmin, xmax, ymin, ymax)</span></span>
-<span><span class="co">#&gt; coord. ref. :  </span></span>
+<span><span class="co">#&gt; coord. ref. : </span></span>
 <span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       :    fc.L_rm.1,   fc.LQ_rm.1,  fc.LQH_rm.1,    fc.L_rm.2,  fc.LQ_rm.2,  fc.LQH_rm.2, ... </span></span>
-<span><span class="co">#&gt; min values  : 2.746611e-06, 1.631124e-07, 1.242599e-08, 5.174928e-06, 3.58231e-06, 6.638164e-08, ... </span></span>
-<span><span class="co">#&gt; max values  : 1.000000e+00, 1.000000e+00, 1.000000e+00, 1.000000e+00, 1.00000e+00, 1.000000e+00, ...</span></span>
+<span><span class="co">#&gt; names       : fc.L_rm.1, fc.LQ_rm.1, fc.LQH_rm.1, fc.L_rm.2, fc.LQ_rm.2, fc.LQH_rm.2, ...</span></span>
+<span><span class="co">#&gt; min values  :  0.000003,          0,           0,  0.000007,   0.000006,           0, ...</span></span>
+<span><span class="co">#&gt; max values  :         1,          1,           1,         1,          1,           1, ...</span></span>
 <span><span class="co"># Original occurrence data coordinates with associated predictor variable values.</span></span>
 <span><span class="fu"><a href="../reference/eval.occs.html">eval.occs</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   longitude  latitude     bio2     bio3     bio5     bio8     bio9 bio13 bio14</span></span>
@@ -1235,25 +1222,25 @@ model</li>
 <span><span class="co"># Background data coordinates with associated predictor variable values.</span></span>
 <span><span class="fu"><a href="../reference/eval.bg.html">eval.bg</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       longitude   latitude      bio2     bio3   bio5     bio8     bio9 bio13</span></span>
-<span><span class="co">#&gt; 11000 -68.20833  -4.625000  9.026417 82.53855 31.561 26.18217 25.67600   323</span></span>
-<span><span class="co">#&gt; 21000 -69.12500  -8.791667 11.760584 78.68716 31.416 25.33333 23.58117   340</span></span>
-<span><span class="co">#&gt; 31000 -70.54167 -13.125000  9.978250 75.81680 29.721 23.88500 22.62383   820</span></span>
-<span><span class="co">#&gt; 41000 -63.87500 -20.791667 12.256917 58.70452 32.026 25.06850 20.10700   135</span></span>
-<span><span class="co">#&gt; 51000 -63.20833  -9.208333 11.365750 71.17384 33.138 25.59017 24.89717   377</span></span>
-<span><span class="co">#&gt; 61000 -62.45833  -2.625000  8.681084 88.57346 31.400 26.23833 26.32333   321</span></span>
+<span><span class="co">#&gt; 11000 -71.95833   4.541667  9.641916 69.77795 34.988 25.49733 27.81883   373</span></span>
+<span><span class="co">#&gt; 21000 -75.20833  -8.708333 11.186167 89.82710 32.896 26.66250 26.62750   394</span></span>
+<span><span class="co">#&gt; 31000 -85.70833  13.041667  9.192250 71.62978 29.368 23.17200 22.98800   272</span></span>
+<span><span class="co">#&gt; 41000 -60.45833 -20.791667 12.932751 60.41083 35.029 28.53033 21.36767    83</span></span>
+<span><span class="co">#&gt; 51000 -62.79167  -9.125000 11.138083 71.42087 32.605 25.32933 24.62333   384</span></span>
+<span><span class="co">#&gt; 61000 -69.95833  -2.625000  8.097500 82.66975 31.352 26.37200 26.29867   319</span></span>
 <span><span class="co">#&gt;       bio14    bio15 bio18 bio19</span></span>
-<span><span class="co">#&gt; 11000   104 31.34519   597   480</span></span>
-<span><span class="co">#&gt; 21000    40 55.14707   898   172</span></span>
-<span><span class="co">#&gt; 31000   256 42.86143  1598   846</span></span>
-<span><span class="co">#&gt; 41000     3 82.63156   311    54</span></span>
-<span><span class="co">#&gt; 51000    11 68.50643   508   170</span></span>
-<span><span class="co">#&gt; 61000   127 30.23508   587   654</span></span>
+<span><span class="co">#&gt; 11000    19 60.05532   155  1013</span></span>
+<span><span class="co">#&gt; 21000   118 38.69117   912   413</span></span>
+<span><span class="co">#&gt; 31000    27 63.25190   461   208</span></span>
+<span><span class="co">#&gt; 41000     9 59.48252   238    60</span></span>
+<span><span class="co">#&gt; 51000    14 68.19033   543   173</span></span>
+<span><span class="co">#&gt; 61000   180 17.63131   691   735</span></span>
 <span><span class="co"># Partition group assignments for occurrence data.</span></span>
 <span><span class="fu"><a href="../reference/eval.occs.grp.html">eval.occs.grp</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  Factor w/ 4 levels "1","2","3","4": 3 3 3 1 1 1 4 4 3 1 ...</span></span>
 <span><span class="co"># Partition group assignments for background data.</span></span>
 <span><span class="fu"><a href="../reference/eval.bg.grp.html">eval.bg.grp</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  Factor w/ 4 levels "1","2","3","4": 2 2 2 2 2 2 2 2 2 2 ...</span></span></code></pre></div>
+<span><span class="co">#&gt;  Factor w/ 4 levels "1","2","3","4": 2 1 3 2 2 2 2 1 2 2 ...</span></span></code></pre></div>
 <p>Maxent models run with <code>maxent.jar</code> have a different
 structure from models run with <code>maxnet</code>, so below is a
 demonstration of how to extract the “betas” information for
@@ -1262,19 +1249,19 @@ demonstration of how to extract the “betas” information for
 users have issues running the Java version of Maxent, this portion is
 not automatically evaluated for the vignette to avoid R Markdown
 knitting errors.</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># NOTE -- This code is not evaluated and so will display no output in this vignette.</span></span>
 <span><span class="co"># Please run independently.</span></span>
 <span></span>
 <span><span class="co"># For maxent.jar models, we can access this information in the lambdas slot.</span></span>
 <span><span class="va">m1.mxjar</span> <span class="op">&lt;-</span> <span class="va">e.mxjar</span><span class="op">@</span><span class="va">models</span><span class="op">$</span><span class="va">fc.LQ_rm.1</span></span>
 <span><span class="va">m1.mxjar</span><span class="op">@</span><span class="va">lambdas</span></span></code></pre></div>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The notation used here is difficult to decipher, so check out the </span></span>
 <span><span class="co"># [`rmaxent`](https://github.com/johnbaums/rmaxent/blob/master/) package.</span></span>
 <span><span class="co"># available on Github for the `parse_lambdas()` function.</span></span>
 <span><span class="fu"><a href="../reference/parse_lambdas.html">parse_lambdas</a></span><span class="op">(</span><span class="va">m1.mxjar</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can also get a long list of results statistics from the results slot.</span></span>
 <span><span class="va">m1.mxjar</span><span class="op">@</span><span class="va">results</span></span></code></pre></div>
 </div>
@@ -1291,29 +1278,29 @@ represents the feature class. Notice that models with NA scores for
 cross-validation are not plotted here, so hinge models with rm 2 and
 higher are not shown because they had errors during
 cross-validation.</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/evalplot.stats.html">evalplot.stats</a></span><span class="op">(</span>e <span class="op">=</span> <span class="va">e.mx</span>, stats <span class="op">=</span> <span class="st">"or.10p"</span>, color <span class="op">=</span> <span class="st">"fc"</span>, x.var <span class="op">=</span> <span class="st">"rm"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-1.png" width="672"></p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can plot more than one statistic at once with ggplot facetting.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.stats.html">evalplot.stats</a></span><span class="op">(</span>e <span class="op">=</span> <span class="va">e.mx</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"or.10p"</span>, <span class="st">"cbi.val"</span><span class="op">)</span>, color <span class="op">=</span> <span class="st">"fc"</span>, x.var <span class="op">=</span> <span class="st">"rm"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-2.png" width="672"></p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-2.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sometimes the error bars make it hard to visualize the plot, so we can try turning them off.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.stats.html">evalplot.stats</a></span><span class="op">(</span>e <span class="op">=</span> <span class="va">e.mx</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"or.10p"</span>, <span class="st">"cbi.val"</span><span class="op">)</span>, color <span class="op">=</span> <span class="st">"fc"</span>, x.var <span class="op">=</span> <span class="st">"rm"</span>, </span>
 <span>               error.bars <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-3.png" width="672"></p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-3.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can also fiddle with the dodge argument to jitter the positions of overlapping points.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.stats.html">evalplot.stats</a></span><span class="op">(</span>e <span class="op">=</span> <span class="va">e.mx</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"or.10p"</span>, <span class="st">"cbi.val"</span><span class="op">)</span>, color <span class="op">=</span> <span class="st">"fc"</span>, x.var <span class="op">=</span> <span class="st">"rm"</span>, </span>
 <span>               dodge <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-4.png" width="672"></p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-4.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Finally, we can switch which variables are on the x-axis and which symbolized by color.</span></span>
 <span><span class="co"># ENMeval currently only accepts two variables for plotting at a time.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.stats.html">evalplot.stats</a></span><span class="op">(</span>e <span class="op">=</span> <span class="va">e.mx</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"or.10p"</span>, <span class="st">"cbi.val"</span><span class="op">)</span>, color <span class="op">=</span> <span class="st">"rm"</span>, x.var <span class="op">=</span> <span class="st">"fc"</span>, </span>
 <span>               error.bars <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-5.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.res-5.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="select">Model selection<a class="anchor" aria-label="anchor" href="#select"></a>
@@ -1333,7 +1320,7 @@ measure of presence-background ENMs, but it is valid to use for relative
 comparisons of models constructed with the same data (Radosavljevic
 &amp; Anderson 2014). Thus, it can be used as well to choose models,
 though it is typically correlated with CBI.</p>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Overall results</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.results.html">eval.results</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span></span>
 <span><span class="co"># Select the model with delta AICc equal to 0, or the one with the lowest AICc score.</span></span>
@@ -1342,11 +1329,11 @@ though it is typically correlated with CBI.</p>
 <span><span class="va">opt.aicc</span> <span class="op">&lt;-</span> <span class="va">res</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">delta.AICc</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">opt.aicc</span></span>
 <span><span class="co">#&gt;    fc rm   tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg</span></span>
-<span><span class="co">#&gt; 1 LQH  2 fc.LQH_rm.2 0.8822739     0.938   0.09416783   0.1200718   0.7887931</span></span>
+<span><span class="co">#&gt; 1 LQH  2 fc.LQH_rm.2 0.8792736     0.937     0.101958   0.1157432   0.7764359</span></span>
 <span><span class="co">#&gt;   auc.val.sd cbi.val.avg cbi.val.sd or.10p.avg or.10p.sd or.mtp.avg  or.mtp.sd</span></span>
-<span><span class="co">#&gt; 1  0.1438574       0.619  0.3072599   0.214899 0.1841122 0.05113636 0.07509177</span></span>
+<span><span class="co">#&gt; 1  0.1403662     0.58825  0.2782965  0.2093434 0.1782428 0.05113636 0.07509177</span></span>
 <span><span class="co">#&gt;      AICc delta.AICc w.AIC ncoef</span></span>
-<span><span class="co">#&gt; 1 3808.58          0     1    27</span></span>
+<span><span class="co">#&gt; 1 3826.62          0     1    28</span></span>
 <span><span class="co"># This dplyr operation executes the sequential criteria explained above, but</span></span>
 <span><span class="co"># first removes settings with NA values for omission rate.</span></span>
 <span><span class="va">opt.seq</span> <span class="op">&lt;-</span> <span class="va">res</span> <span class="op">|&gt;</span> </span>
@@ -1355,57 +1342,75 @@ though it is typically correlated with CBI.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cbi.val.avg</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cbi.val.avg</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">opt.seq</span></span>
 <span><span class="co">#&gt;    fc rm   tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg</span></span>
-<span><span class="co">#&gt; 1 LQH  3 fc.LQH_rm.3  0.860107     0.919    0.1037965   0.1181042   0.7703849</span></span>
+<span><span class="co">#&gt; 1 LQH  2 fc.LQH_rm.2 0.8792736     0.937     0.101958   0.1157432   0.7764359</span></span>
 <span><span class="co">#&gt;   auc.val.sd cbi.val.avg cbi.val.sd or.10p.avg or.10p.sd or.mtp.avg  or.mtp.sd</span></span>
-<span><span class="co">#&gt; 1  0.1422159      0.6155  0.2875604  0.2039141 0.2097099 0.06818182 0.08088696</span></span>
-<span><span class="co">#&gt;       AICc delta.AICc        w.AIC ncoef</span></span>
-<span><span class="co">#&gt; 1 3854.314   45.73378 1.172294e-10    19</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  0.1403662     0.58825  0.2782965  0.2093434 0.1782428 0.05113636 0.07509177</span></span>
+<span><span class="co">#&gt;      AICc delta.AICc w.AIC ncoef</span></span>
+<span><span class="co">#&gt; 1 3826.62          0     1    28</span></span></code></pre></div>
 <p>Let’s now choose the optimal model settings based on the sequential
 criteria and examine it.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can select a single model from the ENMevaluation object using the tune.args of our</span></span>
 <span><span class="co"># optimal model.</span></span>
 <span><span class="va">mod.seq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.models.html">eval.models</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="va">opt.seq</span><span class="op">$</span><span class="va">tune.args</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co"># Here are the non-zero coefficients in our model.</span></span>
 <span><span class="va">mod.seq</span><span class="op">$</span><span class="va">betas</span></span>
 <span><span class="co">#&gt;                                          bio2 </span></span>
-<span><span class="co">#&gt;                                 -4.627958e-01 </span></span>
+<span><span class="co">#&gt;                                 -3.571127e-01 </span></span>
 <span><span class="co">#&gt;                                         bio13 </span></span>
-<span><span class="co">#&gt;                                  6.952041e-03 </span></span>
+<span><span class="co">#&gt;                                  8.793992e-03 </span></span>
 <span><span class="co">#&gt;                                         bio14 </span></span>
-<span><span class="co">#&gt;                                 -9.994936e-03 </span></span>
+<span><span class="co">#&gt;                                 -5.872427e-03 </span></span>
 <span><span class="co">#&gt;                                         bio15 </span></span>
-<span><span class="co">#&gt;                                 -1.024131e-02 </span></span>
+<span><span class="co">#&gt;                                 -1.062860e-02 </span></span>
 <span><span class="co">#&gt;                                         bio19 </span></span>
-<span><span class="co">#&gt;                                  4.308801e-04 </span></span>
+<span><span class="co">#&gt;                                  6.228595e-04 </span></span>
+<span><span class="co">#&gt;                                     I(bio3^2) </span></span>
+<span><span class="co">#&gt;                                 -1.352646e-04 </span></span>
 <span><span class="co">#&gt;                                     I(bio5^2) </span></span>
-<span><span class="co">#&gt;                                 -4.196653e-04 </span></span>
+<span><span class="co">#&gt;                                 -1.138146e-03 </span></span>
 <span><span class="co">#&gt;                                    I(bio18^2) </span></span>
-<span><span class="co">#&gt;                                 -4.125060e-08 </span></span>
-<span><span class="co">#&gt; hinge(bio3):90.0485847628846:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                  1.041632e+00 </span></span>
-<span><span class="co">#&gt; hinge(bio3):42.0289840698242:76.1762556737783 </span></span>
-<span><span class="co">#&gt;                                  4.092149e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio5):32.091081969592:37.1590003967285 </span></span>
-<span><span class="co">#&gt;                                 -1.121875e+00 </span></span>
-<span><span class="co">#&gt; hinge(bio5):6.11800003051758:25.1226941322794 </span></span>
-<span><span class="co">#&gt;                                  1.906558e+00 </span></span>
-<span><span class="co">#&gt; hinge(bio8):26.0479145001392:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                  2.013521e+00 </span></span>
-<span><span class="co">#&gt;              hinge(bio13):465.34693877551:877 </span></span>
-<span><span class="co">#&gt;                                 -2.802205e-01 </span></span>
-<span><span class="co">#&gt;               hinge(bio13):0:286.367346938775 </span></span>
-<span><span class="co">#&gt;                                 -1.361221e+00 </span></span>
-<span><span class="co">#&gt;               hinge(bio13):0:304.265306122449 </span></span>
-<span><span class="co">#&gt;                                 -1.349046e-04 </span></span>
-<span><span class="co">#&gt;               hinge(bio14):0:59.7551020408163 </span></span>
-<span><span class="co">#&gt;                                 -1.211475e-01 </span></span>
-<span><span class="co">#&gt;               hinge(bio18):0:312.244897959184 </span></span>
-<span><span class="co">#&gt;                                  4.863442e+00 </span></span>
-<span><span class="co">#&gt;            hinge(bio19):1059.69387755102:2077 </span></span>
-<span><span class="co">#&gt;                                 -4.091483e-01 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):1144.4693877551:2077 </span></span>
-<span><span class="co">#&gt;                                 -1.021308e+00</span></span>
+<span><span class="co">#&gt;                                 -1.003606e-07 </span></span>
+<span><span class="co">#&gt; hinge(bio2):4.84166669845581:8.54629088421257 </span></span>
+<span><span class="co">#&gt;                                 -6.341348e-01 </span></span>
+<span><span class="co">#&gt; hinge(bio3):89.3984775153958:94.7731399536133 </span></span>
+<span><span class="co">#&gt;                                  1.198953e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio3):90.4734100030393:94.7731399536133 </span></span>
+<span><span class="co">#&gt;                                  9.824436e-01 </span></span>
+<span><span class="co">#&gt;  hinge(bio3):42.101448059082:76.4992876636739 </span></span>
+<span><span class="co">#&gt;                                  5.376644e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio5):32.159918726707:37.0200004577637 </span></span>
+<span><span class="co">#&gt;                                 -1.851733e+00 </span></span>
+<span><span class="co">#&gt;   hinge(bio5):7.2519998550415:24.869796130122 </span></span>
+<span><span class="co">#&gt;                                  4.005943e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio8):26.1010746955872:29.4892711639404 </span></span>
+<span><span class="co">#&gt;                                  2.860478e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio8):27.7951729297638:29.4892711639404 </span></span>
+<span><span class="co">#&gt;                                 -1.429452e-01 </span></span>
+<span><span class="co">#&gt;             hinge(bio13):461.142857142857:807 </span></span>
+<span><span class="co">#&gt;                                 -9.242105e-03 </span></span>
+<span><span class="co">#&gt;             hinge(bio13):477.612244897959:807 </span></span>
+<span><span class="co">#&gt;                                 -2.184089e+00 </span></span>
+<span><span class="co">#&gt;               hinge(bio13):0:296.448979591837 </span></span>
+<span><span class="co">#&gt;                                 -2.898354e+00 </span></span>
+<span><span class="co">#&gt;               hinge(bio14):0:9.53061224489796 </span></span>
+<span><span class="co">#&gt;                                  6.768485e-02 </span></span>
+<span><span class="co">#&gt;               hinge(bio14):0:57.1836734693878 </span></span>
+<span><span class="co">#&gt;                                 -3.403625e-01 </span></span>
+<span><span class="co">#&gt;               hinge(bio14):0:66.7142857142857 </span></span>
+<span><span class="co">#&gt;                                 -2.231388e-01 </span></span>
+<span><span class="co">#&gt;               hinge(bio15):0:23.3965479013871 </span></span>
+<span><span class="co">#&gt;                                  1.627653e+00 </span></span>
+<span><span class="co">#&gt;               hinge(bio18):0:307.836734693878 </span></span>
+<span><span class="co">#&gt;                                  4.550103e+00 </span></span>
+<span><span class="co">#&gt;               hinge(bio18):0:342.040816326531 </span></span>
+<span><span class="co">#&gt;                                  6.104337e-01 </span></span>
+<span><span class="co">#&gt;               hinge(bio18):0:376.244897959184 </span></span>
+<span><span class="co">#&gt;                                  4.888321e-02 </span></span>
+<span><span class="co">#&gt;            hinge(bio19):1047.67346938776:2232 </span></span>
+<span><span class="co">#&gt;                                 -2.788112e+00 </span></span>
+<span><span class="co">#&gt;               hinge(bio19):0:501.061224489796 </span></span>
+<span><span class="co">#&gt;                                  1.128433e-01</span></span>
 <span><span class="co"># And these are the marginal response curves for the predictor variables wit non-zero </span></span>
 <span><span class="co"># coefficients in our model. We define the y-axis to be the cloglog transformation, which</span></span>
 <span><span class="co"># is an approximation of occurrence probability (with assumptions) bounded by 0 and 1</span></span>
@@ -1419,7 +1424,7 @@ criteria and examine it.</p>
 <span><span class="co">#&gt;           1</span></span></code></pre></div>
 <p>This is how to view the marginal response curves for
 <code>maxent.jar</code> models.</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># NOTE -- This code is not evaluated and so will display no output in this vignette.</span></span>
 <span><span class="co"># Please run independently.</span></span>
 <span></span>
@@ -1437,7 +1442,7 @@ This can be changed with the <code>pred.type</code> argument in
 variable rasters, and thus include areas outside of the background
 extent used for model training. Thus, we should interpret areas far
 outside this extent with caution.</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can select the model predictions for our optimal model the same way we did for the </span></span>
 <span><span class="co"># model object above.</span></span>
 <span><span class="va">pred.seq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.predictions.html">eval.predictions</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">opt.seq</span><span class="op">$</span><span class="va">tune.args</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span>
@@ -1447,7 +1452,7 @@ outside this extent with caution.</p>
 <span><span class="co"># visualize where the training data is located.</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="fu"><a href="../reference/eval.bg.html">eval.bg</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fl">3</span>, col <span class="op">=</span> <span class="fu"><a href="../reference/eval.bg.grp.html">eval.bg.grp</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span>, cex <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="fu"><a href="../reference/eval.occs.html">eval.occs</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fl">21</span>, bg <span class="op">=</span> <span class="fu"><a href="../reference/eval.occs.grp.html">eval.occs.grp</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plotPred-1.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plotPred-1.png" class="r-plt" alt="" width="672"></p>
 <p>Let us now explore how model complexity changes the predictions in
 our example. We will compare the simple model built with only linear
 feature classes and the highest regularization multiplier value we used
@@ -1460,114 +1465,110 @@ while the complex ones tend to show more patchiness. Deciding on whether
 a model that is more simple or complex is appropriate for your study is
 not straightforward, but guides exist in the literature (e.g., Merow et
 al. 2014).</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># First, let's examine the non-zero model coefficients in the betas slot.</span></span>
 <span><span class="co"># The simpler model has fewer model coefficients.</span></span>
 <span><span class="va">mod.simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.models.html">eval.models</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="st">'fc.L_rm.5'</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">mod.complex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.models.html">eval.models</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="st">'fc.LQH_rm.1'</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">mod.simple</span><span class="op">$</span><span class="va">betas</span></span>
 <span><span class="co">#&gt;         bio2         bio3         bio8        bio13        bio14        bio15 </span></span>
-<span><span class="co">#&gt; -0.532966677  0.036981721  0.014488869  0.004688425 -0.013258936 -0.023718739 </span></span>
+<span><span class="co">#&gt; -0.565283642  0.034469299  0.004934131  0.004228339 -0.013124112 -0.024652538 </span></span>
 <span><span class="co">#&gt;        bio18 </span></span>
-<span><span class="co">#&gt;  0.001309774</span></span>
+<span><span class="co">#&gt;  0.001446325</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mod.simple</span><span class="op">$</span><span class="va">betas</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 7</span></span>
 <span><span class="va">mod.complex</span><span class="op">$</span><span class="va">betas</span></span>
 <span><span class="co">#&gt;                                           bio2 </span></span>
-<span><span class="co">#&gt;                                  -1.300772e-01 </span></span>
+<span><span class="co">#&gt;                                  -3.484901e-02 </span></span>
 <span><span class="co">#&gt;                                          bio13 </span></span>
-<span><span class="co">#&gt;                                   1.567920e-02 </span></span>
+<span><span class="co">#&gt;                                   1.371658e-02 </span></span>
 <span><span class="co">#&gt;                                          bio14 </span></span>
-<span><span class="co">#&gt;                                  -3.408800e-03 </span></span>
-<span><span class="co">#&gt;                                          bio15 </span></span>
-<span><span class="co">#&gt;                                  -1.047407e-02 </span></span>
-<span><span class="co">#&gt;                                          bio18 </span></span>
-<span><span class="co">#&gt;                                   4.783857e-04 </span></span>
+<span><span class="co">#&gt;                                  -1.958717e-04 </span></span>
 <span><span class="co">#&gt;                                          bio19 </span></span>
-<span><span class="co">#&gt;                                   5.045810e-04 </span></span>
+<span><span class="co">#&gt;                                   2.020559e-04 </span></span>
 <span><span class="co">#&gt;                                      I(bio3^2) </span></span>
-<span><span class="co">#&gt;                                  -5.605024e-04 </span></span>
+<span><span class="co">#&gt;                                  -5.733600e-04 </span></span>
 <span><span class="co">#&gt;                                      I(bio5^2) </span></span>
-<span><span class="co">#&gt;                                  -8.933996e-05 </span></span>
-<span><span class="co">#&gt;                                      I(bio9^2) </span></span>
-<span><span class="co">#&gt;                                  -2.114426e-03 </span></span>
-<span><span class="co">#&gt;  hinge(bio2):10.3210696200935:18.9859161376953 </span></span>
-<span><span class="co">#&gt;                                  -1.663205e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio2):10.6098978373469:18.9859161376953 </span></span>
-<span><span class="co">#&gt;                                  -2.082817e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio2):4.83333349227905:8.58810031657316 </span></span>
-<span><span class="co">#&gt;                                  -1.580067e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):88.9814825252611:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                   1.123558e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):90.0485847628846:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                   2.667189e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):92.1827892381318:94.3169937133789 </span></span>
-<span><span class="co">#&gt;                                  -2.634117e-01 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):42.0289840698242:67.6394377727898 </span></span>
-<span><span class="co">#&gt;                                  -1.298906e+01 </span></span>
-<span><span class="co">#&gt;  hinge(bio3):42.0289840698242:76.1762556737783 </span></span>
-<span><span class="co">#&gt;                                   1.381063e+01 </span></span>
-<span><span class="co">#&gt;   hinge(bio5):32.091081969592:37.1590003967285 </span></span>
-<span><span class="co">#&gt;                                  -3.393143e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio5):6.11800003051758:25.1226941322794 </span></span>
-<span><span class="co">#&gt;                                   7.683829e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio8):25.4872614485877:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                   4.599610e-01 </span></span>
-<span><span class="co">#&gt;  hinge(bio8):26.0479145001392:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                   4.394250e+00 </span></span>
-<span><span class="co">#&gt;  hinge(bio8):27.7298736547937:29.4118328094482 </span></span>
-<span><span class="co">#&gt;                                  -4.326107e+00 </span></span>
-<span><span class="co">#&gt;              hinge(bio13):447.448979591837:877 </span></span>
-<span><span class="co">#&gt;                                  -5.871009e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio13):0:196.877551020408 </span></span>
-<span><span class="co">#&gt;                                   8.887840e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio13):0:214.775510204082 </span></span>
-<span><span class="co">#&gt;                                   1.749113e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio13):0:304.265306122449 </span></span>
-<span><span class="co">#&gt;                                  -7.253474e+00 </span></span>
-<span><span class="co">#&gt;              hinge(bio14):129.469387755102:488 </span></span>
-<span><span class="co">#&gt;                                  -7.833881e-02 </span></span>
-<span><span class="co">#&gt;              hinge(bio14):139.428571428571:488 </span></span>
-<span><span class="co">#&gt;                                  -1.871329e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio14):0:29.8775510204082 </span></span>
-<span><span class="co">#&gt;                                  -1.441614e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio14):0:59.7551020408163 </span></span>
-<span><span class="co">#&gt;                                  -1.069372e+00 </span></span>
-<span><span class="co">#&gt; hinge(bio15):69.9453473772321:201.607177734375 </span></span>
-<span><span class="co">#&gt;                                  -6.670763e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio15):0:20.5721609933036 </span></span>
-<span><span class="co">#&gt;                                   6.341525e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio15):0:41.1443219866071 </span></span>
-<span><span class="co">#&gt;                                  -1.084412e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio18):728.571428571429:1700 </span></span>
-<span><span class="co">#&gt;                                  -1.210289e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio18):1110.20408163265:1700 </span></span>
-<span><span class="co">#&gt;                                  -1.383907e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio18):0:312.244897959184 </span></span>
-<span><span class="co">#&gt;                                   5.003381e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):847.755102040816:2077 </span></span>
-<span><span class="co">#&gt;                                  -7.545615e-01 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):1017.30612244898:2077 </span></span>
-<span><span class="co">#&gt;                                  -2.389713e+00 </span></span>
-<span><span class="co">#&gt;             hinge(bio19):1059.69387755102:2077 </span></span>
-<span><span class="co">#&gt;                                  -2.880705e-02 </span></span>
-<span><span class="co">#&gt;                hinge(bio19):0:42.3877551020408 </span></span>
-<span><span class="co">#&gt;                                   1.632038e+00 </span></span>
-<span><span class="co">#&gt;                hinge(bio19):0:169.551020408163 </span></span>
-<span><span class="co">#&gt;                                  -1.410946e-01 </span></span>
-<span><span class="co">#&gt;                hinge(bio19):0:254.326530612245 </span></span>
-<span><span class="co">#&gt;                                  -4.644699e-01 </span></span>
-<span><span class="co">#&gt;                 hinge(bio19):0:508.65306122449 </span></span>
-<span><span class="co">#&gt;                                   1.112090e+00</span></span>
+<span><span class="co">#&gt;                                  -1.947214e-03 </span></span>
+<span><span class="co">#&gt;                                     I(bio14^2) </span></span>
+<span><span class="co">#&gt;                                  -1.169370e-06 </span></span>
+<span><span class="co">#&gt;   hinge(bio2):10.541088522697:18.8052501678467 </span></span>
+<span><span class="co">#&gt;                                  -4.444045e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio2):4.84166669845581:8.54629088421257 </span></span>
+<span><span class="co">#&gt;                                  -7.364501e-01 </span></span>
+<span><span class="co">#&gt;  hinge(bio2):4.84166669845581:8.83126197542463 </span></span>
+<span><span class="co">#&gt;                                  -1.287224e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio3):89.3984775153958:94.7731399536133 </span></span>
+<span><span class="co">#&gt;                                   3.373626e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio3):90.4734100030393:94.7731399536133 </span></span>
+<span><span class="co">#&gt;                                   3.309855e-01 </span></span>
+<span><span class="co">#&gt;   hinge(bio3):42.101448059082:67.8998277625259 </span></span>
+<span><span class="co">#&gt;                                  -1.109297e+01 </span></span>
+<span><span class="co">#&gt;   hinge(bio3):42.101448059082:76.4992876636739 </span></span>
+<span><span class="co">#&gt;                                   1.252329e+01 </span></span>
+<span><span class="co">#&gt;   hinge(bio5):32.159918726707:37.0200004577637 </span></span>
+<span><span class="co">#&gt;                                  -3.024307e+00 </span></span>
+<span><span class="co">#&gt;    hinge(bio5):7.2519998550415:24.869796130122 </span></span>
+<span><span class="co">#&gt;                                   7.494751e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio8):26.1010746955872:29.4892711639404 </span></span>
+<span><span class="co">#&gt;                                   4.716079e+00 </span></span>
+<span><span class="co">#&gt;  hinge(bio8):27.7951729297638:29.4892711639404 </span></span>
+<span><span class="co">#&gt;                                  -4.146742e+00 </span></span>
+<span><span class="co">#&gt;              hinge(bio13):444.673469387755:807 </span></span>
+<span><span class="co">#&gt;                                  -3.830398e+00 </span></span>
+<span><span class="co">#&gt;              hinge(bio13):461.142857142857:807 </span></span>
+<span><span class="co">#&gt;                                  -9.733949e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio13):0:214.102040816327 </span></span>
+<span><span class="co">#&gt;                                   2.765453e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio13):0:296.448979591837 </span></span>
+<span><span class="co">#&gt;                                  -6.379973e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio13):0:312.918367346939 </span></span>
+<span><span class="co">#&gt;                                  -5.066619e-01 </span></span>
+<span><span class="co">#&gt;              hinge(bio14):133.428571428571:467 </span></span>
+<span><span class="co">#&gt;                                  -1.366309e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio14):0:9.53061224489796 </span></span>
+<span><span class="co">#&gt;                                   5.322608e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio14):0:28.5918367346939 </span></span>
+<span><span class="co">#&gt;                                  -7.552650e-02 </span></span>
+<span><span class="co">#&gt;                hinge(bio14):0:66.7142857142857 </span></span>
+<span><span class="co">#&gt;                                  -1.045965e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio15):66.2902190539302:191.071807861328 </span></span>
+<span><span class="co">#&gt;                                  -2.047826e+00 </span></span>
+<span><span class="co">#&gt; hinge(bio15):70.1896437041613:191.071807861328 </span></span>
+<span><span class="co">#&gt;                                  -4.981868e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio15):0:23.3965479013871 </span></span>
+<span><span class="co">#&gt;                                   4.135612e+00 </span></span>
+<span><span class="co">#&gt;                 hinge(bio15):0:42.893671152543 </span></span>
+<span><span class="co">#&gt;                                  -1.254530e+00 </span></span>
+<span><span class="co">#&gt;             hinge(bio18):718.285714285714:1676 </span></span>
+<span><span class="co">#&gt;                                  -3.982232e-01 </span></span>
+<span><span class="co">#&gt;              hinge(bio18):1094.5306122449:1676 </span></span>
+<span><span class="co">#&gt;                                  -6.820240e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio18):0:307.836734693878 </span></span>
+<span><span class="co">#&gt;                                   5.126147e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio18):0:376.244897959184 </span></span>
+<span><span class="co">#&gt;                                   2.540105e-01 </span></span>
+<span><span class="co">#&gt;             hinge(bio19):1047.67346938776:2232 </span></span>
+<span><span class="co">#&gt;                                  -3.226929e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:45.5510204081633 </span></span>
+<span><span class="co">#&gt;                                   1.023080e+00 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:91.1020408163265 </span></span>
+<span><span class="co">#&gt;                                  -2.805076e-01 </span></span>
+<span><span class="co">#&gt;                 hinge(bio19):0:136.65306122449 </span></span>
+<span><span class="co">#&gt;                                  -3.161503e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:227.755102040816 </span></span>
+<span><span class="co">#&gt;                                  -4.271298e-01 </span></span>
+<span><span class="co">#&gt;                hinge(bio19):0:501.061224489796 </span></span>
+<span><span class="co">#&gt;                                   1.194721e+00</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mod.complex</span><span class="op">$</span><span class="va">betas</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 43</span></span>
+<span><span class="co">#&gt; [1] 41</span></span>
 <span><span class="co"># Next, let's take a look at the marginal response curves.</span></span>
 <span><span class="co"># The complex model has marginal responses with more curves (from quadratic terms) and </span></span>
 <span><span class="co"># spikes (from hinge terms).</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mod.simple</span>, type <span class="op">=</span> <span class="st">"cloglog"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mod.complex</span>, type <span class="op">=</span> <span class="st">"cloglog"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.pred2-1.png" width="672"></p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.pred2-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># To get the data for the marginal response curves from a maxnet model, use the </span></span>
 <span><span class="co"># following code. You can then plot them any way you want.</span></span>
 <span><span class="va">mod.complex.mrc</span> <span class="op">&lt;-</span><span class="fu">maxnet</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/maxnet/man/plot.maxnet.html" class="external-link">response.plot</a></span><span class="op">(</span><span class="va">mod.complex</span>, </span>
@@ -1579,15 +1580,15 @@ al. 2014).</p>
 <span><span class="co"># Finally, let's cut the plotting area into two rows to visualize the predictions </span></span>
 <span><span class="co"># side-by-side.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.pred2-2.png" width="672"></p>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.pred2-2.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The simplest model: linear features only and high regularization.</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="../reference/eval.predictions.html">eval.predictions</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="st">'fc.L_rm.5'</span><span class="op">]</span><span class="op">]</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">30</span>,<span class="fl">20</span><span class="op">)</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">90</span>,<span class="op">-</span><span class="fl">30</span><span class="op">)</span>, </span>
 <span>     main <span class="op">=</span> <span class="st">'L_5 prediction'</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">terrain.colors</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co"># The most complex model: linear, quadratic, and hinge features with low regularization</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="../reference/eval.predictions.html">eval.predictions</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span><span class="op">[[</span><span class="st">'fc.LQH_rm.1'</span><span class="op">]</span><span class="op">]</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">30</span>,<span class="fl">20</span><span class="op">)</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">90</span>,<span class="op">-</span><span class="fl">30</span><span class="op">)</span>, </span>
 <span>     main <span class="op">=</span> <span class="st">'LQH_1 prediction'</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">terrain.colors</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.pred2-3.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/plot.pred2-3.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="null">Null models<a class="anchor" aria-label="anchor" href="#null"></a>
@@ -1614,11 +1615,11 @@ it to calculate null performance metrics using spatial partitions.</p>
 using the Bohl et al. method with the Kass et al. extension and
 visualize the performance of the empirical model against the null model
 averages.</p>
-<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We first run the null simulations with 100 iterations to get a reasonable null distribution </span></span>
 <span><span class="co"># for comparisons with the empirical values</span></span>
 <span><span class="va">mod.null</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ENMnulls.html">ENMnulls</a></span><span class="op">(</span><span class="va">e.mx</span>, mod.settings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>fc <span class="op">=</span> <span class="st">"LQH"</span>, rm <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>, no.iter <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># We can inspect the results of each null simulation.</span></span>
 <span><span class="fu"><a href="../reference/null.results.html">null.results</a></span><span class="op">(</span><span class="va">mod.null</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    fc rm   tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg</span></span>
@@ -1674,13 +1675,13 @@ averages.</p>
 <span><span class="co"># quantile (dashed blue line) and the null mean (solid blue line). For more </span></span>
 <span><span class="co"># details, please see ?evalplot.nulls.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.nulls.html">evalplot.nulls</a></span><span class="op">(</span><span class="va">mod.null</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"or.10p"</span>, <span class="st">"cbi.val"</span><span class="op">)</span>, plot.type <span class="op">=</span> <span class="st">"histogram"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-20-1.png" width="672"></p>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-20-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Or we can visualize the results with a violin plot. The red point shows the </span></span>
 <span><span class="co"># empirical value and the shape shows the density of the null distribution</span></span>
 <span><span class="co"># with lines denoting the quantiles.</span></span>
 <span><span class="fu"><a href="../reference/evalplot.nulls.html">evalplot.nulls</a></span><span class="op">(</span><span class="va">mod.null</span>, stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"or.10p"</span>, <span class="st">"cbi.val"</span><span class="op">)</span>, plot.type <span class="op">=</span> <span class="st">"violin"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-20-2.png" width="672"></p>
+<p><img src="ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-20-2.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="metadata">Metadata<a class="anchor" aria-label="anchor" href="#metadata"></a>
@@ -1697,7 +1698,7 @@ al. 2019, Zurell et al. 2020). Metadata generated by
 <code>ENMeval</code> can be saved to a CSV file for sharing with
 collaborators or for use in supplemental information for a manuscript,
 etc.</p>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate a rangeModelMetadata object based on the information stored in the </span></span>
 <span><span class="co"># ENMevaluate object.</span></span>
 <span><span class="va">rmm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/eval.rmm.html">eval.rmm</a></span><span class="op">(</span><span class="va">e.mx</span><span class="op">)</span></span>
@@ -1711,7 +1712,7 @@ etc.</p>
 <span><span class="va">rmm</span><span class="op">$</span><span class="va">prediction</span><span class="op">$</span><span class="va">continuous</span><span class="op">$</span><span class="va">maxVal</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">global</a></span><span class="op">(</span><span class="va">pred.seq</span>, <span class="va">max</span><span class="op">)</span></span>
 <span><span class="va">rmm</span><span class="op">$</span><span class="va">prediction</span><span class="op">$</span><span class="va">continuous</span><span class="op">$</span><span class="va">units</span> <span class="op">&lt;-</span> <span class="st">"suitability (cloglog transformation)"</span></span>
 <span><span class="co"># This is just an example -- there may be more fields relevant to fill in for your study.</span></span></code></pre></div>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Finally, we can save the metadata to a CSV file.</span></span>
 <span><span class="fu">rangeModelMetadata</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/rangeModelMetadata/man/rmmToCSV.html" class="external-link">rmmToCSV</a></span><span class="op">(</span><span class="va">rmm</span>, <span class="st">"rmm_mx1.csv"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -1995,7 +1996,7 @@ Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org" class="externa
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

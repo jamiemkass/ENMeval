@@ -1,0 +1,31 @@
+# Convert old ENMevaluation objects to new ones
+
+Converts ENMevaluation objects made with version \<=0.3.1 to new ones
+made with version \>=2.0.0.
+
+## Usage
+
+``` r
+ENMevaluation_convert(e, envs)
+```
+
+## Arguments
+
+- e:
+
+  ENMevaluation object: the old object to convert
+
+- envs:
+
+  SpatRaster: the original predictor variables used to generate the old
+  ENMevaluation object (these are used to make the new occs and bg slots
+  which contain the predictor variable values)
+
+## Note
+
+If bin.output was set to TRUE, `` `e@results` `` will be equivalent to
+the new results.partitions slot. Some slots are unable to be filled in
+because previous versions of ENMeval did not record them in
+ENMevaluation objects: variable.importance, partition.settings,
+other.settings, doClamp (set to TRUE arbitrarily to avoid errors, but
+may actually have been FALSE), clamp.directions, taxon.name, and rmm.

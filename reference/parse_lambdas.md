@@ -1,0 +1,62 @@
+# Parse Maxent lambdas information
+
+NOTICE: This function was borrowed from the rmaxent package written by
+John Baumgartner (https://github.com/johnbaums/rmaxent/). (dependencies
+on Github-only packages are not allowed for CRAN).
+
+Parse Maxent .lambdas files to extract the types, weights, minima and
+maxima of features, as well as the fitted model's entropy and other
+values required for predicting to new data.
+
+## Usage
+
+``` r
+parse_lambdas(lambdas)
+```
+
+## Arguments
+
+- lambdas:
+
+  Either a \`MaxEnt\` fitted model object (fitted with the \`maxent\`
+  function in the \`dismo\` package), or a file path to a Maxent
+  .lambdas file.
+
+## Value
+
+A list (of class \`lambdas\`) with five elements: \* \`lambdas\`: a
+\`data.frame\` describing the features used in a Maxent model, including
+their weights (lambdas), maxima, minima, and type; \*
+\`linearPredictorNormalizer\`: a constant that ensures the linear
+predictor (the sum of clamped features multiplied by their respective
+feature weights) is always negative (for numerical stability); \*
+\`densityNormalizer\`: a scaling constant that ensures Maxent's raw
+output sums to 1 over background points; \* \`numBackgroundPoints\`: the
+number of background points used in model training; and \* \`entropy\`:
+the entropy of the fitted model.
+
+## References
+
+\* Wilson, P. W. (2009) \[\_Guidelines for computing MaxEnt model output
+values from a lambdas
+file\_\](http://gis.humboldt.edu/OLM/Courses/GSP_570/Learning%20Modules/10%20BlueSpray_Maxent_Uncertinaty/MaxEnt%20lambda%20files.pdf).
+\* \_Maxent software for species habitat modeling, version 3.3.3k\_ help
+file (software freely available
+\[here\](https://www.cs.princeton.edu/~schapire/maxent/)).
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Below we use the predicts::MaxEnt example to fit a model:
+library(predicts)
+occs <- read.csv(file.path(system.file(package="predicts"),
+"/ex/bradypus.csv"))[,2:3]
+predictors <- rast(file.path(system.file(package='predicts'), '/ex/bio.tif'))
+me <- MaxEnt(predictors, occs)
+# ... and then parse the lambdas information:
+lam <- parse_lambdas(me)
+lam
+str(lam, 1)
+} # }
+```

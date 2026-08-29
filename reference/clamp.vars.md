@@ -1,0 +1,62 @@
+# Clamp predictor variables
+
+This function restricts the values of one or more predictor variable
+rasters to stay within the bounds of the input occurrence and background
+data (argument "ref.vals"). This is termed "clamping", and is mainly
+used to avoid making extreme extrapolations when making model
+predictions to environmental conditions outside the range of the
+occurrence / background data used to train the model. Clamping can be
+done on variables of choice on one or both tails of their distributions
+(i.e., arguments "left" and "right" for minimum and maximum clamps,
+respectively). If "left" and/or "right" are not specified and left at
+the default NULL, the function will clamp all variables for that tail
+(thus, the function default is to clamp all variables on both sides). To
+turn off clamping for one side, enter "none" for either "left" or
+"right".
+
+Categorical variables need to be declared with the argument
+"categoricals". These variables are excluded from the clamping analysis,
+but are put back into the SpatRaster that is returned.
+
+## Usage
+
+``` r
+clamp.vars(orig.vals, ref.vals, left = NULL, right = NULL, categoricals = NULL)
+```
+
+## Arguments
+
+- orig.vals:
+
+  SpatRaster / matrix / data frame: environmental predictor variables
+  (must be in same geographic projection as occurrence data), or
+  predictor variables values for the original records
+
+- ref.vals:
+
+  matrix / data frame: predictor variable values for the reference
+  records (not including coordinates), used to determine the minimums
+  and maximums – this should ideally be the occurrences + background
+  (can be made with terra::extract())
+
+- left:
+
+  character vector: names of variables to get a minimum clamp; can be
+  "none" to turn off minimum clamping
+
+- right:
+
+  character vector: names of variables to get a maximum clamp, can be
+  "none" to turn off maximum clamping
+
+- categoricals:
+
+  character vector: name or names of categorical environmental variables
+
+## Value
+
+The clamped SpatRaster object.
+
+## Author
+
+Stephen J. Phillips, Jamie M. Kass, Gonzalo Pinilla-Buitrago

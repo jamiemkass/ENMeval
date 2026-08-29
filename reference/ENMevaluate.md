@@ -1,0 +1,488 @@
+# Tune ecological niche model (ENM) settings and calculate evaluation statistics
+
+`ENMevaluate()` is the primary function for the ENMeval package. This
+function builds ecological niche models iteratively across a range of
+user-specified tuning settings. Users can choose to evaluate models with
+cross validation or a full-withheld testing dataset. `ENMevaluate()`
+returns an `ENMevaluation` object with slots containing evaluation
+statistics for each combination of settings and for each cross
+validation fold therein, as well as raster predictions for each model
+when raster data is input. The evaluation statistics in the results
+table should aid users in identifying model settings that balance fit
+and predictive ability. See the extensive vignette for fully worked
+examples:
+\<https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html\>.
+
+## Usage
+
+``` r
+ENMevaluate(
+  occs,
+  envs = NULL,
+  bg = NULL,
+  tune.args = NULL,
+  partitions = NULL,
+  algorithm = NULL,
+  partition.settings = NULL,
+  other.settings = list(),
+  categoricals = NULL,
+  doClamp = TRUE,
+  raster.preds = TRUE,
+  clamp.directions = NULL,
+  user.enm = NULL,
+  user.grp = NULL,
+  occs.testing = NULL,
+  taxon.name = NULL,
+  n.bg = 10000,
+  overlap = FALSE,
+  overlapStat = c("D", "I"),
+  user.val.grps = NULL,
+  user.eval = NULL,
+  rmm = NULL,
+  parallel = FALSE,
+  numCores = NULL,
+  updateProgress = FALSE,
+  quiet = FALSE
+)
+```
+
+## Arguments
+
+- occs:
+
+  matrix / data frame: occurrence records with two columns for longitude
+  and latitude of occurrence localities, in that order. If specifying
+  predictor variable values assigned to presence/background localities
+  (without inputting raster data), this table should also have one
+  column for each predictor variable. See Note for important
+  distinctions between running the function with and without rasters.
+
+- envs:
+
+  SpatRaster: environmental predictor variables. These should be in same
+  geographic projection as occurrence data.
+
+- bg:
+
+  matrix / data frame: background records with two columns for longitude
+  and latitude of background (or pseudo-absence) localities, in that
+  order. If NULL, points will be randomly sampled across `envs` with the
+  number specified by argument `n.bg`. If specifying predictor variable
+  values assigned to presence/background localities (without inputting
+  raster data), this table should also have one column for each
+  predictor variable. See Details for important distinctions between
+  running the function with and without rasters.
+
+- tune.args:
+
+  named list: model settings to be tuned (i.e., for Maxent models:
+  `list(fc = c("L","Q"), rm = 1:3)`)
+
+- partitions:
+
+  character: name of partitioning technique. Currently available options
+  are the nonspatial partitions "randomkfold" and "jackknife", the
+  spatial partitions "block" and "checkerboard", "testing" for
+  partitioning with fully withheld data (see argument occs.testing), the
+  "user" option (see argument user.grp), and "none" for no partitioning
+  (see
+  [`?partitions`](https://jamiemkass.github.io/ENMeval/reference/partitions.md)
+  for details).
+
+- algorithm:
+
+  character: name of the algorithm used to build models. Currently one
+  of "maxnet", "maxent.jar", or "bioclim", else the name from a custom
+  ENMdetails implementation.
+
+- partition.settings:
+
+  named list: used to specify certain settings for partitioning schema.
+  See Details and ?partitions for descriptions of these settings.
+
+- other.settings:
+
+  named list: used to specify extra settings for the analysis. All of
+  these settings have internal defaults, so if they are not specified
+  the analysis will be run with default settings. See Details for
+  descriptions of these settings, including how to specify arguments for
+  maxent.jar.
+
+- categoricals:
+
+  character vector: name or names of categorical environmental
+  variables. If not specified, all predictor variables will be treated
+  as continuous unless they are factors. If categorical variables are
+  already factors, specifying names of such variables in this argument
+  is not needed.
+
+- doClamp:
+
+  boolean: if TRUE (default), model prediction extrapolations will be
+  restricted to the upper and lower bounds of the predictor variables.
+  Clamping avoids extreme predictions for environment values outside the
+  range of the training data. If free extrapolation is a study aim, this
+  should be set to FALSE, but for most applications leaving this at the
+  default of TRUE is advisable to avoid unrealistic predictions. When
+  predictor variables are input, they are clamped internally before
+  making model predictions when clamping is on. When no predictor
+  variables are input and data frames of coordinates and variable values
+  are used instead (SWD format), validation data is clamped before
+  making model predictions when clamping is on.
+
+- raster.preds:
+
+  boolean: if TRUE (default), return model prediction rasters. If this
+  is FALSE, the predictions slot in the ENMevaluation object will be
+  empty, which is the same as if no raster data is input. You can still
+  make model prediction rasters using the model objects in the models
+  slot with the predict() function.
+
+- clamp.directions:
+
+  named list: specifies the direction ("left" for minimum, "right" for
+  maximum) of clamping for predictor variables – (e.g.,
+  `list(left = c("bio1","bio5"), right = c("bio10","bio15"))`).
+
+- user.enm:
+
+  ENMdetails object: a custom ENMdetails object used to build models.
+  This is an alternative to specifying `algorithm` with a character
+  string.
+
+- user.grp:
+
+  named list: specifies user-defined partition groups, where `occs.grp`
+  = vector of partition group (fold) for each occurrence locality,
+  intended for user-defined partitions, and `bg.grp` = same vector for
+  background (or pseudo-absence) localities.
+
+- occs.testing:
+
+  matrix / data frame: a fully withheld testing dataset with two columns
+  for longitude and latitude of occurrence localities, in that order
+  when `partitions = "testing"`. These occurrences will be used only for
+  evaluation but not for model training, and thus no cross validation
+  will be performed.
+
+- taxon.name:
+
+  character: name of the focal species or taxon. This is used primarily
+  for annotating the ENMevaluation object and output metadata (rmm), but
+  not necessary for analysis.
+
+- n.bg:
+
+  numeric: the number of background (or pseudo-absence) points to
+  randomly sample over the environmental raster data (default: 10000) if
+  background records were not already provided.
+
+- overlap:
+
+  boolean: if TRUE, calculate range overlap statistics (Warren *et al.*
+  2008).
+
+- overlapStat:
+
+  character: range overlap statistics to be calculated – "D"
+  (Schoener's D) and or "I" (Hellinger's I) – see ?calc.niche.overlap
+  for more details.
+
+- user.val.grps:
+
+  matrix / data frame: user-defined validation record coordinates and
+  predictor variable values. This is used internally by
+  [`ENMnulls()`](https://jamiemkass.github.io/ENMeval/reference/ENMnulls.md)
+  to force each null model to evaluate with empirical validation data,
+  and does not have any current use when running `ENMevaluate()`
+  independently.
+
+- user.eval:
+
+  function: custom function for specifying performance metrics not
+  included in ENMeval. The function must first be defined and then input
+  as the argument `user.eval`. This function should have a single
+  argument called `vars`, which is a list that includes different data
+  that can be used to calculate the metric. See Details below and the
+  vignette for a worked example.
+
+- rmm:
+
+  rangeModelMetadata object: if specified, `ENMevaluate()` will write
+  metadata details for the analysis into this object, but if not, a new
+  `rangeModelMetadata` object will be generated and included in the
+  output `ENMevaluation` object.
+
+- parallel:
+
+  boolean: if TRUE, run with parallel processing.
+
+- numCores:
+
+  numeric: number of cores to use for parallel processing. If NULL, all
+  available cores will be used.
+
+- updateProgress:
+
+  boolean: if TRUE, use shiny progress bar. This is only for use in
+  shiny apps.
+
+- quiet:
+
+  boolean: if TRUE, silence all function messages (but not errors).
+
+## Value
+
+An ENMevaluation object. See ?ENMevaluation for details and description
+of the columns in the results table.
+
+## Details
+
+There are a few methodological details in the implementation of ENMeval
+\>=2.0.0 that are important to mention. There is also a brief discussion
+of some points relevant to null models in ?ENMnulls.
+
+1\. By default, validation AUC is calculated with respect to the full
+background (training + validation). This approach follows Radosavljevic
+& Anderson (2014).This setting can be changed by assigning
+other.settings\$validation.bg to "partition", which will calculate AUC
+with respect to the validation background only. The default value for
+other.settings\$validation.bg is "full". NOTE: When examining validation
+AUC and other discrimination metrics, the "full" option will likely
+result in higher performance than for the "partition" option because
+more and varied background data should lead to higher discriminatory
+power for the model. Users should thus make sure they are correctly
+interpreting the evaluation results.
+
+2\. The continuous Boyce index (always) and AICc (when no raster is
+provided) are not calculated using the predicted values of the
+SpatRaster delineating the full study extent, but instead using the
+predicted values for the background records. This decision to use the
+background only for calculating the continuous Boyce index was made to
+simplify the code and improve running time. The decision for AICc was
+made in order to allow AICc calculations for datasets that do not
+include raster data. See ?calc.aicc for more details, and for caveats
+when calculating AICc without raster data (mainly, that if the
+background does not adequately represent the occurrence records, users
+should use the raster approach, for reasons explained in the calc.aicc
+documentation). For both metrics, if the background records are a good
+representation of the study extent, there should not be much difference
+between this approach using the background data and the approach that
+uses rasters.
+
+3\. When running `ENMevaluate()` without raster data, and instead adding
+the environmental predictor values to the occurrence and background data
+tables, users may notice some differences in the results. Occurrence
+records that share a raster grid cell are automatically removed when
+raster data is provided, but without raster data this functionality
+cannot operate, and thus any such duplicate occurrence records can
+remain in the training data. The Java implementation of Maxent
+(maxent.jar implemented with `MaxEnt()` from the R package `predicts`)
+should automatically remove these records, but the R implementation
+`maxnet` does not, and the `envelope()` function from the R package
+`predicts` does not as well. Therefore, it is up to the user to remove
+such records before running `ENMevaluate()` when raster data are not
+included.
+
+Below are descriptions of the parameters used in the other.settings,
+partition.settings, and user.eval arguments.
+
+For other.settings, the options are:  
+\* path - character: the folder path designating where maxent.jar files
+should be saved  
+\* removeduplicates - boolean: whether or not to remove grid-cell
+duplicates for occurrences (this controls behavior for maxent.jar and
+ENMeval)  
+\* addsamplestobackground - boolean: whether or not to add occurrences
+to the background when modeling with maxnet – the default is TRUE.  
+\* abs.auc.diff - boolean: if TRUE, take absolute value of AUCdiff
+(default: TRUE)  
+\* pred.type - character: specifies which prediction type should be used
+to generate maxnet or maxent.jar prediction rasters (default:
+"cloglog").  
+\* validation.bg - character: either "full" to calculate training and
+validation AUC and CBI for cross-validation with respect to the full
+background (default), or "partition" (meant for spatial partitions only)
+to calculate each with respect to the partitioned background only (i.e.,
+training occurrences are compared to training background, and validation
+occurrences compared to validation background).  
+\* other.args - named list: any additional model arguments not specified
+for tuning; this can include arguments for maxent.jar, which are
+described in the software's Help file, such as "jackknife=TRUE" for a
+variable importance jackknife plot or "responsecurves=TRUE" for response
+curve plots – note the the "path" must be specified (see above).  
+
+For partition.settings, the current options are:  
+\* orientation - character: one of "lat_lon" (default), "lon_lat",
+"lat_lat", or "lon_lon" (required for block partition).  
+\* aggregation.factor - numeric vector: one or two numbers specifying
+the factor with which to aggregate the envs (default: 2) raster to
+assign partitions (required for the checkerboard partitions).  
+\* kfolds - numeric: the number of folds (i.e., partitions) for random
+partitions (default: 5).  
+
+For the block partition, the orientation specifications are
+abbreviations for "latitude" and "longitude", and they determine the
+order and orientations with which the block partitioning function
+creates the partition groups. For example, "lat_lon" will split the
+occurrence localities first by latitude, then by longitude. For the
+checkerboard partitions, the aggregation factor specifies how much to
+aggregate the existing cells in the envs raster to make new spatial
+partitions. For example, 'basic' checkerboard with an aggregation factor
+value of 2 will make squares 4 times larger than the input rasters and
+assign occurrence and background records to partition groups based on
+which square they fall in. Using two aggregation factors makes the
+checkerboard partitions hierarchical, where squares are first aggregated
+to define groups as in the 'basic' checkerboard, but a second
+aggregation is then made to separate the resulting two bins into four
+bins (see ?partitions for more details).
+
+For user.eval, the variables you have access to in order to run your
+custom function are below. See the vignette for a worked example.  
+\* enm - ENMdetails object  
+\* occs.train.z - data frame: predictor variable values for training
+occurrences  
+\* occs.val.z - data frame: predictor variable values for validation
+occurrences  
+\* bg.train.z - data frame: predictor variable values for training
+background  
+\* bg.val.z - data frame: predictor variable values for validation
+background  
+\* mod.k - Model object for current partition (k)  
+\* nk - numeric: number of folds (i.e., partitions)  
+\* other.settings - named list: other settings specified in
+ENMevaluate()  
+\* partitions - character: name of the partition method (e.g.,
+"block")  
+\* occs.train.pred - numeric: predictions made by mod.k for training
+occurrences  
+\* occs.val.pred - numeric: predictions made by mod.k for validation
+occurrences  
+\* bg.train.pred - numeric: predictions made by mod.k for training
+background  
+\* bg.val.pred - numeric: predictions made by mod.k for validation
+background
+
+## References
+
+Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass,
+J. M., Uriarte, M., & Anderson, R. P. (2014). ENMeval: An R package for
+conducting spatially independent evaluations and estimating optimal
+model complexity for Maxent ecological niche models. *Methods in Ecology
+and Evolution*, **5**: 1198-1205.
+[doi:10.1111/2041-210X.12261](https://doi.org/10.1111/2041-210X.12261)
+
+Warren, D. L., Glor, R. E., Turelli, M. & Funk, D. (2008) Environmental
+niche equivalency versus conservatism: quantitative approaches to niche
+evolution. *Evolution*, **62**: 2868-2883.
+[doi:10.1111/j.1558-5646.2008.00482.x](https://doi.org/10.1111/j.1558-5646.2008.00482.x)
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+library(terra)
+library(ENMeval)
+
+occs <- read.csv(file.path(system.file(package="predicts"), 
+"/ex/bradypus.csv"))[,2:3]
+envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+"/ex", sep=""), pattern="tif$", full.names=TRUE))
+occs.z <- cbind(occs, extract(envs, occs, ID = FALSE))
+occs.z$biome <- factor(occs.z$biome)
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+bg.z <- cbind(bg, extract(envs, bg, ID = FALSE))
+bg.z$biome <- factor(bg.z$biome)
+
+# set other.settings -- pred.type is only for Maxent models
+os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", 
+validation.bg = "partition")
+# set partition.settings -- here's an example for the block method
+# see Details for the required settings for other partition methods
+ps <- list(orientation = "lat_lat")
+
+# here's a run with maxnet -- note the tune.args for feature classes (fc)
+# and regularization multipliers (rm), as well as the designation of the
+# categorical variable we are using (this can be a vector if multiple
+# categorical variables are used)
+e.maxnet <- ENMevaluate(occs, envs, bg, 
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+partitions = "block", other.settings = os, partition.settings = ps,
+algorithm = "maxnet", categoricals = "biome", overlap = TRUE)
+
+# print the tuning results
+eval.results(e.maxnet)
+
+# you can plot the marginal response curves of a maxnet object with plot(), 
+# and you can also extract the data for plotting to make your own custom plots
+mods.maxnet <- eval.models(e.maxnet)
+m <- mods.maxnet$fc.LQH_rm.2
+plot(m, type = "cloglog")
+rcurve_data <- maxnet::response.plot(m, "bio1", type = "cloglog", plot = FALSE)
+
+# there is currently no native function to make raster model predictions for
+# maxnet models, but ENMeval can be used to make them like this:
+# here's an example where we make a prediction based on the L2 model
+# (feature class: Linear, regularization multiplier: 2) for our envs data
+pred.LQH2 <- maxnet.predictRaster(m, envs)
+plot(pred.L2)
+
+# here's a run with maxent.jar -- note that if the R package rJava cannot 
+# install or load, or if you have other issues with Java on your computer, 
+# maxent.jar will not function
+e.maxent.jar <- ENMevaluate(occs, envs, bg, 
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+partitions = "block", other.settings = os, partition.settings = ps,
+algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE)
+
+# here's a run of maxent.jar with a path specified for saving the html and 
+# plot files -- you can also turn on jackknife variable importance or 
+# response curves, etc., to have these plots saved there
+e.maxent.jar <- ENMevaluate(occs, envs, bg, 
+tune.args = list(fc = c("L","LQ","LQH","H"), rm = 1:5), 
+partitions = "block", partition.settings = ps,
+algorithm = "maxent.jar", categoricals = "biome", overlap = TRUE,
+other.settings = list(path = "analyses/mxnt_results", 
+other.args = c("jackknife=TRUE", "responsecurves=TRUE")))
+
+# print the tuning results
+eval.results(e.maxent.jar)
+
+# raster predictions can be made for maxent.jar models with predicts or 
+# ENMeval
+mods.maxent.jar <- eval.models(e.maxent.jar)
+pred.L2 <- predict(mods.maxent.jar$fc.L_rm.2, envs, 
+args = "outputform=cloglog")
+pred.L2 <- maxnet.predictRaster(mods.maxent.jar$fc.L_rm.2, envs, os)
+plot(pred.L2)
+
+# this will give you the percent contribution (not deterministic) and
+# permutation importance (deterministic) values of variable importance for
+# Maxent models, and it only works with maxent.jar
+eval.variable.importance(e.maxent.jar)
+
+# here's a run with BIOCLIM. Note that we need to remove the categorical
+# variable here because this algorithm only takes continuous variables. We 
+# also should point out that the way BIOCLIM is tuned is by comparing 
+# performance for different ways to make predictions (as opposed to comparing 
+# performance for models fit in different ways like for maxnet or maxent.jar). 
+# Namely, BIOCLIM can ignore different tails of the distribution when making 
+# predictions, and this is what is tuned in ENMevaluate (see 
+# ?predicts::envelope).
+
+# print the tuning results
+eval.results(e.bioclim)
+# make raster predictions with predicts or ENMeval
+mods.bioclim <- eval.models(e.bioclim)
+# note: the models for low, high, and both are actually all the same, and
+# the only difference for tuning is how they are predicted during
+# cross-validation
+pred.both <- predict(mods.bioclim$tails.both, envs, tails = "both")
+plot(pred.both)
+
+# please see the vignette for more examples of model tuning, 
+# partitioning, plotting functions, and null models
+# https://jamiemkass.github.io/ENMeval/articles/ENMeval-2.0-vignette.html
+} # }
+```
