@@ -378,7 +378,7 @@ nicheOverlap_terra <- function (x, y, stat = "I", mask = TRUE,
 #' @param algorithm character: algorithm name (must be implemented as ENMdetails object)
 #' 
 lookup.enm <- function(algorithm) {
-  x <- switch(algorithm,
+  x <- switch(algorithm, 
               maxent.jar = enm.maxent.jar,
               maxnet = enm.maxnet,
               # randomForest = enm.randomForest,
@@ -386,38 +386,6 @@ lookup.enm <- function(algorithm) {
               bioclim = enm.bioclim
   )
   return(x)
-}
-
-#' @title Look up algorithm name from a fitted model
-#' @description Internal function to infer the algorithm name (e.g. "maxnet") from
-#' a fitted model object's class.
-#' @param mod A fitted model object (e.g. maxnet, MaxEnt_model, envelope_model).
-#'
-lookup.algorithm <- function(mod) {
-  if (inherits(mod, "maxnet")) {
-    "maxnet"
-  } else if (inherits(mod, "MaxEnt_model")) {
-    "maxent.jar"
-  } else if (inherits(mod, "envelope_model")) {
-    "bioclim"
-  } else {
-    stop("Could not determine the algorithm from 'mod'.")
-  }
-}
-
-#' @title Look up predictor variable names from a fitted model
-#' @description Internal function to get the predictor variable names used to fit
-#' a model, given its algorithm.
-#' @param mod A fitted model object.
-#' @param algorithm character: algorithm name, as returned by [lookup.algorithm()].
-#'
-lookup.var.names <- function(mod, algorithm) {
-  switch(algorithm,
-         maxnet = names(mod$samplemeans),
-         maxent.jar = colnames(mod@absence),
-         bioclim = mod@names,
-         stop("Cannot determine predictor variable names for algorithm '",
-              algorithm, "'."))
 }
 
 

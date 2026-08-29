@@ -1,14 +1,14 @@
 Package: ENMeval
 Type: Package
 Title: Automated Tuning and Evaluations of Ecological Niche Models
-Version: 2.0.6
-Date: 2026-08-18
+Version: 2.0.5.2
+Date: 2025-05-01
 Authors@R: c(
   person("Jamie M.","Kass", email = "jamie.m.kass@gmail.com", role = c("aut","cre")), 
-  person("Gonzalo E.","Buitrago-Pinilla", role = "aut"),
   person("Robert","Muscarella", role = "aut"),
   person("Peter J.","Galante", role = "aut"),
   person("Corentin","Bohl", role = "aut"),
+  person("Gonzalo E.","Buitrago-Pinilla", role = "aut"),
   person("Robert A.","Boria", role = "aut"),
   person("Mariano","Soley-Guardia", role = "aut"),
   person("Robert P.","Anderson", role = c("aut")))
@@ -22,7 +22,6 @@ Imports:
     maxnet,
     predicts (>= 0.1-16),
     parallel,
-    patchwork,
     foreach,
     utils,
     stats,
@@ -33,6 +32,7 @@ Imports:
     glmnet,
     rangeModelMetadata,
     rlang
+RoxygenNote: 7.3.2
 LazyData: true
 Suggests: 
     rmarkdown,
@@ -51,5 +51,3 @@ Suggests:
     usdm
 VignetteBuilder: knitr
 URL: https://jamiemkass.github.io/ENMeval/
-Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.2
