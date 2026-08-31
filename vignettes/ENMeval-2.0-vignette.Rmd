@@ -1,10 +1,10 @@
 ---
-title: "ENMeval 2.0.5 Vignette"
+title: "ENMeval 2.0.6 Vignette"
 author: "Jamie M. Kass, Robert Muscarella, Gonzalo E. Pinilla-Buitrago, and Peter J. Galante"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ENMeval 2.0.5 Vignette}
+  %\VignetteIndexEntry{ENMeval 2.0.6 Vignette}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -29,7 +29,7 @@ options(terra.pal = terra::map.pal("plasma", 100))
 
 ## Introduction {#intro}
 
-* To align with the new `ENMeval` 2.0.5, this version updates the vignette by replacing `raster` functions with those from `terra`, and `dismo` functions with those from `predicts`. These updates were made by G. E. Pinilla-Buitrago.
+* To align with the new `ENMeval` 2.0.6, this version updates the vignette by replacing `raster` functions with those from `terra`, and `dismo` functions with those from `predicts`. These updates were made by G. E. Pinilla-Buitrago.
 
 [`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models (ENMs, a.k.a. species distribution models or SDMs), which can estimate species' ranges and niche characteristics using data on species occurrences and environmental variables (Franklin 2010, Peterson et al. 2011, Guisan et al. 2017). 
 
@@ -666,27 +666,14 @@ Let's now choose the optimal model settings based on the sequential criteria and
 mod.seq <- eval.models(e.mx)[[opt.seq$tune.args]]
 # Here are the non-zero coefficients in our model.
 mod.seq$betas
-# And these are the marginal response curves for the predictor variables wit non-zero 
-# coefficients in our model. We define the y-axis to be the cloglog transformation, which
-# is an approximation of occurrence probability (with assumptions) bounded by 0 and 1
-# (Phillips et al. 2017).
-plot(mod.seq, type = "cloglog")
-# The above function plots with graphical customizations to include multiple plots on 
-# the same page. 
-# Clear the graphics device to avoid plotting sequential plots with these settings.
-dev.off()
 ```
 
-This is how to view the marginal response curves for `maxent.jar` models.
+And these are the marginal response curves for the predictor variables with non-zero coefficients in our model, plotted with `evalplot.respCurves()` and `evalplot.respCurve()`. We define the y-axis to be the cloglog transformation, which is an approximation of occurrence probability (with assumptions) bounded by 0 and 1 (Phillips et al. 2017). Unlike `plot()` for `maxnet` models or `predicts::partialResponse()` for `maxent.jar` models, these functions work identically regardless of which algorithm was used to fit the model. One difference to note: `plot()` always holds the non-focal variables at the model's internal, occurrence-only sample means, while `evalplot.respCurves()`/`evalplot.respCurve()` hold them at the mean (or other summary function, via the `fun` argument) of whichever `data` you provide. Below we use occurrence data only to match `plot()`'s behavior, but background data could be included instead for a different reference point.
 
-```{r, eval = FALSE}
-# NOTE -- This code is not evaluated and so will display no output in this vignette.
-# Please run independently.
-
-# maxent.jar models use the predicts::partialResponse() function for this
-pr <- predicts::partialResponse(e.mxjar@models[[opt.seq$tune.args]],
-                                var = "bio5")
-plot(pr, type = "l", las = 1)
+```{r respcurve}
+data <- eval.occs(e.mx)[, names(envs)]
+evalplot.respCurves(mod.seq, data)
+evalplot.respCurve(mod.seq, data, var = "bio5")
 ```
 
 Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions >3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate`.
@@ -717,19 +704,33 @@ length(mod.simple$betas)
 mod.complex$betas
 length(mod.complex$betas)
 # Next, let's take a look at the marginal response curves.
-# The complex model has marginal responses with more curves (from quadratic terms) and 
+# The complex model has marginal responses with more curves (from quadratic terms) and
 # spikes (from hinge terms).
-plot(mod.simple, type = "cloglog")
-plot(mod.complex, type = "cloglog")
-# To get the data for the marginal response curves from a maxnet model, use the 
-# following code. You can then plot them any way you want.
-mod.complex.mrc <-maxnet::response.plot(mod.complex, 
-                                        v = "bio2", 
-                                        type = "cloglog",
-                                        plot = FALSE)
-ggplot(mod.complex.mrc, aes(x = bio2, y = pred)) + 
-  geom_line() + ylab("cloglog prediction") + theme_bw()
-# Finally, let's cut the plotting area into two rows to visualize the predictions 
+evalplot.respCurves(mod.simple, data)
+evalplot.respCurves(mod.complex, data)
+evalplot.respCurve(mod.complex, data, var = "bio2")
+```
+
+The response curves in ENMeval also allow you to control how you plot the curves via two types. The default, `type = 1`, holds all other variables at their mean (can be changed whit the fun parameter) while the focal variable varies across its range, as used in `maxnet`'s `plot()` and the maxent.jar/dismo response curves use. `type = 2` instead holds the focal variable at each grid value while keeping every other variable at its own observed value, as used by the `pdp` and `predicts` packages. It takes longer and consumes more of your computer's resources. The two can diverge, as shown here for `bio2`:
+
+```{r type-compare}
+# Each call returns a ggplot object, so we can pull out its underlying data with
+# ggplot2::layer_data() and combine both types onto one plot for a direct comparison.
+curve1 <- evalplot.respCurve(mod.complex, data, var = "bio2", type = 1)
+curve2 <- evalplot.respCurve(mod.complex, data, var = "bio2", type = 2)
+d1 <- ggplot2::layer_data(curve1, 1)
+d1$type <- "type 1"
+d2 <- ggplot2::layer_data(curve2, 1)
+d2$type <- "type 2"
+ggplot(rbind(d1, d2), aes(x = x, y = y, color = type)) +
+  geom_line(linewidth = 1) +
+  ylim(c(0, 1)) +
+  xlab("bio2") + ylab("predicted suitability") +
+  theme_classic()
+```
+
+```{r plot.pred3}
+# Finally, let's cut the plotting area into two rows to visualize the predictions
 # side-by-side.
 par(mfrow = c(2,1), mar = c(2,1,2,0))
 # The simplest model: linear features only and high regularization.

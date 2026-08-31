@@ -686,9 +686,9 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   ################# #
   # print model-specific message
   if(is.null(taxon.name)) {
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.5 with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.6 with", enm@msgs(tune.args, other.settings), "***\n"))
   }else{
-    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.5 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
+    if(quiet != TRUE) message(paste("\n*** Running ENMeval v2.0.6 for", taxon.name, "with", enm@msgs(tune.args, other.settings), "***\n"))
   }
   
   ################# #

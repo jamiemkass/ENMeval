@@ -4,15 +4,17 @@
 \alias{evalplot.densities}
 \title{Density plots for All Variables with Shared Y-Axis}
 \usage{
-evalplot.densities(data, envs, vars = NULL, bw.envs = 10)
+evalplot.densities(data, envs = NULL, vars = NULL, bw.envs = 10)
 }
 \arguments{
 \item{data}{Data frame of training data (occurrences + background).}
 
-\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.}
+\item{envs}{Raster data (SpatRaster) of environmental variables for model projection.
+If `NULL` (default), only the training-data densities are plotted, with no
+transfer-environment comparison.}
 
 \item{vars}{Vector specifying the variable names for the response curve.
-Default is all variables.}
+Default is all variables (from `envs` if supplied, otherwise from `data`).}
 
 \item{bw.envs}{The smoothing bandwidth to be used in the environmental variables}
 }
@@ -26,7 +28,7 @@ them using patchwork. The plots share a common y-axis label.
 \examples{
 \dontrun{
 occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
-envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""), 
+envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
                         pattern="tif$", full.names=TRUE))
 # No biome
 envs <- envs[[!(names(envs) \%in\% "biome")]]
@@ -46,6 +48,8 @@ tr_envs <- envs * 1.5
 data <- rbind(e@occs, e@bg)[,3:11]
 # Plot
 evalplot.densities(data, envs = tr_envs)
+# Plot training data only, without a transfer environment
+evalplot.densities(data)
 }
 }
 \references{
