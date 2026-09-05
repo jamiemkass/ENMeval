@@ -31,13 +31,15 @@ Useful links:
 
 Authors:
 
+- Jamie M. Kass <jamie.m.kass@gmail.com>
+
+- Gonzalo E. Buitrago-Pinilla
+
 - Robert Muscarella
 
 - Peter J. Galante
 
 - Corentin Bohl
-
-- Gonzalo E. Buitrago-Pinilla
 
 - Robert A. Boria
 

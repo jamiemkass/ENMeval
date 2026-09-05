@@ -115,6 +115,10 @@
 - [`eval.variable.importance()`](https://jamiemkass.github.io/ENMeval/reference/eval.variable.importance.md)
   : eval.variable.importance (variable importance) generic for
   ENMevaluation object
+- [`evalplot.densities()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.densities.md)
+  : Density plots for All Variables with Shared Y-Axis
+- [`evalplot.density()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.density.md)
+  : Plot Density Plots of variables
 - [`evalplot.envSim.hist()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.envSim.hist.md)
   : Similarity histogram plots for partition groups
 - [`evalplot.envSim.map()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.envSim.map.md)
@@ -123,12 +127,22 @@
   : Partition group plots
 - [`evalplot.nulls()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.nulls.md)
   : ENMnulls statistics plot
+- [`evalplot.respCurve()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurve.md)
+  : Plot Response Curve for Maxent Models
+- [`evalplot.respCurve.dens()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurve.dens.md)
+  : Response curve and density plots for one variable
+- [`evalplot.respCurves()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurves.md)
+  : Plot Response Curves for All Variables with Shared Y-Axis
 - [`evalplot.stats()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.stats.md)
   : ENMevaluation statistics plot
 - [`loadENMevaluation()`](https://jamiemkass.github.io/ENMeval/reference/loadENMevaluation.md)
   : Load ENMevaluation object
+- [`lookup.algorithm()`](https://jamiemkass.github.io/ENMeval/reference/lookup.algorithm.md)
+  : Look up algorithm name from a fitted model
 - [`lookup.enm()`](https://jamiemkass.github.io/ENMeval/reference/lookup.enm.md)
   : Look up ENMdetails abject
+- [`lookup.var.names()`](https://jamiemkass.github.io/ENMeval/reference/lookup.var.names.md)
+  : Look up predictor variable names from a fitted model
 - [`maxentJARversion()`](https://jamiemkass.github.io/ENMeval/reference/maxentJARversion.md)
   : Look up version of maxent.jar
 - [`maxnet.predictRaster()`](https://jamiemkass.github.io/ENMeval/reference/maxnet.predictRaster.md)

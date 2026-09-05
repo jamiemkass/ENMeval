@@ -1,4 +1,4 @@
-# ENMeval 2.0.5 Vignette
+# ENMeval 2.0.6 Vignette
 
 - [Introduction](#intro)
 - [Data Acquisition & Pre-processing](#data)
@@ -12,7 +12,7 @@
 
 ## Introduction
 
-- To align with the new `ENMeval` 2.0.5, this version updates the
+- To align with the new `ENMeval` 2.0.6, this version updates the
   vignette by replacing `raster` functions with those from `terra`, and
   `dismo` functions with those from `predicts`. These updates were made
   by G. E. Pinilla-Buitrago.
@@ -1087,8 +1087,8 @@ eval.partition.method(e.mx)
 # Results table with summary statistics for cross validation on test data.
 eval.results(e.mx) |> head()
 #>    fc rm   tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg
-#> 1   L  1   fc.L_rm.1 0.8151500     0.979   0.13769372  0.07251663   0.7242520
-#> 2  LQ  1  fc.LQ_rm.1 0.8343236     0.978   0.13427958  0.08713124   0.7296996
+#> 1   L  1   fc.L_rm.1 0.8151500     0.979   0.13769381  0.07251682   0.7242520
+#> 2  LQ  1  fc.LQ_rm.1 0.8343236     0.978   0.13427968  0.08713141   0.7296996
 #> 3 LQH  1 fc.LQH_rm.1 0.9084494     0.984   0.09287126  0.11976041   0.8002663
 #> 4   L  2   fc.L_rm.2 0.8137242     0.981   0.13552525  0.06967154   0.7243118
 #> 5  LQ  2  fc.LQ_rm.2 0.8285820     0.975   0.12790665  0.06265885   0.7375323
@@ -1111,11 +1111,11 @@ eval.results(e.mx) |> head()
 eval.results.partitions(e.mx) |> head()
 #>    tune.args fold   auc.val   auc.diff cbi.val     or.mtp    or.10p
 #> 1  fc.L_rm.1    1 0.8912350 0.10298034   0.533 0.00000000 0.0000000
-#> 2  fc.L_rm.1    2 0.5539864 0.24290274   0.201 0.11363636 0.6136364
+#> 2  fc.L_rm.1    2 0.5539864 0.24290312   0.201 0.11363636 0.6136364
 #> 3  fc.L_rm.1    3 0.6976628 0.12499818   0.733 0.02222222 0.1777778
 #> 4  fc.L_rm.1    4 0.7541238 0.07989361   0.602 0.00000000 0.3409091
 #> 5 fc.LQ_rm.1    1 0.8856767 0.08037007   0.662 0.00000000 0.0000000
-#> 6 fc.LQ_rm.1    2 0.5507928 0.25534300  -0.012 0.11363636 0.6136364
+#> 6 fc.LQ_rm.1    2 0.5507928 0.25534337  -0.012 0.11363636 0.6136364
 # List of models with names corresponding to tune.args column label.
 eval.models(e.mx) |> str(max.level = 1)
 #> List of 15
@@ -1505,32 +1505,46 @@ mod.seq$betas
 #>                                 -2.788112e+00 
 #>               hinge(bio19):0:501.061224489796 
 #>                                  1.128433e-01
-# And these are the marginal response curves for the predictor variables wit non-zero 
-# coefficients in our model. We define the y-axis to be the cloglog transformation, which
-# is an approximation of occurrence probability (with assumptions) bounded by 0 and 1
-# (Phillips et al. 2017).
-plot(mod.seq, type = "cloglog")
-# The above function plots with graphical customizations to include multiple plots on 
-# the same page. 
-# Clear the graphics device to avoid plotting sequential plots with these settings.
-dev.off()
-#> null device 
-#>           1
 ```
 
-This is how to view the marginal response curves for `maxent.jar`
-models.
+And these are the marginal response curves for the predictor variables
+with non-zero coefficients in our model, plotted with
+[`evalplot.respCurves()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurves.md)
+and
+[`evalplot.respCurve()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurve.md).
+We define the y-axis to be the cloglog transformation, which is an
+approximation of occurrence probability (with assumptions) bounded by 0
+and 1 (Phillips et al. 2017). Unlike
+[`plot()`](https://rspatial.github.io/terra/reference/plot.html) for
+`maxnet` models or
+[`predicts::partialResponse()`](https://rdrr.io/pkg/predicts/man/response.html)
+for `maxent.jar` models, these functions work identically regardless of
+which algorithm was used to fit the model. One difference to note:
+[`plot()`](https://rspatial.github.io/terra/reference/plot.html) always
+holds the non-focal variables at the model’s internal, occurrence-only
+sample means, while
+[`evalplot.respCurves()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurves.md)/[`evalplot.respCurve()`](https://jamiemkass.github.io/ENMeval/reference/evalplot.respCurve.md)
+hold them at the mean (or other summary function, via the `fun`
+argument) of whichever `data` you provide. Below we use occurrence data
+only to match
+[`plot()`](https://rspatial.github.io/terra/reference/plot.html)’s
+behavior, but background data could be included instead for a different
+reference point.
 
 ``` r
 
-# NOTE -- This code is not evaluated and so will display no output in this vignette.
-# Please run independently.
-
-# maxent.jar models use the predicts::partialResponse() function for this
-pr <- predicts::partialResponse(e.mxjar@models[[opt.seq$tune.args]],
-                                var = "bio5")
-plot(pr, type = "l", las = 1)
+data <- eval.occs(e.mx)[, names(envs)]
+evalplot.respCurves(mod.seq, data)
 ```
+
+![](ENMeval-2.0-vignette_files/figure-html/respcurve-1.png)
+
+``` r
+
+evalplot.respCurve(mod.seq, data, var = "bio5")
+```
+
+![](ENMeval-2.0-vignette_files/figure-html/respcurve-2.png)
 
 Now we plot and inspect the prediction raster for our optimal model.
 Note that by default for `maxent.jar` (versions \>3.3.3k) or `maxnet`
@@ -1670,33 +1684,62 @@ mod.complex$betas
 length(mod.complex$betas)
 #> [1] 41
 # Next, let's take a look at the marginal response curves.
-# The complex model has marginal responses with more curves (from quadratic terms) and 
+# The complex model has marginal responses with more curves (from quadratic terms) and
 # spikes (from hinge terms).
-plot(mod.simple, type = "cloglog")
-plot(mod.complex, type = "cloglog")
+evalplot.respCurves(mod.simple, data)
 ```
 
 ![](ENMeval-2.0-vignette_files/figure-html/plot.pred2-1.png)
 
 ``` r
 
-# To get the data for the marginal response curves from a maxnet model, use the 
-# following code. You can then plot them any way you want.
-mod.complex.mrc <-maxnet::response.plot(mod.complex, 
-                                        v = "bio2", 
-                                        type = "cloglog",
-                                        plot = FALSE)
-ggplot(mod.complex.mrc, aes(x = bio2, y = pred)) + 
-  geom_line() + ylab("cloglog prediction") + theme_bw()
-# Finally, let's cut the plotting area into two rows to visualize the predictions 
-# side-by-side.
-par(mfrow = c(2,1), mar = c(2,1,2,0))
+evalplot.respCurves(mod.complex, data)
 ```
 
 ![](ENMeval-2.0-vignette_files/figure-html/plot.pred2-2.png)
 
 ``` r
 
+evalplot.respCurve(mod.complex, data, var = "bio2")
+```
+
+![](ENMeval-2.0-vignette_files/figure-html/plot.pred2-3.png)
+
+The response curves in ENMeval also allow you to control how you plot
+the curves via two types. The default, `type = 1`, holds all other
+variables at their mean (can be changed whit the fun parameter) while
+the focal variable varies across its range, as used in `maxnet`’s
+[`plot()`](https://rspatial.github.io/terra/reference/plot.html) and the
+maxent.jar/dismo response curves use. `type = 2` instead holds the focal
+variable at each grid value while keeping every other variable at its
+own observed value, as used by the `pdp` and `predicts` packages. It
+takes longer and consumes more of your computer’s resources. The two can
+diverge, as shown here for `bio2`:
+
+``` r
+
+# Each call returns a ggplot object, so we can pull out its underlying data with
+# ggplot2::layer_data() and combine both types onto one plot for a direct comparison.
+curve1 <- evalplot.respCurve(mod.complex, data, var = "bio2", type = 1)
+curve2 <- evalplot.respCurve(mod.complex, data, var = "bio2", type = 2)
+d1 <- ggplot2::layer_data(curve1, 1)
+d1$type <- "type 1"
+d2 <- ggplot2::layer_data(curve2, 1)
+d2$type <- "type 2"
+ggplot(rbind(d1, d2), aes(x = x, y = y, color = type)) +
+  geom_line(linewidth = 1) +
+  ylim(c(0, 1)) +
+  xlab("bio2") + ylab("predicted suitability") +
+  theme_classic()
+```
+
+![](ENMeval-2.0-vignette_files/figure-html/type-compare-1.png)
+
+``` r
+
+# Finally, let's cut the plotting area into two rows to visualize the predictions
+# side-by-side.
+par(mfrow = c(2,1), mar = c(2,1,2,0))
 # The simplest model: linear features only and high regularization.
 plot(eval.predictions(e.mx)[['fc.L_rm.5']], ylim = c(-30,20), xlim = c(-90,-30), 
      main = 'L_5 prediction', col = terrain.colors(100))
@@ -1705,7 +1748,7 @@ plot(eval.predictions(e.mx)[['fc.LQH_rm.1']], ylim = c(-30,20), xlim = c(-90,-30
      main = 'LQH_1 prediction', col = terrain.colors(100))
 ```
 
-![](ENMeval-2.0-vignette_files/figure-html/plot.pred2-3.png)
+![](ENMeval-2.0-vignette_files/figure-html/plot.pred3-1.png)
 
 ## Null models
 
@@ -1798,7 +1841,7 @@ null.emp.results(mod.null)
 evalplot.nulls(mod.null, stats = c("or.10p", "cbi.val"), plot.type = "histogram")
 ```
 
-![](ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-20-1.png)
+![](ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-19-1.png)
 
 ``` r
 
@@ -1808,7 +1851,7 @@ evalplot.nulls(mod.null, stats = c("or.10p", "cbi.val"), plot.type = "histogram"
 evalplot.nulls(mod.null, stats = c("or.10p", "cbi.val"), plot.type = "violin")
 ```
 
-![](ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-20-2.png)
+![](ENMeval-2.0-vignette_files/figure-html/unnamed-chunk-19-2.png)
 
 ## Metadata
 

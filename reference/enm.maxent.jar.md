@@ -14,7 +14,3 @@ version does not.
 ``` r
 enm.maxent.jar
 ```
-
-## Format
-
-An object of class `ENMdetails` of length 1.

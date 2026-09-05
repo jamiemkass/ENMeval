@@ -8,7 +8,3 @@ model, implemented by predicts.
 ``` r
 enm.bioclim
 ```
-
-## Format
-
-An object of class `ENMdetails` of length 1.

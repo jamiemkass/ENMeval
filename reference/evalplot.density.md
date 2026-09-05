@@ -1,0 +1,77 @@
+# Plot Density Plots of variables
+
+This function plots densities of a given environmental variable based on
+a maxent.jar or maxnet model.
+
+## Usage
+
+``` r
+evalplot.density(data, envs = NULL, var, bw.envs = 10)
+```
+
+## Arguments
+
+- data:
+
+  Data frame of training data (occurrences + background).
+
+- envs:
+
+  Raster data (SpatRaster) of environmental variables for model
+  projection. If \`NULL\` (default), only the training-data density is
+  plotted, with no transfer-environment comparison.
+
+- var:
+
+  A character string specifying the variable name for the response
+  curve.
+
+- bw.envs:
+
+  The smoothing bandwidth to be used in the environmental variables
+
+## Value
+
+A ggplot object of the response curve.
+
+## References
+
+Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026).
+Extrapolation strategy matters when transferring ecological niche
+models: new visualization tools for informed decisions. Ecography,
+e08590. https://doi.org/10.1002/ecog.08590
+
+## Author
+
+Gonzalo E. Pinilla-Buitrago
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+library(ENMeval)
+occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+                        pattern="tif$", full.names=TRUE))
+# No biome
+envs <- envs[[!(names(envs) %in% "biome")]]
+occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+names(bg) <- names(occs)
+bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+ps <- list(orientation = "lat_lat")
+e.maxnet <- ENMevaluate(occs, envs, bg,
+                       tune.args = list(fc = "LQ", rm = 1),
+                        partitions = "block", other.settings = os, partition.settings = ps,
+                        algorithm = "maxnet", overlap = TRUE)
+# Transfer envs
+tr_envs <- envs * 1.5
+# Define data as combined training values with coordinates removed
+data <- rbind(e.maxnet@occs, e.maxnet@bg)[,3:11]
+# Plot
+evalplot.density(data, envs = tr_envs, var = "bio5")
+# Plot training data only, without a transfer environment
+evalplot.density(data, var = "bio5")
+} # }
+```

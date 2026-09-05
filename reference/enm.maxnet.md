@@ -12,7 +12,3 @@ should not differ.
 ``` r
 enm.maxnet
 ```
-
-## Format
-
-An object of class `ENMdetails` of length 1.

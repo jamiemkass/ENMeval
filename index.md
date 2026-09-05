@@ -1,4 +1,4 @@
-# ENMeval version 2.0.5
+# ENMeval version 2.0.6
 
 ## R package for automated tuning and evaluations of ecological niche models
 
@@ -41,7 +41,7 @@ evaluations, visualization tools, and an extensive
 that walks you through a full analysis workflow. Many features in
 `ENMeval` were created in response to user requests – thank you for your
 input! Version \>=2.0.0 represents an extensive restructure and
-expansion of previous versions, and 2.0.5 is a big move from `raster`
+expansion of previous versions, and \>=2.0.5 is a big move from `raster`
 and `dismo` functions to those of `terra` and `predicts`.
 
 For a more detailed description of `ENMeval`, please reference the most
@@ -53,7 +53,15 @@ P. (2021). ENMeval 2.0: redesigned for customizable and reproducible
 modeling of species’ niches and distributions. Methods in Ecology and
 Evolution, 12: 1602-1608.](https://doi.org/10.1111/2041-210X.13628)
 
-For the original package version, please reference this older
+For descriptions of the new response curve plotting functions to
+investigate extrapolation behavior:
+
+[Pinilla-Buitrago, G.E., Kass, J.M. and Anderson, R.P. (2026),
+Extrapolation strategy matters when transferring ecological niche
+models: new visualization tools for informed decisions. Ecography, 2026:
+e08590.](https://doi.org/10.1002/ecog.08590)
+
+For the original package version, please reference the original
 publication:
 
 [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass,

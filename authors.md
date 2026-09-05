@@ -4,13 +4,13 @@
 
 - **Jamie M. Kass**. Author, maintainer.
 
+- **Gonzalo E. Buitrago-Pinilla**. Author.
+
 - **Robert Muscarella**. Author.
 
 - **Peter J. Galante**. Author.
 
 - **Corentin Bohl**. Author.
-
-- **Gonzalo E. Buitrago-Pinilla**. Author.
 
 - **Robert A. Boria**. Author.
 
