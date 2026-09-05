@@ -12,11 +12,10 @@
 #' 
 #' @examples
 #' \dontrun{
-#' library(terra)
 #' library(ENMeval)
 #' occs <- read.csv(file.path(system.file(package="predicts"), 
 #'                            "/ex/bradypus.csv"))[,2:3]
-#' envs <- rast(list.files(path=paste(system.file(package="predicts"), 
+#' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), 
 #'                                    "/ex", sep=""), pattern="tif$", full.names=TRUE))
 #' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
 #' names(bg) <- names(occs)
@@ -99,6 +98,8 @@ evalplot.grps <- function(e = NULL, envs, pts = NULL, pts.grp = NULL, ref.data =
 #' plot.sim.dataPrep()
 #' }
 #' @keywords internal
+#' @noRd
+
 plot.sim.dataPrep <- function(e, envs, occs.z, bg.z, occs.grp, bg.grp, ref.data, occs.testing.z, quiet) {
   
   if(!is.null(e) & any(!is.null(occs.z), !is.null(bg.z), !is.null(occs.grp), !is.null(bg.grp))) {
@@ -724,4 +725,599 @@ evalplot.nulls <- function(e.null, stats, plot.type, facet.labels = NULL, metric
   }else{
     return(g)  
   }
+}
+
+#' @title Plot Response Curve for Maxent Models
+#' @description This function plots a response curve for a given environmental variable based on a maxent.jar
+#' or maxnet model. It allows plotting clamping on or off and supports multiple variables via
+#' a wrapper that combines plots using the patchwork package.
+#' @param mod A maxent.jar or maxnet model object.
+#' @param data Data frame of training data (occurrences + background).
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' If `NULL` (default), only the training-data response curve is plotted, with no
+#' transfer-environment comparison.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param fun If maxent.jar a function to compute constant values for other variables (default is `mean`). Maxnet models always use mean.
+#' @param type Number (1 or 2) to specify type of response curve to plot. See details for explanation.
+#' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
+#' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
+#' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @details
+#' The type 1 option (default) sets the focal variable to values along a range "r" from its minimum to 
+#' maximum (buffered by exp.curve) while setting all other variables to static values defined by fun
+#' (which defaults to their means), then makes a model prediction for this table. The type 2 option
+#' sets the focal variable to one static value along r while keeping all other variables
+#' at their original values, makes a model predicton for this table, then repeats this process for
+#' all values along the range, resulting in 100 model predictions for an r of length 100. The 
+#' final curve for type 2 plots the means of these prediction tables.
+#' 
+#' The original maxent.jar software and the dismo package implemented type 1 response curves,
+#' but the pdp package and the predicts package implement type 2, so the user can choose
+#' which to visualize in order to directly compare to one of these outputs.
+#' 
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
+#' @return A ggplot object of the response curve.
+#' @author Gonzalo E. Pinilla- Buitrago 
+#' @examples
+#' \dontrun{
+#' library(ENMeval)
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e <- ENMevaluate(occs, envs, bg,
+#'                  tune.args = list(fc = "LQ", rm = 1),
+#'                  partitions = "block", other.settings = os, partition.settings = ps,
+#'                  algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' # Plot with clamp tails
+#' mod <- e@models[[1]]
+#' # Define data as combined training values with coordinates removed
+#' data <- rbind(e@occs, e@bg)[,3:11]
+#' # Plot
+#' evalplot.respCurve(mod, data, envs = tr_envs, var = "bio1")
+#' # Without tails
+#' evalplot.respCurve(mod, data, envs = tr_envs, var = "bio1", clamp.tails = FALSE)
+#' }
+#' @export
+
+evalplot.respCurve <- function(mod,
+                           data,
+                           envs = NULL,
+                           var,
+                           fun = mean,
+                           type = c(1, 2),
+                           exp.curve = 0.025,
+                           nr.curve = 100,
+                           clamp.tails = TRUE) {
+
+  # If type is not entered, default is 1
+  if(length(type) > 1) {
+    type <- 1
+  }
+
+  # Predict via the  enm@predict slot, always unconstrained extrapolation
+  algorithm <- lookup.algorithm(mod)
+  enm <- lookup.enm(algorithm)
+  other.settings <- list(pred.type = "cloglog", doClamp = FALSE)
+
+  # Whether a transfer environment was supplied
+  has_transfer <- !is.null(envs)
+
+  # Get ranges for fitting and transfer
+  min_var_train <- min(data[var])
+  max_var_train <- max(data[var])
+
+  if(has_transfer) {
+    min_var_transfer <- terra::minmax(envs[[var]])[1]
+    max_var_transfer <- terra::minmax(envs[[var]])[2]
+
+    min_val <- min(min_var_train, min_var_transfer)
+    max_val <- max(max_var_train, max_var_transfer)
+  } else {
+    min_val <- min_var_train
+    max_val <- max_var_train
+  }
+
+  if(is.na(min_val) | is.na(max_val)) {
+    stop("The input variable cannot be categorical. Please input a numeric variable.")
+  }
+  
+  # Create vector of values to plot the curve
+  v <- seq(0, (max_val - min_val) * (1 + exp.curve * 2), length.out = nr.curve)
+  v.plot <- (min_val - (max_val - min_val) * exp.curve) + v
+  v.plot <- c(v.plot, min_var_train, max_var_train)
+  v.plot <- sort(v.plot)
+  
+  if(type == 1) {
+    const_v <- apply(data, 2, fun)
+    
+    # Create matrix with nr.curve + 2 rows of constant values
+    d.new <- matrix(const_v, nrow = nr.curve + 2, ncol = length(const_v), byrow = TRUE)
+    colnames(d.new) <- names(const_v)
+    
+    # Replace variable of interest in matrix
+    d.new[, var] <- v.plot
+
+    # Predict suitability values
+    if (algorithm == "bioclim") d.new <- as.data.frame(d.new)
+    p <- enm@predict(mod, d.new, other.settings)
+  }else if(type == 2) {
+    ls <- list()
+    for(i in 1:length(v.plot)) {
+      d.new <- data
+      d.new[[var]] <- v.plot[i]
+      p.i <- enm@predict(mod, d.new, other.settings)
+      ls[[i]] <- mean(p.i)
+    }
+    p <- unlist(ls)
+  }
+  
+  # Prepare data for ggplot
+  v.curve <- cbind(p, v.plot)
+  colnames(v.curve) <- c("predicted suitability", var)
+  # Create ggplot curve
+  ggcurve <- ggplot2::ggplot(tibble::as_tibble(v.curve), ggplot2::aes(x = get(var), 
+                                                                      y = .data$`predicted suitability`)) +
+    ggplot2::geom_line(color = "red") +
+    ggplot2::geom_vline(xintercept = min_var_train, color = "orange") +
+    (if (has_transfer) {
+      ggplot2::geom_vline(xintercept = min_var_transfer, color = "darkorange3", linetype = 3)
+    }) +
+    ggplot2::geom_vline(xintercept = max_var_train, color = "deepskyblue") +
+    (if (has_transfer) {
+      ggplot2::geom_vline(xintercept = max_var_transfer, color = "darkblue", linetype = 3)
+    }) +
+    (if (clamp.tails) {
+      # Add lower clamp tail
+      ggplot2::annotate("segment",
+                        x = min(v.plot),
+                        xend = min_var_train,
+                        y = v.curve[v.plot == min_var_train, "predicted suitability"],
+                        yend = v.curve[v.plot == min_var_train, "predicted suitability"],
+                        col = "darkred",
+                        lty = 2)
+    }) +
+    (if (clamp.tails) {
+      # Add upper clamp tail
+      ggplot2::annotate("segment",
+                        x = max_var_train,
+                        xend = max(v.plot),
+                        y = v.curve[v.plot == max_var_train, "predicted suitability"],
+                        yend = v.curve[v.plot == max_var_train, "predicted suitability"],
+                        col = "darkred",
+                        lty = 2)
+    }) +
+    # Add lower tail shade area
+    (if (has_transfer && min_var_transfer < min_var_train) {
+      ggplot2::annotate("rect",
+                        xmin = min_var_transfer,
+                        xmax = min_var_train,
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "orange")
+    }) +
+    # Add upper tail shade area
+    (if (has_transfer && max_var_transfer > max_var_train) {
+      ggplot2::annotate("rect",
+                        xmin = max_var_train,
+                        xmax = max_var_transfer,
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "blue")
+    }) +
+    ggplot2::ylim(c(-0.01, 1.01)) +
+    ggplot2::scale_x_continuous(expand = c(0, 0)) +
+    ggplot2::xlab(var) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.y = ggplot2::element_text(angle = 90, vjust = 0, hjust = 0.5))
+  return(ggcurve)
+}
+
+#' @title Plot Response Curves for All Variables with Shared Y-Axis
+#' @description A wrapper function to plot response curves for all contributing variables and combine
+#' them using patchwork. The plots share a common y-axis label.
+#' @param mod A maxent.jar or maxnet model object.
+#' @param data Data frame of training data (occurrences + background).
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' If `NULL` (default), only the training-data response curves are plotted, with no
+#' transfer-environment comparison.
+#' @param fun A function to compute constant values for other variables (default is `median`).
+#' @param type Number (1 or 2) to specify type of response curve to plot. See details for explanation.
+#' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
+#' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
+#' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @author Gonzalo E. Pinilla- Buitrago
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
+#' @examples
+#' \dontrun{
+#' library(ENMeval)
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e <- ENMevaluate(occs, envs, bg, tune.args = list(fc = "LQ", rm = 1),
+#'                  partitions = "block", other.settings = os,
+#'                  partition.settings = ps, algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' mod <- e@models[[1]]
+#' # Define data as combined training values with coordinates removed
+#' data <- rbind(e@occs, e@bg)[,3:11]
+#' # Plot
+#' evalplot.respCurves(mod, data, envs = tr_envs)
+#' # Plot training data only, without a transfer environment
+#' evalplot.respCurves(mod, data)
+#' }
+#' @export
+
+evalplot.respCurves <- function(mod,
+                            data,
+                            envs = NULL,
+                            fun = mean,
+                            type = c(1, 2),
+                            exp.curve = 0.025,
+                            nr.curve = 100,
+                            clamp.tails = TRUE) {
+
+  # If type is not entered, default is 1
+  if(length(type) > 1) {
+    type <- 1
+  }
+
+  # Get variable names
+  var_names <- lookup.var.names(mod, lookup.algorithm(mod))
+
+  # Calculate number of columns (assuming square or near-square layout)
+  n_plots <- length(var_names)
+  n_cols <- ceiling(sqrt(n_plots))
+
+  # Generate plots with y-axis text only for the first column
+  plots <- lapply(seq_along(var_names), function(i) {
+    evalplot.respCurve(mod, data, envs, var_names[i], fun, type, exp.curve, nr.curve, clamp.tails = clamp.tails)
+  })
+  
+  # Combine plots with a shared y-axis label
+  combined_plot <- patchwork::wrap_plots(plots, ncol = n_cols, 
+                                         axis_titles = "collect_y") +
+    ggplot2::theme(plot.margin = ggplot2::margin(10, 10, 10, 10))  # Adjust margins
+  
+  return(combined_plot)
+}
+
+#' @title Plot Density Plots of variables
+#' @description This function plots densities of a given environmental variable based on a maxent.jar
+#' or maxnet model.
+#' @param data Data frame of training data (occurrences + background).
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' If `NULL` (default), only the training-data density is plotted, with no
+#' transfer-environment comparison.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param bw.envs The smoothing bandwidth to be used in the environmental variables
+#' @return A ggplot object of the response curve.
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
+#' @author Gonzalo E. Pinilla-Buitrago
+#' @examples
+#' \dontrun{
+#' library(ENMeval)
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- terra::rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e.maxnet <- ENMevaluate(occs, envs, bg,
+#'                        tune.args = list(fc = "LQ", rm = 1),
+#'                         partitions = "block", other.settings = os, partition.settings = ps,
+#'                         algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Define data as combined training values with coordinates removed
+#' data <- rbind(e.maxnet@occs, e.maxnet@bg)[,3:11]
+#' # Plot
+#' evalplot.density(data, envs = tr_envs, var = "bio5")
+#' # Plot training data only, without a transfer environment
+#' evalplot.density(data, var = "bio5")
+#' }
+#' @export
+
+evalplot.density <- function(data,
+                             envs = NULL,
+                             var,
+                             bw.envs = 10) {
+  # Whether a transfer environment was supplied
+  has_transfer <- !is.null(envs)
+
+  # Get ranges for fitting and transfer
+  ## Minimum value of train data
+  min_var_train <- min(data[, var])
+  ## Maximum value of train data
+  max_var_train <- max(data[, var])
+
+  if (has_transfer) {
+    ## Minimum value of transfer data
+    min_var_transfer <- terra::minmax(envs[[var]])[1]
+    ## Maximum value of transfer data
+    max_var_transfer <- terra::minmax(envs[[var]])[2]
+    ## Get values of transfer data
+    env_values <- terra::values(envs[[var]], na.rm = TRUE)
+
+    ## Get percentages
+    if (length(env_values) > 0) {
+      total_count <- length(env_values)
+      count_below <- sum(env_values < min_var_train, na.rm = TRUE)
+      count_above <- sum(env_values > max_var_train, na.rm = TRUE)
+      count_between <- total_count - count_below - count_above
+
+      perc_below <- (count_below / total_count) * 100
+      perc_above <- (count_above / total_count) * 100
+      perc_between <- (count_between / total_count) * 100
+
+      label_below <- sprintf("%.2f%%", perc_below)
+      label_above <- sprintf("%.2f%%", perc_above)
+      label_between <- sprintf("%.2f%%", perc_between)
+    } else {
+      label_below <- "0.0%"; label_above <- "0.0%"; label_between <- "0.0%"
+    }
+  }
+
+  ## ggplot density
+  ggdens <- ggplot2::ggplot(data, ggplot2::aes(x = get(var))) +
+    # Add density curves
+    ggplot2::geom_density(na.rm = TRUE, fill = "black", alpha = 0.3,
+                          bounds = c(min_var_train, max_var_train)) +
+    # Add density curves
+    (if (has_transfer) {
+      ggplot2::geom_density(data = terra::values(envs[[var]]),
+                            na.rm = TRUE, fill = "purple", alpha = 0.2,
+                            bounds = c(min_var_transfer, max_var_transfer),
+                            lty = 2, bw = bw.envs)
+    }) +
+    # Add minimum train line
+    ggplot2::geom_vline(xintercept = min_var_train, col = "orange") +
+    # Add minimum transfer line
+    (if (has_transfer) {
+      ggplot2::geom_vline(xintercept = min_var_transfer, col = "darkorange3", lty = 3)
+    }) +
+    # Add maximum train line
+    ggplot2::geom_vline(xintercept = max_var_train, col = "deepskyblue") +
+    # Add maximum transfer line
+    (if (has_transfer) {
+      ggplot2::geom_vline(xintercept = max_var_transfer, col = "darkblue", lty = 3)
+    }) +
+    # Add lower tail shade area
+    (if (has_transfer && min_var_transfer < min_var_train) {
+      ggplot2::annotate("rect",
+                        xmin = min_var_transfer,
+                        xmax = min_var_train,
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "orange")
+    }) +
+    # Add upper tail shade area
+    (if (has_transfer && max_var_transfer > max_var_train) {
+      ggplot2::annotate("rect",
+                        xmin = max_var_train,
+                        xmax = max_var_transfer,
+                        ymin = -Inf, ymax = Inf,
+                        alpha = .1, fill = "blue")
+    }) +
+    # No expand ggplot
+    ggplot2::scale_x_continuous(expand = c(0.025, 0.025)) +
+    ggplot2::scale_y_continuous(labels = function(x) {
+      sub("e([+-])0*(\\d)", "e\\1\\2", formatC(x, format = "e", digits = 1))
+    }) +
+    # Change x axis label
+    ggplot2::xlab(var) +
+    # Define ggplot theme
+    ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.y = ggplot2::element_text(angle = 90, vjust = 0, hjust = 0.5))
+
+  if (has_transfer) {
+    # Build the plot to calculate the y-axis range
+    ggdens_build <- ggplot2::ggplot_build(ggdens)
+    y_range <- ggdens_build$layout$panel_params[[1]]$y.range
+
+    # Set y_pos to a fraction of the maximum y-value, making it relative
+    y_pos <- y_range[2] * 0.8
+
+    # Add annotation layers with the dynamically calculated y_pos
+    ggdens <- ggdens +
+      # Add "between" percentage label
+      ggplot2::annotate(
+        "label",
+        x = (min_var_train + max_var_train) / 2, # Centered in the training range
+        y = y_pos,
+        label = label_between,
+        color = "black", fontface = "bold", size = 3.5, angle = 90,
+        fill = "white", alpha = 0.6, label.size = NA) +
+      # Add "below" percentage label, if applicable
+      (if (min_var_transfer < min_var_train) {
+        ggplot2::annotate("label",
+          x = (min_var_train + min_var_transfer) / 2,
+          y = y_pos,
+          label = label_below,
+          color = "darkorange3", fontface = "bold", size = 3.5, angle = 90,
+          fill = "white", alpha = 0.6, label.size = NA)}) +
+      # Add "above" percentage label, if applicable
+      (if (max_var_transfer > max_var_train) {
+        ggplot2::annotate("label",
+          x = (max_var_transfer + max_var_train) / 2,
+          y = y_pos,
+          label = label_above,
+          color = "darkblue", fontface = "bold", size = 3.5, angle = 90,
+          fill = "white", alpha = 0.6, label.size = NA)})
+  }
+  return(ggdens)
+}
+
+#' @title Density plots for All Variables with Shared Y-Axis
+#' @description A wrapper function to plot response curves for all contributing variables and combine
+#' them using patchwork. The plots share a common y-axis label.
+#' @param data Data frame of training data (occurrences + background).
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' If `NULL` (default), only the training-data densities are plotted, with no
+#' transfer-environment comparison.
+#' @param vars Vector specifying the variable names for the response curve.
+#' Default is all variables (from `envs` if supplied, otherwise from `data`).
+#' @param bw.envs The smoothing bandwidth to be used in the environmental variables
+#' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
+#' @author Gonzalo E. Pinilla-Buitrago
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+#' e <- ENMevaluate(occs, envs, bg,
+#'                  tune.args = list(fc = "LQ", rm = 1),
+#'                  partitions = "block", other.settings = os, partition.settings = ps,
+#'                  algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Define data as combined training values with coordinates removed
+#' data <- rbind(e@occs, e@bg)[,3:11]
+#' # Plot
+#' evalplot.densities(data, envs = tr_envs)
+#' # Plot training data only, without a transfer environment
+#' evalplot.densities(data)
+#' }
+
+#' @export
+evalplot.densities <- function(data,
+                               envs = NULL,
+                               vars = NULL,
+                               bw.envs = 10) {
+
+  # Default if vars is NULL is all variables (from envs if supplied, else data)
+  if(is.null(vars)) {
+    vars <- if (!is.null(envs)) names(envs) else names(data)
+  }
+
+  # Calculate number of columns (assuming square or near-square layout)
+  n_plots <- length(vars)
+  n_cols <- ceiling(sqrt(n_plots))
+
+  # Generate plots with y-axis text only for the first column
+  plots <- lapply(seq_along(vars), function(i) {
+    ENMeval::evalplot.density(data, envs, vars[i], bw.envs = bw.envs)
+  })
+  
+  # Combine plots with a shared y-axis label
+  combined_plot <- patchwork::wrap_plots(plots, ncol = n_cols, 
+                                         axis_titles = "collect_y") +
+    ggplot2::theme(plot.margin = ggplot2::margin(10, 10, 10, 10))  # Adjust margins
+  
+  # Add a shared y-axis label
+  combined_plot <- combined_plot
+  
+  return(combined_plot)
+}
+
+#' @title Response curve and density plots for one variable
+#' @description A wrapper function to plot response curves and density plot.
+#' @param mod A maxent.jar or maxnet model object.
+#' @param data Data frame of training data (occurrences + background).
+#' @param envs Raster data (SpatRaster) of environmental variables for model projection.
+#' If `NULL` (default), only the training-data response curve and density are plotted,
+#' with no transfer-environment comparison.
+#' @param var A character string specifying the variable name for the response curve.
+#' @param fun A function to compute constant values for other variables (default is `median`).
+#' @param type Number (1 or 2) to specify type of response curve to plot. See details for explanation.
+#' @param exp.curve Numeric value indicating the range expansion for plotting (default is 0.025).
+#' @param nr.curve Integer specifying the number of points for the response curve (default is 100).
+#' @param clamp.tails Logical; if `TRUE`, clamping tails in plot (default is `TRUE`).
+#' @param bw.envs The smoothing bandwidth to be used in the environmental variables
+#' @return A combined patchwork plot of all response curves with a shared y-axis label.
+#' @references
+#' Pinilla-Buitrago, G.E., Kass, J.M., & Anderson, R.P. (2026). Extrapolation
+#' strategy matters when transferring ecological niche models: new
+#' visualization tools for informed decisions. Ecography, e08590.
+#' https://doi.org/10.1002/ecog.08590
+#' @author Gonzalo E. Pinilla-Buitrago
+#' @examples
+#' \dontrun{
+#' occs <- read.csv(file.path(system.file(package="predicts"), "/ex/bradypus.csv"))[,2:3]
+#' envs <- rast(list.files(path=paste(system.file(package="predicts"), "/ex", sep=""),
+#'                         pattern="tif$", full.names=TRUE))
+#' # No biome
+#' envs <- envs[[!(names(envs) %in% "biome")]]
+#' occs.z <- cbind(occs, terra::extract(envs, occs, ID = FALSE))
+#' bg <- as.data.frame(predicts::backgroundSample(envs, n = 10000))
+#' names(bg) <- names(occs)
+#' bg.z <- cbind(bg, terra::extract(envs, bg, ID = FALSE))
+#' os <- list(abs.auc.diff = FALSE, pred.type = "cloglog", validation.bg = "partition")
+#' ps <- list(orientation = "lat_lat")
+# e <- ENMevaluate(occs, envs, bg, tune.args = list(fc = "LQ", rm = 1),
+#                  partitions = "block", other.settings = os,
+#                  partition.settings = ps, algorithm = "maxnet", overlap = TRUE)
+#' # Transfer envs
+#' tr_envs <- envs * 1.5
+#' # Plot
+#' mod <- e@models[[1]]
+#' # Define data as combined training values with coordinates removed
+#' data <- rbind(e@occs, e@bg)[,3:11]
+#' evalplot.respCurve.dens(mod, data, envs = tr_envs, var = "bio1", fun = median)
+#' # Plot training data only, without a transfer environment
+#' evalplot.respCurve.dens(mod, data, var = "bio1", fun = median)
+#' }
+#' @export
+evalplot.respCurve.dens <- function(mod, data, envs = NULL, var, fun = mean, type = c(1, 2),
+                                exp.curve = 0.025, nr.curve = 100,
+                                clamp.tails = TRUE, bw.envs = 10) {
+
+  # If type is not entered, default is 1
+  if(length(type) > 1) {
+    type <- 1
+  }
+
+  curve_var <- ENMeval::evalplot.respCurve(mod, data, envs, var, fun, type, exp.curve, 
+    nr.curve, clamp.tails = clamp.tails)
+  den_var <- ENMeval::evalplot.density(data, envs, var, bw.envs = bw.envs)
+  curden_var <- patchwork::wrap_plots(curve_var, den_var, ncol = 1, 
+                                      axis_titles = "collect_x")
+  return(curden_var)
 }

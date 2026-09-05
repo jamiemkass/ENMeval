@@ -28,7 +28,6 @@ Authors:
   \item Robert Muscarella
   \item Peter J. Galante
   \item Corentin Bohl
-  \item Gonzalo E. Buitrago-Pinilla
   \item Robert A. Boria
   \item Mariano Soley-Guardia
   \item Robert P. Anderson
