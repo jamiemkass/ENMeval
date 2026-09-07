@@ -119,7 +119,7 @@ Now let's take a look at which areas of this extent are climatically different w
 # NA values for our environmental variable rasters.
 occs.z <- terra::extract(envs, occs, ID = FALSE)
 occs.na <- which(rowSums(is.na(occs.z)) > 0)
-occs <- occs[-occs.na,]
+if (length(occs.na) > 0) occs <- occs[-occs.na,]
 occs.z <- na.omit(occs.z)
 # Now we use the mess() function from the predicts pkg to calculate 
 # environmental similarity metrics of our predictor variable extent compared to 
