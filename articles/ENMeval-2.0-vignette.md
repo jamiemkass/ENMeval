@@ -1087,8 +1087,8 @@ eval.partition.method(e.mx)
 # Results table with summary statistics for cross validation on test data.
 eval.results(e.mx) |> head()
 #>    fc rm   tune.args auc.train cbi.train auc.diff.avg auc.diff.sd auc.val.avg
-#> 1   L  1   fc.L_rm.1 0.8151500     0.979   0.13769381  0.07251682   0.7242520
-#> 2  LQ  1  fc.LQ_rm.1 0.8343236     0.978   0.13427968  0.08713141   0.7296996
+#> 1   L  1   fc.L_rm.1 0.8151500     0.979   0.13769372  0.07251663   0.7242520
+#> 2  LQ  1  fc.LQ_rm.1 0.8343236     0.978   0.13427958  0.08713124   0.7296996
 #> 3 LQH  1 fc.LQH_rm.1 0.9084494     0.984   0.09287126  0.11976041   0.8002663
 #> 4   L  2   fc.L_rm.2 0.8137242     0.981   0.13552525  0.06967154   0.7243118
 #> 5  LQ  2  fc.LQ_rm.2 0.8285820     0.975   0.12790665  0.06265885   0.7375323
@@ -1111,11 +1111,11 @@ eval.results(e.mx) |> head()
 eval.results.partitions(e.mx) |> head()
 #>    tune.args fold   auc.val   auc.diff cbi.val     or.mtp    or.10p
 #> 1  fc.L_rm.1    1 0.8912350 0.10298034   0.533 0.00000000 0.0000000
-#> 2  fc.L_rm.1    2 0.5539864 0.24290312   0.201 0.11363636 0.6136364
+#> 2  fc.L_rm.1    2 0.5539864 0.24290274   0.201 0.11363636 0.6136364
 #> 3  fc.L_rm.1    3 0.6976628 0.12499818   0.733 0.02222222 0.1777778
 #> 4  fc.L_rm.1    4 0.7541238 0.07989361   0.602 0.00000000 0.3409091
 #> 5 fc.LQ_rm.1    1 0.8856767 0.08037007   0.662 0.00000000 0.0000000
-#> 6 fc.LQ_rm.1    2 0.5507928 0.25534337  -0.012 0.11363636 0.6136364
+#> 6 fc.LQ_rm.1    2 0.5507928 0.25534300  -0.012 0.11363636 0.6136364
 # List of models with names corresponding to tune.args column label.
 eval.models(e.mx) |> str(max.level = 1)
 #> List of 15
