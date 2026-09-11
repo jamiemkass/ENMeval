@@ -176,7 +176,7 @@ Robert Muscarella \<bob.muscarella@gmail.com\> and Jamie M. Kass
 
 ``` r
 library(terra)
-#> terra 1.9.46
+#> terra 1.9.50
 
 set.seed(1)
 
