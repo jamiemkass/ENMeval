@@ -467,7 +467,7 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
                               values = FALSE) |> as.data.frame()
       names(bg) <- names(occs)
     }
-    
+
     # remove cell duplicates
     if(other.settings$removeduplicates == TRUE) {
       occs.cellNo <- terra::extract(envs, occs, cells = TRUE, ID = FALSE)
@@ -482,9 +482,20 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
     }else{
       occs.z <- terra::extract(envs, occs, ID = FALSE)  
     }
-    
+
     # bind coordinates to predictor variable values for occs and bg
     bg.z <- terra::extract(envs, bg, ID = FALSE)
+
+    # with cropped maps points can fall outside and produce empty data frames
+    if (all(is.na(occs.z)))
+      stop(paste0("All predictor variables for 'occs' are NAs. ",
+       "Check that coordinates are in longitude-latitude order and ",
+       "they fall inside the extent of 'envs'."))
+    if (all(is.na(bg.z)))
+      stop(paste0("All predictor variables for 'bg' are NAs. ",
+       "Check that coordinates are in longitude-latitude order and ",
+       "they fall inside the extent of 'envs'."))
+
     occs <- cbind(occs, occs.z)
     bg <- cbind(bg, bg.z)
   }else{
