@@ -342,6 +342,14 @@ ENMevaluate <- function(occs, envs = NULL, bg = NULL, tune.args = NULL,
   if(inherits(occs[,1], "character") | inherits(bg[,1], "character")) 
     stop("* If first column of input occurrence or background data is the taxon name, remove it and instead include the 'taxon.name' argument. The first two columns must be the longitude and latitude of the occurrence/background localities.")
   
+  # guess if long-lat columns are in wrong order and warn
+  nms <- tolower(names(occs))
+  if(grepl("lat", nms[1]) || nms[1] %in% "y" ||
+     grepl("lon", nms[2]) || nms[2] %in% "x") {
+    warning("Column names of 'occs' suggest latitude-longitude order: '", names(occs)[1], "', '", names(occs)[2],
+         "'.\n The expected order is logitude-latitude.")
+  }
+
   if(is.null(taxon.name)) {
     if(quiet != TRUE) message(paste0("*** Running initial checks... ***\n"))
   }else{
